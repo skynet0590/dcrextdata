@@ -9,12 +9,12 @@ import (
 
 const (
 	url1 = "http://api.f2pool.com/decred/address"
-	url2 = "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus&api_key=00274ad8102c2d7eca6df307d63cbfabb67ad2f8c9ff9b8d2b6cb9502517ae79"
+	url2 = "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus"
 	url3 = "http://mining.luxor.tech/API/DCR/stats/"
-	url4 = "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus&api_key=c87e18eecb88daa29189565d564dc1a4ecaf1bd2659e8d12933dbca0f706cd40"
+	url4 = "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus"
 	url5 = "https://altpool.net/api/status"
 	url6 = "https://altpool.net/api/currencies"
-	url7 = "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus&api_key=6ffab05bb226622342bebd62d1b3ae3bbf23b4ea706acac2bb4c2e17c5685857"
+	url7 = "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus"
 	url8 = "https://dcred.eu/api/api?q=network"
 )
 
