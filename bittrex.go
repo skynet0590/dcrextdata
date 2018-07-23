@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/vattle/sqlboiler/queries/qm"
+	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 )
 
 const (
@@ -31,24 +34,24 @@ type ticksData struct {
 }
 
 type tickDataArray struct {
-	O  float64 `json:"O"`
-	H  float64 `json:"H"`
-	L  float64 `json:"L"`
-	C  float64 `json:"C"`
-	V  float64 `json:"V"`
-	T  string  `json:"T"`
-	BV float64 `json:"BV"`
+	O  string `json:"O"`
+	H  string `json:"H"`
+	L  string `json:"L"`
+	C  string `json:"C"`
+	V  string `json:"V"`
+	T  string `json:"T"`
+	BV string `json:"BV"`
 }
 
 //ResultArray Export the values to ResultArray struct
 type ResultArray struct {
-	ID        int64   `json:"Id"`
-	Timestamp string  `json:"TimeStamp"`
-	Quantity  float64 `json:"Quantity"`
-	Price     float64 `json:"Price"`
-	Total     float64 `json:"Total"`
-	Filltype  string  `json:"FillType"`
-	Ordertype string  `json:"OrderType"`
+	ID        int64  `json:"Id"`
+	Timestamp string `json:"TimeStamp"`
+	Quantity  string `json:"Quantity"`
+	Price     string `json:"Price"`
+	Total     string `json:"Total"`
+	Filltype  string `json:"FillType"`
+	Ordertype string `json:"OrderType"`
 }
 
 //Function to Return Historic Pricing Data from Bittrex Exchange
@@ -95,11 +98,18 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	//Loop over array of struct and store them in the table
 
 	for i := range data.Result {
+		var p1 models.HistoricDatum
 
-		sqlStatement := `INSERT INTO historicData(exchangeID,globaltradeid,tradeid,timestamp,quantity,price,total,fill_type,order_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`
-		_, err = db.Exec(sqlStatement, "1", data.Result[i].ID, "nil", data.Result[i].Timestamp, data.Result[i].Quantity, data.Result[i].Price, data.Result[i].Total, data.Result[i].Filltype, data.Result[i].Ordertype)
-
-		fmt.Println()
+		p1.Exchangeid = 1
+		p1.Globaltradeid = data.Result[i].ID
+		p1.Tradeid = "nil"
+		p1.Timestamp = data.Result[i].Timestamp
+		p1.Quantity = data.Result[i].Quantity
+		p1.Price = data.Result[i].Price
+		p1.Total = data.Result[i].Total
+		p1.fill_type = data.Result[i].Filltype
+		p1.order_type = data.Result[i].Ordertype
+		err := p1.Insert(db)
 	}
 	return
 
@@ -109,8 +119,7 @@ func (b *Bittrex) fetchBittrexData(date string) {
 
 	//Fetch Data from historicData Table
 
-	sqlStatement := `SELECT * FROM historicData where timestamp=$1`
-	err = db.QueryRow(sqlStatement).Scan(&date)
+	err := models.HistoricDatum(qm.Where("timestamp=?", date)).All()
 }
 
 //To get Ticks from Bittrex Exchange every 24 hours
@@ -155,12 +164,20 @@ func (b *Bittrex) getTicks(currencyPair string) {
 	fmt.Printf("Results: %v\n", data.Result)
 
 	//Loop over array of struct and stores the response in table
+
 	for i := range data.Result {
+		var p2 models.ChartDatum
 
-		sqlStatement := `INSERT INTO chartData(exhcangeID,date,high,low,open,close,volume,quoteVolume,baseVolume,weightedAverage) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
-		_, err = db.Exec(sqlStatement, "1", data.Result[i].T, data.Result[i].H, data.Result[i].L, data.Result[i].O, data.Result[i].C, data.Result[i].V, "nil", data.Result[i].BV, "nil")
-
-		fmt.Println()
+		p1.Exchangeid = 1
+		p1.date = data.Result[i].T
+		p1.high = data.Result[i].H
+		p1.low = data.Result[i].O
+		p1.open = data.Result[i].C
+		p1.close = data.Result[i].V
+		p1.volume = "nil"
+		p1.quoteVolume = data.Result[i].BV
+		p1.weightedAverage = "nil"
+		err := p1.Insert(db)
 	}
 	return
 }
