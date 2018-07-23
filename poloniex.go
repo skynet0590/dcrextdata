@@ -1,10 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
+
+	"github.com/vattle/sqlboiler/boil"
+	"github.com/vattle/sqlboiler/queries/qm"
+	. "github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
@@ -51,6 +58,14 @@ type chartData struct {
 
 func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string) string {
 
+	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	if err != nil {
+		panic(err.Error())
+
+	}
+
+	boil.SetDB(db)
+
 	//Get Url of Poloniex API
 
 	url := poloniexBaseURL
@@ -90,12 +105,21 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 
 	fmt.Printf("Results: %v\n", data)
 
-	//Loop over the entire list to insert data into the table
 	for i := range data.Result {
-		sqlStatement := `INSERT INTO historicData(exchangeID,globaltradeid,tradeid,timestamp,quantity,price,total,fill_type,order_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`
-		_, err = db.Exec(sqlStatement, "0", data.Result[i].GlobalTradeID, data.Result[i].TradeID, data.Result[i].Date, data.Result[i].Amount, data.Result[i].Rate, data.Result[i].Total, "nil", data.Result[i].Types)
+		var p1 models.HistoricDatum
 
+		p1.Exchangeid = 0
+		p1.Globaltradeid = string(data.Result[i].GlobalTradeID)
+		p1.Tradeid = data.Result[i].TradeID
+		p1.timestamp = data.Result[i].Date
+		p1.quantity = data.Result[i].Amount
+		p1.price = data.Result[i].Rate
+		p1.total = data.Result[i].Total
+		p1.fill_type = "nil"
+		p1.order_type = data.Result[i].Types
+		err := p1.Insert(db)
 	}
+
 	return "Saved poloneix historic data!"
 }
 
@@ -104,8 +128,7 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 
 func (p *Poloniex) fetchPoloniexData(date string) {
 
-	sqlStatement := `SELECT * FROM historicData where timestamp=$1`
-	err = db.QueryRow(sqlStatement).Scan(&date)
+	err := models.HistoricDatum(qm.Where("timestamp=?", date)).All()
 
 }
 
