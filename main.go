@@ -1,17 +1,68 @@
 package main
 
+// go:generate sqlboiler postgres
+
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
+	"runtime/pprof"
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/vattle/sqlboiler/boil"
+	// "github.com/vevsatechnologies/External_Data_Feed_Processor/tree/master/models"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Open handle to database like normal
-var db, err = sql.Open("postgres", "dbname=data_feed_processor,user=postgres")
+var log = log15.New()
+
+// mainCore does all the work. Deferred functions do not run after os.Exit(),
+// so main wraps this function, which returns a code.
+func mainCore() error {
+	// Parse the configuration file, and setup logger.
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Failed to load dcrdata config: %s\n", err.Error())
+		return err
+	}
+
+	defer func() {
+		if logRotator != nil {
+			logRotator.Close()
+		}
+	}()
+
+	if cfg.CPUProfile != "" {
+		var f *os.File
+		f, err = os.Create(cfg.CPUProfile)
+		if err != nil {
+			return err
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+}
 
 func main() {
+
+	if err := mainCore(); err != nil {
+		if logRotator != nil {
+			log.Error(err)
+		}
+		os.Exit(1)
+	}
+	os.Exit(0)
+
+	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	if err != nil {
+		panic(err.Error())
+		return
+	}
+
+	boil.SetDB(db)
 
 	// fetchHistoricData(1, "") //parameters : exchangeID,currency pair, start time, end time
 	getPOSdata()
@@ -21,7 +72,7 @@ func main() {
 
 	// }
 
-	getPOWData(2, "") //parameters: pool id
+	// getPOWData(2, "") //parameters: pool id
 
 }
 
