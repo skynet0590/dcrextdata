@@ -9,17 +9,6 @@ import (
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 )
 
-const (
-	url1 = "http://api.f2pool.com/decred/address"
-	url2 = "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus"
-	url3 = "http://mining.luxor.tech/API/DCR/stats/"
-	url4 = "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus"
-	url5 = "https://altpool.net/api/status"
-	url6 = "https://altpool.net/api/currencies"
-	url7 = "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus"
-	url8 = "https://dcred.eu/api/api?q=network"
-)
-
 type POW struct {
 	client *http.Client
 }

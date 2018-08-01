@@ -6,16 +6,19 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spf13/viper"
+
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 )
 
 const (
-	bittrexBaseURL = "https://bittrex.com/api/v1.1/public/getmarkethistory"
+	bittrexBaseURL = viper.Get("ExchangeData[1]")
 
-	bittrexTicksURL = "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
+	bittrexTicksURL = viper.Get("ChartData")
 )
 
+//Bittrex ash
 type Bittrex struct {
 	client *http.Client
 }

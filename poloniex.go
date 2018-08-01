@@ -7,19 +7,20 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spf13/viper"
+
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 
 	"github.com/vattle/sqlboiler/boil"
 	"github.com/vattle/sqlboiler/queries/qm"
-	. "github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
-	poloniexBaseURL = "https://poloniex.com/public"
+	poloniexBaseURL = viper.Get("ExchangeData[0]")
 )
 
-// Structure containing Poloniex client data
-
+//Poloniex Structure containing Poloniex client data
 type Poloniex struct {
 	client *http.Client
 }

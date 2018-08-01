@@ -4,13 +4,11 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
-	"os"
-	"runtime/pprof"
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
 	// "github.com/vevsatechnologies/External_Data_Feed_Processor/tree/master/models"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -19,44 +17,19 @@ import (
 // Open handle to database like normal
 var log = log15.New()
 
-// mainCore does all the work. Deferred functions do not run after os.Exit(),
-// so main wraps this function, which returns a code.
-func mainCore() error {
-	// Parse the configuration file, and setup logger.
-	cfg, err := loadConfig()
-	if err != nil {
-		fmt.Printf("Failed to load dcrdata config: %s\n", err.Error())
-		return err
-	}
-
-	defer func() {
-		if logRotator != nil {
-			logRotator.Close()
-		}
-	}()
-
-	if cfg.CPUProfile != "" {
-		var f *os.File
-		f, err = os.Create(cfg.CPUProfile)
-		if err != nil {
-			return err
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
-}
-
 func main() {
 
-	if err := mainCore(); err != nil {
-		if logRotator != nil {
-			log.Error(err)
-		}
-		os.Exit(1)
-	}
-	os.Exit(0)
+	viper.SetConfigFile("./config.json")
 
-	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	// Searches for config file in given paths and read it
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Error reading config file, %s", err)
+	}
+
+	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
+	viper.SetDefault("ExchangeData", "https://poloniex.com/public")
+
+	db, err := sql.Open("postgres", "dbname="+viper.Get("Database.pgdbname")+" user="+viper.Get("Database.pguser")+"host="+viper.Get("Database.pghost")+" password="+viper.Get("Database.pgpass"))
 	if err != nil {
 		panic(err.Error())
 		return
@@ -109,48 +82,13 @@ func getPOSdata() {
 	user.getPOS()
 }
 
-func getPOWData(PoolID int, api_key string) {
+func getPOWData(PoolID int, apiKey string) {
 
 	user := POW{
 		client: &http.Client{},
 	}
-	if PoolID == 1 {
-		url := url1
-		user.getPOW(PoolID, url, api_key)
-	}
-	if PoolID == 2 {
-		url := url2
-		user.getPOW(PoolID, url, api_key)
-	}
 
-	if PoolID == 3 {
-		url := url3
-		user.getPOW(PoolID, url, api_key)
-	}
-
-	if PoolID == 4 {
-		url := url4
-		user.getPOW(PoolID, url, api_key)
-	}
-
-	if PoolID == 5 {
-		url := url5
-		user.getPOW(PoolID, url, api_key)
-	}
-
-	if PoolID == 6 {
-		url := url6
-		user.getPOW(PoolID, url, api_key)
-	}
-	if PoolID == 7 {
-		url := url7
-		user.getPOW(PoolID, url, api_key)
-	}
-
-	if PoolID == 8 {
-		url := url8
-		user.getPOW(PoolID, url, api_key)
-	}
+	user.getPOW(PoolID, viper.Get("POW"+"["+PoolID+"]"), apiKey)
 
 }
 

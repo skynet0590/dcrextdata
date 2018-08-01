@@ -5,11 +5,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
-)
+	"github.com/spf13/viper"
 
-const (
-	url = "https://api.decred.org/?c=gsd"
+	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 )
 
 type POS struct {
@@ -38,7 +36,7 @@ type Data map[string]POSData
 
 func (p *POS) getPOS() {
 
-	url := url
+	url := viper.Get("POS")
 	request, err := http.NewRequest("GET", url, nil)
 
 	res, _ := p.client.Do(request)
