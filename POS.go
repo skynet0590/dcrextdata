@@ -36,7 +36,7 @@ type Data map[string]POSData
 
 func (p *POS) getPOS() {
 
-	url := viper.Get("POS")
+	url := viper.Get("POS").(string)
 	request, err := http.NewRequest("GET", url, nil)
 
 	res, _ := p.client.Do(request)

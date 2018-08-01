@@ -7,15 +7,10 @@ import (
 	"net/http"
 
 	"github.com/spf13/viper"
+	null "gopkg.in/nullbio/null.v5"
 
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
-)
-
-const (
-	bittrexBaseURL = viper.Get("ExchangeData[1]")
-
-	bittrexTicksURL = viper.Get("ChartData")
 )
 
 //Bittrex ash
@@ -64,7 +59,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 
 	//Get the base url
 
-	url := bittrexBaseURL
+	url := viper.Get("ExchangeData[1]").(string)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err.Error())
@@ -103,7 +98,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	for i := range data.Result {
 		var p1 models.HistoricDatum
 
-		p1.Exchangeid = 1
+		p1.Exchangeid = null.Int(1)
 		p1.Globaltradeid = data.Result[i].ID
 		p1.Tradeid = "nil"
 		p1.Timestamp = data.Result[i].Timestamp
@@ -130,7 +125,7 @@ func (b *Bittrex) fetchBittrexData(date string) {
 
 func (b *Bittrex) getTicks(currencyPair string) {
 
-	url := bittrexTicksURL
+	url := viper.Get("ChartData")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err.Error())

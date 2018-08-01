@@ -13,11 +13,6 @@ import (
 
 	"github.com/vattle/sqlboiler/boil"
 	"github.com/vattle/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/queries/qm"
-)
-
-const (
-	poloniexBaseURL = viper.Get("ExchangeData[0]")
 )
 
 //Poloniex Structure containing Poloniex client data
@@ -69,7 +64,7 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 
 	//Get Url of Poloniex API
 
-	url := poloniexBaseURL
+	url := viper.Get("ExchangeData[0]").(string)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

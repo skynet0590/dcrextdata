@@ -23,13 +23,13 @@ func main() {
 
 	// Searches for config file in given paths and read it
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file, %s", err)
+		panic(err)
 	}
 
 	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
 	viper.SetDefault("ExchangeData", "https://poloniex.com/public")
 
-	db, err := sql.Open("postgres", "dbname="+viper.Get("Database.pgdbname")+" user="+viper.Get("Database.pguser")+"host="+viper.Get("Database.pghost")+" password="+viper.Get("Database.pgpass"))
+	db, err := sql.Open("postgres", "dbname="+viper.GetString("Database.pgdbname")+" user="+viper.GetString("Database.pguser")+"host="+viper.GetString("Database.pghost")+" password="+viper.GetString("Database.pgpass"))
 	if err != nil {
 		panic(err.Error())
 		return
@@ -88,7 +88,7 @@ func getPOWData(PoolID int, apiKey string) {
 		client: &http.Client{},
 	}
 
-	user.getPOW(PoolID, viper.Get("POW"+"["+PoolID+"]"), apiKey)
+	user.getPOW(PoolID, viper.GetString("POW"+"["+string(PoolID)+"]"), apiKey)
 
 }
 
