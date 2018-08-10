@@ -10,7 +10,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
-	// "github.com/vevsatechnologies/External_Data_Feed_Processor/tree/master/models"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

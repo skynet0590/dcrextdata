@@ -18,21 +18,20 @@ import (
 	"github.com/vattle/sqlboiler/queries"
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vattle/sqlboiler/strmangle"
-	"gopkg.in/nullbio/null.v6"
 )
 
 // HistoricDatum is an object representing the database table.
 type HistoricDatum struct {
-	ID            int          `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Exchangeid    null.Int     `boil:"exchangeid" json:"exchangeid,omitempty" toml:"exchangeid" yaml:"exchangeid,omitempty"`
-	Globaltradeid null.Int     `boil:"globaltradeid" json:"globaltradeid,omitempty" toml:"globaltradeid" yaml:"globaltradeid,omitempty"`
-	Tradeid       null.Float64 `boil:"tradeid" json:"tradeid,omitempty" toml:"tradeid" yaml:"tradeid,omitempty"`
-	Timestamp     null.Time    `boil:"timestamp" json:"timestamp,omitempty" toml:"timestamp" yaml:"timestamp,omitempty"`
-	Quantity      null.String  `boil:"quantity" json:"quantity,omitempty" toml:"quantity" yaml:"quantity,omitempty"`
-	Price         null.Float64 `boil:"price" json:"price,omitempty" toml:"price" yaml:"price,omitempty"`
-	Total         null.Float64 `boil:"total" json:"total,omitempty" toml:"total" yaml:"total,omitempty"`
-	FillType      null.String  `boil:"fill_type" json:"fill_type,omitempty" toml:"fill_type" yaml:"fill_type,omitempty"`
-	OrderType     null.String  `boil:"order_type" json:"order_type,omitempty" toml:"order_type" yaml:"order_type,omitempty"`
+	ID            int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Exchangeid    float64   `boil:"exchangeid" json:"exchangeid" toml:"exchangeid" yaml:"exchangeid"`
+	Globaltradeid float64   `boil:"globaltradeid" json:"globaltradeid" toml:"globaltradeid" yaml:"globaltradeid"`
+	Tradeid       float64   `boil:"tradeid" json:"tradeid" toml:"tradeid" yaml:"tradeid"`
+	Timestamp     time.Time `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
+	Quantity      string    `boil:"quantity" json:"quantity" toml:"quantity" yaml:"quantity"`
+	Price         float64   `boil:"price" json:"price" toml:"price" yaml:"price"`
+	Total         float64   `boil:"total" json:"total" toml:"total" yaml:"total"`
+	FillType      string    `boil:"fill_type" json:"fill_type" toml:"fill_type" yaml:"fill_type"`
+	OrderType     string    `boil:"order_type" json:"order_type" toml:"order_type" yaml:"order_type"`
 
 	R *historicDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L historicDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`

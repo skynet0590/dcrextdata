@@ -74,6 +74,7 @@ func (p *POS) getPOS() {
 		p1.Usercountactive = value.UserCountActive
 		p1.Timestamp = NOW()
 
+		err := p1.Insert(db)
 	}
 
 }

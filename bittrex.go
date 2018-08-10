@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/spf13/viper"
-	null "gopkg.in/nullbio/null.v5"
 
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
@@ -43,13 +42,13 @@ type tickDataArray struct {
 
 //ResultArray Export the values to ResultArray struct
 type ResultArray struct {
-	ID        int64  `json:"Id"`
-	Timestamp string `json:"TimeStamp"`
-	Quantity  string `json:"Quantity"`
-	Price     string `json:"Price"`
-	Total     string `json:"Total"`
-	Filltype  string `json:"FillType"`
-	Ordertype string `json:"OrderType"`
+	ID        int64   `json:"Id"`
+	Timestamp int64   `json:"TimeStamp"`
+	Quantity  float64 `json:"Quantity"`
+	Price     float64 `json:"Price"`
+	Total     float64 `json:"Total"`
+	Filltype  string  `json:"FillType"`
+	Ordertype string  `json:"OrderType"`
 }
 
 //Function to Return Historic Pricing Data from Bittrex Exchange
@@ -98,15 +97,16 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	for i := range data.Result {
 		var p1 models.HistoricDatum
 
-		p1.Exchangeid = null.Int(1)
+		p1.Exchangeid = 1
 		p1.Globaltradeid = data.Result[i].ID
-		p1.Tradeid = "nil"
-		p1.Timestamp = data.Result[i].Timestamp
+		p1.Tradeid = ""
+		p1.Timestamping = data.Result[i].Timestamp
 		p1.Quantity = data.Result[i].Quantity
 		p1.Price = data.Result[i].Price
 		p1.Total = data.Result[i].Total
-		p1.fill_type = data.Result[i].Filltype
-		p1.order_type = data.Result[i].Ordertype
+		p1.FillType = data.Result[i].Filltype
+		p1.OrderType = data.Result[i].Ordertype
+
 		err := p1.Insert(db)
 	}
 	return
@@ -117,7 +117,7 @@ func (b *Bittrex) fetchBittrexData(date string) {
 
 	//Fetch Data from historicData Table
 
-	err := models.HistoricDatum(qm.Where("timestamp=?", date)).All()
+	err := models.NewTable(qm.Where("Timestamping=?", date)).All()
 }
 
 //To get Ticks from Bittrex Exchange every 24 hours
@@ -164,7 +164,7 @@ func (b *Bittrex) getTicks(currencyPair string) {
 	//Loop over array of struct and stores the response in table
 
 	for i := range data.Result {
-		var p2 models.ChartDatum
+		var p1 models.ChartDatum
 
 		p1.Exchangeid = 1
 		p1.date = data.Result[i].T

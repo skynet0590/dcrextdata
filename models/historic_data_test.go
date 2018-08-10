@@ -533,7 +533,7 @@ func testHistoricDataSelect(t *testing.T) {
 }
 
 var (
-	historicDatumDBTypes = map[string]string{`Exchangeid`: `integer`, `FillType`: `character varying`, `Globaltradeid`: `integer`, `ID`: `integer`, `OrderType`: `character varying`, `Price`: `numeric`, `Quantity`: `character varying`, `Timestamp`: `timestamp without time zone`, `Total`: `numeric`, `Tradeid`: `numeric`}
+	historicDatumDBTypes = map[string]string{`Exchangeid`: `numeric`, `FillType`: `character varying`, `Globaltradeid`: `numeric`, `ID`: `integer`, `OrderType`: `character varying`, `Price`: `numeric`, `Quantity`: `character varying`, `Timestamp`: `timestamp without time zone`, `Total`: `numeric`, `Tradeid`: `numeric`}
 	_                    = bytes.MinRead
 )
 

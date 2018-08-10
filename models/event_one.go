@@ -18,14 +18,13 @@ import (
 	"github.com/vattle/sqlboiler/queries"
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vattle/sqlboiler/strmangle"
-	"gopkg.in/nullbio/null.v6"
 )
 
 // EventOne is an object representing the database table.
 type EventOne struct {
-	ID   int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name null.String `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
-	Day  string      `boil:"day" json:"day" toml:"day" yaml:"day"`
+	ID   int    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name string `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Day  string `boil:"day" json:"day" toml:"day" yaml:"day"`
 
 	R *eventOneR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventOneL  `boil:"-" json:"-" toml:"-" yaml:"-"`
