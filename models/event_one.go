@@ -18,59 +18,66 @@ import (
 	"github.com/vattle/sqlboiler/queries"
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vattle/sqlboiler/strmangle"
+	"gopkg.in/nullbio/null.v6"
 )
 
-// Datum is an object representing the database table.
-type Datum struct {
-	ID int `boil:"id" json:"id" toml:"id" yaml:"id"`
+// EventOne is an object representing the database table.
+type EventOne struct {
+	ID   int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name null.String `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
+	Day  string      `boil:"day" json:"day" toml:"day" yaml:"day"`
 
-	R *datumR `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L datumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
+	R *eventOneR `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L eventOneL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
-var DatumColumns = struct {
-	ID string
+var EventOneColumns = struct {
+	ID   string
+	Name string
+	Day  string
 }{
-	ID: "id",
+	ID:   "id",
+	Name: "name",
+	Day:  "day",
 }
 
-// datumR is where relationships are stored.
-type datumR struct {
+// eventOneR is where relationships are stored.
+type eventOneR struct {
 }
 
-// datumL is where Load methods for each relationship are stored.
-type datumL struct{}
+// eventOneL is where Load methods for each relationship are stored.
+type eventOneL struct{}
 
 var (
-	datumColumns               = []string{"id"}
-	datumColumnsWithoutDefault = []string{}
-	datumColumnsWithDefault    = []string{"id"}
-	datumPrimaryKeyColumns     = []string{"id"}
+	eventOneColumns               = []string{"id", "name", "day"}
+	eventOneColumnsWithoutDefault = []string{"name", "day"}
+	eventOneColumnsWithDefault    = []string{"id"}
+	eventOnePrimaryKeyColumns     = []string{"id"}
 )
 
 type (
-	// DatumSlice is an alias for a slice of pointers to Datum.
-	// This should generally be used opposed to []Datum.
-	DatumSlice []*Datum
-	// DatumHook is the signature for custom Datum hook methods
-	DatumHook func(boil.Executor, *Datum) error
+	// EventOneSlice is an alias for a slice of pointers to EventOne.
+	// This should generally be used opposed to []EventOne.
+	EventOneSlice []*EventOne
+	// EventOneHook is the signature for custom EventOne hook methods
+	EventOneHook func(boil.Executor, *EventOne) error
 
-	datumQuery struct {
+	eventOneQuery struct {
 		*queries.Query
 	}
 )
 
 // Cache for insert, update and upsert
 var (
-	datumType                 = reflect.TypeOf(&Datum{})
-	datumMapping              = queries.MakeStructMapping(datumType)
-	datumPrimaryKeyMapping, _ = queries.BindMapping(datumType, datumMapping, datumPrimaryKeyColumns)
-	datumInsertCacheMut       sync.RWMutex
-	datumInsertCache          = make(map[string]insertCache)
-	datumUpdateCacheMut       sync.RWMutex
-	datumUpdateCache          = make(map[string]updateCache)
-	datumUpsertCacheMut       sync.RWMutex
-	datumUpsertCache          = make(map[string]insertCache)
+	eventOneType                 = reflect.TypeOf(&EventOne{})
+	eventOneMapping              = queries.MakeStructMapping(eventOneType)
+	eventOnePrimaryKeyMapping, _ = queries.BindMapping(eventOneType, eventOneMapping, eventOnePrimaryKeyColumns)
+	eventOneInsertCacheMut       sync.RWMutex
+	eventOneInsertCache          = make(map[string]insertCache)
+	eventOneUpdateCacheMut       sync.RWMutex
+	eventOneUpdateCache          = make(map[string]updateCache)
+	eventOneUpsertCacheMut       sync.RWMutex
+	eventOneUpsertCache          = make(map[string]insertCache)
 )
 
 var (
@@ -79,20 +86,20 @@ var (
 	// Force bytes in case of primary key column that uses []byte (for relationship compares)
 	_ = bytes.MinRead
 )
-var datumBeforeInsertHooks []DatumHook
-var datumBeforeUpdateHooks []DatumHook
-var datumBeforeDeleteHooks []DatumHook
-var datumBeforeUpsertHooks []DatumHook
+var eventOneBeforeInsertHooks []EventOneHook
+var eventOneBeforeUpdateHooks []EventOneHook
+var eventOneBeforeDeleteHooks []EventOneHook
+var eventOneBeforeUpsertHooks []EventOneHook
 
-var datumAfterInsertHooks []DatumHook
-var datumAfterSelectHooks []DatumHook
-var datumAfterUpdateHooks []DatumHook
-var datumAfterDeleteHooks []DatumHook
-var datumAfterUpsertHooks []DatumHook
+var eventOneAfterInsertHooks []EventOneHook
+var eventOneAfterSelectHooks []EventOneHook
+var eventOneAfterUpdateHooks []EventOneHook
+var eventOneAfterDeleteHooks []EventOneHook
+var eventOneAfterUpsertHooks []EventOneHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Datum) doBeforeInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumBeforeInsertHooks {
+func (o *EventOne) doBeforeInsertHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneBeforeInsertHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -102,8 +109,8 @@ func (o *Datum) doBeforeInsertHooks(exec boil.Executor) (err error) {
 }
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Datum) doBeforeUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumBeforeUpdateHooks {
+func (o *EventOne) doBeforeUpdateHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneBeforeUpdateHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -113,8 +120,8 @@ func (o *Datum) doBeforeUpdateHooks(exec boil.Executor) (err error) {
 }
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Datum) doBeforeDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumBeforeDeleteHooks {
+func (o *EventOne) doBeforeDeleteHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneBeforeDeleteHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -124,8 +131,8 @@ func (o *Datum) doBeforeDeleteHooks(exec boil.Executor) (err error) {
 }
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Datum) doBeforeUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumBeforeUpsertHooks {
+func (o *EventOne) doBeforeUpsertHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneBeforeUpsertHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -135,8 +142,8 @@ func (o *Datum) doBeforeUpsertHooks(exec boil.Executor) (err error) {
 }
 
 // doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Datum) doAfterInsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumAfterInsertHooks {
+func (o *EventOne) doAfterInsertHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneAfterInsertHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -146,8 +153,8 @@ func (o *Datum) doAfterInsertHooks(exec boil.Executor) (err error) {
 }
 
 // doAfterSelectHooks executes all "after Select" hooks.
-func (o *Datum) doAfterSelectHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumAfterSelectHooks {
+func (o *EventOne) doAfterSelectHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneAfterSelectHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -157,8 +164,8 @@ func (o *Datum) doAfterSelectHooks(exec boil.Executor) (err error) {
 }
 
 // doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Datum) doAfterUpdateHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumAfterUpdateHooks {
+func (o *EventOne) doAfterUpdateHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneAfterUpdateHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -168,8 +175,8 @@ func (o *Datum) doAfterUpdateHooks(exec boil.Executor) (err error) {
 }
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Datum) doAfterDeleteHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumAfterDeleteHooks {
+func (o *EventOne) doAfterDeleteHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneAfterDeleteHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -179,8 +186,8 @@ func (o *Datum) doAfterDeleteHooks(exec boil.Executor) (err error) {
 }
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Datum) doAfterUpsertHooks(exec boil.Executor) (err error) {
-	for _, hook := range datumAfterUpsertHooks {
+func (o *EventOne) doAfterUpsertHooks(exec boil.Executor) (err error) {
+	for _, hook := range eventOneAfterUpsertHooks {
 		if err := hook(exec, o); err != nil {
 			return err
 		}
@@ -189,32 +196,32 @@ func (o *Datum) doAfterUpsertHooks(exec boil.Executor) (err error) {
 	return nil
 }
 
-// AddDatumHook registers your hook function for all future operations.
-func AddDatumHook(hookPoint boil.HookPoint, datumHook DatumHook) {
+// AddEventOneHook registers your hook function for all future operations.
+func AddEventOneHook(hookPoint boil.HookPoint, eventOneHook EventOneHook) {
 	switch hookPoint {
 	case boil.BeforeInsertHook:
-		datumBeforeInsertHooks = append(datumBeforeInsertHooks, datumHook)
+		eventOneBeforeInsertHooks = append(eventOneBeforeInsertHooks, eventOneHook)
 	case boil.BeforeUpdateHook:
-		datumBeforeUpdateHooks = append(datumBeforeUpdateHooks, datumHook)
+		eventOneBeforeUpdateHooks = append(eventOneBeforeUpdateHooks, eventOneHook)
 	case boil.BeforeDeleteHook:
-		datumBeforeDeleteHooks = append(datumBeforeDeleteHooks, datumHook)
+		eventOneBeforeDeleteHooks = append(eventOneBeforeDeleteHooks, eventOneHook)
 	case boil.BeforeUpsertHook:
-		datumBeforeUpsertHooks = append(datumBeforeUpsertHooks, datumHook)
+		eventOneBeforeUpsertHooks = append(eventOneBeforeUpsertHooks, eventOneHook)
 	case boil.AfterInsertHook:
-		datumAfterInsertHooks = append(datumAfterInsertHooks, datumHook)
+		eventOneAfterInsertHooks = append(eventOneAfterInsertHooks, eventOneHook)
 	case boil.AfterSelectHook:
-		datumAfterSelectHooks = append(datumAfterSelectHooks, datumHook)
+		eventOneAfterSelectHooks = append(eventOneAfterSelectHooks, eventOneHook)
 	case boil.AfterUpdateHook:
-		datumAfterUpdateHooks = append(datumAfterUpdateHooks, datumHook)
+		eventOneAfterUpdateHooks = append(eventOneAfterUpdateHooks, eventOneHook)
 	case boil.AfterDeleteHook:
-		datumAfterDeleteHooks = append(datumAfterDeleteHooks, datumHook)
+		eventOneAfterDeleteHooks = append(eventOneAfterDeleteHooks, eventOneHook)
 	case boil.AfterUpsertHook:
-		datumAfterUpsertHooks = append(datumAfterUpsertHooks, datumHook)
+		eventOneAfterUpsertHooks = append(eventOneAfterUpsertHooks, eventOneHook)
 	}
 }
 
-// OneP returns a single datum record from the query, and panics on error.
-func (q datumQuery) OneP() *Datum {
+// OneP returns a single eventOne record from the query, and panics on error.
+func (q eventOneQuery) OneP() *EventOne {
 	o, err := q.One()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -223,9 +230,9 @@ func (q datumQuery) OneP() *Datum {
 	return o
 }
 
-// One returns a single datum record from the query.
-func (q datumQuery) One() (*Datum, error) {
-	o := &Datum{}
+// One returns a single eventOne record from the query.
+func (q eventOneQuery) One() (*EventOne, error) {
+	o := &EventOne{}
 
 	queries.SetLimit(q.Query, 1)
 
@@ -234,7 +241,7 @@ func (q datumQuery) One() (*Datum, error) {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for data")
+		return nil, errors.Wrap(err, "models: failed to execute a one query for event_one")
 	}
 
 	if err := o.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
@@ -244,8 +251,8 @@ func (q datumQuery) One() (*Datum, error) {
 	return o, nil
 }
 
-// AllP returns all Datum records from the query, and panics on error.
-func (q datumQuery) AllP() DatumSlice {
+// AllP returns all EventOne records from the query, and panics on error.
+func (q eventOneQuery) AllP() EventOneSlice {
 	o, err := q.All()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -254,16 +261,16 @@ func (q datumQuery) AllP() DatumSlice {
 	return o
 }
 
-// All returns all Datum records from the query.
-func (q datumQuery) All() (DatumSlice, error) {
-	var o []*Datum
+// All returns all EventOne records from the query.
+func (q eventOneQuery) All() (EventOneSlice, error) {
+	var o []*EventOne
 
 	err := q.Bind(&o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to Datum slice")
+		return nil, errors.Wrap(err, "models: failed to assign all query results to EventOne slice")
 	}
 
-	if len(datumAfterSelectHooks) != 0 {
+	if len(eventOneAfterSelectHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doAfterSelectHooks(queries.GetExecutor(q.Query)); err != nil {
 				return o, err
@@ -274,8 +281,8 @@ func (q datumQuery) All() (DatumSlice, error) {
 	return o, nil
 }
 
-// CountP returns the count of all Datum records in the query, and panics on error.
-func (q datumQuery) CountP() int64 {
+// CountP returns the count of all EventOne records in the query, and panics on error.
+func (q eventOneQuery) CountP() int64 {
 	c, err := q.Count()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -284,8 +291,8 @@ func (q datumQuery) CountP() int64 {
 	return c
 }
 
-// Count returns the count of all Datum records in the query.
-func (q datumQuery) Count() (int64, error) {
+// Count returns the count of all EventOne records in the query.
+func (q eventOneQuery) Count() (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
@@ -293,14 +300,14 @@ func (q datumQuery) Count() (int64, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count data rows")
+		return 0, errors.Wrap(err, "models: failed to count event_one rows")
 	}
 
 	return count, nil
 }
 
 // Exists checks if the row exists in the table, and panics on error.
-func (q datumQuery) ExistsP() bool {
+func (q eventOneQuery) ExistsP() bool {
 	e, err := q.Exists()
 	if err != nil {
 		panic(boil.WrapErr(err))
@@ -310,7 +317,7 @@ func (q datumQuery) ExistsP() bool {
 }
 
 // Exists checks if the row exists in the table.
-func (q datumQuery) Exists() (bool, error) {
+func (q eventOneQuery) Exists() (bool, error) {
 	var count int64
 
 	queries.SetCount(q.Query)
@@ -318,31 +325,31 @@ func (q datumQuery) Exists() (bool, error) {
 
 	err := q.Query.QueryRow().Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if data exists")
+		return false, errors.Wrap(err, "models: failed to check if event_one exists")
 	}
 
 	return count > 0, nil
 }
 
-// DataG retrieves all records.
-func DataG(mods ...qm.QueryMod) datumQuery {
-	return Data(boil.GetDB(), mods...)
+// EventOnesG retrieves all records.
+func EventOnesG(mods ...qm.QueryMod) eventOneQuery {
+	return EventOnes(boil.GetDB(), mods...)
 }
 
-// Data retrieves all the records using an executor.
-func Data(exec boil.Executor, mods ...qm.QueryMod) datumQuery {
-	mods = append(mods, qm.From("\"data\""))
-	return datumQuery{NewQuery(exec, mods...)}
+// EventOnes retrieves all the records using an executor.
+func EventOnes(exec boil.Executor, mods ...qm.QueryMod) eventOneQuery {
+	mods = append(mods, qm.From("\"event_one\""))
+	return eventOneQuery{NewQuery(exec, mods...)}
 }
 
-// FindDatumG retrieves a single record by ID.
-func FindDatumG(id int, selectCols ...string) (*Datum, error) {
-	return FindDatum(boil.GetDB(), id, selectCols...)
+// FindEventOneG retrieves a single record by ID.
+func FindEventOneG(id int, selectCols ...string) (*EventOne, error) {
+	return FindEventOne(boil.GetDB(), id, selectCols...)
 }
 
-// FindDatumGP retrieves a single record by ID, and panics on error.
-func FindDatumGP(id int, selectCols ...string) *Datum {
-	retobj, err := FindDatum(boil.GetDB(), id, selectCols...)
+// FindEventOneGP retrieves a single record by ID, and panics on error.
+func FindEventOneGP(id int, selectCols ...string) *EventOne {
+	retobj, err := FindEventOne(boil.GetDB(), id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -350,35 +357,35 @@ func FindDatumGP(id int, selectCols ...string) *Datum {
 	return retobj
 }
 
-// FindDatum retrieves a single record by ID with an executor.
+// FindEventOne retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindDatum(exec boil.Executor, id int, selectCols ...string) (*Datum, error) {
-	datumObj := &Datum{}
+func FindEventOne(exec boil.Executor, id int, selectCols ...string) (*EventOne, error) {
+	eventOneObj := &EventOne{}
 
 	sel := "*"
 	if len(selectCols) > 0 {
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"data\" where \"id\"=$1", sel,
+		"select %s from \"event_one\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(exec, query, id)
 
-	err := q.Bind(datumObj)
+	err := q.Bind(eventOneObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from data")
+		return nil, errors.Wrap(err, "models: unable to select from event_one")
 	}
 
-	return datumObj, nil
+	return eventOneObj, nil
 }
 
-// FindDatumP retrieves a single record by ID with an executor, and panics on error.
-func FindDatumP(exec boil.Executor, id int, selectCols ...string) *Datum {
-	retobj, err := FindDatum(exec, id, selectCols...)
+// FindEventOneP retrieves a single record by ID with an executor, and panics on error.
+func FindEventOneP(exec boil.Executor, id int, selectCols ...string) *EventOne {
+	retobj, err := FindEventOne(exec, id, selectCols...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -387,13 +394,13 @@ func FindDatumP(exec boil.Executor, id int, selectCols ...string) *Datum {
 }
 
 // InsertG a single record. See Insert for whitelist behavior description.
-func (o *Datum) InsertG(whitelist ...string) error {
+func (o *EventOne) InsertG(whitelist ...string) error {
 	return o.Insert(boil.GetDB(), whitelist...)
 }
 
 // InsertGP a single record, and panics on error. See Insert for whitelist
 // behavior description.
-func (o *Datum) InsertGP(whitelist ...string) {
+func (o *EventOne) InsertGP(whitelist ...string) {
 	if err := o.Insert(boil.GetDB(), whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -401,7 +408,7 @@ func (o *Datum) InsertGP(whitelist ...string) {
 
 // InsertP a single record using an executor, and panics on error. See Insert
 // for whitelist behavior description.
-func (o *Datum) InsertP(exec boil.Executor, whitelist ...string) {
+func (o *EventOne) InsertP(exec boil.Executor, whitelist ...string) {
 	if err := o.Insert(exec, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -412,9 +419,9 @@ func (o *Datum) InsertP(exec boil.Executor, whitelist ...string) {
 // No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
 // - All columns without a default value are included (i.e. name, age)
 // - All columns with a default, but non-zero are included (i.e. health = 75)
-func (o *Datum) Insert(exec boil.Executor, whitelist ...string) error {
+func (o *EventOne) Insert(exec boil.Executor, whitelist ...string) error {
 	if o == nil {
-		return errors.New("models: no data provided for insertion")
+		return errors.New("models: no event_one provided for insertion")
 	}
 
 	var err error
@@ -423,34 +430,34 @@ func (o *Datum) Insert(exec boil.Executor, whitelist ...string) error {
 		return err
 	}
 
-	nzDefaults := queries.NonZeroDefaultSet(datumColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(eventOneColumnsWithDefault, o)
 
 	key := makeCacheKey(whitelist, nzDefaults)
-	datumInsertCacheMut.RLock()
-	cache, cached := datumInsertCache[key]
-	datumInsertCacheMut.RUnlock()
+	eventOneInsertCacheMut.RLock()
+	cache, cached := eventOneInsertCache[key]
+	eventOneInsertCacheMut.RUnlock()
 
 	if !cached {
 		wl, returnColumns := strmangle.InsertColumnSet(
-			datumColumns,
-			datumColumnsWithDefault,
-			datumColumnsWithoutDefault,
+			eventOneColumns,
+			eventOneColumnsWithDefault,
+			eventOneColumnsWithoutDefault,
 			nzDefaults,
 			whitelist,
 		)
 
-		cache.valueMapping, err = queries.BindMapping(datumType, datumMapping, wl)
+		cache.valueMapping, err = queries.BindMapping(eventOneType, eventOneMapping, wl)
 		if err != nil {
 			return err
 		}
-		cache.retMapping, err = queries.BindMapping(datumType, datumMapping, returnColumns)
+		cache.retMapping, err = queries.BindMapping(eventOneType, eventOneMapping, returnColumns)
 		if err != nil {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"data\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"event_one\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.IndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"data\" DEFAULT VALUES"
+			cache.query = "INSERT INTO \"event_one\" DEFAULT VALUES"
 		}
 
 		var queryOutput, queryReturning string
@@ -479,63 +486,63 @@ func (o *Datum) Insert(exec boil.Executor, whitelist ...string) error {
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into data")
+		return errors.Wrap(err, "models: unable to insert into event_one")
 	}
 
 	if !cached {
-		datumInsertCacheMut.Lock()
-		datumInsertCache[key] = cache
-		datumInsertCacheMut.Unlock()
+		eventOneInsertCacheMut.Lock()
+		eventOneInsertCache[key] = cache
+		eventOneInsertCacheMut.Unlock()
 	}
 
 	return o.doAfterInsertHooks(exec)
 }
 
-// UpdateG a single Datum record. See Update for
+// UpdateG a single EventOne record. See Update for
 // whitelist behavior description.
-func (o *Datum) UpdateG(whitelist ...string) error {
+func (o *EventOne) UpdateG(whitelist ...string) error {
 	return o.Update(boil.GetDB(), whitelist...)
 }
 
-// UpdateGP a single Datum record.
+// UpdateGP a single EventOne record.
 // UpdateGP takes a whitelist of column names that should be updated.
 // Panics on error. See Update for whitelist behavior description.
-func (o *Datum) UpdateGP(whitelist ...string) {
+func (o *EventOne) UpdateGP(whitelist ...string) {
 	if err := o.Update(boil.GetDB(), whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// UpdateP uses an executor to update the Datum, and panics on error.
+// UpdateP uses an executor to update the EventOne, and panics on error.
 // See Update for whitelist behavior description.
-func (o *Datum) UpdateP(exec boil.Executor, whitelist ...string) {
+func (o *EventOne) UpdateP(exec boil.Executor, whitelist ...string) {
 	err := o.Update(exec, whitelist...)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// Update uses an executor to update the Datum.
+// Update uses an executor to update the EventOne.
 // Whitelist behavior: If a whitelist is provided, only the columns given are updated.
 // No whitelist behavior: Without a whitelist, columns are inferred by the following rules:
 // - All columns are inferred to start with
 // - All primary keys are subtracted from this set
 // Update does not automatically update the record in case of default values. Use .Reload()
 // to refresh the records.
-func (o *Datum) Update(exec boil.Executor, whitelist ...string) error {
+func (o *EventOne) Update(exec boil.Executor, whitelist ...string) error {
 	var err error
 	if err = o.doBeforeUpdateHooks(exec); err != nil {
 		return err
 	}
 	key := makeCacheKey(whitelist, nil)
-	datumUpdateCacheMut.RLock()
-	cache, cached := datumUpdateCache[key]
-	datumUpdateCacheMut.RUnlock()
+	eventOneUpdateCacheMut.RLock()
+	cache, cached := eventOneUpdateCache[key]
+	eventOneUpdateCacheMut.RUnlock()
 
 	if !cached {
 		wl := strmangle.UpdateColumnSet(
-			datumColumns,
-			datumPrimaryKeyColumns,
+			eventOneColumns,
+			eventOnePrimaryKeyColumns,
 			whitelist,
 		)
 
@@ -543,14 +550,14 @@ func (o *Datum) Update(exec boil.Executor, whitelist ...string) error {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return errors.New("models: unable to update data, could not build whitelist")
+			return errors.New("models: unable to update event_one, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"data\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"event_one\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, datumPrimaryKeyColumns),
+			strmangle.WhereClause("\"", "\"", len(wl)+1, eventOnePrimaryKeyColumns),
 		)
-		cache.valueMapping, err = queries.BindMapping(datumType, datumMapping, append(wl, datumPrimaryKeyColumns...))
+		cache.valueMapping, err = queries.BindMapping(eventOneType, eventOneMapping, append(wl, eventOnePrimaryKeyColumns...))
 		if err != nil {
 			return err
 		}
@@ -565,58 +572,58 @@ func (o *Datum) Update(exec boil.Executor, whitelist ...string) error {
 
 	_, err = exec.Exec(cache.query, values...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update data row")
+		return errors.Wrap(err, "models: unable to update event_one row")
 	}
 
 	if !cached {
-		datumUpdateCacheMut.Lock()
-		datumUpdateCache[key] = cache
-		datumUpdateCacheMut.Unlock()
+		eventOneUpdateCacheMut.Lock()
+		eventOneUpdateCache[key] = cache
+		eventOneUpdateCacheMut.Unlock()
 	}
 
 	return o.doAfterUpdateHooks(exec)
 }
 
 // UpdateAllP updates all rows with matching column names, and panics on error.
-func (q datumQuery) UpdateAllP(cols M) {
+func (q eventOneQuery) UpdateAllP(cols M) {
 	if err := q.UpdateAll(cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAll updates all rows with the specified column values.
-func (q datumQuery) UpdateAll(cols M) error {
+func (q eventOneQuery) UpdateAll(cols M) error {
 	queries.SetUpdate(q.Query, cols)
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all for data")
+		return errors.Wrap(err, "models: unable to update all for event_one")
 	}
 
 	return nil
 }
 
 // UpdateAllG updates all rows with the specified column values.
-func (o DatumSlice) UpdateAllG(cols M) error {
+func (o EventOneSlice) UpdateAllG(cols M) error {
 	return o.UpdateAll(boil.GetDB(), cols)
 }
 
 // UpdateAllGP updates all rows with the specified column values, and panics on error.
-func (o DatumSlice) UpdateAllGP(cols M) {
+func (o EventOneSlice) UpdateAllGP(cols M) {
 	if err := o.UpdateAll(boil.GetDB(), cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAllP updates all rows with the specified column values, and panics on error.
-func (o DatumSlice) UpdateAllP(exec boil.Executor, cols M) {
+func (o EventOneSlice) UpdateAllP(exec boil.Executor, cols M) {
 	if err := o.UpdateAll(exec, cols); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o DatumSlice) UpdateAll(exec boil.Executor, cols M) error {
+func (o EventOneSlice) UpdateAll(exec boil.Executor, cols M) error {
 	ln := int64(len(o))
 	if ln == 0 {
 		return nil
@@ -638,13 +645,13 @@ func (o DatumSlice) UpdateAll(exec boil.Executor, cols M) error {
 
 	// Append all of the primary key values for each column
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), datumPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), eventOnePrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"data\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"event_one\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, datumPrimaryKeyColumns, len(o)))
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, eventOnePrimaryKeyColumns, len(o)))
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -653,19 +660,19 @@ func (o DatumSlice) UpdateAll(exec boil.Executor, cols M) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to update all in datum slice")
+		return errors.Wrap(err, "models: unable to update all in eventOne slice")
 	}
 
 	return nil
 }
 
 // UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Datum) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+func (o *EventOne) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
 	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...)
 }
 
 // UpsertGP attempts an insert, and does an update or ignore on conflict. Panics on error.
-func (o *Datum) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
+func (o *EventOne) UpsertGP(updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
 	if err := o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -673,23 +680,23 @@ func (o *Datum) UpsertGP(updateOnConflict bool, conflictColumns []string, update
 
 // UpsertP attempts an insert using an executor, and does an update or ignore on conflict.
 // UpsertP panics on error.
-func (o *Datum) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
+func (o *EventOne) UpsertP(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) {
 	if err := o.Upsert(exec, updateOnConflict, conflictColumns, updateColumns, whitelist...); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
-func (o *Datum) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
+func (o *EventOne) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns []string, whitelist ...string) error {
 	if o == nil {
-		return errors.New("models: no data provided for upsert")
+		return errors.New("models: no event_one provided for upsert")
 	}
 
 	if err := o.doBeforeUpsertHooks(exec); err != nil {
 		return err
 	}
 
-	nzDefaults := queries.NonZeroDefaultSet(datumColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(eventOneColumnsWithDefault, o)
 
 	// Build cache key in-line uglily - mysql vs postgres problems
 	buf := strmangle.GetBuffer()
@@ -718,43 +725,43 @@ func (o *Datum) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumn
 	key := buf.String()
 	strmangle.PutBuffer(buf)
 
-	datumUpsertCacheMut.RLock()
-	cache, cached := datumUpsertCache[key]
-	datumUpsertCacheMut.RUnlock()
+	eventOneUpsertCacheMut.RLock()
+	cache, cached := eventOneUpsertCache[key]
+	eventOneUpsertCacheMut.RUnlock()
 
 	var err error
 
 	if !cached {
 		insert, ret := strmangle.InsertColumnSet(
-			datumColumns,
-			datumColumnsWithDefault,
-			datumColumnsWithoutDefault,
+			eventOneColumns,
+			eventOneColumnsWithDefault,
+			eventOneColumnsWithoutDefault,
 			nzDefaults,
 			whitelist,
 		)
 
 		update := strmangle.UpdateColumnSet(
-			datumColumns,
-			datumPrimaryKeyColumns,
+			eventOneColumns,
+			eventOnePrimaryKeyColumns,
 			updateColumns,
 		)
 		if len(update) == 0 {
-			return errors.New("models: unable to upsert data, could not build update column list")
+			return errors.New("models: unable to upsert event_one, could not build update column list")
 		}
 
 		conflict := conflictColumns
 		if len(conflict) == 0 {
-			conflict = make([]string, len(datumPrimaryKeyColumns))
-			copy(conflict, datumPrimaryKeyColumns)
+			conflict = make([]string, len(eventOnePrimaryKeyColumns))
+			copy(conflict, eventOnePrimaryKeyColumns)
 		}
-		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"data\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = queries.BuildUpsertQueryPostgres(dialect, "\"event_one\"", updateOnConflict, ret, update, conflict, insert)
 
-		cache.valueMapping, err = queries.BindMapping(datumType, datumMapping, insert)
+		cache.valueMapping, err = queries.BindMapping(eventOneType, eventOneMapping, insert)
 		if err != nil {
 			return err
 		}
 		if len(ret) != 0 {
-			cache.retMapping, err = queries.BindMapping(datumType, datumMapping, ret)
+			cache.retMapping, err = queries.BindMapping(eventOneType, eventOneMapping, ret)
 			if err != nil {
 				return err
 			}
@@ -782,59 +789,59 @@ func (o *Datum) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumn
 		_, err = exec.Exec(cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert data")
+		return errors.Wrap(err, "models: unable to upsert event_one")
 	}
 
 	if !cached {
-		datumUpsertCacheMut.Lock()
-		datumUpsertCache[key] = cache
-		datumUpsertCacheMut.Unlock()
+		eventOneUpsertCacheMut.Lock()
+		eventOneUpsertCache[key] = cache
+		eventOneUpsertCacheMut.Unlock()
 	}
 
 	return o.doAfterUpsertHooks(exec)
 }
 
-// DeleteP deletes a single Datum record with an executor.
+// DeleteP deletes a single EventOne record with an executor.
 // DeleteP will match against the primary key column to find the record to delete.
 // Panics on error.
-func (o *Datum) DeleteP(exec boil.Executor) {
+func (o *EventOne) DeleteP(exec boil.Executor) {
 	if err := o.Delete(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// DeleteG deletes a single Datum record.
+// DeleteG deletes a single EventOne record.
 // DeleteG will match against the primary key column to find the record to delete.
-func (o *Datum) DeleteG() error {
+func (o *EventOne) DeleteG() error {
 	if o == nil {
-		return errors.New("models: no Datum provided for deletion")
+		return errors.New("models: no EventOne provided for deletion")
 	}
 
 	return o.Delete(boil.GetDB())
 }
 
-// DeleteGP deletes a single Datum record.
+// DeleteGP deletes a single EventOne record.
 // DeleteGP will match against the primary key column to find the record to delete.
 // Panics on error.
-func (o *Datum) DeleteGP() {
+func (o *EventOne) DeleteGP() {
 	if err := o.DeleteG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
-// Delete deletes a single Datum record with an executor.
+// Delete deletes a single EventOne record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *Datum) Delete(exec boil.Executor) error {
+func (o *EventOne) Delete(exec boil.Executor) error {
 	if o == nil {
-		return errors.New("models: no Datum provided for delete")
+		return errors.New("models: no EventOne provided for delete")
 	}
 
 	if err := o.doBeforeDeleteHooks(exec); err != nil {
 		return err
 	}
 
-	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), datumPrimaryKeyMapping)
-	sql := "DELETE FROM \"data\" WHERE \"id\"=$1"
+	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), eventOnePrimaryKeyMapping)
+	sql := "DELETE FROM \"event_one\" WHERE \"id\"=$1"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -843,7 +850,7 @@ func (o *Datum) Delete(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete from data")
+		return errors.Wrap(err, "models: unable to delete from event_one")
 	}
 
 	if err := o.doAfterDeleteHooks(exec); err != nil {
@@ -854,61 +861,61 @@ func (o *Datum) Delete(exec boil.Executor) error {
 }
 
 // DeleteAllP deletes all rows, and panics on error.
-func (q datumQuery) DeleteAllP() {
+func (q eventOneQuery) DeleteAllP() {
 	if err := q.DeleteAll(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all matching rows.
-func (q datumQuery) DeleteAll() error {
+func (q eventOneQuery) DeleteAll() error {
 	if q.Query == nil {
-		return errors.New("models: no datumQuery provided for delete all")
+		return errors.New("models: no eventOneQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	_, err := q.Query.Exec()
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from data")
+		return errors.Wrap(err, "models: unable to delete all from event_one")
 	}
 
 	return nil
 }
 
 // DeleteAllGP deletes all rows in the slice, and panics on error.
-func (o DatumSlice) DeleteAllGP() {
+func (o EventOneSlice) DeleteAllGP() {
 	if err := o.DeleteAllG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAllG deletes all rows in the slice.
-func (o DatumSlice) DeleteAllG() error {
+func (o EventOneSlice) DeleteAllG() error {
 	if o == nil {
-		return errors.New("models: no Datum slice provided for delete all")
+		return errors.New("models: no EventOne slice provided for delete all")
 	}
 	return o.DeleteAll(boil.GetDB())
 }
 
 // DeleteAllP deletes all rows in the slice, using an executor, and panics on error.
-func (o DatumSlice) DeleteAllP(exec boil.Executor) {
+func (o EventOneSlice) DeleteAllP(exec boil.Executor) {
 	if err := o.DeleteAll(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o DatumSlice) DeleteAll(exec boil.Executor) error {
+func (o EventOneSlice) DeleteAll(exec boil.Executor) error {
 	if o == nil {
-		return errors.New("models: no Datum slice provided for delete all")
+		return errors.New("models: no EventOne slice provided for delete all")
 	}
 
 	if len(o) == 0 {
 		return nil
 	}
 
-	if len(datumBeforeDeleteHooks) != 0 {
+	if len(eventOneBeforeDeleteHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doBeforeDeleteHooks(exec); err != nil {
 				return err
@@ -918,12 +925,12 @@ func (o DatumSlice) DeleteAll(exec boil.Executor) error {
 
 	var args []interface{}
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), datumPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), eventOnePrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"data\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, datumPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM \"event_one\" WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, eventOnePrimaryKeyColumns, len(o))
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -932,10 +939,10 @@ func (o DatumSlice) DeleteAll(exec boil.Executor) error {
 
 	_, err := exec.Exec(sql, args...)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to delete all from datum slice")
+		return errors.Wrap(err, "models: unable to delete all from eventOne slice")
 	}
 
-	if len(datumAfterDeleteHooks) != 0 {
+	if len(eventOneAfterDeleteHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doAfterDeleteHooks(exec); err != nil {
 				return err
@@ -947,23 +954,23 @@ func (o DatumSlice) DeleteAll(exec boil.Executor) error {
 }
 
 // ReloadGP refetches the object from the database and panics on error.
-func (o *Datum) ReloadGP() {
+func (o *EventOne) ReloadGP() {
 	if err := o.ReloadG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // ReloadP refetches the object from the database with an executor. Panics on error.
-func (o *Datum) ReloadP(exec boil.Executor) {
+func (o *EventOne) ReloadP(exec boil.Executor) {
 	if err := o.Reload(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
 }
 
 // ReloadG refetches the object from the database using the primary keys.
-func (o *Datum) ReloadG() error {
+func (o *EventOne) ReloadG() error {
 	if o == nil {
-		return errors.New("models: no Datum provided for reload")
+		return errors.New("models: no EventOne provided for reload")
 	}
 
 	return o.Reload(boil.GetDB())
@@ -971,8 +978,8 @@ func (o *Datum) ReloadG() error {
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *Datum) Reload(exec boil.Executor) error {
-	ret, err := FindDatum(exec, o.ID)
+func (o *EventOne) Reload(exec boil.Executor) error {
+	ret, err := FindEventOne(exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -984,7 +991,7 @@ func (o *Datum) Reload(exec boil.Executor) error {
 // ReloadAllGP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
 // Panics on error.
-func (o *DatumSlice) ReloadAllGP() {
+func (o *EventOneSlice) ReloadAllGP() {
 	if err := o.ReloadAllG(); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -993,7 +1000,7 @@ func (o *DatumSlice) ReloadAllGP() {
 // ReloadAllP refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
 // Panics on error.
-func (o *DatumSlice) ReloadAllP(exec boil.Executor) {
+func (o *EventOneSlice) ReloadAllP(exec boil.Executor) {
 	if err := o.ReloadAll(exec); err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1001,9 +1008,9 @@ func (o *DatumSlice) ReloadAllP(exec boil.Executor) {
 
 // ReloadAllG refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *DatumSlice) ReloadAllG() error {
+func (o *EventOneSlice) ReloadAllG() error {
 	if o == nil {
-		return errors.New("models: empty DatumSlice provided for reload all")
+		return errors.New("models: empty EventOneSlice provided for reload all")
 	}
 
 	return o.ReloadAll(boil.GetDB())
@@ -1011,37 +1018,37 @@ func (o *DatumSlice) ReloadAllG() error {
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *DatumSlice) ReloadAll(exec boil.Executor) error {
+func (o *EventOneSlice) ReloadAll(exec boil.Executor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	data := DatumSlice{}
+	eventOnes := EventOneSlice{}
 	var args []interface{}
 	for _, obj := range *o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), datumPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), eventOnePrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"data\".* FROM \"data\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, datumPrimaryKeyColumns, len(*o))
+	sql := "SELECT \"event_one\".* FROM \"event_one\" WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, eventOnePrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(exec, sql, args...)
 
-	err := q.Bind(&data)
+	err := q.Bind(&eventOnes)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in DatumSlice")
+		return errors.Wrap(err, "models: unable to reload all in EventOneSlice")
 	}
 
-	*o = data
+	*o = eventOnes
 
 	return nil
 }
 
-// DatumExists checks if the Datum row exists.
-func DatumExists(exec boil.Executor, id int) (bool, error) {
+// EventOneExists checks if the EventOne row exists.
+func EventOneExists(exec boil.Executor, id int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"data\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"event_one\" where \"id\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -1052,20 +1059,20 @@ func DatumExists(exec boil.Executor, id int) (bool, error) {
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if data exists")
+		return false, errors.Wrap(err, "models: unable to check if event_one exists")
 	}
 
 	return exists, nil
 }
 
-// DatumExistsG checks if the Datum row exists.
-func DatumExistsG(id int) (bool, error) {
-	return DatumExists(boil.GetDB(), id)
+// EventOneExistsG checks if the EventOne row exists.
+func EventOneExistsG(id int) (bool, error) {
+	return EventOneExists(boil.GetDB(), id)
 }
 
-// DatumExistsGP checks if the Datum row exists. Panics on error.
-func DatumExistsGP(id int) bool {
-	e, err := DatumExists(boil.GetDB(), id)
+// EventOneExistsGP checks if the EventOne row exists. Panics on error.
+func EventOneExistsGP(id int) bool {
+	e, err := EventOneExists(boil.GetDB(), id)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -1073,9 +1080,9 @@ func DatumExistsGP(id int) bool {
 	return e
 }
 
-// DatumExistsP checks if the Datum row exists. Panics on error.
-func DatumExistsP(exec boil.Executor, id int) bool {
-	e, err := DatumExists(exec, id)
+// EventOneExistsP checks if the EventOne row exists. Panics on error.
+func EventOneExistsP(exec boil.Executor, id int) bool {
+	e, err := EventOneExists(exec, id)
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
