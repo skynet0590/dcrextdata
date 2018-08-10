@@ -8,12 +8,6 @@ import (
 	"net/http"
 
 	"github.com/spf13/viper"
-
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
-
-	"github.com/vattle/sqlboiler/boil"
-	"github.com/vattle/sqlboiler/queries/qm"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 const (
@@ -59,13 +53,17 @@ type chartData struct {
 
 func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string) string {
 
-	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
+		viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 
 	}
 
-	boil.SetDB(db)
+	// boil.SetDB(db)
 
 	//Get Url of Poloniex API
 
@@ -107,18 +105,11 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 	fmt.Printf("Results: %v\n", data)
 
 	for i := range data.Result {
-		var p1 models.HistoricDatum
 
-		p1.Exchangeid = 0
-		p1.Globaltradeid = string(data.Result[i].GlobalTradeID)
-		p1.Tradeid = data.Result[i].TradeID
-		p1.timestamp = data.Result[i].Date
-		p1.quantity = data.Result[i].Amount
-		p1.price = data.Result[i].Rate
-		p1.total = data.Result[i].Total
-		p1.fill_type = "nil"
-		p1.order_type = data.Result[i].Types
-		err := p1.Insert(db)
+		err := db.QueryRow("Insert into historic_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9",
+			0, data.Result[i].GlobalTradeID, data.Result[i].TradeID, data.Result[i].Date, data.Result[i].Amount, data.Result[i].Rate,
+			data.Result[i].Total, "nil", data.Result[i].Types)
+
 	}
 
 	return "Saved poloneix historic data!"
@@ -129,7 +120,17 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 
 func (p *Poloniex) fetchPoloniexData(date string) {
 
-	err := models.HistoricDatum(qm.Where("timestamp=?", date)).All()
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
+		viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
+	if err != nil {
+		panic(err)
+
+	}
+
+	rows, err := db.Query("SELECT * FROM historic_data where timestamp=$1", date)
 
 }
 
@@ -168,6 +169,15 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 		panic(err.Error())
 	}
 
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
+		viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
+	if err != nil {
+		panic(err)
+
+	}
 	//Store the data to charData struct
 
 	var data chartData
@@ -176,7 +186,7 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 
 	//Loop over the entire data and store it in the table
 	for i := range data.Result {
-		sqlStatement := `INSERT INTO chartData(exhcangeID,date,high,low,open,close,volume,quoteVolume,baseVolume,weightedAverage) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
+		sqlStatement := `INSERT INTO chart_data(exhcangeID,date,high,low,open,close,volume,quoteVolume,baseVolume,weightedAverage) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
 		_, err = db.Exec(sqlStatement, "0", data.Result[i].Date, data.Result[i].High, data.Result[i].Low, data.Result[i].Open, data.Result[i].Close, data.Result[i].Volume, data.Result[i].QuoteVolume, "nil", data.Result[i].WeightedAverage)
 
 	}

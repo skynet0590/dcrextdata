@@ -7,21 +7,13 @@ import (
 	"net/http"
 
 	"github.com/spf13/viper"
-
-	"github.com/vattle/sqlboiler/queries/qm"
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
-)
-
-const (
-	bittrexBaseURL = viper.Get("ExchangeData[1]")
-
-	bittrexTicksURL = viper.Get("ChartData")
 )
 
 //Bittrex ash
 type Bittrex struct {
 	client *http.Client
 }
+
 type bittrexData struct {
 	Success string `json:"success"`
 	Message string `json:"message"`
@@ -64,7 +56,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 
 	//Get the base url
 
-	url := bittrexBaseURL
+	url := viper.Get("ExchangeData[1]")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err.Error())
@@ -101,18 +93,11 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	//Loop over array of struct and store them in the table
 
 	for i := range data.Result {
-		var p1 models.HistoricDatum
 
-		p1.Exchangeid = 1
-		p1.Globaltradeid = data.Result[i].ID
-		p1.Tradeid = "nil"
-		p1.Timestamp = data.Result[i].Timestamp
-		p1.Quantity = data.Result[i].Quantity
-		p1.Price = data.Result[i].Price
-		p1.Total = data.Result[i].Total
-		p1.fill_type = data.Result[i].Filltype
-		p1.order_type = data.Result[i].Ordertype
-		err := p1.Insert(db)
+		err := db.QueryRow("Insert into historic_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9",
+			1, data.Result[i].ID, "nil", data.Result[i].Timestamp, data.Result[i].Quantity, data.Result[i].Price,
+			data.Result[i].Total, data.Result[i].Filltype, data.Result[i].Ordertype)
+
 	}
 	return
 
@@ -122,7 +107,7 @@ func (b *Bittrex) fetchBittrexData(date string) {
 
 	//Fetch Data from historicData Table
 
-	err := models.HistoricDatum(qm.Where("timestamp=?", date)).All()
+	err := db.Query("Select * from historic_data where Timestamp = $1", date)
 }
 
 //To get Ticks from Bittrex Exchange every 24 hours
@@ -130,7 +115,8 @@ func (b *Bittrex) fetchBittrexData(date string) {
 
 func (b *Bittrex) getTicks(currencyPair string) {
 
-	url := bittrexTicksURL
+	url := viper.Get("ChartData")
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		panic(err.Error())
@@ -169,18 +155,11 @@ func (b *Bittrex) getTicks(currencyPair string) {
 	//Loop over array of struct and stores the response in table
 
 	for i := range data.Result {
-		var p2 models.ChartDatum
 
-		p1.Exchangeid = 1
-		p1.date = data.Result[i].T
-		p1.high = data.Result[i].H
-		p1.low = data.Result[i].O
-		p1.open = data.Result[i].C
-		p1.close = data.Result[i].V
-		p1.volume = "nil"
-		p1.quoteVolume = data.Result[i].BV
-		p1.weightedAverage = "nil"
-		err := p1.Insert(db)
+		err := db.QueryRow("Insert into chart_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9",
+			1, data.Result[i].T, data.Result[i].H, data.Result[i].O, data.Result[i].C,
+			data.Result[i].V, "nil", data.Result[i].BV, "nil")
+
 	}
 	return
 }
