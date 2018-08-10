@@ -18,15 +18,15 @@ create table New_table (
 
 create table historic_data (
 id serial primary key not null ,
-exchangeID numeric not null,
-globaltradeid numeric not null,
-tradeid numeric not null,
-timestamp timestamp not null,
-quantity  varchar (30) not null,
-price numeric not null, 
-total numeric not null,
-fill_type varchar (20) not null,
-order_type varchar (20) not null
+exchangeID numeric  null,
+globaltradeid numeric null,
+tradeid numeric  null,
+timestamp timestamp null,
+quantity  varchar (30) null,
+price numeric null, 
+total numeric null,
+fill_type varchar (20) null,
+order_type varchar (20) null
 );
 
 create table chart_data (
