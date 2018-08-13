@@ -1,13 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/spf13/viper"
-
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 )
 
 type POS struct {
@@ -46,6 +46,15 @@ func (p *POS) getPOS() {
 		panic(err.Error())
 	}
 
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
+		viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
+	if err != nil {
+		panic(err.Error())
+		return
+	}
 	var data Data
 
 	json.Unmarshal(body, &data)
@@ -54,25 +63,10 @@ func (p *POS) getPOS() {
 
 	for key, value := range data {
 
-		var p1 models.Posdatatable
-
-		p1.Posid = key
-		p1.Apienabled = value.APIEnabled
-		p1.Apiversionssupported = value.APIVersionsSupported
-		p1.Network = value.Network
-		p1.URL = value.URL
-		p1.Launched = value.Launched
-		p1.Lastupdated = value.LastUpdated
-		p1.Immature = value.Immature
-		p1.Live = value.Live
-		p1.Voted = value.Voted
-		p1.Missed = value.Missed
-		p1.Poolfees = value.PoolFees
-		p1.Proportionlive = value.ProportionLive
-		p1.Proportionmissed = value.ProportionMissed
-		p1.Usercount = value.UserCount
-		p1.Usercountactive = value.UserCountActive
-		p1.Timestamp = NOW()
+		err := db.QueryRow("Insert into pos_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17",
+			key, value.APIEnabled, value.APIVersionsSupported, value.Network, value.URL, value.Launched,
+			value.LastUpdated, value.Immature, value.Live, value.Voted, value.Missed, value.PoolFees,
+			value.ProportionLive, value.ProportionMissed, value.UserCount, value.UserCountActive, "NOW()")
 
 		err := p1.Insert(db)
 	}

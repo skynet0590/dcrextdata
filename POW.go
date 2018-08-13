@@ -1,12 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
+	"github.com/spf13/viper"
 )
 
 type POW struct {
@@ -115,6 +116,16 @@ func (p *POW) getPOW(id int, url string, api_key string) {
 		req.URL.RawQuery = q.Encode()
 	}
 
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
+		viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
+	if err != nil {
+		panic(err.Error())
+		return
+	}
+
 	request, err := http.NewRequest("GET", req.URL.String(), nil)
 
 	res, _ := p.client.Do(request)
@@ -135,55 +146,18 @@ func (p *POW) getPOW(id int, url string, api_key string) {
 	//Loop over the entire list to insert data into the table
 	for i := 0; i < 15; i++ {
 
-		var p1 models.Powdatatable
+		err := db.QueryRow("Insert into pow_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$26,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45",
+			id, data.hashrate, data.dataVal.efficiency, data.dataVal.progress,
+			data.globalStats[0].workers, data.dataVal.currentnetworkblock, data.dataVal.nextnetworkblock, data.dataVal.lastblock,
+			data.dataVal.networkdiff, data.dataVal.esttime, data.dataVal.estshares, data.dataVal.timesincelast,
+			data.globalStats[0].networkHashrate, data.blocksfound, data.totalminers, data.globalStats[0].time,
+			data.globalStats[0].networkDifficulty, data.globalStats[0].coinPrice, data.globalStats[0].btcPrice,
+			data.dcr.estimate, data.date, data.blocksper, data.luck, data.ppshare, data.totalKickback, data.success,
+			data.lastUpdate, data.decred.name, data.decred.port, data.decred.fees, data.decred.estimate_current,
+			data.decred.estimate_last24h, data.decred.actual_last24h, data.decred.mbtc_mh_factor,
+			data.decred.hashrate_last24h, data.decred.rental_current, data.dcr.height, data.dcr.blocks24h, data.dcr.btc24h,
+			data.mainnet.currentHeight, data.blockReward.pos, data.blockReward.pow, data.blockReward.dev, id)
 
-		p1.ID = id
-		p1.HashRate = data.hashrate | data.dataVal.hashrate | data.pphash
-		p1.Efficiency = data.dataVal.efficiency
-		p1.Progress = data.dataVal.progress
-		p1.Workers = data.globalStats[0].workers
-		p1.CurrentNetworkBlock = data.dataVal.currentnetworkblock
-		p1.NextNetworkBlock = data.dataVal.nextnetworkblock
-		p1.LastBlock = data.dataVal.lastblock
-		p1.NetworkDiff = data.dataVal.networkdiff | data.globalStats[0].networkDifficulty | data.mainnet.networkDifficulty
-		p1.EstTime = data.globalStats[0].time | data.dataVal.esttime
-		p1.EstShare = data.dataVal.estshares
-		p1.TimeSinceLast = data.dataVal.timesincelast
-		p1.NetHashrate = data.globalStats[0].networkHashrate
-		p1.BlocksFound = data.blocksfound
-		p1.TotalMiners = data.totalminers
-		p1.Time = data.globalStats[0].time
-		p1.NetworkDifficulty = data.globalStats[0].networkDifficulty
-		p1.CoinPrice = data.globalStats[0].coinPrice
-		p1.BTCPrice = data.globalStats[0].btcPrice
-		p1.Est = data.dcr.estimate
-		p1.Date = data.date
-		p1.Blocksper = data.blocksper
-		p1.Luck = data.luck
-		p1.Ppshare = data.ppshare
-		p1.Totalkickback = data.totalKickback
-		p1.Success = data.success
-		p1.Lastupdate = data.lastUpdate
-		p1.Name = data.decred.name
-		p1.Port = data.decred.port
-		p1.Fees = data.decred.fees
-		p1.EstimateCurrent = data.decred.estimate_current
-		p1.EstimateLast24h = data.decred.estimate_last24h
-		p1.Actual24H = data.decred.actual_last24h
-		p1.MBTCMHFactor = data.decred.mbtc_mh_factor
-		p1.HashrateLast24h = data.decred.hashrate_last24h
-		p1.RentalCurrent = data.decred.rental_current
-		p1.Height = data.dcr.height
-		p1.Blocks24h = data.dcr.blocks24h
-		p1.BTC24H = data.dcr.btc24h
-		p1.Currentheight = data.mainnet.currentHeight
-		p1.Total = data.blockReward.total
-		p1.Pos = data.blockReward.pos
-		p1.Pow = data.blockReward.pow
-		p1.Dev = data.blockReward.dev
-		p1.Powid = id
-
-		err := p1.Insert(db)
 	}
 
 }
