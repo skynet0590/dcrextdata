@@ -17,10 +17,13 @@ go get gopkg.in/inconshreveable/log15.v2
 ```
 
 ### Set the configration settings for database in config.json file
+
+
 ### Create database *data_feed_processor*
 
 
-```psql -U postgres data_feed_processor < data_feed_processor.sql
+```
+psql -U postgres data_feed_processor < data_feed_processor.sql
 ```
 ```
 go generate
