@@ -4,26 +4,23 @@
         "pguser"   : "postgres",
         "pgpass"   : "alisha",
         "pghost"   : "localhost",
-        "pgport"   : 5432
+        "pgport"   : "5432"
      },
 
     "POS": "https://api.decred.org/?c=gsd",
 
-    "POW": ["http://api.f2pool.com/decred/address",
-             "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus",
-             "http://mining.luxor.tech/API/DCR/stats/",
-             "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus",
-             "https://altpool.net/api/status",
-             "https://altpool.net/api/currencies",
-             "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus",
-             "https://dcred.eu/api/api?q=network" ] ,
-
-    "ExchangeData" : {
-           "0" : "https://poloniex.com/public",
-           "1" : "https://bittrex.com/api/v1.1/public/getmarkethistory"
+    "POW": {
+        "0" : "http://api.f2pool.com/decred/address",
+        "1" : "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus",
+        "2" : "http://mining.luxor.tech/API/DCR/stats/",
+        "3" : "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus",
+        "4" : "https://altpool.net/api/status",
+        "5" : "https://altpool.net/api/currencies",
+        "6" : "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus",
+        "7" : "https://dcred.eu/api/api?q=network"
     },
     
  
-    "ChartData" : ["https://bittrex.com/Api/v2.0/pub/market/GetTicks"]
+    "ChartData" : "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
 
 }
