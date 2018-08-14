@@ -3,14 +3,15 @@
 create table historic_data (
 id serial primary key not null ,
 exchangeID integer,
-globaltradeid varchar (20),
+Globaltradeid varchar (20),
 tradeid varchar (20),
-timest timestamp,
-quantity  varchar (30),
-price varchar (20), 
-total varchar (20),
-fill_type varchar (20),
-order_type varchar (20)
+Timest timestamp,
+Quantity  varchar (30),
+Price varchar (20), 
+Total varchar (20),
+Fill_type varchar (20),
+Order_type varchar (20)
+
 );
 
 create table chart_data (

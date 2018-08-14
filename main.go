@@ -25,7 +25,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Print(viper.Get("Database.pghost"))
 	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
 	viper.SetDefault("ExchangeData", "https://bittrex.com/api/v1.1/public/getmarkethistory")
 
@@ -38,15 +37,15 @@ func main() {
 
 	boil.SetDB(db)
 
-	// fetchHistoricData(1, "") //parameters : exchangeID,currency pair, start time, end time
-	// getPOSdata()
+	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time
+	getPOSdata()
 	// for {
 	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time                                    //parameters :  Currency pair
 	// 	getChartData(1, "BTC_DCR", "1405699200", "9999999999")    //parameters: exchange id,Currency Pair, start time , end time
 
 	// }
 
-	getPOWData(2, "") //parameters: pool id
+	// getPOWData(2, "") //parameters: pool id
 
 }
 

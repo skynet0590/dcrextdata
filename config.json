@@ -21,6 +21,11 @@
     },
     
  
-    "ChartData" : "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
+    "ChartData" : "https://bittrex.com/Api/v2.0/pub/market/GetTicks",
+
+    "ExchangeData" : {
+        "0" : "https://poloniex.com/public",
+        "1" : "https://bittrex.com/api/v1.1/public/getmarkethistory"
+    }
 
 }

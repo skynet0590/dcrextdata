@@ -63,17 +63,18 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
+
 		panic(err.Error())
-		return
+
 	}
 
 	boil.SetDB(db)
 
 	url := viper.Get("ExchangeData.1")
 
-	// fmt.Println(url)
 	req, err := http.NewRequest("GET", url.(string), nil)
 	if err != nil {
+
 		panic(err.Error())
 	}
 	q := req.URL.Query()
@@ -98,6 +99,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	//Store the response in body variable as a byte array
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
+
 		panic(err.Error())
 	}
 
