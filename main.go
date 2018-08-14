@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
@@ -26,18 +25,12 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Print(viper.Get("Database.pghost"))
 	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
-	viper.SetDefault("ExchangeData", "https://poloniex.com/public")
+	viper.SetDefault("ExchangeData", "https://bittrex.com/api/v1.1/public/getmarkethistory")
 
-<<<<<<< HEAD
-	db, err := sql.Open("postgres", "dbname="+viper.GetString("Database.pgdbname")+" user="+viper.GetString("Database.pguser")+"host="+viper.GetString("Database.pghost")+" password="+viper.GetString("Database.pgpass"))
-=======
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
-		viper.Get("Database.pgdbname"))
-
-	db, err := sql.Open("postgres", dbInfo)
->>>>>>> 5d384d00a11c52daa2872ca8513b3ad5855ed5e8
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err.Error())
 		return
@@ -45,42 +38,42 @@ func main() {
 
 	boil.SetDB(db)
 
-	fetchHistoricData(1, "") //parameters : exchangeID,currency pair, start time, end time
+	// fetchHistoricData(1, "") //parameters : exchangeID,currency pair, start time, end time
 	getPOSdata()
-	for {
-		getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time                                    //parameters :  Currency pair
-		getChartData(1, "BTC_DCR", "1405699200", "9999999999")    //parameters: exchange id,Currency Pair, start time , end time
+	// for {
+	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time                                    //parameters :  Currency pair
+	// 	getChartData(1, "BTC_DCR", "1405699200", "9999999999")    //parameters: exchange id,Currency Pair, start time , end time
 
-	}
+	// }
 
-	getPOWData(2, "") //parameters: pool id
+	// getPOWData(2, "") //parameters: pool id
 
 }
 
 // Exchange id = 0 for Poloneix
 // Exchange id =1 for Bittrex
 
-func fetchHistoricData(exchangeID int, date string) {
+// func fetchHistoricData(exchangeID int, date string) {
 
-	if exchangeID == 0 { //Poloniex exchange
-		user := Poloniex{
+// 	if exchangeID == 0 { //Poloniex exchange
+// 		user := Poloniex{
 
-			client: &http.Client{},
-		}
-		user.fetchPoloniexData(date)
+// 			client: &http.Client{},
+// 		}
+// 		user.fetchPoloniexData(date)
 
-	}
+// 	}
 
-	if exchangeID == 1 { //Bittrex Exchange
+// 	if exchangeID == 1 { //Bittrex Exchange
 
-		user := Bittrex{
+// 		user := Bittrex{
 
-			client: &http.Client{},
-		}
-		user.fetchBittrexData(date)
-	}
+// 			client: &http.Client{},
+// 		}
+// 		user.fetchBittrexData(date)
+// 	}
 
-}
+// }
 
 func getPOSdata() {
 
@@ -97,11 +90,7 @@ func getPOWData(PoolID int, apiKey string) {
 		client: &http.Client{},
 	}
 
-<<<<<<< HEAD
 	user.getPOW(PoolID, viper.GetString("POW"+"["+string(PoolID)+"]"), apiKey)
-=======
-	user.getPOW(PoolID, viper.Get(string("POW")+"["+string(PoolID)+"]"), apiKey)
->>>>>>> 5d384d00a11c52daa2872ca8513b3ad5855ed5e8
 
 }
 
@@ -129,7 +118,7 @@ func getHistoricData(exchangeID int, currencyPair string, startTime string, endT
 
 	//Time delay of 24 hours
 
-	time.Sleep(86400 * time.Second)
+	// time.Sleep(86400 * time.Second)
 }
 
 //Get chart data from exchanges

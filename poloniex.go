@@ -7,22 +7,20 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/spf13/viper"
-<<<<<<< HEAD
-
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
+	// null "gopkg.in/nullbio/null.v6"
+	null "gopkg.in/nullbio/null.v6"
+	// null "gopkg.in/volatiletech/null.v6"
 
 	"github.com/vattle/sqlboiler/boil"
-	"github.com/vattle/sqlboiler/queries/qm"
-=======
 )
 
 const (
-	poloniexBaseURL = viper.Get("ExchangeData[0]")
->>>>>>> 5d384d00a11c52daa2872ca8513b3ad5855ed5e8
+	poloniexBaseURL = "https://poloniex.com/public"
 )
 
-//Poloniex Structure containing Poloniex client data
+// Structure containing Poloniex client data
+
 type Poloniex struct {
 	client *http.Client
 }
@@ -31,13 +29,13 @@ type Poloniex struct {
 
 type poloniexData struct {
 	Result []struct {
-		GlobalTradeID int64   `json:"globalTradeID"`
-		TradeID       string  `json:"tradeID"`
-		Date          string  `json:"date"`
-		Types         string  `json:"type"`
-		Rate          float64 `json:"rate"`
-		Amount        float64 `json:"amount"`
-		Total         float64 `json:"total"`
+		GlobalTradeID null.String `json:"globalTradeID"`
+		TradeID       null.String `json:"tradeID"`
+		Date          null.Time   `json:"date"`
+		Types         null.String `json:"type"`
+		Rate          null.String `json:"rate"`
+		Amount        null.String `json:"amount"`
+		Total         null.String `json:"total"`
 	}
 }
 
@@ -45,14 +43,14 @@ type poloniexData struct {
 
 type chartData struct {
 	Result []struct {
-		Date            int64   `json:"date"`
-		High            float64 `json:"high"`
-		Low             float64 `json:"low"`
-		Open            float64 `json:"open"`
-		Close           float64 `json:"close"`
-		Volume          float64 `json:"volume"`
-		QuoteVolume     float64 `json:"quoteVolume"`
-		WeightedAverage float64 `json:"weightedAverage"`
+		Date            null.Time   `json:"date"`
+		High            null.String `json:"high"`
+		Low             null.String `json:"low"`
+		Open            null.String `json:"open"`
+		Close           null.String `json:"close"`
+		Volume          null.String `json:"volume"`
+		QuoteVolume     null.String `json:"quoteVolume"`
+		WeightedAverage null.String `json:"weightedAverage"`
 	}
 }
 
@@ -61,21 +59,17 @@ type chartData struct {
 
 func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string) string {
 
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
-		viper.Get("Database.pgdbname"))
-
-	db, err := sql.Open("postgres", dbInfo)
+	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 
 	}
 
-	// boil.SetDB(db)
+	boil.SetDB(db)
 
 	//Get Url of Poloniex API
 
-	url := viper.Get("ExchangeData[0]").(string)
+	url := poloniexBaseURL
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -113,11 +107,18 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 	fmt.Printf("Results: %v\n", data)
 
 	for i := range data.Result {
+		var p1 models.HistoricDatum
 
-		err := db.QueryRow("Insert into historic_data Values $1,$2,$3,$4,$5,$6,$7,$8,$9",
-			0, data.Result[i].GlobalTradeID, data.Result[i].TradeID, data.Result[i].Date, data.Result[i].Amount, data.Result[i].Rate,
-			data.Result[i].Total, "nil", data.Result[i].Types)
-
+		// p1.Exchangeid = 0
+		p1.Globaltradeid = data.Result[i].GlobalTradeID
+		p1.Tradeid = data.Result[i].TradeID
+		// p1.timest = data.Result[i].Date
+		p1.Quantity = data.Result[i].Amount
+		p1.Price = data.Result[i].Rate
+		p1.Total = data.Result[i].Total
+		p1.OrderType = data.Result[i].Types
+		err := p1.Insert(db)
+		panic(err.Error())
 	}
 
 	return "Saved poloneix historic data!"
@@ -126,26 +127,24 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 //Returns data from Poloniex exchange
 //Parameters : currency pair , start time , end time
 
-func (p *Poloniex) fetchPoloniexData(date string) {
+// func (p *Poloniex) fetchPoloniexData(date string) {
 
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
-		viper.Get("Database.pgdbname"))
+// 	err := models.HistoricDatum(qm.Where("timestamp=$1", date)).All()
 
-	db, err := sql.Open("postgres", dbInfo)
-	if err != nil {
-		panic(err)
-
-	}
-
-	rows, err := db.Query("SELECT * FROM historic_data where timestamp=$1", date)
-
-}
+// }
 
 //Returns Poloniex Chart Data
 //Parameters : Currency pair, Start time , End time
 
 func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
+
+	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	if err != nil {
+		panic(err.Error())
+
+	}
+
+	boil.SetDB(db)
 
 	//Get the base URL
 
@@ -177,15 +176,6 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 		panic(err.Error())
 	}
 
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		viper.Get("Database.pghost"), 5432, viper.Get("Database.pguser"), viper.Get("Database.pgpass"),
-		viper.Get("Database.pgdbname"))
-
-	db, err := sql.Open("postgres", dbInfo)
-	if err != nil {
-		panic(err)
-
-	}
 	//Store the data to charData struct
 
 	var data chartData
@@ -194,8 +184,23 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 
 	//Loop over the entire data and store it in the table
 	for i := range data.Result {
-		sqlStatement := `INSERT INTO chart_data(exhcangeID,date,high,low,open,close,volume,quoteVolume,baseVolume,weightedAverage) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`
-		_, err = db.Exec(sqlStatement, "0", data.Result[i].Date, data.Result[i].High, data.Result[i].Low, data.Result[i].Open, data.Result[i].Close, data.Result[i].Volume, data.Result[i].QuoteVolume, "nil", data.Result[i].WeightedAverage)
+
+		var p2 models.ChartDatum
+
+		// p2.exchangeID = "0"
+		//p2.date = data.Result[i].Date
+
+		p2.High = data.Result[i].High
+		p2.Low = data.Result[i].Low
+		p2.Opening = data.Result[i].Open
+		p2.Closing = data.Result[i].Close
+		p2.Volume = data.Result[i].Volume
+		p2.Quotevolume = data.Result[i].QuoteVolume
+		// p2.Basevolume = data.Result[i].BaseVolume
+		p2.Weightedaverage = data.Result[i].WeightedAverage
+
+		err := p2.Insert(db)
+		panic(err.Error())
 
 	}
 

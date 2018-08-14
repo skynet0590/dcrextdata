@@ -2,9 +2,10 @@
     "Database": {
         "pgdbname" : "data_feed_processor",
         "pguser"   : "postgres",
-        "pgpass"   : "",
-        "pghost"   : "127.0.0.1:5432"
-    },
+        "pgpass"   : "alisha",
+        "pghost"   : "localhost",
+        "pgport"   : 5432
+     },
 
     "POS": "https://api.decred.org/?c=gsd",
 
@@ -17,9 +18,12 @@
              "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus",
              "https://dcred.eu/api/api?q=network" ] ,
 
-    "ExchangeData" : ["https://poloniex.com/public",
-                     "https://bittrex.com/api/v1.1/public/getmarkethistory"],
-
+    "ExchangeData" : {
+           "0" : "https://poloniex.com/public",
+           "1" : "https://bittrex.com/api/v1.1/public/getmarkethistory"
+    },
+    
+ 
     "ChartData" : ["https://bittrex.com/Api/v2.0/pub/market/GetTicks"]
 
 }
