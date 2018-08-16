@@ -119,15 +119,6 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 	return "Saved poloneix historic data!"
 }
 
-//Returns data from Poloniex exchange
-//Parameters : currency pair , start time , end time
-
-// func (p *Poloniex) fetchPoloniexData(date string) {
-
-// 	err := models.HistoricDatum(qm.Where("timestamp=$1", date)).All()
-
-// }
-
 //Returns Poloniex Chart Data
 //Parameters : Currency pair, Start time , End time
 

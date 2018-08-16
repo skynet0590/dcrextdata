@@ -130,13 +130,6 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 
 }
 
-// func (b *Bittrex) fetchBittrexData(date string) {
-
-// 	//Fetch Data from historicData Table
-
-// 	err := db.Query("Select * from historic_data where Timestamp = $1", date)
-// }
-
 //To get Ticks from Bittrex Exchange every 24 hours
 //Parameters : Currency Pair
 

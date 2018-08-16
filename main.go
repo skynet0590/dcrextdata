@@ -4,6 +4,7 @@ package main
 
 import (
 	"database/sql"
+	"dcrextdata/models"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
+	"github.com/vattle/sqlboiler/queries/qm"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -50,30 +52,13 @@ func main() {
 
 }
 
-// Exchange id = 0 for Poloneix
-// Exchange id =1 for Bittrex
+func fetchHistoricData(date string) {
 
-// func fetchHistoricData(exchangeID int, date string) {
+	Result, err := models.HistoricDatum(qm.Where("Timestamp=?", date)).One(ctx, db)
 
-// 	if exchangeID == 0 { //Poloniex exchange
-// 		user := Poloniex{
+	fmt.Print(Result)
 
-// 			client: &http.Client{},
-// 		}
-// 		user.fetchPoloniexData(date)
-
-// 	}
-
-// 	if exchangeID == 1 { //Bittrex Exchange
-
-// 		user := Bittrex{
-
-// 			client: &http.Client{},
-// 		}
-// 		user.fetchBittrexData(date)
-// 	}
-
-// }
+}
 
 func getPOSdata() {
 
