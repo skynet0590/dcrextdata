@@ -40,7 +40,7 @@ func main() {
 
 	boil.SetDB(db)
 
-	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time
+	// getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time
 	getPOSdata()
 	// for {
 	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time                                    //parameters :  Currency pair
@@ -54,7 +54,7 @@ func main() {
 
 func fetchHistoricData(date string) {
 
-	Result, err := models.HistoricDatum(qm.Where("Timestamp=?", date)).One(ctx, db)
+	Result, err := models.HistoricDatum(qm.Where("Timest=?", date)).One(ctx, db)
 
 	fmt.Print(Result)
 

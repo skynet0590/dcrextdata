@@ -12,11 +12,11 @@ import (
 	null "gopkg.in/nullbio/null.v6"
 )
 
-type POS struct {
+type pos struct {
 	client *http.Client
 }
 
-type POSData struct {
+type posData struct {
 	APIEnabled           null.String  `json:"APIEnabled"`
 	APIVersionsSupported []int        `json:"APIVersionsSupported"`
 	Network              null.String  `json:"Network"`
@@ -34,9 +34,9 @@ type POSData struct {
 	UserCountActive      null.Float64 `json:"UserCountActive"`
 }
 
-type Data map[string]POSData
+type Data map[string]posData
 
-func (p *POS) getPOS() {
+func (p *pos) getPOS() {
 
 	url := viper.Get("POS").(string)
 	request, err := http.NewRequest("GET", url, nil)

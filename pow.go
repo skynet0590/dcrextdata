@@ -10,11 +10,11 @@ import (
 	null "gopkg.in/nullbio/null.v6"
 )
 
-type POW struct {
+type pow struct {
 	client *http.Client
 }
 
-type POWdata struct {
+type powdata struct {
 	date          null.Float64        `json : "date"`
 	hashper       null.String         `json : "hashper" `
 	blocksper     null.Float64        `json:"blocksper"`
@@ -106,7 +106,7 @@ type altpoolCurrency struct {
 	timesincelast null.String  `json:"timesincelast"`
 }
 
-func (p *POW) getPOW(id int, url string, api_key string) {
+func (p *pow) getPOW(id int, url string, api_key string) {
 
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -126,7 +126,7 @@ func (p *POW) getPOW(id int, url string, api_key string) {
 		panic(err.Error())
 	}
 
-	var data POWdata
+	var data powdata
 	json.Unmarshal(body, &data)
 
 	fmt.Println(string(body))
