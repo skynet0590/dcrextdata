@@ -7,9 +7,9 @@
         "pgport"   : "5432"
      },
 
-    "POS": "https://api.decred.org/?c=gsd",
+    "pos": "https://api.decred.org/?c=gsd",
 
-    "POW": {
+    "pow": {
         "0" : "http://api.f2pool.com/decred/address",
         "1" : "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus",
         "2" : "http://mining.luxor.tech/API/DCR/stats/",
@@ -21,7 +21,10 @@
     },
     
  
-    "ChartData" : "https://bittrex.com/Api/v2.0/pub/market/GetTicks",
+    "ChartData" : {
+        "bittrex" :"https://bittrex.com/Api/v2.0/pub/market/GetTicks",
+        "poloniex" : "https://poloniex.com/public?command=returnChartData"
+    },
 
     "ExchangeData" : {
         "poloniex" : "https://poloniex.com/public",

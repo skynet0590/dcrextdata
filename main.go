@@ -4,15 +4,12 @@ package main
 
 import (
 	"database/sql"
-	"dcrextdata/models"
 	"fmt"
 	"net/http"
-	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
-	"github.com/vattle/sqlboiler/queries/qm"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -23,61 +20,64 @@ var db, err = sql.Open("postgres", psqlInfo)
 
 func main() {
 
-	viper.SetConfigFile("./config.json")
+	//Set and read the config file
 
-	// Searches for config file in given paths and read it
+	viper.SetConfigFile("./config.json")
 	if err := viper.ReadInConfig(); err != nil {
 		panic(err)
 	}
 
-	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
+	// Set default value for pow and exchange
+	viper.SetDefault("pow", "http://api.f2pool.com/decred/address")
 	viper.SetDefault("ExchangeData", "https://bittrex.com/api/v1.1/public/getmarkethistory")
-
-	if err != nil {
-		panic(err.Error())
-		return
-	}
 
 	boil.SetDB(db)
 
-	// getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time
-	getPOSdata()
-	// for {
-	// getHistoricData(1, "BTC-DCR", "1514764800", "1514851200") //parameters : exchangeID,currency pair, start time, end time                                    //parameters :  Currency pair
-	// 	getChartData(1, "BTC_DCR", "1405699200", "9999999999")    //parameters: exchange id,Currency Pair, start time , end time
+	// functions to insert data
 
-	// }
+	// getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200") //parameters : exchange name,currency pair, start time, end time
+	// getChartData("poloniex", "BTC_DCR", "1514764800", "1517443199", "86400") //parameters: exchange name,Currency Pair, start time , end time
+	// getPowData(2, "")                                                 //parameters: pool id
+	getPosData()
 
-	// getPOWData(2, "") //parameters: pool id
+	// functions to fetch data
 
+	// fetchHistoricData("date")
 }
 
 func fetchHistoricData(date string) {
 
-	Result, err := models.HistoricDatum(qm.Where("Timest=?", date)).One(ctx, db)
+	// Result, err := models.HistoricDatum(qm.Where("created_on=?", date)).One(ctx, db)
 
-	fmt.Print(Result)
+	// fmt.Print(Result)
 
 }
 
-func getPOSdata() {
+// Function to get Proof of Stake Data
+
+func getPosData() {
 
 	user := pos{
 		client: &http.Client{},
 	}
 
-	user.getPOS()
+	user.getPos()
 }
 
-func getPOWData(PoolID int, apiKey string) {
+// Function to get Proof of Work Data
+// @parameters - PoolID integer 0 to 7
+
+func getPowData(PoolID int, apiKey string) {
 
 	user := pow{
 		client: &http.Client{},
 	}
 
-	user.getPOW(PoolID, viper.GetString("POW"+"["+string(PoolID)+"]"), apiKey)
+	user.getPow(PoolID, viper.GetString("pow"+"["+string(PoolID)+"]"), apiKey)
 
 }
+
+// Function to insert historic data into db from exchanges
 
 func getHistoricData(exchangeName string, currencyPair string, startTime string, endTime string) {
 
@@ -98,28 +98,25 @@ func getHistoricData(exchangeName string, currencyPair string, startTime string,
 		user.getBittrexData(currencyPair)
 	}
 
-	//Time delay of 24 hours
-
-	time.Sleep(86400 * time.Second)
 }
 
 //Get chart data from exchanges
 
-func getChartData(exchangeName string, currencyPair string, startTime string, endTime string) {
+func getChartData(exchangeName string, currencyPair string, startTime string, endTime string, period string) {
 
 	if exchangeName == "poloniex" {
 		user := Poloniex{
 
 			client: &http.Client{},
 		}
-		user.getChartData(currencyPair, startTime, endTime)
+		user.getChartData(currencyPair, startTime, endTime, period)
 
 	}
-	if exchangeName == "Bittrex" {
+	if exchangeName == "bittrex" {
 		user := Bittrex{
 			client: &http.Client{},
 		}
-		user.getTicks(currencyPair)
+		user.getChartData(currencyPair)
 
 	}
 

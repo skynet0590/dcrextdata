@@ -2,50 +2,50 @@
 
 create table historic_data (
 id serial primary key not null ,
-exchangeID integer,
-Globaltradeid varchar (20),
-tradeid varchar (20),
-Timest timestamp,
-Quantity  varchar (30),
-Price varchar (20), 
-Total varchar (20),
-Fill_type varchar (20),
-Order_type varchar (20)
+exchange_name varchar (50),
+globaltradeid numeric,
+tradeid numeric,
+created_on varchar (100),
+quantity  NUMERIC,
+price numeric, 
+total numeric,
+fill_type varchar (20),
+order_type varchar (20)
 
 );
 
 create table chart_data (
     id serial primary key not null ,
-    exchangeID integer ,
-    date       timestamp,
-    high    varchar (20),
-    low     varchar (20),
-    opening    varchar (20),
-    closing   varchar (20),
-    volume  varchar (20),
-    quotevolume varchar (20),
-    weightedaverage varchar (20)
+    exchange_name VARCHAR (50),
+    created_on    varchar (100),
+    high    numeric,
+    low     numeric,
+    opening    numeric,
+    closing   numeric,
+    volume  numeric,
+    quotevolume numeric,
+    basevolume numeric,
+    weightedaverage NUMERIC
 );
 
 create table pos_data(
     id serial primary key not null ,
-    Posid VARCHAR (20),
-    Apienabled varchar (20),
-    Apiversionssupported numeric,
-    Network VARCHAR (20),
-    URL VARCHAR (100),
-    Launched VARCHAR (20),
-    Lastupdated VARCHAR (20),
-    Immature VARCHAR (20),
-    Live VARCHAR (20),
-    Voted NUMERIC,
-    Missed NUMERIC,
-    Poolfees NUMERIC,
-    Proportionlive NUMERIC,
-    Proportionmissed numeric ,
-    Usercount NUMERIC,
-    Usercountactive NUMERIC,
-    Timestamp TIME
+    posid VARCHAR (20),
+    apienabled varchar (20),
+    network VARCHAR (20),
+    network_url VARCHAR (100),
+    launched VARCHAR (20),
+    last_updated VARCHAR (20),
+    immature VARCHAR (20),
+    live VARCHAR (20),
+    voted NUMERIC,
+    missed NUMERIC,
+    poolfees NUMERIC,
+    proportionlive NUMERIC,
+    proportionmissed numeric ,
+    usercount NUMERIC,
+    usercountactive NUMERIC,
+    created_on TIME
 
 );
 
@@ -67,12 +67,12 @@ create table pow_data(
     nethashrate numeric,
     blocksfound numeric,
     totalminers numeric,
-    time numeric ,
+    created_time numeric ,
     networkdifficulty numeric ,
     coinprice numeric,
     btcprice numeric ,
     est numeric ,
-    date numeric ,
+    created_on numeric ,
     blocksper numeric ,
     luck numeric ,
     ppshare numeric ,

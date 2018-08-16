@@ -23,16 +23,17 @@ import (
 
 // ChartDatum is an object representing the database table.
 type ChartDatum struct {
-	ID              int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Exchangeid      null.Int    `boil:"exchangeid" json:"exchangeid,omitempty" toml:"exchangeid" yaml:"exchangeid,omitempty"`
-	Date            null.Time   `boil:"date" json:"date,omitempty" toml:"date" yaml:"date,omitempty"`
-	High            null.String `boil:"high" json:"high,omitempty" toml:"high" yaml:"high,omitempty"`
-	Low             null.String `boil:"low" json:"low,omitempty" toml:"low" yaml:"low,omitempty"`
-	Opening         null.String `boil:"opening" json:"opening,omitempty" toml:"opening" yaml:"opening,omitempty"`
-	Closing         null.String `boil:"closing" json:"closing,omitempty" toml:"closing" yaml:"closing,omitempty"`
-	Volume          null.String `boil:"volume" json:"volume,omitempty" toml:"volume" yaml:"volume,omitempty"`
-	Quotevolume     null.String `boil:"quotevolume" json:"quotevolume,omitempty" toml:"quotevolume" yaml:"quotevolume,omitempty"`
-	Weightedaverage null.String `boil:"weightedaverage" json:"weightedaverage,omitempty" toml:"weightedaverage" yaml:"weightedaverage,omitempty"`
+	ID              int          `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ExchangeName    null.String  `boil:"exchange_name" json:"exchange_name,omitempty" toml:"exchange_name" yaml:"exchange_name,omitempty"`
+	CreatedOn       null.String  `boil:"created_on" json:"created_on,omitempty" toml:"created_on" yaml:"created_on,omitempty"`
+	High            null.Float64 `boil:"high" json:"high,omitempty" toml:"high" yaml:"high,omitempty"`
+	Low             null.Float64 `boil:"low" json:"low,omitempty" toml:"low" yaml:"low,omitempty"`
+	Opening         null.Float64 `boil:"opening" json:"opening,omitempty" toml:"opening" yaml:"opening,omitempty"`
+	Closing         null.Float64 `boil:"closing" json:"closing,omitempty" toml:"closing" yaml:"closing,omitempty"`
+	Volume          null.Float64 `boil:"volume" json:"volume,omitempty" toml:"volume" yaml:"volume,omitempty"`
+	Quotevolume     null.Float64 `boil:"quotevolume" json:"quotevolume,omitempty" toml:"quotevolume" yaml:"quotevolume,omitempty"`
+	Basevolume      null.Float64 `boil:"basevolume" json:"basevolume,omitempty" toml:"basevolume" yaml:"basevolume,omitempty"`
+	Weightedaverage null.Float64 `boil:"weightedaverage" json:"weightedaverage,omitempty" toml:"weightedaverage" yaml:"weightedaverage,omitempty"`
 
 	R *chartDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L chartDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,25 +41,27 @@ type ChartDatum struct {
 
 var ChartDatumColumns = struct {
 	ID              string
-	Exchangeid      string
-	Date            string
+	ExchangeName    string
+	CreatedOn       string
 	High            string
 	Low             string
 	Opening         string
 	Closing         string
 	Volume          string
 	Quotevolume     string
+	Basevolume      string
 	Weightedaverage string
 }{
 	ID:              "id",
-	Exchangeid:      "exchangeid",
-	Date:            "date",
+	ExchangeName:    "exchange_name",
+	CreatedOn:       "created_on",
 	High:            "high",
 	Low:             "low",
 	Opening:         "opening",
 	Closing:         "closing",
 	Volume:          "volume",
 	Quotevolume:     "quotevolume",
+	Basevolume:      "basevolume",
 	Weightedaverage: "weightedaverage",
 }
 
@@ -70,8 +73,8 @@ type chartDatumR struct {
 type chartDatumL struct{}
 
 var (
-	chartDatumColumns               = []string{"id", "exchangeid", "date", "high", "low", "opening", "closing", "volume", "quotevolume", "weightedaverage"}
-	chartDatumColumnsWithoutDefault = []string{"exchangeid", "date", "high", "low", "opening", "closing", "volume", "quotevolume", "weightedaverage"}
+	chartDatumColumns               = []string{"id", "exchange_name", "created_on", "high", "low", "opening", "closing", "volume", "quotevolume", "basevolume", "weightedaverage"}
+	chartDatumColumnsWithoutDefault = []string{"exchange_name", "created_on", "high", "low", "opening", "closing", "volume", "quotevolume", "basevolume", "weightedaverage"}
 	chartDatumColumnsWithDefault    = []string{"id"}
 	chartDatumPrimaryKeyColumns     = []string{"id"}
 )

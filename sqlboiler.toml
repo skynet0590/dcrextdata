@@ -1,7 +1,6 @@
 [postgres]
-
-dbname = "data_feed_processor",
-user   = "postgres",
-pass   = "alisha",
-host   = "localhost"
+dbname="data_feed_processor"
+user="postgres"
+pass="alisha"
+host="localhost"
 

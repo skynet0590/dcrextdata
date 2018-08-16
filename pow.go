@@ -106,7 +106,7 @@ type altpoolCurrency struct {
 	timesincelast null.String  `json:"timesincelast"`
 }
 
-func (p *pow) getPOW(id int, url string, api_key string) {
+func (p *pow) getPow(id int, url string, api_key string) {
 
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -152,12 +152,12 @@ func (p *pow) getPOW(id int, url string, api_key string) {
 		p1.Nethashrate = data.globalStats[0].networkHashrate
 		p1.Blocksfound = data.blocksfound
 		p1.Totalminers = data.totalminers
-		p1.Time = data.globalStats[0].time
+		// p1.Time = data.globalStats[0].time
 		p1.Networkdifficulty = data.globalStats[0].networkDifficulty
 		p1.Coinprice = data.globalStats[0].coinPrice
 		p1.Btcprice = data.globalStats[0].btcPrice
 		p1.Est = data.dcr.estimate
-		p1.Date = data.date
+		// p1.Date = data.date
 		p1.Blocksper = data.blocksper
 		p1.Luck = data.luck
 		p1.Ppshare = data.ppshare
@@ -181,7 +181,6 @@ func (p *pow) getPOW(id int, url string, api_key string) {
 		p1.Pos = data.blockReward.pos
 		p1.Pow = data.blockReward.pow
 		p1.Dev = data.blockReward.dev
-		// p1.Powid = id.(null.Float64)
 
 		err := p1.Insert(db)
 

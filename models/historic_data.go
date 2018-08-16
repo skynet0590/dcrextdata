@@ -23,16 +23,16 @@ import (
 
 // HistoricDatum is an object representing the database table.
 type HistoricDatum struct {
-	ID            int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Exchangeid    null.Int    `boil:"exchangeid" json:"exchangeid,omitempty" toml:"exchangeid" yaml:"exchangeid,omitempty"`
-	Globaltradeid null.String `boil:"globaltradeid" json:"globaltradeid,omitempty" toml:"globaltradeid" yaml:"globaltradeid,omitempty"`
-	Tradeid       null.String `boil:"tradeid" json:"tradeid,omitempty" toml:"tradeid" yaml:"tradeid,omitempty"`
-	Timest        null.Time   `boil:"timest" json:"timest,omitempty" toml:"timest" yaml:"timest,omitempty"`
-	Quantity      null.String `boil:"quantity" json:"quantity,omitempty" toml:"quantity" yaml:"quantity,omitempty"`
-	Price         null.String `boil:"price" json:"price,omitempty" toml:"price" yaml:"price,omitempty"`
-	Total         null.String `boil:"total" json:"total,omitempty" toml:"total" yaml:"total,omitempty"`
-	FillType      null.String `boil:"fill_type" json:"fill_type,omitempty" toml:"fill_type" yaml:"fill_type,omitempty"`
-	OrderType     null.String `boil:"order_type" json:"order_type,omitempty" toml:"order_type" yaml:"order_type,omitempty"`
+	ID            int          `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ExchangeName  null.String  `boil:"exchange_name" json:"exchange_name,omitempty" toml:"exchange_name" yaml:"exchange_name,omitempty"`
+	Globaltradeid null.Float64 `boil:"globaltradeid" json:"globaltradeid,omitempty" toml:"globaltradeid" yaml:"globaltradeid,omitempty"`
+	Tradeid       null.Float64 `boil:"tradeid" json:"tradeid,omitempty" toml:"tradeid" yaml:"tradeid,omitempty"`
+	CreatedOn     null.String  `boil:"created_on" json:"created_on,omitempty" toml:"created_on" yaml:"created_on,omitempty"`
+	Quantity      null.Float64 `boil:"quantity" json:"quantity,omitempty" toml:"quantity" yaml:"quantity,omitempty"`
+	Price         null.Float64 `boil:"price" json:"price,omitempty" toml:"price" yaml:"price,omitempty"`
+	Total         null.Float64 `boil:"total" json:"total,omitempty" toml:"total" yaml:"total,omitempty"`
+	FillType      null.String  `boil:"fill_type" json:"fill_type,omitempty" toml:"fill_type" yaml:"fill_type,omitempty"`
+	OrderType     null.String  `boil:"order_type" json:"order_type,omitempty" toml:"order_type" yaml:"order_type,omitempty"`
 
 	R *historicDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L historicDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,10 +40,10 @@ type HistoricDatum struct {
 
 var HistoricDatumColumns = struct {
 	ID            string
-	Exchangeid    string
+	ExchangeName  string
 	Globaltradeid string
 	Tradeid       string
-	Timest        string
+	CreatedOn     string
 	Quantity      string
 	Price         string
 	Total         string
@@ -51,10 +51,10 @@ var HistoricDatumColumns = struct {
 	OrderType     string
 }{
 	ID:            "id",
-	Exchangeid:    "exchangeid",
+	ExchangeName:  "exchange_name",
 	Globaltradeid: "globaltradeid",
 	Tradeid:       "tradeid",
-	Timest:        "timest",
+	CreatedOn:     "created_on",
 	Quantity:      "quantity",
 	Price:         "price",
 	Total:         "total",
@@ -70,8 +70,8 @@ type historicDatumR struct {
 type historicDatumL struct{}
 
 var (
-	historicDatumColumns               = []string{"id", "exchangeid", "globaltradeid", "tradeid", "timest", "quantity", "price", "total", "fill_type", "order_type"}
-	historicDatumColumnsWithoutDefault = []string{"exchangeid", "globaltradeid", "tradeid", "timest", "quantity", "price", "total", "fill_type", "order_type"}
+	historicDatumColumns               = []string{"id", "exchange_name", "globaltradeid", "tradeid", "created_on", "quantity", "price", "total", "fill_type", "order_type"}
+	historicDatumColumnsWithoutDefault = []string{"exchange_name", "globaltradeid", "tradeid", "created_on", "quantity", "price", "total", "fill_type", "order_type"}
 	historicDatumColumnsWithDefault    = []string{"id"}
 	historicDatumPrimaryKeyColumns     = []string{"id"}
 )

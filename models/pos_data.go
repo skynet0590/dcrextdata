@@ -18,29 +18,30 @@ import (
 	"github.com/vattle/sqlboiler/queries"
 	"github.com/vattle/sqlboiler/queries/qm"
 	"github.com/vattle/sqlboiler/strmangle"
+	"github.com/vattle/sqlboiler/types"
 	"gopkg.in/nullbio/null.v6"
 )
 
 // PosDatum is an object representing the database table.
 type PosDatum struct {
-	ID                   int          `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Posid                null.String  `boil:"posid" json:"posid,omitempty" toml:"posid" yaml:"posid,omitempty"`
-	Apienabled           null.String  `boil:"apienabled" json:"apienabled,omitempty" toml:"apienabled" yaml:"apienabled,omitempty"`
-	Apiversionssupported null.Float64 `boil:"apiversionssupported" json:"apiversionssupported,omitempty" toml:"apiversionssupported" yaml:"apiversionssupported,omitempty"`
-	Network              null.String  `boil:"network" json:"network,omitempty" toml:"network" yaml:"network,omitempty"`
-	URL                  null.String  `boil:"url" json:"url,omitempty" toml:"url" yaml:"url,omitempty"`
-	Launched             null.String  `boil:"launched" json:"launched,omitempty" toml:"launched" yaml:"launched,omitempty"`
-	Lastupdated          null.String  `boil:"lastupdated" json:"lastupdated,omitempty" toml:"lastupdated" yaml:"lastupdated,omitempty"`
-	Immature             null.String  `boil:"immature" json:"immature,omitempty" toml:"immature" yaml:"immature,omitempty"`
-	Live                 null.String  `boil:"live" json:"live,omitempty" toml:"live" yaml:"live,omitempty"`
-	Voted                null.Float64 `boil:"voted" json:"voted,omitempty" toml:"voted" yaml:"voted,omitempty"`
-	Missed               null.Float64 `boil:"missed" json:"missed,omitempty" toml:"missed" yaml:"missed,omitempty"`
-	Poolfees             null.Float64 `boil:"poolfees" json:"poolfees,omitempty" toml:"poolfees" yaml:"poolfees,omitempty"`
-	Proportionlive       null.Float64 `boil:"proportionlive" json:"proportionlive,omitempty" toml:"proportionlive" yaml:"proportionlive,omitempty"`
-	Proportionmissed     null.Float64 `boil:"proportionmissed" json:"proportionmissed,omitempty" toml:"proportionmissed" yaml:"proportionmissed,omitempty"`
-	Usercount            null.Float64 `boil:"usercount" json:"usercount,omitempty" toml:"usercount" yaml:"usercount,omitempty"`
-	Usercountactive      null.Float64 `boil:"usercountactive" json:"usercountactive,omitempty" toml:"usercountactive" yaml:"usercountactive,omitempty"`
-	Timestamp            null.String  `boil:"timestamp" json:"timestamp,omitempty" toml:"timestamp" yaml:"timestamp,omitempty"`
+	ID                   int               `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Posid                null.String       `boil:"posid" json:"posid,omitempty" toml:"posid" yaml:"posid,omitempty"`
+	Apienabled           null.String       `boil:"apienabled" json:"apienabled,omitempty" toml:"apienabled" yaml:"apienabled,omitempty"`
+	Apiversionssupported types.StringArray `boil:"apiversionssupported" json:"apiversionssupported,omitempty" toml:"apiversionssupported" yaml:"apiversionssupported,omitempty"`
+	Network              null.String       `boil:"network" json:"network,omitempty" toml:"network" yaml:"network,omitempty"`
+	NetworkURL           null.String       `boil:"network_url" json:"network_url,omitempty" toml:"network_url" yaml:"network_url,omitempty"`
+	Launched             null.String       `boil:"launched" json:"launched,omitempty" toml:"launched" yaml:"launched,omitempty"`
+	LastUpdated          null.String       `boil:"last_updated" json:"last_updated,omitempty" toml:"last_updated" yaml:"last_updated,omitempty"`
+	Immature             null.String       `boil:"immature" json:"immature,omitempty" toml:"immature" yaml:"immature,omitempty"`
+	Live                 null.String       `boil:"live" json:"live,omitempty" toml:"live" yaml:"live,omitempty"`
+	Voted                null.Float64      `boil:"voted" json:"voted,omitempty" toml:"voted" yaml:"voted,omitempty"`
+	Missed               null.Float64      `boil:"missed" json:"missed,omitempty" toml:"missed" yaml:"missed,omitempty"`
+	Poolfees             null.Float64      `boil:"poolfees" json:"poolfees,omitempty" toml:"poolfees" yaml:"poolfees,omitempty"`
+	Proportionlive       null.Float64      `boil:"proportionlive" json:"proportionlive,omitempty" toml:"proportionlive" yaml:"proportionlive,omitempty"`
+	Proportionmissed     null.Float64      `boil:"proportionmissed" json:"proportionmissed,omitempty" toml:"proportionmissed" yaml:"proportionmissed,omitempty"`
+	Usercount            null.Float64      `boil:"usercount" json:"usercount,omitempty" toml:"usercount" yaml:"usercount,omitempty"`
+	Usercountactive      null.Float64      `boil:"usercountactive" json:"usercountactive,omitempty" toml:"usercountactive" yaml:"usercountactive,omitempty"`
+	CreatedOn            null.String       `boil:"created_on" json:"created_on,omitempty" toml:"created_on" yaml:"created_on,omitempty"`
 
 	R *posDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L posDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -52,9 +53,9 @@ var PosDatumColumns = struct {
 	Apienabled           string
 	Apiversionssupported string
 	Network              string
-	URL                  string
+	NetworkURL           string
 	Launched             string
-	Lastupdated          string
+	LastUpdated          string
 	Immature             string
 	Live                 string
 	Voted                string
@@ -64,16 +65,16 @@ var PosDatumColumns = struct {
 	Proportionmissed     string
 	Usercount            string
 	Usercountactive      string
-	Timestamp            string
+	CreatedOn            string
 }{
 	ID:                   "id",
 	Posid:                "posid",
 	Apienabled:           "apienabled",
 	Apiversionssupported: "apiversionssupported",
 	Network:              "network",
-	URL:                  "url",
+	NetworkURL:           "network_url",
 	Launched:             "launched",
-	Lastupdated:          "lastupdated",
+	LastUpdated:          "last_updated",
 	Immature:             "immature",
 	Live:                 "live",
 	Voted:                "voted",
@@ -83,7 +84,7 @@ var PosDatumColumns = struct {
 	Proportionmissed:     "proportionmissed",
 	Usercount:            "usercount",
 	Usercountactive:      "usercountactive",
-	Timestamp:            "timestamp",
+	CreatedOn:            "created_on",
 }
 
 // posDatumR is where relationships are stored.
@@ -94,9 +95,9 @@ type posDatumR struct {
 type posDatumL struct{}
 
 var (
-	posDatumColumns               = []string{"id", "posid", "apienabled", "apiversionssupported", "network", "url", "launched", "lastupdated", "immature", "live", "voted", "missed", "poolfees", "proportionlive", "proportionmissed", "usercount", "usercountactive", "timestamp"}
-	posDatumColumnsWithoutDefault = []string{"posid", "apienabled", "apiversionssupported", "network", "url", "launched", "lastupdated", "immature", "live", "voted", "missed", "poolfees", "proportionlive", "proportionmissed", "usercount", "usercountactive", "timestamp"}
-	posDatumColumnsWithDefault    = []string{"id"}
+	posDatumColumns               = []string{"id", "posid", "apienabled", "apiversionssupported", "network", "network_url", "launched", "last_updated", "immature", "live", "voted", "missed", "poolfees", "proportionlive", "proportionmissed", "usercount", "usercountactive", "created_on"}
+	posDatumColumnsWithoutDefault = []string{"posid", "apienabled", "network", "network_url", "launched", "last_updated", "immature", "live", "voted", "missed", "poolfees", "proportionlive", "proportionmissed", "usercount", "usercountactive", "created_on"}
+	posDatumColumnsWithDefault    = []string{"id", "apiversionssupported"}
 	posDatumPrimaryKeyColumns     = []string{"id"}
 )
 

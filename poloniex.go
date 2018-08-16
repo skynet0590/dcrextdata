@@ -23,13 +23,13 @@ type Poloniex struct {
 
 type poloniexData struct {
 	Result []struct {
-		GlobalTradeID null.String `json:"globalTradeID"`
-		TradeID       null.String `json:"tradeID"`
-		Date          null.Time   `json:"date"`
-		Types         null.String `json:"type"`
-		Rate          null.String `json:"rate"`
-		Amount        null.String `json:"amount"`
-		Total         null.String `json:"total"`
+		GlobalTradeID null.Float64 `json:"globalTradeID"`
+		TradeID       null.Float64 `json:"tradeID"`
+		Date          null.String  `json:"date"`
+		Types         null.String  `json:"type"`
+		Rate          null.Float64 `json:"rate"`
+		Amount        null.Float64 `json:"amount"`
+		Total         null.Float64 `json:"total"`
 	}
 }
 
@@ -37,14 +37,14 @@ type poloniexData struct {
 
 type chartData struct {
 	Result []struct {
-		Date            null.Time   `json:"date"`
-		High            null.String `json:"high"`
-		Low             null.String `json:"low"`
-		Open            null.String `json:"open"`
-		Close           null.String `json:"close"`
-		Volume          null.String `json:"volume"`
-		QuoteVolume     null.String `json:"quoteVolume"`
-		WeightedAverage null.String `json:"weightedAverage"`
+		Date            null.String  `json:"date"`
+		High            null.Float64 `json:"high"`
+		Low             null.Float64 `json:"low"`
+		Open            null.Float64 `json:"open"`
+		Close           null.Float64 `json:"close"`
+		Volume          null.Float64 `json:"volume"`
+		QuoteVolume     null.Float64 `json:"quoteVolume"`
+		WeightedAverage null.Float64 `json:"weightedAverage"`
 	}
 }
 
@@ -104,15 +104,16 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 	for i := range data.Result {
 		var p1 models.HistoricDatum
 
-		// p1.Exchangeid = 0
+		// p1.ExchangeName = "Poloniex"
 		p1.Globaltradeid = data.Result[i].GlobalTradeID
 		p1.Tradeid = data.Result[i].TradeID
-		// p1.timest = data.Result[i].Date
+		p1.CreatedOn = data.Result[i].Date
 		p1.Quantity = data.Result[i].Amount
 		p1.Price = data.Result[i].Rate
 		p1.Total = data.Result[i].Total
 		p1.OrderType = data.Result[i].Types
 		err := p1.Insert(db)
+
 		panic(err.Error())
 	}
 
@@ -122,11 +123,9 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 //Returns Poloniex Chart Data
 //Parameters : Currency pair, Start time , End time
 
-func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
+func (p *Poloniex) getChartData(currencyPair string, start string, end string, period string) {
 
-	//Get the base URL
-
-	url := viper.Get("ExchangeData.0").(string)
+	url := viper.Get("ChartData.poloniex").(string)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -136,10 +135,11 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 	//Append the user defined parameters to the url
 
 	q := req.URL.Query()
-	q.Add("command", "returnChartData")
 	q.Add("currencyPair", currencyPair)
 	q.Add("start", start)
 	q.Add("end", end)
+	q.Add("period", period)
+
 	req.URL.RawQuery = q.Encode()
 
 	request, err := http.NewRequest("GET", req.URL.String(), nil)
@@ -165,8 +165,7 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 
 		var p2 models.ChartDatum
 
-		// p2.exchangeID = "0"
-		//p2.date = data.Result[i].Date
+		p2.CreatedOn = data.Result[i].Date
 
 		p2.High = data.Result[i].High
 		p2.Low = data.Result[i].Low
@@ -174,7 +173,6 @@ func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 		p2.Closing = data.Result[i].Close
 		p2.Volume = data.Result[i].Volume
 		p2.Quotevolume = data.Result[i].QuoteVolume
-		// p2.Basevolume = data.Result[i].BaseVolume
 		p2.Weightedaverage = data.Result[i].WeightedAverage
 
 		err := p2.Insert(db)

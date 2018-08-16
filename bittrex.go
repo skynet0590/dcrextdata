@@ -9,7 +9,8 @@ import (
 	"net/http"
 
 	"github.com/spf13/viper"
-	"github.com/vattle/sqlboiler/boil"
+
+	boil "github.com/vattle/sqlboiler/boil"
 	null "gopkg.in/nullbio/null.v6"
 )
 
@@ -33,24 +34,24 @@ type ticksData struct {
 }
 
 type tickDataArray struct {
-	O  null.String `json:"O"`
-	H  null.String `json:"H"`
-	L  null.String `json:"L"`
-	C  null.String `json:"C"`
-	V  null.String `json:"V"`
-	T  null.Time   `json:"T"`
-	BV null.String `json:"BV"`
+	O  null.Float64 `json:"O"`
+	H  null.Float64 `json:"H"`
+	L  null.Float64 `json:"L"`
+	C  null.Float64 `json:"C"`
+	V  null.Float64 `json:"V"`
+	T  null.String  `json:"T"`
+	BV null.Float64 `json:"BV"`
 }
 
 //ResultArray Export the values to ResultArray struct
 type ResultArray struct {
-	ID        null.String `json:"Id"`
-	Timestamp null.Time   `json:"TimeStamp"`
-	Quantity  null.String `json:"Quantity"`
-	Price     null.String `json:"Price"`
-	Total     null.String `json:"Total"`
-	Filltype  null.String `json:"FillType"`
-	Ordertype null.String `json:"OrderType"`
+	ID        null.Float64 `json:"Id"`
+	Timestamp null.String  `json:"TimeStamp"`
+	Quantity  null.Float64 `json:"Quantity"`
+	Price     null.Float64 `json:"Price"`
+	Total     null.Float64 `json:"Total"`
+	Filltype  null.String  `json:"FillType"`
+	Ordertype null.String  `json:"OrderType"`
 }
 
 //Function to Return Historic Pricing Data from Bittrex Exchange
@@ -69,7 +70,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 
 	boil.SetDB(db)
 
-	url := viper.Get("ExchangeData.1")
+	url := viper.Get("ExchangeData.bittrex")
 
 	req, err := http.NewRequest("GET", url.(string), nil)
 	if err != nil {
@@ -85,8 +86,6 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	req.URL.RawQuery = q.Encode()
 
 	//Sends the GET request to the API
-
-	fmt.Print(req.URL.String())
 
 	request, err := http.NewRequest("GET", req.URL.String(), nil)
 
@@ -106,23 +105,26 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 	var data bittrexData
 
 	json.Unmarshal(body, &data)
-	fmt.Printf("Results: %v\n", data.Result)
+	// fmt.Printf("Results: %v\n", data.Result)
 
 	//Loop over array of struct and store them in the table
 
-	for i := range data.Result {
+	fmt.Print(data.Result[99].Filltype)
+	for i := 0; i <= 99; i++ {
 
-		var p1 models.HistoricDatum
+		var p models.HistoricDatum
 
-		p1.Globaltradeid = data.Result[i].ID
+		// p1.ExchangeName =
+		p.Globaltradeid = data.Result[i].ID
+		p.Quantity = data.Result[i].Quantity
+		p.Price = data.Result[i].Price
+		p.Total = data.Result[i].Total
+		p.FillType = data.Result[i].Filltype
+		p.OrderType = data.Result[i].Ordertype
+		p.CreatedOn = data.Result[i].Timestamp
 
-		p1.Quantity = data.Result[i].Quantity
-		p1.Price = data.Result[i].Price
-		p1.Total = data.Result[i].Total
-		p1.FillType = data.Result[i].Filltype
-		p1.OrderType = data.Result[i].Ordertype
-		p1.Timest = data.Result[i].Timestamp
-		err := p1.Insert(db)
+		// fmt.Print(data.Result[i].Filltype)
+		err := p.Insert(db)
 
 		panic(err.Error())
 	}
@@ -133,7 +135,7 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 //To get Ticks from Bittrex Exchange every 24 hours
 //Parameters : Currency Pair
 
-func (b *Bittrex) getTicks(currencyPair string) {
+func (b *Bittrex) getChartData(currencyPair string) {
 
 	url := viper.Get("ChartData")
 
@@ -179,7 +181,7 @@ func (b *Bittrex) getTicks(currencyPair string) {
 		var p1 models.ChartDatum
 
 		// p1.Exchangeid = 1
-		p1.Date = data.Result[i].T
+		p1.CreatedOn = data.Result[i].T
 		p1.High = data.Result[i].H
 		p1.Low = data.Result[i].O
 		p1.Opening = data.Result[i].C

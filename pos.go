@@ -18,7 +18,7 @@ type pos struct {
 
 type posData struct {
 	APIEnabled           null.String  `json:"APIEnabled"`
-	APIVersionsSupported []int        `json:"APIVersionsSupported"`
+	APIVersionsSupported []string     `json:"APIVersionsSupported"`
 	Network              null.String  `json:"Network"`
 	URL                  null.String  `json:"URL"`
 	Launched             null.String  `json:"Launched"`
@@ -36,9 +36,9 @@ type posData struct {
 
 type Data map[string]posData
 
-func (p *pos) getPOS() {
+func (p *pos) getPos() {
 
-	url := viper.Get("POS").(string)
+	url := viper.Get("pos").(string)
 	request, err := http.NewRequest("GET", url, nil)
 
 	res, _ := p.client.Do(request)
@@ -52,20 +52,23 @@ func (p *pos) getPOS() {
 
 	json.Unmarshal(body, &data)
 
+	fmt.Printf("Results: %v\n", data)
+
 	//Loop over the entire list to insert data into the table
 
 	for key, value := range data {
 
+		fmt.Println(key)
+		// fmt.Print(value.LastUpdated)
 		var p1 models.PosDatum
 
-		fmt.Println(key)
 		// p1.Posid = key
 		p1.Apienabled = value.APIEnabled
-		// p1.Apiversionssupported = value.APIVersionsSupported
+		p1.Apiversionssupported = value.APIVersionsSupported
 		p1.Network = value.Network
-		p1.URL = value.URL
+		p1.NetworkURL = value.URL
 		p1.Launched = value.Launched
-		p1.Lastupdated = value.LastUpdated
+		p1.LastUpdated = value.LastUpdated
 		p1.Immature = value.Immature
 		p1.Live = value.Live
 		p1.Voted = value.Voted
@@ -75,10 +78,10 @@ func (p *pos) getPOS() {
 		p1.Proportionmissed = value.ProportionMissed
 		p1.Usercount = value.UserCount
 		p1.Usercountactive = value.UserCountActive
-		// p1.Timestamp = NOW()
 		err := p1.Insert(db)
 
 		panic(err.Error())
+
 	}
 
 }

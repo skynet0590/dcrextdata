@@ -24,6 +24,7 @@ import (
 // PowDatum is an object representing the database table.
 type PowDatum struct {
 	ID                  int          `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Powid               null.Float64 `boil:"powid" json:"powid,omitempty" toml:"powid" yaml:"powid,omitempty"`
 	Hashrate            null.Float64 `boil:"hashrate" json:"hashrate,omitempty" toml:"hashrate" yaml:"hashrate,omitempty"`
 	Efficiency          null.Float64 `boil:"efficiency" json:"efficiency,omitempty" toml:"efficiency" yaml:"efficiency,omitempty"`
 	Progress            null.Float64 `boil:"progress" json:"progress,omitempty" toml:"progress" yaml:"progress,omitempty"`
@@ -38,12 +39,12 @@ type PowDatum struct {
 	Nethashrate         null.Float64 `boil:"nethashrate" json:"nethashrate,omitempty" toml:"nethashrate" yaml:"nethashrate,omitempty"`
 	Blocksfound         null.Float64 `boil:"blocksfound" json:"blocksfound,omitempty" toml:"blocksfound" yaml:"blocksfound,omitempty"`
 	Totalminers         null.Float64 `boil:"totalminers" json:"totalminers,omitempty" toml:"totalminers" yaml:"totalminers,omitempty"`
-	Time                null.Float64 `boil:"time" json:"time,omitempty" toml:"time" yaml:"time,omitempty"`
+	CreatedTime         null.Float64 `boil:"created_time" json:"created_time,omitempty" toml:"created_time" yaml:"created_time,omitempty"`
 	Networkdifficulty   null.Float64 `boil:"networkdifficulty" json:"networkdifficulty,omitempty" toml:"networkdifficulty" yaml:"networkdifficulty,omitempty"`
 	Coinprice           null.Float64 `boil:"coinprice" json:"coinprice,omitempty" toml:"coinprice" yaml:"coinprice,omitempty"`
 	Btcprice            null.Float64 `boil:"btcprice" json:"btcprice,omitempty" toml:"btcprice" yaml:"btcprice,omitempty"`
 	Est                 null.Float64 `boil:"est" json:"est,omitempty" toml:"est" yaml:"est,omitempty"`
-	Date                null.Float64 `boil:"date" json:"date,omitempty" toml:"date" yaml:"date,omitempty"`
+	CreatedOn           null.Float64 `boil:"created_on" json:"created_on,omitempty" toml:"created_on" yaml:"created_on,omitempty"`
 	Blocksper           null.Float64 `boil:"blocksper" json:"blocksper,omitempty" toml:"blocksper" yaml:"blocksper,omitempty"`
 	Luck                null.Float64 `boil:"luck" json:"luck,omitempty" toml:"luck" yaml:"luck,omitempty"`
 	Ppshare             null.Float64 `boil:"ppshare" json:"ppshare,omitempty" toml:"ppshare" yaml:"ppshare,omitempty"`
@@ -67,7 +68,6 @@ type PowDatum struct {
 	Pos                 null.Float64 `boil:"pos" json:"pos,omitempty" toml:"pos" yaml:"pos,omitempty"`
 	Pow                 null.Float64 `boil:"pow" json:"pow,omitempty" toml:"pow" yaml:"pow,omitempty"`
 	Dev                 null.Float64 `boil:"dev" json:"dev,omitempty" toml:"dev" yaml:"dev,omitempty"`
-	Powid               null.Float64 `boil:"powid" json:"powid,omitempty" toml:"powid" yaml:"powid,omitempty"`
 
 	R *powDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L powDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,6 +75,7 @@ type PowDatum struct {
 
 var PowDatumColumns = struct {
 	ID                  string
+	Powid               string
 	Hashrate            string
 	Efficiency          string
 	Progress            string
@@ -89,12 +90,12 @@ var PowDatumColumns = struct {
 	Nethashrate         string
 	Blocksfound         string
 	Totalminers         string
-	Time                string
+	CreatedTime         string
 	Networkdifficulty   string
 	Coinprice           string
 	Btcprice            string
 	Est                 string
-	Date                string
+	CreatedOn           string
 	Blocksper           string
 	Luck                string
 	Ppshare             string
@@ -118,9 +119,9 @@ var PowDatumColumns = struct {
 	Pos                 string
 	Pow                 string
 	Dev                 string
-	Powid               string
 }{
 	ID:                  "id",
+	Powid:               "powid",
 	Hashrate:            "hashrate",
 	Efficiency:          "efficiency",
 	Progress:            "progress",
@@ -135,12 +136,12 @@ var PowDatumColumns = struct {
 	Nethashrate:         "nethashrate",
 	Blocksfound:         "blocksfound",
 	Totalminers:         "totalminers",
-	Time:                "time",
+	CreatedTime:         "created_time",
 	Networkdifficulty:   "networkdifficulty",
 	Coinprice:           "coinprice",
 	Btcprice:            "btcprice",
 	Est:                 "est",
-	Date:                "date",
+	CreatedOn:           "created_on",
 	Blocksper:           "blocksper",
 	Luck:                "luck",
 	Ppshare:             "ppshare",
@@ -164,7 +165,6 @@ var PowDatumColumns = struct {
 	Pos:                 "pos",
 	Pow:                 "pow",
 	Dev:                 "dev",
-	Powid:               "powid",
 }
 
 // powDatumR is where relationships are stored.
@@ -175,8 +175,8 @@ type powDatumR struct {
 type powDatumL struct{}
 
 var (
-	powDatumColumns               = []string{"id", "hashrate", "efficiency", "progress", "workers", "currentnetworkblock", "nextnetworkblock", "lastblock", "networkdiff", "esttime", "estshare", "timesincelast", "nethashrate", "blocksfound", "totalminers", "time", "networkdifficulty", "coinprice", "btcprice", "est", "date", "blocksper", "luck", "ppshare", "totalkickback", "success", "lastupdate", "name", "port", "fees", "estimatecurrent", "estimatelast24h", "actual124h", "mbtcmhfactor", "hashratelast24h", "rentalcurrent", "height", "blocks24h", "btc24h", "currentheight", "total", "pos", "pow", "dev", "powid"}
-	powDatumColumnsWithoutDefault = []string{"hashrate", "efficiency", "progress", "workers", "currentnetworkblock", "nextnetworkblock", "lastblock", "networkdiff", "esttime", "estshare", "timesincelast", "nethashrate", "blocksfound", "totalminers", "time", "networkdifficulty", "coinprice", "btcprice", "est", "date", "blocksper", "luck", "ppshare", "totalkickback", "success", "lastupdate", "name", "port", "fees", "estimatecurrent", "estimatelast24h", "actual124h", "mbtcmhfactor", "hashratelast24h", "rentalcurrent", "height", "blocks24h", "btc24h", "currentheight", "total", "pos", "pow", "dev", "powid"}
+	powDatumColumns               = []string{"id", "powid", "hashrate", "efficiency", "progress", "workers", "currentnetworkblock", "nextnetworkblock", "lastblock", "networkdiff", "esttime", "estshare", "timesincelast", "nethashrate", "blocksfound", "totalminers", "created_time", "networkdifficulty", "coinprice", "btcprice", "est", "created_on", "blocksper", "luck", "ppshare", "totalkickback", "success", "lastupdate", "name", "port", "fees", "estimatecurrent", "estimatelast24h", "actual124h", "mbtcmhfactor", "hashratelast24h", "rentalcurrent", "height", "blocks24h", "btc24h", "currentheight", "total", "pos", "pow", "dev"}
+	powDatumColumnsWithoutDefault = []string{"powid", "hashrate", "efficiency", "progress", "workers", "currentnetworkblock", "nextnetworkblock", "lastblock", "networkdiff", "esttime", "estshare", "timesincelast", "nethashrate", "blocksfound", "totalminers", "created_time", "networkdifficulty", "coinprice", "btcprice", "est", "created_on", "blocksper", "luck", "ppshare", "totalkickback", "success", "lastupdate", "name", "port", "fees", "estimatecurrent", "estimatelast24h", "actual124h", "mbtcmhfactor", "hashratelast24h", "rentalcurrent", "height", "blocks24h", "btc24h", "currentheight", "total", "pos", "pow", "dev"}
 	powDatumColumnsWithDefault    = []string{"id"}
 	powDatumPrimaryKeyColumns     = []string{"id"}
 )
