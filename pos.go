@@ -59,7 +59,7 @@ func (p *pos) getPos() {
 	for key, value := range data {
 
 		fmt.Println(key)
-		// fmt.Print(value.LastUpdated)
+
 		var p1 models.PosDatum
 
 		// p1.Posid = key

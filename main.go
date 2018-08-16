@@ -4,12 +4,14 @@ package main
 
 import (
 	"database/sql"
+	"dcrextdata/models"
 	"fmt"
 	"net/http"
 
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
+	"github.com/vattle/sqlboiler/queries/qm"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -35,9 +37,9 @@ func main() {
 
 	// functions to insert data
 
-	// getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200") //parameters : exchange name,currency pair, start time, end time
-	// getChartData("poloniex", "BTC_DCR", "1514764800", "1517443199", "86400") //parameters: exchange name,Currency Pair, start time , end time
-	// getPowData(2, "")                                                 //parameters: pool id
+	getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200")        //parameters : exchange name,currency pair, start time, end time
+	getChartData("poloniex", "BTC_DCR", "1514764800", "1517443199", "86400") //parameters: exchange name,Currency Pair, start time , end time
+	getPowData(2, "")                                                        //parameters: pool id
 	getPosData()
 
 	// functions to fetch data
@@ -47,9 +49,9 @@ func main() {
 
 func fetchHistoricData(date string) {
 
-	// Result, err := models.HistoricDatum(qm.Where("created_on=?", date)).One(ctx, db)
+	Result, err := models.HistoricDatum(qm.Where("created_on=?", date)).One(ctx, db)
 
-	// fmt.Print(Result)
+	fmt.Print(Result)
 
 }
 
@@ -73,6 +75,7 @@ func getPowData(PoolID int, apiKey string) {
 		client: &http.Client{},
 	}
 
+	fmt.Print(viper.GetString("pow" + "[" + string(PoolID) + "]"))
 	user.getPow(PoolID, viper.GetString("pow"+"["+string(PoolID)+"]"), apiKey)
 
 }
