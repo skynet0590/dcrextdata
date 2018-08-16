@@ -92,6 +92,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/raedahgroup/dcrextdata"
+  packages = ["models"]
+  revision = "dd051b3a7c99afcc520679be0b645ad3f347c972"
+
+[[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
@@ -176,12 +182,6 @@
   version = "v6.3"
 
 [[projects]]
-  name = "gopkg.in/volatiletech/null.v6"
-  packages = [".","convert"]
-  revision = "0bef4e07ae1b27a2a4efa23bbb3006c8c3d2e01d"
-  version = "v6.4"
-
-[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -190,6 +190,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "372bd079a3db8697ab4498afd9833abb7dc3b73a498ac61d2864298fbf4d6b90"
+  inputs-digest = "806bced6c9ee57507228803188a190dafc51f0c4fbf9648d851e029d2520a3bb"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -1,0 +1,30 @@
+[database]
+
+; PostgreSQL database config
+pgdbname=data_feed_processor
+pguser=postgres
+pgpass= ''
+; Connect via TCP
+pghost=127.0.0.1:5432
+; Connect via UNIX domain socket
+;pghost=/run/postgresql
+
+
+[Historic data URL]
+historic_data = ["https://poloniex.com/public","https://bittrex.com/api/v1.1/public/getmarkethistory"]
+
+[Chart Data]
+chart_data = "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
+
+[POS Data]
+pos_data = "https://api.decred.org/?c=gsd"
+
+[POW Data]
+pow_data = ["http://api.f2pool.com/decred/address",
+            "https://www2.coinmine.pl/dcr/index.php?page=api&action=getpoolstatus",
+            "http://mining.luxor.tech/API/DCR/stats/",
+            "https://dcr.suprnova.cc/index.php?page=api&action=getpoolstatus",
+            "https://altpool.net/api/status",
+            "https://altpool.net/api/currencies",
+            "https://pool.mn/dcr/index.php?page=api&action=getpoolstatus",
+            "https://dcred.eu/api/api?q=network" ]

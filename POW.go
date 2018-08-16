@@ -1,12 +1,12 @@
 package main
 
 import (
+	"dcrextdata/models"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 	null "gopkg.in/nullbio/null.v6"
 )
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"dcrextdata/models"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 	null "gopkg.in/nullbio/null.v6"
 )
 
