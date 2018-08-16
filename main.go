@@ -62,7 +62,7 @@ func fetchHistoricData(date string) {
 
 func getPOSdata() {
 
-	user := POS{
+	user := pos{
 		client: &http.Client{},
 	}
 
@@ -71,7 +71,7 @@ func getPOSdata() {
 
 func getPOWData(PoolID int, apiKey string) {
 
-	user := POW{
+	user := pow{
 		client: &http.Client{},
 	}
 
