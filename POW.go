@@ -1,14 +1,11 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/spf13/viper"
-	"github.com/vattle/sqlboiler/boil"
 	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
 	null "gopkg.in/nullbio/null.v6"
 )
@@ -118,15 +115,6 @@ func (p *POW) getPOW(id int, url string, api_key string) {
 		q.Add("api_key", api_key)
 		req.URL.RawQuery = q.Encode()
 	}
-
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err.Error())
-		return
-	}
-
-	boil.SetDB(db)
 
 	request, err := http.NewRequest("GET", req.URL.String(), nil)
 

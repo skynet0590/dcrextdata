@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/spf13/viper"
@@ -15,6 +16,8 @@ import (
 
 // Open handle to database like normal
 var log = log15.New()
+var psqlInfo = fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
+var db, err = sql.Open("postgres", psqlInfo)
 
 func main() {
 
@@ -28,8 +31,6 @@ func main() {
 	viper.SetDefault("POW", "http://api.f2pool.com/decred/address")
 	viper.SetDefault("ExchangeData", "https://bittrex.com/api/v1.1/public/getmarkethistory")
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
-	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err.Error())
 		return
@@ -93,12 +94,9 @@ func getPOWData(PoolID int, apiKey string) {
 
 }
 
-// Exchange id = 0 for Poloneix
-// Exchange id =1 for Bittrex
+func getHistoricData(exchangeName string, currencyPair string, startTime string, endTime string) {
 
-func getHistoricData(exchangeID int, currencyPair string, startTime string, endTime string) {
-
-	if exchangeID == 0 { //Poloniex exchange
+	if exchangeName == "poloniex" {
 		user := Poloniex{
 
 			client: &http.Client{},
@@ -107,7 +105,7 @@ func getHistoricData(exchangeID int, currencyPair string, startTime string, endT
 
 	}
 
-	if exchangeID == 1 { //Bittrex Exchange
+	if exchangeName == "bittrex" {
 
 		user := Bittrex{
 			client: &http.Client{},
@@ -117,16 +115,14 @@ func getHistoricData(exchangeID int, currencyPair string, startTime string, endT
 
 	//Time delay of 24 hours
 
-	// time.Sleep(86400 * time.Second)
+	time.Sleep(86400 * time.Second)
 }
 
 //Get chart data from exchanges
-// if exchange id =0 , get chart data from poloniex exchange
-// exchange id =1  get chart data from bittrex exchange
 
-func getChartData(exchangeID int, currencyPair string, startTime string, endTime string) {
+func getChartData(exchangeName string, currencyPair string, startTime string, endTime string) {
 
-	if exchangeID == 0 {
+	if exchangeName == "poloniex" {
 		user := Poloniex{
 
 			client: &http.Client{},
@@ -134,7 +130,7 @@ func getChartData(exchangeID int, currencyPair string, startTime string, endTime
 		user.getChartData(currencyPair, startTime, endTime)
 
 	}
-	if exchangeID == 1 {
+	if exchangeName == "Bittrex" {
 		user := Bittrex{
 			client: &http.Client{},
 		}

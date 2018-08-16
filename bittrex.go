@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
-	// null "gopkg.in/nullbio/null.v5"
 	null "gopkg.in/nullbio/null.v6"
 )
 
@@ -142,14 +141,6 @@ func (b *Bittrex) getBittrexData(currencyPair string) {
 //Parameters : Currency Pair
 
 func (b *Bittrex) getTicks(currencyPair string) {
-
-	db, err := sql.Open("postgres", "dbname="+viper.GetString("Database.pgdbname")+" user="+viper.GetString("Database.pguser")+"host="+viper.GetString("Database.pghost")+" password="+viper.GetString("Database.pgpass"))
-	if err != nil {
-		panic(err.Error())
-		return
-	}
-
-	boil.SetDB(db)
 
 	url := viper.Get("ChartData")
 

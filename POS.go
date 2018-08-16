@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -48,13 +47,6 @@ func (p *POS) getPOS() {
 		panic(err.Error())
 	}
 
-	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
-
-	db, err := sql.Open("postgres", dbInfo)
-	if err != nil {
-		panic(err.Error())
-		return
-	}
 	var data Data
 
 	json.Unmarshal(body, &data)

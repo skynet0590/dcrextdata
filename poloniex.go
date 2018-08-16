@@ -7,16 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
-	// null "gopkg.in/nullbio/null.v6"
-	null "gopkg.in/nullbio/null.v6"
-	// null "gopkg.in/volatiletech/null.v6"
-
+	"github.com/spf13/viper"
 	"github.com/vattle/sqlboiler/boil"
-)
-
-const (
-	poloniexBaseURL = "https://poloniex.com/public"
+	"github.com/vevsatechnologies/External_Data_Feed_Processor/models"
+	null "gopkg.in/nullbio/null.v6"
 )
 
 // Structure containing Poloniex client data
@@ -59,17 +53,18 @@ type chartData struct {
 
 func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string) string {
 
-	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
+	dbInfo := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
+
+	db, err := sql.Open("postgres", dbInfo)
 	if err != nil {
 		panic(err.Error())
 
 	}
-
 	boil.SetDB(db)
 
 	//Get Url of Poloniex API
 
-	url := poloniexBaseURL
+	url := viper.Get("ExchangeData.0").(string)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -138,17 +133,9 @@ func (p *Poloniex) getPoloniexData(currencyPair string, start string, end string
 
 func (p *Poloniex) getChartData(currencyPair string, start string, end string) {
 
-	db, err := sql.Open("postgres", "dbname=data_feed_processor user=postgres host=localhost password=alisha")
-	if err != nil {
-		panic(err.Error())
-
-	}
-
-	boil.SetDB(db)
-
 	//Get the base URL
 
-	url := poloniexBaseURL
+	url := viper.Get("ExchangeData.0").(string)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

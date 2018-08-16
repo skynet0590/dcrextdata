@@ -176,6 +176,12 @@
   version = "v6.3"
 
 [[projects]]
+  name = "gopkg.in/volatiletech/null.v6"
+  packages = [".","convert"]
+  revision = "0bef4e07ae1b27a2a4efa23bbb3006c8c3d2e01d"
+  version = "v6.4"
+
+[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -184,6 +190,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dd1ee72b322916eda831c0d309e1a548966ce3ae38983e64d011abed0e82b499"
+  inputs-digest = "372bd079a3db8697ab4498afd9833abb7dc3b73a498ac61d2864298fbf4d6b90"
   solver-name = "gps-cdcl"
   solver-version = 1
