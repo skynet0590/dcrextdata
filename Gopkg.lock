@@ -139,11 +139,6 @@
   revision = "82e14d2e1acb4e1b6ef2193858820f9bff6f187c"
   version = "v2.5.0"
 
-[[projects]]
-  branch = "master"
-  name = "github.com/vevsatechnologies/External_Data_Feed_Processor"
-  packages = ["models"]
-  revision = "93275890801b1219a5de3d63a5ba9947270951f3"
 
 [[projects]]
   branch = "master"
