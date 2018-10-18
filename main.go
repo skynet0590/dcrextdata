@@ -1,126 +1,74 @@
 package main
 
-// go:generate sqlboiler postgres
-
 import (
-	"database/sql"
-	"dcrextdata/models"
 	"fmt"
-	"net/http"
-
-	_ "github.com/lib/pq"
-	"github.com/spf13/viper"
-	"github.com/vattle/sqlboiler/boil"
-	"github.com/vattle/sqlboiler/queries/qm"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"log"
+	"time"
 )
 
-// Open handle to database like normal
-var log = log15.New()
-var psqlInfo = fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable", viper.Get("Database.pghost"), viper.Get("Database.pgport"), viper.Get("Database.pguser"), viper.Get("Database.pgpass"), viper.Get("Database.pgdbname"))
-var db, err = sql.Open("postgres", psqlInfo)
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "dcrdata"
+	password = "pass"
+	dbname   = "exchange"
+)
 
 func main() {
 
-	//Set and read the config file
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 
-	viper.SetConfigFile("./config.json")
-	if err := viper.ReadInConfig(); err != nil {
-		panic(err)
+	client, err := initClient(psqlInfo)
+	defer client.close()
+
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return
 	}
 
-	// Set default value for pow and exchange
-	viper.SetDefault("pow", "http://api.f2pool.com/decred/address")
-	viper.SetDefault("ExchangeData", "https://bittrex.com/api/v1.1/public/getmarkethistory")
-
-	boil.SetDB(db)
-
-	// functions to insert data
-
-	getHistoricData("bittrex", "BTC-DCR", "1514764800", "1514851200")        //parameters : exchange name,currency pair, start time, end time
-	getChartData("poloniex", "BTC_DCR", "1514764800", "1517443199", "86400") //parameters: exchange name,Currency Pair, start time , end time
-	getPowData(2, "")                                                        //parameters: pool id
-	getPosData()
-
-	// functions to fetch data
-
-	// fetchHistoricData("date")
-}
-
-func fetchHistoricData(date string) {
-
-	Result, err := models.HistoricDatum(qm.Where("created_on=?", date)).One(ctx, db)
-
-	fmt.Print(Result)
-
-}
-
-// Function to get Proof of Stake Data
-
-func getPosData() {
-
-	user := pos{
-		client: &http.Client{},
-	}
-
-	user.getPos()
-}
-
-// Function to get Proof of Work Data
-// @parameters - PoolID integer 0 to 7
-
-func getPowData(PoolID int, apiKey string) {
-
-	user := pow{
-		client: &http.Client{},
-	}
-
-	fmt.Print(viper.GetString("pow" + "[" + string(PoolID) + "]"))
-	user.getPow(PoolID, viper.GetString("pow"+"["+string(PoolID)+"]"), apiKey)
-
-}
-
-// Function to insert historic data into db from exchanges
-
-func getHistoricData(exchangeName string, currencyPair string, startTime string, endTime string) {
-
-	if exchangeName == "poloniex" {
-		user := Poloniex{
-
-			client: &http.Client{},
+	data := make([]exchangeDataTick, 0)
+	if exists, _ := tableExists(client.db, "exchangedata"); exists {
+		if d := collectExchangeData(time.Now().Unix()); d != nil {
+			data = d
+		} else {
+			log.Print("Could not retrieve exchange data")
 		}
-		user.getPoloniexData(currencyPair, startTime, endTime)
-
-	}
-
-	if exchangeName == "bittrex" {
-
-		user := Bittrex{
-			client: &http.Client{},
+	} else {
+		if err := client.createExchangetable(); err != nil {
+			log.Printf("Error: %v", err)
+			return
 		}
-		user.getBittrexData(currencyPair)
+		if d := collectExchangeData(0); d != nil {
+			data = d
+		} else {
+			log.Print("Could not retrieve exchange data")
+		}
 	}
 
+	err = client.addEntries(data)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return
+	}
+	log.Print("All entries successfully stored")
 }
 
-//Get chart data from exchanges
+func collectExchangeData(start int64) []exchangeDataTick {
+	data := make([]exchangeDataTick, 0)
 
-func getChartData(exchangeName string, currencyPair string, startTime string, endTime string, period string) {
-
-	if exchangeName == "poloniex" {
-		user := Poloniex{
-
-			client: &http.Client{},
-		}
-		user.getChartData(currencyPair, startTime, endTime, period)
-
+	poloniexdata, err := collectPoloniexData(start)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return nil
 	}
-	if exchangeName == "bittrex" {
-		user := Bittrex{
-			client: &http.Client{},
-		}
-		user.getChartData(currencyPair)
-
+	bittrexdata, err := collectBittrexData(start)
+	if err != nil {
+		log.Printf("Error: %v", err)
+		return nil
 	}
-
+	data = append(data, poloniexdata...)
+	data = append(data, bittrexdata...)
+	return data
 }

@@ -1,24 +1,9 @@
+## Dcrextdata
+- Collect and store poloniex and bittrex exchange data for
+- Watch and update exchange data records
+- Collect and store mining pool stats
 
-### Set the configration settings for database in config.json file
-
-
-### Create database *data_feed_processor*
-
-
-```
-psql -U postgres data_feed_processor < data_feed_processor.sql
-```
-```
-go generate
-```
-
-```
-sqlboiler postgres
-```
+Currently the project is missing configuration support so you'll need to edit consts in `main.go`
 
 
-### Run the project
-
-```
-go run main.go bittrex.go poloniex.go POS.go POW.go 
-```
+To run, just `go build` and run the executable or you could `go run main.go postgres.go collectors.go`
