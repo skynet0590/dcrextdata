@@ -6,19 +6,14 @@ import (
 	"time"
 )
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "dcrdata"
-	password = "pass"
-	dbname   = "exchange"
-)
-
 func main() {
-
+	cfg, err := loadConfig()
+	if err != nil {
+		return
+	}
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 
 	client, err := initClient(psqlInfo)
 	defer client.close()
