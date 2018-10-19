@@ -1,5 +1,5 @@
 ## Dcrextdata
-- Collect and store poloniex and bittrex exchange data for
+- Collect and store poloniex and bittrex exchange data
 - Watch and update exchange data records
 - Collect and store mining pool stats
 
