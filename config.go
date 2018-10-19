@@ -24,8 +24,18 @@ func loadConfig() (*config, error) {
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
 			log.Printf("Missing config file %s in current directory", configfile)
+		} else {
 			return nil, err
 		}
 	}
+
+	_, err = parser.Parse()
+	if err != nil {
+		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
+			parser.WriteHelp(os.Stderr)
+		}
+		return nil, err
+	}
+
 	return &cfg, nil
 }
