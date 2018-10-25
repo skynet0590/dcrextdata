@@ -45,12 +45,12 @@ type bittrexAPIResponse struct {
 var dcrlaunchtime int64 = 1454889600
 
 func collectPoloniexData(start int64) ([]exchangeDataTick, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 300 * time.Second}
 
 	if start == 0 {
 		start = dcrlaunchtime
 	}
-	res, err := client.Get(fmt.Sprintf("https://poloniex.com/public?command=returnChartData&currencyPair=BTC_DCR&start=%d&end=9999999999&period=300", start))
+	res, err := client.Get(fmt.Sprintf("https://poloniex.com/public?command=returnChartData&currencyPair=BTC_DCR&start=%d&end=9999999999&period=1800", start))
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +83,11 @@ func collectPoloniexData(start int64) ([]exchangeDataTick, error) {
 }
 
 func collectBittrexData(start int64) ([]exchangeDataTick, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 300 * time.Second}
 	if start == 0 {
 		start = dcrlaunchtime
 	}
-	res, err := client.Get(fmt.Sprintf("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=BTC-DCR&tickInterval=fiveMin&_=%d", start))
+	res, err := client.Get(fmt.Sprintf("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=BTC-DCR&tickInterval=thirtyMin&_=%d", start))
 	if err != nil {
 		return nil, err
 	}

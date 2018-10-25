@@ -8,11 +8,12 @@ import (
 )
 
 type config struct {
-	DBHost string `long:"dbhost" description:"Database host"`
-	DBPort int    `long:"dbport" description:"Database port"`
-	DBUser string `long:"dbuser" description:"Database username"`
-	DBPass string `long:"dbpass" description:"Database password"`
-	DBName string `long:"dbname" description:"Database name"`
+	DBHost     string `long:"dbhost" description:"Database host"`
+	DBPort     int    `long:"dbport" description:"Database port"`
+	DBUser     string `long:"dbuser" description:"Database username"`
+	DBPass     string `long:"dbpass" description:"Database password"`
+	DBName     string `long:"dbname" description:"Database name"`
+	DropTables bool   `short:"D" long:"droptables" descripton:"Drop all database tables"`
 }
 
 var configfile = "dcrextdata.conf"

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strings"
 
@@ -12,8 +13,11 @@ type pgClient struct {
 	db *sql.DB
 }
 
-var insertexchangedataStmt = "INSERT INTO exchangedata (high, low, open, close, time, exchange) VALUES ($1, $2, $3, $4, $5, $6);"
-var createexchangedataStmt = "CREATE TABLE IF NOT EXISTS exchangedata (high FLOAT8, low FLOAT8, open FLOAT8, close FLOAT8, time INT, exchange VARCHAR(25), CONSTRAINT tick PRIMARY KEY (time, exchange));"
+var (
+	insertexchangedataStmt  = "INSERT INTO exchangedata (high, low, open, close, time, exchange) VALUES ($1, $2, $3, $4, $5, $6);"
+	createexchangedataStmt  = "CREATE TABLE IF NOT EXISTS exchangedata (high FLOAT8, low FLOAT8, open FLOAT8, close FLOAT8, time INT, exchange VARCHAR(25), CONSTRAINT tick PRIMARY KEY (time, exchange));"
+	getlastexchangedatatime = "SELECT time FROM exchangedata ORDER BY time DESC LIMIT 1;"
+)
 
 func initClient(psqlInfo string) (*pgClient, error) {
 	db, err := sql.Open("postgres", psqlInfo)
@@ -56,4 +60,29 @@ func (c *pgClient) addEntries(data []exchangeDataTick) error {
 		}
 	}
 	return nil
+}
+
+func (c *pgClient) lastExchangeEntryTime() (int64, error) {
+	var time int64 = -1
+	stmt, err := c.db.Prepare(getlastexchangedatatime)
+	if err != nil {
+		return time, err
+	}
+
+	rows, err := stmt.Query()
+	if err != nil {
+		return time, err
+	}
+	if rows.Next() {
+		err = rows.Scan(&time)
+		if err != nil {
+			return time, err
+		}
+	}
+	return time, nil
+}
+
+func (c *pgClient) dropTable(name string) error {
+	_, err := c.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s;`, name))
+	return err
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const tickInterval int64 = 300
+const tickInterval int64 = 1800
 
 func mainCore() error {
 	cfg, err := loadConfig()
@@ -28,25 +28,44 @@ func mainCore() error {
 		return err
 	}
 
+	if cfg.DropTables {
+		log.Printf("Dropping tables")
+		err = client.dropTable("exchangedata")
+		if err == nil {
+			log.Print("Tables dropped")
+		}
+		return err
+	}
+
 	data := make([]exchangeDataTick, 0)
 	if exists, _ := tableExists(client.db, "exchangedata"); exists {
-		if d := collectExchangeData(time.Now().Unix()); d != nil {
+		t, err := client.lastExchangeEntryTime()
+		if err != nil {
+			log.Printf("Could not retrieve last entry time: %v", err)
+			return err
+		}
+		log.Printf("Retireving exchange data from %s", time.Unix(t, 0).String())
+		if d := collectExchangeData(t); d != nil {
 			data = d
 		} else {
 			log.Print("Could not retrieve exchange data")
+			return nil
 		}
 	} else {
 		if err := client.createExchangetable(); err != nil {
 			log.Printf("Error: %v", err)
 			return err
 		}
+		log.Print("Retrieving exchange data")
 		if d := collectExchangeData(0); d != nil {
 			data = d
 		} else {
 			log.Print("Could not retrieve exchange data")
+			return nil
 		}
 	}
 
+	log.Print("Attempting to store entries...")
 	err = client.addEntries(data)
 	if err != nil {
 		log.Printf("Error: %v", err)
