@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const tickInterval int64 = 1800
+const tickInterval int64 = 3600
 
 func mainCore() error {
 	cfg, err := loadConfig()
