@@ -3,10 +3,10 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	_ "github.com/lib/pq"
+	log "github.com/sirupsen/logrus"
 )
 
 type PgDb struct {
@@ -37,7 +37,7 @@ func (db *PgDb) tableExists(name string) (bool, error) {
 	if err == nil {
 		defer func() {
 			if e := rows.Close(); e != nil {
-				log.Printf("Close of Query failed: %v", e)
+				log.Error("Close of Query failed: ", e)
 			}
 		}()
 		return rows.Next(), nil
@@ -51,12 +51,17 @@ func (db *PgDb) ExchangeDataTableExits() bool {
 }
 
 func (db *PgDb) AddExchangeData(data []exchangeDataTick) error {
+	added := 0
 	for _, v := range data {
 		_, err := db.Exec(insertExchangeDataStmt, v.High, v.Low, v.Open, v.Close, v.Time, v.Exchange)
-		if err != nil && !strings.Contains(err.Error(), "unique constraint") {
-			return err
+		if err != nil {
+			if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+				return err
+			}
+			added++
 		}
 	}
+	log.Debug("Succesfully added entries: ", added)
 	return nil
 }
 

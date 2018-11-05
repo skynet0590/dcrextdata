@@ -2,20 +2,31 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
-const tickInterval int64 = 3600
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:          true,
+		DisableLevelTruncation: true,
+		TimestampFormat:        "2006-01-02 15:04:05",
+	})
+	log.SetOutput(os.Stdout)
+
+	// TODO: Set debug level via config
+	log.SetLevel(log.DebugLevel)
+}
 
 func mainCore() error {
 	cfg, err := loadConfig()
 	if err != nil {
-		return err
+		log.Fatal("Unable to load config: ", err)
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
@@ -25,22 +36,26 @@ func mainCore() error {
 	db, err := NewPgDb(psqlInfo)
 	defer db.Close()
 
+	err = db.Ping()
 	if err != nil {
-		log.Printf("Error: %v", err)
-		return err
+		db.Close()
+		log.Fatal("Error connecting to Postgresl: ", err)
 	}
 
 	if cfg.DropTables {
-		log.Print("Dropping tables")
+		log.Info("Dropping tables")
 		err = db.DropExchangeDataTable()
 		if err != nil {
-			log.Printf("Could not drop tables: %v", err)
+			db.Close()
+			log.Fatal("Could not drop tables: ", err)
 		} else {
-			log.Print("Tables dropped")
+			log.Info("Tables dropped")
+			return err
 		}
-		return err
+
 	}
 
+	log.Info("Attemping to retrieve exchange data")
 	data := make([]exchangeDataTick, 0)
 	if exists := db.ExchangeDataTableExits(); exists {
 		t, err := db.LastExchangeEntryTime()
@@ -48,39 +63,40 @@ func mainCore() error {
 			if strings.Contains(err.Error(), "no rows") {
 				t = 0
 			} else {
-				log.Printf("Could not retrieve last entry time: %v", err)
+				log.Error("Could not retrieve last entry time: ", err)
 				return err
 			}
 		}
-		log.Printf("Retireving exchange data from %s", time.Unix(t, 0).String())
+		log.Info("Retireving exchange data from ", time.Unix(t, 0).String())
 		if d, err := collectExchangeData(t); err == nil {
 			data = d
 		} else {
-			log.Print("Could not retrieve exchange data")
+			log.Error("Could not retrieve exchange data: ", err)
 			return err
 		}
 	} else {
-		log.Printf("Creating new exchange data table")
+		log.Info("Creating new exchange data table")
 		if err := db.CreateExchangeDataTable(); err != nil {
-			log.Printf("Error: %v", err)
+			log.Error("Error creating exchange data table: ", err)
 			return err
 		}
-		log.Print("Retrieving exchange data")
+		log.Info("Retrieving exchange data")
 		if d, err := collectExchangeData(0); err == nil {
 			data = d
 		} else {
-			log.Print("Could not retrieve exchange data")
+			log.Error("Could not retrieve exchange data: ", err)
 			return err
 		}
 	}
 
-	log.Print("Attempting to store entries...")
+	log.Debug("Collected exchange entry count: ", len(data))
+
 	err = db.AddExchangeData(data)
 	if err != nil {
-		log.Printf("Error: %v", err)
+		log.Error("Error adding exchange entries: ", err)
 		return err
 	}
-	log.Print("All entries successfully stored")
+	log.Info("Collected entries stored")
 
 	quit := make(chan struct{})
 
@@ -91,7 +107,7 @@ func mainCore() error {
 		<-c
 		signal.Stop(c)
 
-		log.Print("CTRL+C hit.  Closing goroutines.")
+		log.Info("CTRL+C hit.  Closing goroutines.")
 		close(quit)
 	}()
 
@@ -100,33 +116,43 @@ func mainCore() error {
 	wg.Add(1)
 
 	go func() {
-		ticker := time.NewTicker(time.Second * time.Duration(1860))
+		last, err := db.LastExchangeEntryTime()
+
+		if err != nil {
+			log.Error("Could not retrieve last entry time ", err)
+			wg.Done()
+			return
+		}
+
+		// Sleep till 30 seconds before next collection time
+		time.Sleep(time.Duration(last+1730-time.Now().Unix()) * time.Second)
+
+		ticker := time.NewTicker(time.Second * time.Duration(1800)) // Set a timer for every 30 minutes
 
 		defer func() {
 			ticker.Stop()
 			wg.Done()
 		}()
 
-		last := time.Now().Unix()
-		log.Printf("Starting collector")
+		log.Info("Starting collector")
 		for {
 			select {
 			case t := <-ticker.C:
-				log.Print("Collecting recent exchange data")
+				log.Info("Collecting recent exchange data")
 				data, err := collectExchangeData(last)
 				last = t.Unix()
 				if err != nil {
-					log.Print("Could not retrieve exchange data")
+					log.Error("Could not retrieve exchange data: ", err)
 					return
 				}
 				err = db.AddExchangeData(data)
 				if err != nil {
-					log.Printf("Error: %v", err)
+					log.Error("Error adding exchange data entries: ", err)
 					return
 				}
-				log.Print("Added recent exchange data")
+				log.Info("Added recent exchange data")
 			case <-quit:
-				log.Printf("Closing collector")
+				log.Info("Closing collector")
 				return
 			}
 		}
