@@ -14,6 +14,7 @@ type config struct {
 	DBPass     string `long:"dbpass" description:"Database password"`
 	DBName     string `long:"dbname" description:"Database name"`
 	DropTables bool   `short:"D" long:"droptables" descripton:"Drop all database tables"`
+	Quiet      bool   `short:"q" long:"quiet"`
 }
 
 var configfile = "dcrextdata.conf"

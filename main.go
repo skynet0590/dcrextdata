@@ -18,8 +18,6 @@ func init() {
 		TimestampFormat:        "2006-01-02 15:04:05",
 	})
 	log.SetOutput(os.Stdout)
-
-	// TODO: Set debug level via config
 	log.SetLevel(log.DebugLevel)
 }
 
@@ -27,6 +25,10 @@ func mainCore() error {
 	cfg, err := loadConfig()
 	if err != nil {
 		log.Fatal("Unable to load config: ", err)
+	}
+
+	if cfg.Quiet {
+		log.SetLevel(log.ErrorLevel)
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
