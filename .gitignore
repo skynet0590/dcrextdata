@@ -1,0 +1,4 @@
+*.exe
+dcrextdata
+dcrextdata.conf
+vendor
