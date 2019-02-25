@@ -1,40 +1,40 @@
 package main
 
 import (
-	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
-	"time"
-
-	"github.com/raedahgroup/dcrextdata/collection/exchanges"
-	"github.com/raedahgroup/dcrextdata/db"
-	log "github.com/sirupsen/logrus"
 )
 
 const dcrlaunchtime int64 = 1454889600
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp:          true,
-		DisableLevelTruncation: true,
-		TimestampFormat:        "2006-01-02 15:04:05",
-	})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
+	// log.SetFormatter(&log.TextFormatter{
+	// 	FullTimestamp:          true,
+	// 	DisableLevelTruncation: true,
+	// 	TimestampFormat:        "2006-01-02 15:04:05",
+	// })
+	// log.SetOutput(os.Stdout)
+	// log.SetLevel(log.DebugLevel)
+
+	//initLogRotator("logs/main.log")
 }
 
-func mainCore() error {
+func main() {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal("Unable to load config: ", err)
+		log.Error("Unable to load config: ", err)
+		return
 	}
 
-	if cfg.Quiet {
-		log.SetLevel(log.ErrorLevel)
-	}
+	defer func() {
+		if logRotator != nil {
+			logRotator.Close()
+		}
+	}()
 
-	db, err := db.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
+	db, err := NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer db.Close()
 
 	if cfg.Reset {
@@ -42,44 +42,30 @@ func mainCore() error {
 		err = db.DropAllTables()
 		if err != nil {
 			db.Close()
-			log.Fatal("Could not drop tables: ", err)
+			log.Error("Could not drop tables: ", err)
+			return
 		} else {
 			log.Info("Tables dropped")
 			// return err
 		}
 	}
 
-	log.Info("Attemping to retrieve exchange data")
-
-	client := &http.Client{Timeout: 300 * time.Second}
-
 	if exists := db.ExchangeDataTableExits(); !exists {
 		log.Info("Creating new exchange data table")
 		if err := db.CreateExchangeDataTable(); err != nil {
 			log.Error("Error creating exchange data table: ", err)
-			return err
+			return
 		}
 	}
 
-	quit := make(chan struct{})
-	wg := new(sync.WaitGroup)
-
 	//retrievers := make([]exchanges.Retriever, 0, 2)
 
-	poloniex := exchanges.NewPoloniex(client, db.LastExchangeEntryTime("poloniex")-cfg.CollectionInterval, cfg.CollectionInterval)
-	bittrex := exchanges.NewBittrex(client, db.LastExchangeEntryTime("bittex")-cfg.CollectionInterval, cfg.CollectionInterval)
+	//exchangeCollector := exchanges.Collector{Retrievers: []exchanges.Retriever{poloniex, bittrex}}
 
-	exchangeCollector := exchanges.Collector{Retrievers: []exchanges.Retriever{poloniex, bittrex}}
+	resultChan := make(chan []DataTick)
 
-	log.Info("Starting Collector")
-	resultChan, errChan := exchangeCollector.CollectAtInterval(time.Duration(cfg.CollectionInterval)*time.Second, wg, quit)
-
-	wg.Add(1)
-	go storeExchangeData(db, resultChan, errChan, quit)
-
-	//last := db.LastExchangeEntryTime()
-	// Sleep till 30 seconds before next collection time
-	//time.Sleep(time.Duration(last+1730-time.Now().Unix()) * time.Second)
+	quit := make(chan struct{})
+	wg := new(sync.WaitGroup)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -87,35 +73,61 @@ func mainCore() error {
 	go func() {
 		<-c
 		signal.Stop(c)
-
-		log.Info("CTRL+C hit.  Closing goroutines.")
+		log.Info("CTRL+C hit. Closing goroutines.")
 		close(quit)
 	}()
 
-	wg.Wait()
-	return nil
-}
+	wg.Add(1)
+	log.Info("Starting exchange storage goroutine")
+	go storeExchangeData(db, resultChan, quit, wg)
 
-func main() {
-	if err := mainCore(); err != nil {
-		os.Exit(1)
+	// Exchange collection enabled
+	if len(cfg.Exchanges) > 0 {
+		exchanges := make(map[string]int64)
+		for _, ex := range strings.Split(cfg.Exchanges, ",") {
+			exchanges[ex] = db.LastExchangeEntryTime(ex)
+		}
+
+		//log.Debugf("exchangeMap: %v", exchanges)
+		collector, err := NewExchangeCollector(exchanges, cfg.CollectionInterval)
+
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		if collector.HistoricSyncRequired() {
+			log.Info("Starting historic sync")
+			if collector.HistoricSync(resultChan) {
+				excLog.Error("Historic sync failed")
+				close(quit)
+				return
+			}
+			excLog.Info("Completed historic sync")
+		}
+
+		go collector.Collect(resultChan, quit)
 	}
-	os.Exit(0)
+
+	//last := db.LastExchangeEntryTime()
+	// Sleep till 30 seconds before next collection time
+	//time.Sleep(time.Duration(last+1730-time.Now().Unix()) * time.Second)
+
+	wg.Wait()
+	log.Info("Goodbye")
 }
 
-func storeExchangeData(db *db.PgDb, resultChan chan []exchanges.DataTick, errChan chan error, quit chan struct{}) {
+func storeExchangeData(db *PgDb, resultChan chan []DataTick, quit chan struct{}, wg *sync.WaitGroup) {
 	for {
 		select {
 		case dataTick := <-resultChan:
-			added, err := db.AddExchangeData(dataTick)
+			err := db.AddExchangeData(dataTick)
 			if err != nil {
 				log.Errorf("Could not store exchange entry: %v", err)
 			}
-			log.Infof("Added %d entries", added)
-		case err := <-errChan:
-			log.Error(err)
 		case <-quit:
-			log.Info("Quitting storage goroutine")
+			log.Debug("Retrieved quit signal")
+			wg.Done()
 			return
 		}
 	}

@@ -3,3 +3,5 @@ dcrextdata
 dcrextdata.conf
 vendor
 .vscode
+logs
+*.log
