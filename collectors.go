@@ -39,22 +39,15 @@ func (ec *ExchangeCollector) HistoricSyncRequired() bool {
 	return false
 }
 
-func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) bool {
-	errs := make(chan error)
+func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) error {
 	for _, ex := range ec.exchanges {
-		go func(ex Exchange, dataChan chan []DataTick) {
-			errs <- ex.Historic(dataChan)
-		}(ex, data)
-	}
-
-	failed := false
-	for err := range errs {
+		err := ex.Historic(data)
 		if err != nil {
-			failed = true
-			excLog.Error(err)
+			return err
 		}
 	}
-	return !failed
+
+	return nil
 }
 
 func (ec *ExchangeCollector) Collect(data chan []DataTick, quit chan struct{}) {
@@ -67,6 +60,7 @@ func (ec *ExchangeCollector) Collect(data chan []DataTick, quit chan struct{}) {
 				go ex.Collect(data)
 			}
 		case <-quit:
+			excLog.Infof("Stopping collector")
 			return
 		}
 

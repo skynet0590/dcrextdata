@@ -7,19 +7,7 @@ import (
 	"sync"
 )
 
-const dcrlaunchtime int64 = 1454889600
-
-func init() {
-	// log.SetFormatter(&log.TextFormatter{
-	// 	FullTimestamp:          true,
-	// 	DisableLevelTruncation: true,
-	// 	TimestampFormat:        "2006-01-02 15:04:05",
-	// })
-	// log.SetOutput(os.Stdout)
-	// log.SetLevel(log.DebugLevel)
-
-	//initLogRotator("logs/main.log")
-}
+// const dcrlaunchtime int64 = 1454889600
 
 func main() {
 	cfg, err := loadConfig()
@@ -98,7 +86,7 @@ func main() {
 
 		if collector.HistoricSyncRequired() {
 			log.Info("Starting historic sync")
-			if collector.HistoricSync(resultChan) {
+			if err = collector.HistoricSync(resultChan); err != nil {
 				excLog.Error("Historic sync failed")
 				close(quit)
 				return
@@ -107,11 +95,9 @@ func main() {
 		}
 
 		go collector.Collect(resultChan, quit)
+	} else {
+		close(quit)
 	}
-
-	//last := db.LastExchangeEntryTime()
-	// Sleep till 30 seconds before next collection time
-	//time.Sleep(time.Duration(last+1730-time.Now().Unix()) * time.Second)
 
 	wg.Wait()
 	log.Info("Goodbye")

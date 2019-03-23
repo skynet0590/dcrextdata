@@ -14,40 +14,33 @@ const (
 	maxRetryAttempts = 3
 )
 
-// GetResponse attempts to collect json data from the given url string and decode it into
+// GetResponse attempts to collect json data from the given url string and decodes it into
 // the destination
 func GetResponse(client *http.Client, url string, destination interface{}) error {
-	resp, err := client.Get(url)
-	requestsLog.Tracef("GET %s", url)
-	if err != nil {
-		requestsLog.Warn(err)
-		if resp != nil {
-			resp.Body.Close()
-		}
-		retryAttempts := 1
-
-		ticker := time.NewTicker(retryDelay)
-
-		for range ticker.C {
-			retryResp, err := client.Get(url)
-
-			if err != nil {
-				if retryResp != nil {
-					retryResp.Body.Close()
-				}
-
-				retryAttempts++
-				if retryAttempts > maxRetryAttempts {
-					return err
-				}
-				requestsLog.Warn(err)
-				continue
+	resp := new(http.Response)
+	for i := 0; i < maxRetryAttempts; i++ {
+		res, err := client.Get(url)
+		requestsLog.Tracef("GET %s", url)
+		if err != nil {
+			if i == maxRetryAttempts {
+				return err
 			}
-			resp = retryResp
+			requestsLog.Warn(err)
+			if res != nil {
+				res.Body.Close()
+			}
+			time.Sleep(retryDelay)
+			continue
 		}
+		resp = res
+		break
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(destination)
+	if resp == nil {
+		requestsLog.Debug("Response nil")
+	}
+
+	err := json.NewDecoder(resp.Body).Decode(destination)
 	if err != nil {
 		return err
 	}
