@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 )
 
@@ -12,7 +12,7 @@ import (
 func main() {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Error("Unable to load config: ", err)
+		fmt.Printf("Unable to load config: %v\n", err)
 		return
 	}
 
@@ -70,9 +70,9 @@ func main() {
 	go storeExchangeData(db, resultChan, quit, wg)
 
 	// Exchange collection enabled
-	if len(cfg.Exchanges) > 0 {
+	if cfg.ExchangesEnabled {
 		exchanges := make(map[string]int64)
-		for _, ex := range strings.Split(cfg.Exchanges, ",") {
+		for _, ex := range cfg.Exchanges {
 			exchanges[ex] = db.LastExchangeEntryTime(ex)
 		}
 
@@ -84,17 +84,14 @@ func main() {
 			return
 		}
 
-		if collector.HistoricSyncRequired() {
-			log.Info("Starting historic sync")
-			if err = collector.HistoricSync(resultChan); err != nil {
-				excLog.Error("Historic sync failed")
-				close(quit)
-				return
-			}
-			excLog.Info("Completed historic sync")
-		}
+		excLog.Info("Starting historic sync")
 
-		go collector.Collect(resultChan, quit)
+		collector.HistoricSync(resultChan)
+
+		wg.Add(1)
+
+		excLog.Info("Starting periodic collection")
+		go collector.Collect(resultChan, wg, quit)
 	} else {
 		close(quit)
 	}

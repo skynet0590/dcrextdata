@@ -27,6 +27,7 @@ type Exchange interface {
 	Historic(chan []DataTick) error
 	Collect(chan []DataTick) error
 	LastUpdateTime() int64
+	Name() string
 }
 
 type CommonExchange struct {
@@ -61,6 +62,8 @@ func NewBittrex(client *http.Client, lastUpdate int64, period int64) (Exchange, 
 	}, nil
 }
 
+func (*BittrexExchange) Name() string { return Bittrex }
+
 func (ex *BittrexExchange) Historic(data chan []DataTick) error { return ex.Collect(data) }
 
 func (ex *BittrexExchange) Collect(data chan []DataTick) error {
@@ -88,7 +91,7 @@ func (ex *BittrexExchange) Collect(data chan []DataTick) error {
 	return nil
 }
 
-func (ex *BittrexExchange) respToDataTicks(resp *bittrexAPIResponse, start int64) []DataTick {
+func (BittrexExchange) respToDataTicks(resp *bittrexAPIResponse, start int64) []DataTick {
 	dataTicks := make([]DataTick, 0, len(resp.Result))
 	for _, v := range resp.Result {
 		t, _ := time.Parse("2006-01-02T15:04:05", v.Time)
@@ -132,6 +135,8 @@ func NewPoloniex(client *http.Client, lastUpdate int64, period int64) (Exchange,
 	}, nil
 }
 
+func (*PoloniexExchange) Name() string { return Poloniex }
+
 func (ex *PoloniexExchange) Historic(data chan []DataTick) error {
 	now := time.Now().Unix()
 
@@ -150,6 +155,7 @@ func (ex *PoloniexExchange) Historic(data chan []DataTick) error {
 
 		data <- resp
 		ex.lastUpdate = last
+		excLog.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
 		now = time.Now().Unix()
 	}
 

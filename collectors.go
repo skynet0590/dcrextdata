@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -29,28 +30,30 @@ func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*Exchan
 	}, nil
 }
 
-func (ec *ExchangeCollector) HistoricSyncRequired() bool {
+func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) {
 	now := time.Now().Unix()
+	wg := new(sync.WaitGroup)
 	for _, ex := range ec.exchanges {
-		if now-ex.LastUpdateTime() > ec.period {
-			return true
+		l := ex.LastUpdateTime()
+		if now-l <= ec.period {
+			continue
 		}
+		wg.Add(1)
+		go func(ex Exchange, wg *sync.WaitGroup) {
+			err := ex.Historic(data)
+			if err != nil {
+				excLog.Error(err)
+			} else {
+				excLog.Infof("Completed historic sync for %s", ex.Name())
+			}
+			wg.Done()
+		}(ex, wg)
 	}
-	return false
+
+	wg.Wait()
 }
 
-func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) error {
-	for _, ex := range ec.exchanges {
-		err := ex.Historic(data)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (ec *ExchangeCollector) Collect(data chan []DataTick, quit chan struct{}) {
+func (ec *ExchangeCollector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan struct{}) {
 	ticker := time.NewTicker(time.Duration(ec.period) * time.Second)
 	for {
 		select {
@@ -61,6 +64,7 @@ func (ec *ExchangeCollector) Collect(data chan []DataTick, quit chan struct{}) {
 			}
 		case <-quit:
 			excLog.Infof("Stopping collector")
+			wg.Done()
 			return
 		}
 

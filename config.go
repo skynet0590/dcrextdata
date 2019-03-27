@@ -33,8 +33,9 @@ type config struct {
 	DBName string `long:"dbname" description:"Database name"`
 
 	// Exchange collector
-	CollectionInterval int64  `short:"i" long:"collectioninterval"`
-	Exchanges          string `long:"exchanges"`
+	CollectionInterval int64    `short:"i" long:"collectioninterval"`
+	ExchangesEnabled   bool     `long:"exchangesON"`
+	Exchanges          []string `long:"exchange"`
 }
 
 var defaultCfg = config{
