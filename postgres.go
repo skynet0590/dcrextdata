@@ -79,7 +79,7 @@ func (pg *PgDb) AddExchangeData(data []DataTick) error {
 		}
 		added++
 	}
-	pqLog.Tracef("Added %d entries from %s", added, data[len(data)-1].Exchange)
+	pqLog.Infof("Added %d entries from %s", added, data[len(data)-1].Exchange)
 	return nil
 }
 

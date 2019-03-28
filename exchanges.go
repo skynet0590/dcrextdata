@@ -159,6 +159,16 @@ func (ex *PoloniexExchange) Historic(data chan []DataTick) error {
 		now = time.Now().Unix()
 	}
 
+	resp, last, err := ex.fetch(ex.lastUpdate, now, ex.period)
+
+	if err != nil {
+		return err
+	}
+
+	data <- resp
+	ex.lastUpdate = last
+	excLog.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
+
 	return nil
 }
 

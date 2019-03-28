@@ -30,27 +30,32 @@ func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*Exchan
 	}, nil
 }
 
-func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) {
+func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) []error {
 	now := time.Now().Unix()
 	wg := new(sync.WaitGroup)
+	errs := make([]error, 0)
+	errMtx := new(sync.Mutex)
 	for _, ex := range ec.exchanges {
 		l := ex.LastUpdateTime()
 		if now-l <= ec.period {
 			continue
 		}
 		wg.Add(1)
-		go func(ex Exchange, wg *sync.WaitGroup) {
+		go func(ex Exchange, errMtx *sync.Mutex, wg *sync.WaitGroup) {
 			err := ex.Historic(data)
 			if err != nil {
-				excLog.Error(err)
+				errMtx.Lock()
+				errs = append(errs, err)
+				errMtx.Unlock()
 			} else {
 				excLog.Infof("Completed historic sync for %s", ex.Name())
 			}
 			wg.Done()
-		}(ex, wg)
+		}(ex, errMtx, wg)
 	}
 
 	wg.Wait()
+	return errs
 }
 
 func (ec *ExchangeCollector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan struct{}) {

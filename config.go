@@ -19,8 +19,8 @@ const (
 
 type config struct {
 	// General application behaviour
-	Reset      bool   `short:"R" long:"reset" descripton:"Drop all database tables and start over"`
-	LogFile    string `long:"logfile"`
+	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
+	LogFile    string `short:"L" long:"logfile" description:"File name of the log file"`
 	ConfigFile string `short:"C" long:"configfile" description:"Path to configuration file"`
 	DebugLevel string `short:"d" long:"debuglevel" description:"Logging level {trace, debug, info, warn, error, critical}"`
 	Quiet      bool   `short:"q" long:"quiet" description:"Easy way to set debuglevel to error"`
@@ -33,9 +33,9 @@ type config struct {
 	DBName string `long:"dbname" description:"Database name"`
 
 	// Exchange collector
-	CollectionInterval int64    `short:"i" long:"collectioninterval"`
-	ExchangesEnabled   bool     `long:"exchangesON"`
-	Exchanges          []string `long:"exchange"`
+	CollectionInterval int64    `short:"i" long:"collectioninterval" description:"Interval in seconds between successive ticker entries. Valid options are 300 and 1800"`
+	ExchangesEnabled   bool     `long:"exchangesON" description:"Enables collection of ticker data from exchanges"`
+	Exchanges          []string `long:"exchange" description:"Exchange to be tracked"`
 }
 
 var defaultCfg = config{
@@ -121,7 +121,7 @@ func loadConfig() (*config, error) {
 	err := flags.NewIniParser(parser).ParseFile(cfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			//log.Errorf("Missing config file %s in current directory", cfg.ConfigFile)
+			fmt.Printf("Missing config file %s in current directory\n", cfg.ConfigFile)
 		} else {
 			return nil, err
 		}
@@ -129,8 +129,9 @@ func loadConfig() (*config, error) {
 
 	_, err = parser.Parse()
 	if err != nil {
-		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
-			parser.WriteHelp(os.Stderr)
+		e, ok := err.(*flags.Error)
+		if ok && e.Type == flags.ErrHelp {
+			os.Exit(0)
 		}
 		return nil, err
 	}

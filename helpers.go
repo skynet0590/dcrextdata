@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -37,7 +38,8 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 	}
 
 	if resp == nil {
-		requestsLog.Debug("Response nil")
+		// requestsLog.Debug("Response nil")
+		return fmt.Errorf("Empty response")
 	}
 
 	err := json.NewDecoder(resp.Body).Decode(destination)

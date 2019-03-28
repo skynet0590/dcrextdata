@@ -46,10 +46,6 @@ func main() {
 		}
 	}
 
-	//retrievers := make([]exchanges.Retriever, 0, 2)
-
-	//exchangeCollector := exchanges.Collector{Retrievers: []exchanges.Retriever{poloniex, bittrex}}
-
 	resultChan := make(chan []DataTick)
 
 	quit := make(chan struct{})
@@ -65,35 +61,39 @@ func main() {
 		close(quit)
 	}()
 
-	wg.Add(1)
-	log.Info("Starting exchange storage goroutine")
-	go storeExchangeData(db, resultChan, quit, wg)
-
-	// Exchange collection enabled
 	if cfg.ExchangesEnabled {
+		wg.Add(1)
+		log.Info("Starting exchange storage goroutine")
+		go storeExchangeData(db, resultChan, quit, wg)
 		exchanges := make(map[string]int64)
 		for _, ex := range cfg.Exchanges {
 			exchanges[ex] = db.LastExchangeEntryTime(ex)
 		}
 
-		//log.Debugf("exchangeMap: %v", exchanges)
 		collector, err := NewExchangeCollector(exchanges, cfg.CollectionInterval)
 
 		if err != nil {
 			log.Error(err)
+			close(quit)
 			return
 		}
 
 		excLog.Info("Starting historic sync")
 
-		collector.HistoricSync(resultChan)
+		errs := collector.HistoricSync(resultChan)
+
+		if len(errs) > 0 {
+			for _, err = range errs {
+				excLog.Error(err)
+			}
+			close(quit)
+			return
+		}
 
 		wg.Add(1)
 
 		excLog.Info("Starting periodic collection")
 		go collector.Collect(resultChan, wg, quit)
-	} else {
-		close(quit)
 	}
 
 	wg.Wait()
