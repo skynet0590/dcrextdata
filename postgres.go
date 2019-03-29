@@ -6,34 +6,103 @@ import (
 	"strings"
 
 	_ "github.com/lib/pq"
-	log "github.com/sirupsen/logrus"
+)
+
+const (
+	// Exchange Table
+	LastExchangeEntryTime   = `SELECT time FROM exchange_data WHERE exchange=$1 ORDER BY time DESC LIMIT 1`
+	InsertExchangeDataTick  = `INSERT INTO exchange_data (high, low, open, close, time, exchange) VALUES ($1, $2, $3, $4, $5, $6)`
+	CreateExchangeDataTable = `CREATE TABLE IF NOT EXISTS exchange_data (high FLOAT8, low FLOAT8, open FLOAT8, close FLOAT8, time INT, exchange VARCHAR(25), CONSTRAINT tick PRIMARY KEY (time, exchange))`
 )
 
 type PgDb struct {
-	*sql.DB
+	db *sql.DB
 }
 
-var (
-	insertExchangeDataStmt      = `INSERT INTO exchange_data (high, low, open, close, time, exchange) VALUES ($1, $2, $3, $4, $5, $6)`
-	createExchangeDataStmt      = `CREATE TABLE IF NOT EXISTS exchange_data (high FLOAT8, low FLOAT8, open FLOAT8, close FLOAT8, time INT, exchange VARCHAR(25), CONSTRAINT tick PRIMARY KEY (time, exchange))`
-	getLastExchangeDataTimeStmt = `SELECT time FROM exchange_data ORDER BY time DESC LIMIT 1`
-)
+// Core methods
 
-func NewPgDb(psqlInfo string) (PgDb, error) {
+//
+func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
+	var psqlInfo string
+	if pass == "" {
+		psqlInfo = fmt.Sprintf("host=%s user=%s "+
+			"dbname=%s sslmode=disable",
+			host, user, dbname)
+	} else {
+		psqlInfo = fmt.Sprintf("host=%s user=%s "+
+			"password=%s dbname=%s sslmode=disable",
+			host, user, pass, dbname)
+	}
+	// Only add port arg fot TCP connection since UNIX domain sockets (specified
+	// by a "/" prefix) do not have a port.
+	if !strings.HasPrefix(host, "/") {
+		psqlInfo += fmt.Sprintf(" port=%s", port)
+	}
+
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		return PgDb{nil}, err
+		return nil, err
 	}
-	return PgDb{db}, nil
+
+	err = db.Ping()
+
+	return &PgDb{db}, err
 }
 
-func (db *PgDb) CreateExchangeDataTable() error {
-	_, err := db.Exec(createExchangeDataStmt)
+func (pg *PgDb) Close() error {
+	pqLog.Trace("Closing postgresql connection")
+	return pg.db.Close()
+}
+
+func (pg *PgDb) dropTable(name string) error {
+	pqLog.Tracef("Dropping table %s", name)
+	_, err := pg.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s;`, name))
 	return err
 }
 
-func (db *PgDb) tableExists(name string) (bool, error) {
-	rows, err := db.Query(`SELECT relname FROM pg_class WHERE relname = $1`, name)
+func (pg *PgDb) DropAllTables() error {
+	// TODO: Add the other tables
+	return pg.dropTable("exchange_data")
+}
+
+// Exchange methods
+
+//
+func (pg *PgDb) AddExchangeData(data []DataTick) error {
+	added := 0
+	for _, v := range data {
+		_, err := pg.db.Exec(InsertExchangeDataTick, v.High, v.Low, v.Open, v.Close, v.Time, v.Exchange)
+		if err != nil {
+			if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+				return err
+			}
+		}
+		added++
+	}
+	if len(data) == 1 {
+		pqLog.Infof("Added %d entry from %s (%s)", added, data[0].Exchange, UnixTimeToString(data[0].Time))
+	} else {
+		last := data[len(data)-1]
+		pqLog.Infof("Added %d entries from %s (%s to %s)", added, last.Exchange, UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
+	}
+
+	return nil
+}
+
+func (pg *PgDb) LastExchangeEntryTime(exchange string) (time int64) {
+	rows := pg.db.QueryRow(LastExchangeEntryTime, exchange)
+	_ = rows.Scan(&time)
+	return
+}
+
+func (pg *PgDb) CreateExchangeDataTable() error {
+	pqLog.Trace("Creating exchange data table")
+	_, err := pg.db.Exec(CreateExchangeDataTable)
+	return err
+}
+
+func (pg *PgDb) tableExists(name string) (bool, error) {
+	rows, err := pg.db.Query(`SELECT relname FROM pg_class WHERE relname = $1`, name)
 	if err == nil {
 		defer func() {
 			if e := rows.Close(); e != nil {
@@ -45,42 +114,7 @@ func (db *PgDb) tableExists(name string) (bool, error) {
 	return false, err
 }
 
-func (db *PgDb) ExchangeDataTableExits() bool {
-	exists, _ := db.tableExists("exchange_data")
+func (pg *PgDb) ExchangeDataTableExits() bool {
+	exists, _ := pg.tableExists("exchange_data")
 	return exists
-}
-
-func (db *PgDb) AddExchangeData(data []exchangeDataTick) error {
-	added := 0
-	for _, v := range data {
-		_, err := db.Exec(insertExchangeDataStmt, v.High, v.Low, v.Open, v.Close, v.Time, v.Exchange)
-		if err != nil {
-			if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-				return err
-			}
-			added++
-		}
-	}
-	log.Debug("Succesfully added entries: ", added)
-	return nil
-}
-
-func (db *PgDb) LastExchangeEntryTime() (int64, error) {
-	var time int64 = -1
-	rows := db.QueryRow(getLastExchangeDataTimeStmt)
-	err := rows.Scan(&time)
-
-	if err != nil {
-		return time, err
-	}
-	return time, nil
-}
-
-func (db *PgDb) DropTable(name string) error {
-	_, err := db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s;`, name))
-	return err
-}
-
-func (db *PgDb) DropExchangeDataTable() error {
-	return db.DropTable("exchange_data")
 }

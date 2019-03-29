@@ -4,103 +4,52 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp:          true,
-		DisableLevelTruncation: true,
-		TimestampFormat:        "2006-01-02 15:04:05",
-	})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.DebugLevel)
-}
+// const dcrlaunchtime int64 = 1454889600
 
-func mainCore() error {
+func main() {
 	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal("Unable to load config: ", err)
+		fmt.Printf("Unable to load config: %v\n", err)
+		return
 	}
 
-	if cfg.Quiet {
-		log.SetLevel(log.ErrorLevel)
-	}
+	defer func() {
+		if logRotator != nil {
+			logRotator.Close()
+		}
+	}()
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
-
-	db, err := NewPgDb(psqlInfo)
+	db, err := NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer db.Close()
 
-	err = db.Ping()
-	if err != nil {
-		db.Close()
-		log.Fatal("Error connecting to Postgresl: ", err)
-	}
-
-	if cfg.DropTables {
+	if cfg.Reset {
 		log.Info("Dropping tables")
-		err = db.DropExchangeDataTable()
+		err = db.DropAllTables()
 		if err != nil {
 			db.Close()
-			log.Fatal("Could not drop tables: ", err)
+			log.Error("Could not drop tables: ", err)
+			return
 		} else {
 			log.Info("Tables dropped")
-			return err
+			// return err
 		}
-
 	}
 
-	log.Info("Attemping to retrieve exchange data")
-	data := make([]exchangeDataTick, 0)
-	if exists := db.ExchangeDataTableExits(); exists {
-		t, err := db.LastExchangeEntryTime()
-		if err != nil {
-			if strings.Contains(err.Error(), "no rows") {
-				t = 0
-			} else {
-				log.Error("Could not retrieve last entry time: ", err)
-				return err
-			}
-		}
-		log.Info("Retireving exchange data from ", time.Unix(t, 0).String())
-		if d, err := collectExchangeData(t); err == nil {
-			data = d
-		} else {
-			log.Error("Could not retrieve exchange data: ", err)
-			return err
-		}
-	} else {
+	if exists := db.ExchangeDataTableExits(); !exists {
 		log.Info("Creating new exchange data table")
 		if err := db.CreateExchangeDataTable(); err != nil {
 			log.Error("Error creating exchange data table: ", err)
-			return err
-		}
-		log.Info("Retrieving exchange data")
-		if d, err := collectExchangeData(0); err == nil {
-			data = d
-		} else {
-			log.Error("Could not retrieve exchange data: ", err)
-			return err
+			return
 		}
 	}
 
-	log.Debug("Collected exchange entry count: ", len(data))
-
-	err = db.AddExchangeData(data)
-	if err != nil {
-		log.Error("Error adding exchange entries: ", err)
-		return err
-	}
-	log.Info("Collected entries stored")
+	resultChan := make(chan []DataTick)
 
 	quit := make(chan struct{})
+	wg := new(sync.WaitGroup)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -108,65 +57,61 @@ func mainCore() error {
 	go func() {
 		<-c
 		signal.Stop(c)
-
-		log.Info("CTRL+C hit.  Closing goroutines.")
+		log.Info("CTRL+C hit. Closing goroutines.")
 		close(quit)
 	}()
 
-	var wg sync.WaitGroup
+	if cfg.ExchangesEnabled {
+		wg.Add(1)
+		log.Info("Starting exchange storage goroutine")
+		go storeExchangeData(db, resultChan, quit, wg)
+		exchanges := make(map[string]int64)
+		for _, ex := range cfg.Exchanges {
+			exchanges[ex] = db.LastExchangeEntryTime(ex)
+		}
 
-	wg.Add(1)
-
-	go func() {
-		last, err := db.LastExchangeEntryTime()
+		collector, err := NewExchangeCollector(exchanges, cfg.CollectionInterval)
 
 		if err != nil {
-			log.Error("Could not retrieve last entry time ", err)
-			wg.Done()
+			log.Error(err)
+			close(quit)
 			return
 		}
 
-		// Sleep till 30 seconds before next collection time
-		time.Sleep(time.Duration(last+1730-time.Now().Unix()) * time.Second)
+		excLog.Info("Starting historic sync")
 
-		ticker := time.NewTicker(time.Second * time.Duration(1800)) // Set a timer for every 30 minutes
+		errs := collector.HistoricSync(resultChan)
 
-		defer func() {
-			ticker.Stop()
-			wg.Done()
-		}()
-
-		log.Info("Starting collector")
-		for {
-			select {
-			case t := <-ticker.C:
-				log.Info("Collecting recent exchange data")
-				data, err := collectExchangeData(last)
-				last = t.Unix()
-				if err != nil {
-					log.Error("Could not retrieve exchange data: ", err)
-					return
-				}
-				err = db.AddExchangeData(data)
-				if err != nil {
-					log.Error("Error adding exchange data entries: ", err)
-					return
-				}
-				log.Info("Added recent exchange data")
-			case <-quit:
-				log.Info("Closing collector")
-				return
+		if len(errs) > 0 {
+			for _, err = range errs {
+				excLog.Error(err)
 			}
+			close(quit)
+			return
 		}
-	}()
+
+		wg.Add(1)
+
+		excLog.Info("Starting periodic collection")
+		go collector.Collect(resultChan, wg, quit)
+	}
 
 	wg.Wait()
-	return nil
+	log.Info("Goodbye")
 }
 
-func main() {
-	if err := mainCore(); err != nil {
-		os.Exit(1)
+func storeExchangeData(db *PgDb, resultChan chan []DataTick, quit chan struct{}, wg *sync.WaitGroup) {
+	for {
+		select {
+		case dataTick := <-resultChan:
+			err := db.AddExchangeData(dataTick)
+			if err != nil {
+				log.Errorf("Could not store exchange entry: %v", err)
+			}
+		case <-quit:
+			log.Debug("Retrieved quit signal")
+			wg.Done()
+			return
+		}
 	}
-	os.Exit(0)
 }

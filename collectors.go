@@ -1,144 +1,83 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
+	"sync"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
-type exchangeDataTick struct {
-	High     float64
-	Low      float64
-	Open     float64
-	Close    float64
-	Volume   float64
-	Time     int64
-	Exchange string
+type ExchangeCollector struct {
+	exchanges []Exchange
+	period    int64
 }
 
-type poloniexDataTick struct {
-	High   float64 `json:"high"`
-	Low    float64 `json:"low"`
-	Open   float64 `json:"open"`
-	Close  float64 `json:"close"`
-	Volume float64 `json:"volume"`
-	Time   int64   `json:"date"`
-}
+func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*ExchangeCollector, error) {
+	exchanges := make([]Exchange, 0, len(exchangeLasts))
 
-type poloniexAPIResponse []poloniexDataTick
+	for exchange, last := range exchangeLasts {
+		if contructor, ok := ExchangeConstructors[exchange]; ok {
 
-type bittrexDataTick struct {
-	High   float64 `json:"H"`
-	Low    float64 `json:"L"`
-	Open   float64 `json:"O"`
-	Close  float64 `json:"C"`
-	Volume float64 `json:"BV"`
-	Time   string  `json:"T"`
-}
-
-type bittrexAPIResponse struct {
-	Result []bittrexDataTick `json:"result"`
-}
-
-var dcrlaunchtime int64 = 1454889600
-
-func collectPoloniexData(start int64) ([]exchangeDataTick, error) {
-	client := &http.Client{Timeout: 300 * time.Second}
-
-	if start == 0 {
-		start = dcrlaunchtime
-	}
-
-	res, err := client.Get(fmt.Sprintf("https://poloniex.com/public?command=returnChartData&currencyPair=BTC_DCR&start=%d&end=9999999999&period=1800", start))
-	if err != nil {
-		return nil, err
-	}
-
-	data := new(poloniexAPIResponse)
-	err = json.NewDecoder(res.Body).Decode(data)
-
-	if err != nil {
-		return nil, err
-	}
-
-	res.Body.Close()
-
-	exchangeData := make([]exchangeDataTick, 0)
-
-	for _, v := range []poloniexDataTick(*data) {
-		eData := exchangeDataTick{
-			High:     v.High,
-			Low:      v.Low,
-			Open:     v.Open,
-			Close:    v.Close,
-			Time:     v.Time,
-			Exchange: "poloniex",
+			ex, err := contructor(&http.Client{Timeout: 300 * time.Second}, last, period) // Consider if sharing a single client is better
+			if err != nil {
+				return nil, err
+			}
+			lastStr := UnixTimeToString(ex.LastUpdateTime())
+			if last == 0 {
+				lastStr = "never"
+			}
+			excLog.Infof("Starting exchange collector for %s, last collect time: %s", exchange, lastStr)
+			exchanges = append(exchanges, ex)
 		}
-		exchangeData = append(exchangeData, eData)
 	}
 
-	return exchangeData, nil
+	return &ExchangeCollector{
+		exchanges: exchanges,
+		period:    period,
+	}, nil
 }
 
-func collectBittrexData(start int64) ([]exchangeDataTick, error) {
-	client := &http.Client{Timeout: 300 * time.Second}
-
-	// Bittrex "start" option doesn't work
-	res, err := client.Get("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=BTC-DCR&tickInterval=thirtyMin")
-
-	if err != nil {
-		return nil, err
-	}
-
-	data := new(bittrexAPIResponse)
-	err = json.NewDecoder(res.Body).Decode(data)
-
-	if err != nil {
-		return nil, err
-	}
-
-	res.Body.Close()
-
-	exchangeData := make([]exchangeDataTick, 0)
-
-	for _, v := range data.Result {
-		t, _ := time.Parse(time.RFC3339[:19], v.Time)
-
-		if t.Unix() < start {
+func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) []error {
+	now := time.Now().Unix()
+	wg := new(sync.WaitGroup)
+	errs := make([]error, 0)
+	errMtx := new(sync.Mutex)
+	for _, ex := range ec.exchanges {
+		l := ex.LastUpdateTime()
+		if now-l <= ec.period {
 			continue
 		}
-
-		eData := exchangeDataTick{
-			High:     v.High,
-			Low:      v.Low,
-			Open:     v.Open,
-			Close:    v.Close,
-			Time:     t.Unix(),
-			Exchange: "bittrex",
-		}
-		exchangeData = append(exchangeData, eData)
+		wg.Add(1)
+		go func(ex Exchange, errMtx *sync.Mutex, wg *sync.WaitGroup) {
+			err := ex.Historic(data)
+			if err != nil {
+				errMtx.Lock()
+				errs = append(errs, err)
+				errMtx.Unlock()
+			} else {
+				excLog.Infof("Completed historic sync for %s", ex.Name())
+			}
+			wg.Done()
+		}(ex, errMtx, wg)
 	}
 
-	return exchangeData, nil
+	wg.Wait()
+	return errs
 }
 
-func collectExchangeData(start int64) ([]exchangeDataTick, error) {
-	data := make([]exchangeDataTick, 0)
+func (ec *ExchangeCollector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan struct{}) {
+	ticker := time.NewTicker(time.Duration(ec.period) * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			excLog.Trace("Triggering exchange collectors")
+			for _, ex := range ec.exchanges {
+				go ex.Collect(data)
+			}
+		case <-quit:
+			excLog.Infof("Stopping collector")
+			wg.Done()
+			return
+		}
 
-	poloniexdata, err := collectPoloniexData(start)
-	if err != nil {
-		log.Error("Error: ", err)
-		return nil, err
 	}
-	bittrexdata, err := collectBittrexData(start)
-	if err != nil {
-		log.Error("Error: ", err)
-		return nil, err
-	}
-	data = append(data, poloniexdata...)
-	data = append(data, bittrexdata...)
-	return data, nil
 }
