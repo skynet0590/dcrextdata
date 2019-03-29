@@ -80,3 +80,7 @@ func addParams(base string, params map[string]interface{}) (string, error) {
 	str := strBuilder.String()
 	return str[:len(str)-1], nil
 }
+
+func UnixTimeToString(t int64) string {
+	return time.Unix(t, 0).UTC().String()
+}

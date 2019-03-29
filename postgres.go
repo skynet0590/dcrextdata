@@ -79,7 +79,13 @@ func (pg *PgDb) AddExchangeData(data []DataTick) error {
 		}
 		added++
 	}
-	pqLog.Infof("Added %d entries from %s", added, data[len(data)-1].Exchange)
+	if len(data) == 1 {
+		pqLog.Infof("Added %d entry from %s (%s)", added, data[0].Exchange, UnixTimeToString(data[0].Time))
+	} else {
+		last := data[len(data)-1]
+		pqLog.Infof("Added %d entries from %s (%s to %s)", added, last.Exchange, UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
+	}
+
 	return nil
 }
 

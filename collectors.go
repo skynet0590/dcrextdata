@@ -16,10 +16,16 @@ func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*Exchan
 
 	for exchange, last := range exchangeLasts {
 		if contructor, ok := ExchangeConstructors[exchange]; ok {
+
 			ex, err := contructor(&http.Client{Timeout: 300 * time.Second}, last, period) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err
 			}
+			lastStr := UnixTimeToString(ex.LastUpdateTime())
+			if last == 0 {
+				lastStr = "never"
+			}
+			excLog.Infof("Starting exchange collector for %s, last collect time: %s", exchange, lastStr)
 			exchanges = append(exchanges, ex)
 		}
 	}
