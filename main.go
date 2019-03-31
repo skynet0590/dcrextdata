@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/raedahgroup/dcrextdata/version"
+	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
 // const dcrlaunchtime int64 = 1454889600
@@ -48,17 +49,8 @@ func main() {
 			db.Close()
 			log.Error("Could not drop tables: ", err)
 			return
-		} else {
-			log.Info("Tables dropped")
 		}
-	}
-
-	if exists := db.ExchangeDataTableExits(); !exists {
-		log.Info("Creating new exchange data table")
-		if err := db.CreateExchangeDataTable(); err != nil {
-			log.Error("Error creating exchange data table: ", err)
-			return
-		}
+		log.Info("Tables dropped")
 	}
 
 	resultChan := make(chan []DataTick)
@@ -76,7 +68,24 @@ func main() {
 		close(quit)
 	}()
 
+	if cfg.VSPEnabled {
+		log.Info("Starting VSP data collection")
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+		if err == nil {
+			wg.Add(1)
+			go vspCollector.Run(quit, wg)
+		} else {
+			log.Error(err)
+		}
+	}
+
 	if cfg.ExchangesEnabled {
+		if exists := db.ExchangeDataTableExits(); !exists {
+			if err := db.CreateExchangeDataTable(); err != nil {
+				log.Error("Error creating exchange data table: ", err)
+				return
+			}
+		}
 		wg.Add(1)
 		log.Info("Starting exchange storage goroutine")
 		go storeExchangeData(db, resultChan, quit, wg)
