@@ -10,6 +10,8 @@ import (
 
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
+	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -31,12 +33,11 @@ var (
 
 	// logRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
-	logRotator  *rotator.Rotator
-	log         = backendLog.Logger("DEXD")
-	excLog      = backendLog.Logger("EXCH")
-	pqLog       = backendLog.Logger("PSQL")
-	requestsLog = backendLog.Logger("RQST")
-	vspLog      = backendLog.Logger("VSPC")
+	logRotator *rotator.Rotator
+	log        = backendLog.Logger("DEXD")
+	excLog     = backendLog.Logger("EXCH")
+	pqLog      = backendLog.Logger("PSQL")
+	vspLog     = backendLog.Logger("VSPC")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -44,11 +45,12 @@ var subsystemLoggers = map[string]slog.Logger{
 	"DATD": log,
 	"EXCH": excLog,
 	"PSQL": pqLog,
-	"RQST": requestsLog,
 	"VSPC": vspLog,
 }
 
 func init() {
+	exchanges.UseLogger(excLog)
+	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)
 }
 
