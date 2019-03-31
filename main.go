@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/version"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
@@ -34,7 +36,7 @@ func main() {
 	log.Infof("%s version %v (Go version %s)", version.AppName,
 		version.Version(), runtime.Version())
 
-	db, err := NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
+	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer db.Close()
 
 	if err != nil {
@@ -53,7 +55,7 @@ func main() {
 		log.Info("Tables dropped")
 	}
 
-	resultChan := make(chan []DataTick)
+	resultChan := make(chan []exchanges.DataTick)
 
 	quit := make(chan struct{})
 	wg := new(sync.WaitGroup)
@@ -89,12 +91,12 @@ func main() {
 		wg.Add(1)
 		log.Info("Starting exchange storage goroutine")
 		go storeExchangeData(db, resultChan, quit, wg)
-		exchanges := make(map[string]int64)
+		exchangeMap := make(map[string]int64)
 		for _, ex := range cfg.Exchanges {
-			exchanges[ex] = db.LastExchangeEntryTime(ex)
+			exchangeMap[ex] = db.LastExchangeEntryTime(ex)
 		}
 
-		collector, err := NewExchangeCollector(exchanges, cfg.CollectionInterval)
+		collector, err := exchanges.NewCollector(exchangeMap, cfg.CollectionInterval)
 
 		if err != nil {
 			log.Error(err)
@@ -125,7 +127,7 @@ func main() {
 	log.Info("Goodbye")
 }
 
-func storeExchangeData(db *PgDb, resultChan chan []DataTick, quit chan struct{}, wg *sync.WaitGroup) {
+func storeExchangeData(db *postgres.PgDb, resultChan chan []exchanges.DataTick, quit chan struct{}, wg *sync.WaitGroup) {
 	for {
 		select {
 		case dataTick := <-resultChan:
@@ -134,7 +136,6 @@ func storeExchangeData(db *PgDb, resultChan chan []DataTick, quit chan struct{},
 				log.Errorf("Could not store exchange entry: %v", err)
 			}
 		case <-quit:
-			log.Debug("Retrieved quit signal")
 			wg.Done()
 			return
 		}

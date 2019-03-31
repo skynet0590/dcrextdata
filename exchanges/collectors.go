@@ -2,20 +2,22 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package exchanges
 
 import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/helpers"
 )
 
-type ExchangeCollector struct {
+type Collector struct {
 	exchanges []Exchange
 	period    int64
 }
 
-func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*ExchangeCollector, error) {
+func NewCollector(exchangeLasts map[string]int64, period int64) (*Collector, error) {
 	exchanges := make([]Exchange, 0, len(exchangeLasts))
 
 	for exchange, last := range exchangeLasts {
@@ -25,22 +27,22 @@ func NewExchangeCollector(exchangeLasts map[string]int64, period int64) (*Exchan
 			if err != nil {
 				return nil, err
 			}
-			lastStr := UnixTimeToString(ex.LastUpdateTime())
+			lastStr := helpers.UnixTimeToString(ex.LastUpdateTime())
 			if last == 0 {
 				lastStr = "never"
 			}
-			excLog.Infof("Starting exchange collector for %s, last collect time: %s", exchange, lastStr)
+			log.Infof("Starting exchange collector for %s, last collect time: %s", exchange, lastStr)
 			exchanges = append(exchanges, ex)
 		}
 	}
 
-	return &ExchangeCollector{
+	return &Collector{
 		exchanges: exchanges,
 		period:    period,
 	}, nil
 }
 
-func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) []error {
+func (ec *Collector) HistoricSync(data chan []DataTick) []error {
 	now := time.Now().Unix()
 	wg := new(sync.WaitGroup)
 	errs := make([]error, 0)
@@ -58,7 +60,7 @@ func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) []error {
 				errs = append(errs, err)
 				errMtx.Unlock()
 			} else {
-				excLog.Infof("Completed historic sync for %s", ex.Name())
+				log.Infof("Completed historic sync for %s", ex.Name())
 			}
 			wg.Done()
 		}(ex, errMtx, wg)
@@ -68,17 +70,17 @@ func (ec *ExchangeCollector) HistoricSync(data chan []DataTick) []error {
 	return errs
 }
 
-func (ec *ExchangeCollector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan struct{}) {
+func (ec *Collector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan struct{}) {
 	ticker := time.NewTicker(time.Duration(ec.period) * time.Second)
 	for {
 		select {
 		case <-ticker.C:
-			excLog.Trace("Triggering exchange collectors")
+			log.Trace("Triggering exchange collectors")
 			for _, ex := range ec.exchanges {
 				go ex.Collect(data)
 			}
 		case <-quit:
-			excLog.Infof("Stopping collector")
+			log.Infof("Stopping collector")
 			wg.Done()
 			return
 		}

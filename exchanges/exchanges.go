@@ -2,12 +2,14 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package exchanges
 
 import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/helpers"
 )
 
 const (
@@ -86,14 +88,14 @@ func (ex *BittrexExchange) Historic(data chan []DataTick) error { return ex.Coll
 func (ex *BittrexExchange) Collect(data chan []DataTick) error {
 	resp := new(bittrexAPIResponse)
 
-	requestUrl, err := addParams(ex.baseUrl, map[string]interface{}{
+	requestUrl, err := helpers.AddParams(ex.baseUrl, map[string]interface{}{
 		"marketName":   "BTC-DCR",
 		"tickInterval": bittrexIntervals[ex.period],
 	})
 	if err != nil {
 		return err
 	}
-	err = GetResponse(ex.client, requestUrl, resp)
+	err = helpers.GetResponse(ex.client, requestUrl, resp)
 
 	if err != nil {
 		return err
@@ -171,7 +173,7 @@ func (ex *PoloniexExchange) Historic(data chan []DataTick) error {
 
 		data <- resp
 		ex.lastUpdate = last
-		excLog.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
+		log.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
 		now = time.Now().Unix()
 	}
 
@@ -183,7 +185,7 @@ func (ex *PoloniexExchange) Historic(data chan []DataTick) error {
 
 	data <- resp
 	ex.lastUpdate = last
-	excLog.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
+	log.Debugf("Last update time is now: %s", time.Unix(last, 0).String())
 
 	return nil
 }
@@ -203,7 +205,7 @@ func (ex *PoloniexExchange) Collect(data chan []DataTick) error {
 func (ex *PoloniexExchange) fetch(start, end, period int64) ([]DataTick, int64, error) {
 	resp := new(poloniexAPIResponse)
 	//?command=returnChartData&currencyPair=BTC_DCR&start=%d&end=%d&period=%d
-	requestURL, err := addParams(ex.baseUrl, map[string]interface{}{
+	requestURL, err := helpers.AddParams(ex.baseUrl, map[string]interface{}{
 		"command":      "returnChartData",
 		"currencyPair": "BTC_DCR",
 		"start":        start,
@@ -215,7 +217,7 @@ func (ex *PoloniexExchange) fetch(start, end, period int64) ([]DataTick, int64, 
 
 		return nil, 0, err
 	}
-	err = GetResponse(ex.client, requestURL, resp)
+	err = helpers.GetResponse(ex.client, requestURL, resp)
 
 	res := []poloniexDataTick(*resp)
 	dataTicks := make([]DataTick, 0, len(res))
@@ -266,17 +268,17 @@ func (ex *BleutradeExchange) Historic(data chan []DataTick) error { return ex.Co
 func (ex *BleutradeExchange) Collect(data chan []DataTick) error {
 	resp := new(bleutradeAPIResponse)
 
-	requestUrl, err := addParams(ex.baseUrl, map[string]interface{}{
+	requestUrl, err := helpers.AddParams(ex.baseUrl, map[string]interface{}{
 		"market": "DCR_BTC",
 		"period": bleutradeIntervals[ex.period],
 	})
 	if err != nil {
 		return err
 	}
-	err = GetResponse(ex.client, requestUrl, resp)
+	err = helpers.GetResponse(ex.client, requestUrl, resp)
 
 	if err != nil {
-		excLog.Errorf("bleutrade: %v", err)
+		log.Errorf("bleutrade: %v", err)
 		return err
 	}
 
@@ -301,22 +303,22 @@ func (ex *BleutradeExchange) respToDataTicks(resp *bleutradeAPIResponse, start i
 		// conversion of types to match exchangeDataTick
 		high, err := strconv.ParseFloat(v.High, 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil
 		}
 		low, err := strconv.ParseFloat(v.Low, 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil
 		}
 		open, err := strconv.ParseFloat(v.Open, 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil
 		}
 		close, err := strconv.ParseFloat(v.Close, 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil
 		}
 
@@ -402,40 +404,40 @@ func (ex *BinanceExchange) Collect(data chan []DataTick) error {
 func (ex *BinanceExchange) fetch(start, end, period int64) ([]DataTick, int64, error) {
 	resp := new(binanceAPIResponse)
 	//?symbol=DCRBTC&interval=30m&limit=%d&startTime=%d
-	requestURL, err := addParams(ex.baseUrl, map[string]interface{}{
+	requestURL, err := helpers.AddParams(ex.baseUrl, map[string]interface{}{
 		"symbol":    "DCRBTC",
 		"startTime": start * 1000,
 		"endTime":   end * 1000,
 		"interval":  binanceIntervals[ex.period],
-		"limit": binanceVolumeLimit,
+		"limit":     binanceVolumeLimit,
 	})
 
 	if err != nil {
 		return nil, 0, err
 	}
-	err = GetResponse(ex.client, requestURL, resp)
+	err = helpers.GetResponse(ex.client, requestURL, resp)
 
 	res := binanceAPIResponse(*resp)
 	dataTicks := make([]DataTick, 0, len(res))
 	for _, j := range res {
 		high, err := strconv.ParseFloat(j[2].(string), 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil, 0, err
 		}
 		low, err := strconv.ParseFloat(j[3].(string), 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil, 0, err
 		}
 		open, err := strconv.ParseFloat(j[1].(string), 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil, 0, err
 		}
 		close, err := strconv.ParseFloat(j[4].(string), 64)
 		if err != nil {
-			excLog.Error("Failed to convert to float: ", err.Error())
+			log.Error("Failed to convert to float: ", err.Error())
 			return nil, 0, err
 		}
 

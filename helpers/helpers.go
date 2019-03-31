@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package helpers
 
 import (
 	"encoding/json"
@@ -25,12 +25,12 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 
 	for i := 1; i <= maxRetryAttempts; i++ {
 		res, err := client.Get(url)
-		requestsLog.Tracef("GET %s", url)
+		// log.Tracef("GET %s", url)
 		if err != nil {
 			if i == maxRetryAttempts {
 				return err
 			}
-			requestsLog.Warn(err)
+			// log.Warn(err)
 			if res != nil {
 				res.Body.Close()
 			}
@@ -50,7 +50,7 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 	return nil
 }
 
-func addParams(base string, params map[string]interface{}) (string, error) {
+func AddParams(base string, params map[string]interface{}) (string, error) {
 	var strBuilder strings.Builder
 
 	_, err := strBuilder.WriteString(base)

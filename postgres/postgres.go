@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package main
+package postgres
 
 import (
 	"database/sql"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -109,12 +110,12 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 }
 
 func (pg *PgDb) Close() error {
-	pqLog.Trace("Closing postgresql connection")
+	log.Trace("Closing postgresql connection")
 	return pg.db.Close()
 }
 
 func (pg *PgDb) dropTable(name string) error {
-	pqLog.Tracef("Dropping table %s", name)
+	log.Tracef("Dropping table %s", name)
 	_, err := pg.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s;`, name))
 	return err
 }
@@ -132,7 +133,7 @@ func (pg *PgDb) DropAllTables() error {
 // Exchange methods
 
 //
-func (pg *PgDb) AddExchangeData(data []DataTick) error {
+func (pg *PgDb) AddExchangeData(data []exchanges.DataTick) error {
 	added := 0
 	for _, v := range data {
 		_, err := pg.db.Exec(InsertExchangeDataTick, v.High, v.Low, v.Open, v.Close, v.Time, v.Exchange)
@@ -144,11 +145,11 @@ func (pg *PgDb) AddExchangeData(data []DataTick) error {
 		added++
 	}
 	if len(data) == 1 {
-		pqLog.Infof("Added %d entry from %s (%s)", added, data[0].Exchange,
+		log.Infof("Added %d entry from %s (%s)", added, data[0].Exchange,
 			UnixTimeToString(data[0].Time))
 	} else {
 		last := data[len(data)-1]
-		pqLog.Infof("Added %d entries from %s (%s to %s)", added, last.Exchange,
+		log.Infof("Added %d entries from %s (%s to %s)", added, last.Exchange,
 			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
 	}
 
@@ -162,7 +163,7 @@ func (pg *PgDb) LastExchangeEntryTime(exchange string) (time int64) {
 }
 
 func (pg *PgDb) CreateExchangeDataTable() error {
-	pqLog.Trace("Creating exchange data table")
+	log.Trace("Creating exchange data table")
 	_, err := pg.db.Exec(CreateExchangeDataTable)
 	return err
 }
