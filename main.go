@@ -49,17 +49,6 @@ func main() {
 		return
 	}
 
-	if cfg.Reset {
-		log.Info("Dropping tables")
-		err = db.DropAllTables()
-		if err != nil {
-			db.Close()
-			log.Error("Could not drop tables: ", err)
-			return
-		}
-		log.Info("Tables dropped")
-	}
-
 	resultChan := make(chan []exchanges.DataTick)
 
 	quit := make(chan struct{})
@@ -86,7 +75,13 @@ func main() {
 		}
 	}
 
+	if cfg.ExchangesEnabled { // Temp
+		log.Warn("Exchange collection temporarily disabled")
+		cfg.ExchangesEnabled = false
+	}
+
 	if cfg.ExchangesEnabled {
+
 		if exists := db.ExchangeDataTableExits(); !exists {
 			if err := db.CreateExchangeDataTable(); err != nil {
 				log.Error("Error creating exchange data table: ", err)

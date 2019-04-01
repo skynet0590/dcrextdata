@@ -12,46 +12,16 @@ import (
 	"time"
 )
 
-const requestURL = "https://api.decred.org/?c=gsd"
-
-type Response map[string]*ResposeData
-
-type ResposeData struct {
-	APIEnabled           bool    `json:"APIEnabled"`
-	APIVersionsSupported []int   `json:"APIVersionsSupported"`
-	Network              string  `json:"Network"`
-	URL                  string  `json:"URL"`
-	Launched             int     `json:"Launched"`
-	LastUpdated          int     `json:"LastUpdated"`
-	Immature             int     `json:"Immature"`
-	Live                 int     `json:"Live"`
-	Voted                int     `json:"Voted"`
-	Missed               int     `json:"Missed"`
-	PoolFees             float64 `json:"PoolFees"`
-	ProportionLive       float64 `json:"ProportionLive"`
-	ProportionMissed     float64 `json:"ProportionMissed"`
-	UserCount            int     `json:"UserCount"`
-	UserCountActive      int     `json:"UserCountActive"`
-}
-
-type DataStore interface {
-	StoreVSP(time.Time, Response) error
-	CreateVSPTables() error
-}
-type Collector struct {
-	client    *http.Client
-	period    time.Duration
-	request   *http.Request
-	dataStore DataStore
-}
+const (
+	requestURL = "https://api.decred.org/?c=gsd"
+	retryLimit = 3
+)
 
 func NewVspCollector(period int64, store DataStore) (*Collector, error) {
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	err = store.CreateVSPTables()
 
 	if err != nil {
 		return nil, err
@@ -82,7 +52,7 @@ func (vsp *Collector) fetch(response interface{}) error {
 
 func (vsp *Collector) Run(quit chan struct{}, wg *sync.WaitGroup) {
 	if err := vsp.CollectAndStore(time.Now()); err != nil {
-		log.Error("Could not start collection: %v", err)
+		log.Errorf("Could not start collection: %v", err)
 	}
 
 	ticker := time.NewTicker(vsp.period * time.Second)
@@ -109,12 +79,26 @@ func (vsp *Collector) Run(quit chan struct{}, wg *sync.WaitGroup) {
 func (vsp *Collector) CollectAndStore(t time.Time) error {
 	resp := new(Response)
 	err := vsp.fetch(resp)
-	if err != nil {
-		return err
+	for retry := 0; err != nil; retry++ {
+		if retry == retryLimit {
+			return err
+		}
+		log.Warn(err)
+		err = vsp.fetch(resp)
 	}
-	err = vsp.dataStore.StoreVSP(t, *resp)
-	if err != nil {
-		return err
+
+	if resp != nil {
+		errs := vsp.dataStore.StoreVSPs(*resp)
+		for _, err = range errs {
+			if err != nil {
+				if e, ok := err.(PoolTickTimeExistsError); ok {
+					log.Trace(e)
+				} else {
+					log.Error(err)
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
