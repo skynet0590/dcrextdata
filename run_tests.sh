@@ -2,8 +2,10 @@
 
 # usage:
 # ./run_tests.sh                         # local, go 1.11
+# docker/podman dosn't work yet because I have't figured out how to make
+# and upload a dcrextdata docker image so... don't try that
 # ./run_tests.sh docker                  # docker, go 1.11
-# ./run_tests.sh podman                  # podman, go 1.11
+# ./run_tests.sh podman                  # podman, go 1.11 
 
 set -ex
 
@@ -27,9 +29,13 @@ testrepo () {
   export GO111MODULE=on
 
   go version
+  
 
   # Test application install
   go build
+
+  # Get linter
+  go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
   env GORACE='halt_on_error=1' go test -v -race ./...
 
@@ -44,20 +50,20 @@ testrepo () {
 
 }
 
-DOCKER=
-[[ "$1" == "docker" || "$1" == "podman" ]] && DOCKER=$1
-if [ ! "$DOCKER" ]; then
-    testrepo
-    exit
-fi
+testrepo
+# DOCKER=
+# [[ "$1" == "docker" || "$1" == "podman" ]] && DOCKER=$1
+# if [ ! "$DOCKER" ]; then
+#     testrepo
+#     exit
+# fi
 
-# Don't really know what other image to use yet
-DOCKER_IMAGE_TAG=dcrdata-golang-builder-$GOVERSION
-$DOCKER pull decred/$DOCKER_IMAGE_TAG
+# DOCKER_IMAGE_TAG=dcrdata-golang-builder-$GOVERSION
+# $DOCKER pull decred/$DOCKER_IMAGE_TAG
 
-$DOCKER run --rm -it -v $(pwd):/src decred/$DOCKER_IMAGE_TAG /bin/bash -c "\
-  rsync -ra --include-from=<(git --git-dir=/src/.git ls-files) \
-  --filter=':- .gitignore' \
-  /src/ /go/src/github.com/raedahgroup/$REPO/ && \
-  cd github.com/raedahgroup/$REPO/ && \
-  env GOVERSION=$GOVERSION GO111MODULE=on bash run_tests.sh"
+# $DOCKER run --rm -it -v $(pwd):/src decred/$DOCKER_IMAGE_TAG /bin/bash -c "\
+#   rsync -ra --include-from=<(git --git-dir=/src/.git ls-files) \
+#   --filter=':- .gitignore' \
+#   /src/ /go/src/github.com/raedahgroup/$REPO/ && \
+#   cd github.com/raedahgroup/$REPO/ && \
+#   env GOVERSION=$GOVERSION GO111MODULE=on bash run_tests.sh"

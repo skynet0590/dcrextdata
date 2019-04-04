@@ -1,6 +1,10 @@
-# Dcrextdata
-- Maintains an up-to-date database of ticker data from various dcr exchanges
-- Collects and store mining pool stats
+# dcrextdata
+
+[![Build Status](https://img.shields.io/travis/decred/dcrdata.svg)](https://travis-ci.org/raedahgroup/dcrextdata)
+[![Go Report Card](https://goreportcard.com/badge/github.com/decred/dcrdata)](https://goreportcard.com/report/github.com/raedahgroup/dcrextdata)
+[![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
+
+    dcrextdata is a standalone program for collecting additional info about the decred cryptocurrency like ticker and orderbook data various exchnages. 
 
 ## Requirements
 - [Go](golang.org/dl) 1.11
