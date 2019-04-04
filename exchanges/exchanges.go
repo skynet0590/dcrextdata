@@ -375,7 +375,7 @@ func (ex *BinanceExchange) Historic(data chan []DataTick) error {
 	for (now-ex.lastUpdate)/ex.period >= binanceVolumeLimit {
 		end := ex.lastUpdate + binanceVolumeLimit*ex.period
 
-		resp, last, err := ex.fetch(ex.lastUpdate, end, ex.period)
+		resp, last, err := ex.fetch(ex.lastUpdate, end)
 
 		if err != nil {
 			return err
@@ -390,7 +390,7 @@ func (ex *BinanceExchange) Historic(data chan []DataTick) error {
 }
 
 func (ex *BinanceExchange) Collect(data chan []DataTick) error {
-	resp, last, err := ex.fetch(ex.lastUpdate, ex.lastUpdate+binanceVolumeLimit*ex.period, ex.period)
+	resp, last, err := ex.fetch(ex.lastUpdate, ex.lastUpdate+binanceVolumeLimit*ex.period)
 
 	if err != nil {
 		return err
@@ -401,7 +401,7 @@ func (ex *BinanceExchange) Collect(data chan []DataTick) error {
 	return nil
 }
 
-func (ex *BinanceExchange) fetch(start, end, period int64) ([]DataTick, int64, error) {
+func (ex *BinanceExchange) fetch(start, end int64) ([]DataTick, int64, error) {
 	resp := new(binanceAPIResponse)
 	//?symbol=DCRBTC&interval=30m&limit=%d&startTime=%d
 	requestURL, err := helpers.AddParams(ex.baseUrl, map[string]interface{}{
@@ -417,7 +417,7 @@ func (ex *BinanceExchange) fetch(start, end, period int64) ([]DataTick, int64, e
 	}
 	err = helpers.GetResponse(ex.client, requestURL, resp)
 
-	res := binanceAPIResponse(*resp)
+	res := *resp
 	dataTicks := make([]DataTick, 0, len(res))
 	for _, j := range res {
 		high, err := strconv.ParseFloat(j[2].(string), 64)

@@ -77,7 +77,12 @@ func (ec *Collector) Collect(data chan []DataTick, wg *sync.WaitGroup, quit chan
 		case <-ticker.C:
 			log.Trace("Triggering exchange collectors")
 			for _, ex := range ec.exchanges {
-				go ex.Collect(data)
+				go func(exh Exchange) {
+					err := exh.Collect(data)
+					if err != nil {
+						log.Error(err)
+					}
+				}(ex)
 			}
 		case <-quit:
 			log.Infof("Stopping collector")

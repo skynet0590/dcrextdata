@@ -17,8 +17,8 @@ import (
 const (
 	defaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
-	defaultLogDirname     = "logs"
-	defaultLogLevel       = "info"
+	// defaultLogDirname     = "logs"
+	defaultLogLevel = "info"
 )
 
 type config struct {

@@ -112,11 +112,9 @@ func (vsp *Collector) CollectAndStore(t time.Time) error {
 	if err != nil {
 		return err
 	}
-	if resp != nil {
-		err := vsp.dataStore.StoreVSP(t, *resp)
-		if err != nil {
-			return err
-		}
+	err = vsp.dataStore.StoreVSP(t, *resp)
+	if err != nil {
+		return err
 	}
 	return nil
 }
