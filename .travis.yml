@@ -16,9 +16,5 @@ env:
 
 install: true
 
-cache:
-  directories:
-    - ~/.cache
-
 script:
-  - ./run_tests.sh docker
+  - ./run_tests.sh
