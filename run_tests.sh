@@ -27,9 +27,13 @@ testrepo () {
   export GO111MODULE=on
 
   go version
+  
 
   # Test application install
   go build
+
+  # Get linter
+  go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
   env GORACE='halt_on_error=1' go test -v -race ./...
 
