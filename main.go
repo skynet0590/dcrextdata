@@ -37,7 +37,12 @@ func main() {
 		version.Version(), runtime.Version())
 
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
-	defer db.Close()
+	defer func(db *postgres.PgDb) {
+		err := db.Close()
+		if err != nil {
+			log.Error("Could not close database connection: %v", err)
+		}
+	}(db)
 
 	if err != nil {
 		log.Error(err)
