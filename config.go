@@ -40,6 +40,11 @@ type config struct {
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
+	// PoW collector
+	PowEnabled  bool     `long:"powON" description:"Enables collection of data from pows"`
+	Pows        []string `long:"pow" description:"pows to be tracked"`
+	PowInterval int64    `long:"powI" description:"Collection interval for Pow"`
+
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
