@@ -41,6 +41,11 @@ type config struct {
 	ExchangesEnabled   bool     `long:"exchangesON" description:"Enables collection of ticker data from exchanges"`
 	Exchanges          []string `long:"exchange" description:"Exchange to be tracked"`
 
+	// PoW collector
+	PowEnabled  bool     `long:"powON" description:"Enables collection of data from pows"`
+	Pows        []string `long:"pow" description:"pows to be tracked"`
+	PowInterval int64    `long:"powI" description:"Collection interval for Pow"`
+
 	// VSP
 	VSPEnabled  bool  `long:"vsp" description:"Enables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspI" description:"Collection interval for vsp"`

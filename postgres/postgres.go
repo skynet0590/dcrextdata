@@ -12,6 +12,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -73,6 +74,25 @@ const (
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12);`
 
 	selectIDFromVSP = `SELECT id FROM vsp WHERE name=$1 LIMIT 1;`
+
+	// PoW table
+	CreatePowDataTable = `CREATE TABLE IF NOT EXISTS pow_data (
+		time INT,
+		network_hashrate INT,
+		pool_hashrate FLOAT8,
+		workers INT,
+		network_difficulty FLOAT8,
+		coin_price VARCHAR(25),
+		btc_price VARCHAR(25),
+		source VARCHAR(25),
+		PRIMARY KEY (time, source)
+	);`
+
+	InsertPowData = `INSERT INTO pow_data (
+		time, network_hashrate, pool_hashrate, workers, network_difficulty, coin_price, btc_price, source)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
+	LastPowEntryTime = `SELECT time FROM pow_data WHERE pow=$1 ORDER BY time DESC LIMIT 1`
 )
 
 type PgDb struct {
@@ -125,6 +145,9 @@ func (pg *PgDb) DropAllTables() error {
 		return err
 	}
 	if err := pg.dropTable("vsp"); err != nil {
+		return err
+	}
+	if err := pg.dropTable("pow_data"); err != err {
 		return err
 	}
 	return pg.dropTable("exchange_data")
@@ -263,3 +286,45 @@ func (pg *PgDb) selectVSPID(name string) (id int, err error) {
 // func (pg *PgDb) addVSPINFO(data vsp.ResponseData) error {
 
 // }
+
+// PoW
+
+//
+func (pg *PgDb) AddPowData(data []pow.PowData) error {
+	added := 0
+	for _, d := range data {
+		_, err := pg.db.Exec(InsertPowData, d.Time, d.NetworkHashrate, d.PoolHashrate, d.Workers, d.NetworkDifficulty, d.CoinPrice, d.BtcPrice, d.Source)
+		if err != nil {
+			if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+				return err
+			}
+		}
+		added++
+	}
+	if len(data) == 1 {
+		log.Infof("Added %d entry from %s (%s)", added, data[0].Source,
+			UnixTimeToString(data[0].Time))
+	} else {
+		last := data[len(data)-1]
+		log.Infof("Added %d entries from %s (%s to %s)", added, last.Source,
+			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
+	}
+
+	return nil
+}
+
+func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
+	rows := pg.db.QueryRow(LastPowEntryTime, source)
+	_ = rows.Scan(&time)
+	return
+}
+
+func (pg *PgDb) CreatePowDataTable() error {
+	_, err := pg.db.Exec(CreatePowDataTable)
+	return err
+}
+
+func (pg *PgDb) PowDataTableExits() bool {
+	exists, _ := pg.tableExists("pow_data")
+	return exists
+}

@@ -11,6 +11,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/raedahgroup/dcrextdata/pow"
+
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/version"
@@ -84,6 +86,29 @@ func main() {
 		} else {
 			log.Error(err)
 		}
+	}
+
+	if cfg.PowEnabled {
+		if exists := db.PowDataTableExits(); !exists {
+			if err := db.CreatePowDataTable(); err != nil {
+				log.Error("Error creating PoW data table: ", err)
+				return
+			}
+		}
+		wg.Add(1)
+		log.Info("Starting PoW data collection")
+		powMap := make(map[string]int64)
+		for _, pow := range cfg.Pows {
+			powMap[pow] = db.LastPowEntryTime(pow)
+		}
+		powCollector, err := pow.NewCollector(powMap, cfg.PowInterval, db)
+		if err == nil {
+			wg.Add(1)
+			go powCollector.Collect(quit, wg)
+		} else {
+			log.Error(err)
+		}
+
 	}
 
 	if cfg.ExchangesEnabled {
