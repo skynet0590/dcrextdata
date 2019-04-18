@@ -12,6 +12,7 @@ import (
 	"github.com/jrick/logrotate/rotator"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
+	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -38,6 +39,7 @@ var (
 	excLog     = backendLog.Logger("EXCH")
 	pqLog      = backendLog.Logger("PSQL")
 	vspLog     = backendLog.Logger("VSPC")
+	powLog     = backendLog.Logger("POWL")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -46,9 +48,11 @@ var subsystemLoggers = map[string]slog.Logger{
 	"EXCH": excLog,
 	"PSQL": pqLog,
 	"VSPC": vspLog,
+	"POWL": powLog,
 }
 
 func init() {
+	pow.UseLogger(powLog)
 	exchanges.UseLogger(excLog)
 	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)

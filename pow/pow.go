@@ -20,7 +20,8 @@ const (
 )
 
 var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
-	Luxor: NewLuxor,
+	Luxor:  NewLuxor,
+	F2pool: NewF2pool,
 }
 
 type Pow interface {
@@ -94,3 +95,59 @@ func (LuxorPow) fetch(res *luxorAPIResponse, start int64) []PowData {
 }
 
 func (*LuxorPow) Name() string { return Luxor }
+
+type F2poolPow struct {
+	CommonInfo
+}
+
+func NewF2pool(client *http.Client, lastUpdate int64) (Pow, error) {
+	if client == nil {
+		return nil, new(NilClientError)
+	}
+	return &F2poolPow{
+		CommonInfo: CommonInfo{
+			client:     client,
+			lastUpdate: lastUpdate,
+			baseUrl:    F2poolUrl,
+		},
+	}, nil
+}
+
+func (in *F2poolPow) Collect() ([]PowData, error) {
+	res := new(f2poolAPIResponse)
+	err := helpers.GetResponse(in.client, F2poolUrl, res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := in.fetch(res, in.lastUpdate)
+	in.lastUpdate = result[len(result)-1].Time
+
+	return result, nil
+}
+
+func (F2poolPow) fetch(res *f2poolAPIResponse, start int64) []PowData {
+	data := make([]PowData, 0, len(res.Hashrate))
+	for k, v := range res.Hashrate {
+		t, _ := time.Parse(time.RFC3339, k)
+
+		if t.Unix() < start {
+			continue
+		}
+
+		data = append(data, PowData{
+			Time:              t.Unix(),
+			NetworkHashrate:   0,
+			PoolHashrate:      v,
+			Workers:           0,
+			NetworkDifficulty: 0,
+			CoinPrice:         "",
+			BtcPrice:          "",
+			Source:            "f2pool",
+		})
+	}
+	return data
+}
+
+func (*F2poolPow) Name() string { return F2pool }
