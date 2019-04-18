@@ -29,11 +29,6 @@ func NewCollector(powLasts map[string]int64, period int64, store PowDataStore) (
 	for pow, last := range powLasts {
 		if contructor, ok := PowConstructors[pow]; ok {
 
-			err := store.CreatePowDataTable()
-			if err != nil {
-				return nil, err
-			}
-
 			in, err := contructor(&http.Client{Timeout: 300 * time.Second}, last) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err

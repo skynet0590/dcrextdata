@@ -79,7 +79,7 @@ const (
 	CreatePowDataTable = `CREATE TABLE IF NOT EXISTS pow_data (
 		time INT,
 		network_hashrate INT,
-		pool_hashrate FLOAT8,
+		pool_hashrate INT8,
 		workers INT,
 		network_difficulty FLOAT8,
 		coin_price VARCHAR(25),
@@ -92,7 +92,7 @@ const (
 		time, network_hashrate, pool_hashrate, workers, network_difficulty, coin_price, btc_price, source)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
-	LastPowEntryTime = `SELECT time FROM pow_data WHERE pow=$1 ORDER BY time DESC LIMIT 1`
+	LastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
 )
 
 type PgDb struct {
@@ -147,7 +147,7 @@ func (pg *PgDb) DropAllTables() error {
 	if err := pg.dropTable("vsp"); err != nil {
 		return err
 	}
-	if err := pg.dropTable("pow_data"); err != err {
+	if err := pg.dropTable("pow_data"); err != nil {
 		return err
 	}
 	return pg.dropTable("exchange_data")
