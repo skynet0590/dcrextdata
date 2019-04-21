@@ -4,6 +4,7 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -22,28 +23,31 @@ import (
 
 // Exchange is an object representing the database table.
 type Exchange struct {
-	ID          int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	URL         string    `boil:"url" json:"url" toml:"url" yaml:"url"`
-	StartTime   time.Time `boil:"start_time" json:"start_time" toml:"start_time" yaml:"start_time"`
-	LastUpdated time.Time `boil:"last_updated" json:"last_updated" toml:"last_updated" yaml:"last_updated"`
+	ID                   int    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name                 string `boil:"name" json:"name" toml:"name" yaml:"name"`
+	URL                  string `boil:"url" json:"url" toml:"url" yaml:"url"`
+	TickShortInterval    int    `boil:"tick_short_interval" json:"tick_short_interval" toml:"tick_short_interval" yaml:"tick_short_interval"`
+	TickLongInterval     int    `boil:"tick_long_interval" json:"tick_long_interval" toml:"tick_long_interval" yaml:"tick_long_interval"`
+	TickHistoricInterval int    `boil:"tick_historic_interval" json:"tick_historic_interval" toml:"tick_historic_interval" yaml:"tick_historic_interval"`
 
 	R *exchangeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L exchangeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ExchangeColumns = struct {
-	ID          string
-	Name        string
-	URL         string
-	StartTime   string
-	LastUpdated string
+	ID                   string
+	Name                 string
+	URL                  string
+	TickShortInterval    string
+	TickLongInterval     string
+	TickHistoricInterval string
 }{
-	ID:          "id",
-	Name:        "name",
-	URL:         "url",
-	StartTime:   "start_time",
-	LastUpdated: "last_updated",
+	ID:                   "id",
+	Name:                 "name",
+	URL:                  "url",
+	TickShortInterval:    "tick_short_interval",
+	TickLongInterval:     "tick_long_interval",
+	TickHistoricInterval: "tick_historic_interval",
 }
 
 // Generated where
@@ -66,39 +70,20 @@ func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.f
 func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
-type whereHelpertime_Time struct{ field string }
-
-func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var ExchangeWhere = struct {
-	ID          whereHelperint
-	Name        whereHelperstring
-	URL         whereHelperstring
-	StartTime   whereHelpertime_Time
-	LastUpdated whereHelpertime_Time
+	ID                   whereHelperint
+	Name                 whereHelperstring
+	URL                  whereHelperstring
+	TickShortInterval    whereHelperint
+	TickLongInterval     whereHelperint
+	TickHistoricInterval whereHelperint
 }{
-	ID:          whereHelperint{field: `id`},
-	Name:        whereHelperstring{field: `name`},
-	URL:         whereHelperstring{field: `url`},
-	StartTime:   whereHelpertime_Time{field: `start_time`},
-	LastUpdated: whereHelpertime_Time{field: `last_updated`},
+	ID:                   whereHelperint{field: `id`},
+	Name:                 whereHelperstring{field: `name`},
+	URL:                  whereHelperstring{field: `url`},
+	TickShortInterval:    whereHelperint{field: `tick_short_interval`},
+	TickLongInterval:     whereHelperint{field: `tick_long_interval`},
+	TickHistoricInterval: whereHelperint{field: `tick_historic_interval`},
 }
 
 // ExchangeRels is where relationship names are stored.
@@ -122,8 +107,8 @@ func (*exchangeR) NewStruct() *exchangeR {
 type exchangeL struct{}
 
 var (
-	exchangeColumns               = []string{"id", "name", "url", "start_time", "last_updated"}
-	exchangeColumnsWithoutDefault = []string{"name", "url", "start_time", "last_updated"}
+	exchangeColumns               = []string{"id", "name", "url", "tick_short_interval", "tick_long_interval", "tick_historic_interval"}
+	exchangeColumnsWithoutDefault = []string{"name", "url", "tick_short_interval", "tick_long_interval", "tick_historic_interval"}
 	exchangeColumnsWithDefault    = []string{"id"}
 	exchangePrimaryKeyColumns     = []string{"id"}
 )
@@ -159,18 +144,13 @@ var (
 	_ = qmhelper.Where
 )
 
-// OneG returns a single exchange record from the query using the global executor.
-func (q exchangeQuery) OneG() (*Exchange, error) {
-	return q.One(boil.GetDB())
-}
-
 // One returns a single exchange record from the query.
-func (q exchangeQuery) One(exec boil.Executor) (*Exchange, error) {
+func (q exchangeQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Exchange, error) {
 	o := &Exchange{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(nil, exec, o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -181,16 +161,11 @@ func (q exchangeQuery) One(exec boil.Executor) (*Exchange, error) {
 	return o, nil
 }
 
-// AllG returns all Exchange records from the query using the global executor.
-func (q exchangeQuery) AllG() (ExchangeSlice, error) {
-	return q.All(boil.GetDB())
-}
-
 // All returns all Exchange records from the query.
-func (q exchangeQuery) All(exec boil.Executor) (ExchangeSlice, error) {
+func (q exchangeQuery) All(ctx context.Context, exec boil.ContextExecutor) (ExchangeSlice, error) {
 	var o []*Exchange
 
-	err := q.Bind(nil, exec, &o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to Exchange slice")
 	}
@@ -198,19 +173,14 @@ func (q exchangeQuery) All(exec boil.Executor) (ExchangeSlice, error) {
 	return o, nil
 }
 
-// CountG returns the count of all Exchange records in the query, and panics on error.
-func (q exchangeQuery) CountG() (int64, error) {
-	return q.Count(boil.GetDB())
-}
-
 // Count returns the count of all Exchange records in the query.
-func (q exchangeQuery) Count(exec boil.Executor) (int64, error) {
+func (q exchangeQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count exchange rows")
 	}
@@ -218,20 +188,15 @@ func (q exchangeQuery) Count(exec boil.Executor) (int64, error) {
 	return count, nil
 }
 
-// ExistsG checks if the row exists in the table, and panics on error.
-func (q exchangeQuery) ExistsG() (bool, error) {
-	return q.Exists(boil.GetDB())
-}
-
 // Exists checks if the row exists in the table.
-func (q exchangeQuery) Exists(exec boil.Executor) (bool, error) {
+func (q exchangeQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if exchange exists")
 	}
@@ -262,7 +227,7 @@ func (o *Exchange) ExchangeTicks(mods ...qm.QueryMod) exchangeTickQuery {
 
 // LoadExchangeTicks allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (exchangeL) LoadExchangeTicks(e boil.Executor, singular bool, maybeExchange interface{}, mods queries.Applicator) error {
+func (exchangeL) LoadExchangeTicks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeExchange interface{}, mods queries.Applicator) error {
 	var slice []*Exchange
 	var object *Exchange
 
@@ -286,7 +251,7 @@ func (exchangeL) LoadExchangeTicks(e boil.Executor, singular bool, maybeExchange
 			}
 
 			for _, a := range args {
-				if queries.Equal(a, obj.ID) {
+				if a == obj.ID {
 					continue Outer
 				}
 			}
@@ -304,7 +269,7 @@ func (exchangeL) LoadExchangeTicks(e boil.Executor, singular bool, maybeExchange
 		mods.Apply(query)
 	}
 
-	results, err := query.Query(e)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load exchange_tick")
 	}
@@ -334,7 +299,7 @@ func (exchangeL) LoadExchangeTicks(e boil.Executor, singular bool, maybeExchange
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if queries.Equal(local.ID, foreign.ExchangeID) {
+			if local.ID == foreign.ExchangeID {
 				local.R.ExchangeTicks = append(local.R.ExchangeTicks, foreign)
 				if foreign.R == nil {
 					foreign.R = &exchangeTickR{}
@@ -348,25 +313,16 @@ func (exchangeL) LoadExchangeTicks(e boil.Executor, singular bool, maybeExchange
 	return nil
 }
 
-// AddExchangeTicksG adds the given related objects to the existing relationships
-// of the exchange, optionally inserting them as new records.
-// Appends related to o.R.ExchangeTicks.
-// Sets related.R.Exchange appropriately.
-// Uses the global database handle.
-func (o *Exchange) AddExchangeTicksG(insert bool, related ...*ExchangeTick) error {
-	return o.AddExchangeTicks(boil.GetDB(), insert, related...)
-}
-
 // AddExchangeTicks adds the given related objects to the existing relationships
 // of the exchange, optionally inserting them as new records.
 // Appends related to o.R.ExchangeTicks.
 // Sets related.R.Exchange appropriately.
-func (o *Exchange) AddExchangeTicks(exec boil.Executor, insert bool, related ...*ExchangeTick) error {
+func (o *Exchange) AddExchangeTicks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ExchangeTick) error {
 	var err error
 	for _, rel := range related {
 		if insert {
-			queries.Assign(&rel.ExchangeID, o.ID)
-			if err = rel.Insert(exec, boil.Infer()); err != nil {
+			rel.ExchangeID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -382,11 +338,11 @@ func (o *Exchange) AddExchangeTicks(exec boil.Executor, insert bool, related ...
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			queries.Assign(&rel.ExchangeID, o.ID)
+			rel.ExchangeID = o.ID
 		}
 	}
 
@@ -410,109 +366,15 @@ func (o *Exchange) AddExchangeTicks(exec boil.Executor, insert bool, related ...
 	return nil
 }
 
-// SetExchangeTicksG removes all previously related items of the
-// exchange replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Exchange's ExchangeTicks accordingly.
-// Replaces o.R.ExchangeTicks with related.
-// Sets related.R.Exchange's ExchangeTicks accordingly.
-// Uses the global database handle.
-func (o *Exchange) SetExchangeTicksG(insert bool, related ...*ExchangeTick) error {
-	return o.SetExchangeTicks(boil.GetDB(), insert, related...)
-}
-
-// SetExchangeTicks removes all previously related items of the
-// exchange replacing them completely with the passed
-// in related items, optionally inserting them as new records.
-// Sets o.R.Exchange's ExchangeTicks accordingly.
-// Replaces o.R.ExchangeTicks with related.
-// Sets related.R.Exchange's ExchangeTicks accordingly.
-func (o *Exchange) SetExchangeTicks(exec boil.Executor, insert bool, related ...*ExchangeTick) error {
-	query := "update \"exchange_tick\" set \"exchange_id\" = null where \"exchange_id\" = $1"
-	values := []interface{}{o.ID}
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, query)
-		fmt.Fprintln(boil.DebugWriter, values)
-	}
-
-	_, err := exec.Exec(query, values...)
-	if err != nil {
-		return errors.Wrap(err, "failed to remove relationships before set")
-	}
-
-	if o.R != nil {
-		for _, rel := range o.R.ExchangeTicks {
-			queries.SetScanner(&rel.ExchangeID, nil)
-			if rel.R == nil {
-				continue
-			}
-
-			rel.R.Exchange = nil
-		}
-
-		o.R.ExchangeTicks = nil
-	}
-	return o.AddExchangeTicks(exec, insert, related...)
-}
-
-// RemoveExchangeTicksG relationships from objects passed in.
-// Removes related items from R.ExchangeTicks (uses pointer comparison, removal does not keep order)
-// Sets related.R.Exchange.
-// Uses the global database handle.
-func (o *Exchange) RemoveExchangeTicksG(related ...*ExchangeTick) error {
-	return o.RemoveExchangeTicks(boil.GetDB(), related...)
-}
-
-// RemoveExchangeTicks relationships from objects passed in.
-// Removes related items from R.ExchangeTicks (uses pointer comparison, removal does not keep order)
-// Sets related.R.Exchange.
-func (o *Exchange) RemoveExchangeTicks(exec boil.Executor, related ...*ExchangeTick) error {
-	var err error
-	for _, rel := range related {
-		queries.SetScanner(&rel.ExchangeID, nil)
-		if rel.R != nil {
-			rel.R.Exchange = nil
-		}
-		if _, err = rel.Update(exec, boil.Whitelist("exchange_id")); err != nil {
-			return err
-		}
-	}
-	if o.R == nil {
-		return nil
-	}
-
-	for _, rel := range related {
-		for i, ri := range o.R.ExchangeTicks {
-			if rel != ri {
-				continue
-			}
-
-			ln := len(o.R.ExchangeTicks)
-			if ln > 1 && i < ln-1 {
-				o.R.ExchangeTicks[i] = o.R.ExchangeTicks[ln-1]
-			}
-			o.R.ExchangeTicks = o.R.ExchangeTicks[:ln-1]
-			break
-		}
-	}
-
-	return nil
-}
-
 // Exchanges retrieves all the records using an executor.
 func Exchanges(mods ...qm.QueryMod) exchangeQuery {
 	mods = append(mods, qm.From("\"exchange\""))
 	return exchangeQuery{NewQuery(mods...)}
 }
 
-// FindExchangeG retrieves a single record by ID.
-func FindExchangeG(iD int, selectCols ...string) (*Exchange, error) {
-	return FindExchange(boil.GetDB(), iD, selectCols...)
-}
-
 // FindExchange retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindExchange(exec boil.Executor, iD int, selectCols ...string) (*Exchange, error) {
+func FindExchange(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Exchange, error) {
 	exchangeObj := &Exchange{}
 
 	sel := "*"
@@ -525,7 +387,7 @@ func FindExchange(exec boil.Executor, iD int, selectCols ...string) (*Exchange, 
 
 	q := queries.Raw(query, iD)
 
-	err := q.Bind(nil, exec, exchangeObj)
+	err := q.Bind(ctx, exec, exchangeObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -536,14 +398,9 @@ func FindExchange(exec boil.Executor, iD int, selectCols ...string) (*Exchange, 
 	return exchangeObj, nil
 }
 
-// InsertG a single record. See Insert for whitelist behavior description.
-func (o *Exchange) InsertG(columns boil.Columns) error {
-	return o.Insert(boil.GetDB(), columns)
-}
-
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *Exchange) Insert(exec boil.Executor, columns boil.Columns) error {
+func (o *Exchange) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no exchange provided for insertion")
 	}
@@ -597,9 +454,9 @@ func (o *Exchange) Insert(exec boil.Executor, columns boil.Columns) error {
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -615,16 +472,10 @@ func (o *Exchange) Insert(exec boil.Executor, columns boil.Columns) error {
 	return nil
 }
 
-// UpdateG a single Exchange record using the global executor.
-// See Update for more documentation.
-func (o *Exchange) UpdateG(columns boil.Columns) (int64, error) {
-	return o.Update(boil.GetDB(), columns)
-}
-
 // Update uses an executor to update the Exchange.
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
-func (o *Exchange) Update(exec boil.Executor, columns boil.Columns) (int64, error) {
+func (o *Exchange) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
 	key := makeCacheKey(columns, nil)
 	exchangeUpdateCacheMut.RLock()
@@ -659,7 +510,7 @@ func (o *Exchange) Update(exec boil.Executor, columns boil.Columns) (int64, erro
 	}
 
 	var result sql.Result
-	result, err = exec.Exec(cache.query, values...)
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update exchange row")
 	}
@@ -678,16 +529,11 @@ func (o *Exchange) Update(exec boil.Executor, columns boil.Columns) (int64, erro
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (q exchangeQuery) UpdateAllG(cols M) (int64, error) {
-	return q.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values.
-func (q exchangeQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (q exchangeQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all for exchange")
 	}
@@ -700,13 +546,8 @@ func (q exchangeQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (o ExchangeSlice) UpdateAllG(cols M) (int64, error) {
-	return o.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o ExchangeSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (o ExchangeSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
 		return 0, nil
@@ -741,7 +582,7 @@ func (o ExchangeSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all in exchange slice")
 	}
@@ -753,14 +594,9 @@ func (o ExchangeSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *Exchange) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
-}
-
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Exchange) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Exchange) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no exchange provided for upsert")
 	}
@@ -849,12 +685,12 @@ func (o *Exchange) Upsert(exec boil.Executor, updateOnConflict bool, conflictCol
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert exchange")
@@ -869,15 +705,9 @@ func (o *Exchange) Upsert(exec boil.Executor, updateOnConflict bool, conflictCol
 	return nil
 }
 
-// DeleteG deletes a single Exchange record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *Exchange) DeleteG() (int64, error) {
-	return o.Delete(boil.GetDB())
-}
-
 // Delete deletes a single Exchange record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *Exchange) Delete(exec boil.Executor) (int64, error) {
+func (o *Exchange) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Exchange provided for delete")
 	}
@@ -890,7 +720,7 @@ func (o *Exchange) Delete(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete from exchange")
 	}
@@ -904,14 +734,14 @@ func (o *Exchange) Delete(exec boil.Executor) (int64, error) {
 }
 
 // DeleteAll deletes all matching rows.
-func (q exchangeQuery) DeleteAll(exec boil.Executor) (int64, error) {
+func (q exchangeQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
 		return 0, errors.New("models: no exchangeQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from exchange")
 	}
@@ -924,13 +754,8 @@ func (q exchangeQuery) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// DeleteAllG deletes all rows in the slice.
-func (o ExchangeSlice) DeleteAllG() (int64, error) {
-	return o.DeleteAll(boil.GetDB())
-}
-
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o ExchangeSlice) DeleteAll(exec boil.Executor) (int64, error) {
+func (o ExchangeSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no Exchange slice provided for delete all")
 	}
@@ -953,7 +778,7 @@ func (o ExchangeSlice) DeleteAll(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from exchange slice")
 	}
@@ -966,19 +791,10 @@ func (o ExchangeSlice) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *Exchange) ReloadG() error {
-	if o == nil {
-		return errors.New("models: no Exchange provided for reload")
-	}
-
-	return o.Reload(boil.GetDB())
-}
-
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *Exchange) Reload(exec boil.Executor) error {
-	ret, err := FindExchange(exec, o.ID)
+func (o *Exchange) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindExchange(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -987,19 +803,9 @@ func (o *Exchange) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllG refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-func (o *ExchangeSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("models: empty ExchangeSlice provided for reload all")
-	}
-
-	return o.ReloadAll(boil.GetDB())
-}
-
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *ExchangeSlice) ReloadAll(exec boil.Executor) error {
+func (o *ExchangeSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
@@ -1016,7 +822,7 @@ func (o *ExchangeSlice) ReloadAll(exec boil.Executor) error {
 
 	q := queries.Raw(sql, args...)
 
-	err := q.Bind(nil, exec, &slice)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in ExchangeSlice")
 	}
@@ -1026,13 +832,8 @@ func (o *ExchangeSlice) ReloadAll(exec boil.Executor) error {
 	return nil
 }
 
-// ExchangeExistsG checks if the Exchange row exists.
-func ExchangeExistsG(iD int) (bool, error) {
-	return ExchangeExists(boil.GetDB(), iD)
-}
-
 // ExchangeExists checks if the Exchange row exists.
-func ExchangeExists(exec boil.Executor, iD int) (bool, error) {
+func ExchangeExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"exchange\" where \"id\"=$1 limit 1)"
 
@@ -1041,7 +842,7 @@ func ExchangeExists(exec boil.Executor, iD int) (bool, error) {
 		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, iD)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

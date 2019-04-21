@@ -5,9 +5,8 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"os"
-	"os/signal"
 	"runtime"
 	"sync"
 
@@ -19,11 +18,11 @@ import (
 
 // const dcrlaunchtime int64 = 1454889600
 
-func main() {
+func _main(ctx context.Context) error {
 	cfg, err := loadConfig()
 	if err != nil {
-		fmt.Printf("Unable to load config: %v\n", err)
-		return
+		// fmt.Printf("Unable to load config: %v\n", err)
+		return err
 	}
 
 	defer func() {
@@ -45,99 +44,51 @@ func main() {
 	}(db)
 
 	if err != nil {
-		log.Error(err)
-		return
+		return err
 	}
 
-	resultChan := make(chan []exchanges.DataTick)
-
-	quit := make(chan struct{})
 	wg := new(sync.WaitGroup)
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	go func() {
-		<-c
-		signal.Stop(c)
-		log.Info("CTRL+C hit. Closing goroutines.")
-		close(quit)
-	}()
 
 	if cfg.VSPEnabled {
 		log.Info("Starting VSP data collection")
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
 			wg.Add(1)
-			go vspCollector.Run(quit, wg)
+			go vspCollector.Run(ctx, wg)
 		} else {
 			log.Error(err)
 		}
 	}
 
-	if cfg.ExchangesEnabled { // Temp
-		log.Warn("Exchange collection temporarily disabled")
-		cfg.ExchangesEnabled = false
-	}
-
 	if cfg.ExchangesEnabled {
-
-		if exists := db.ExchangeDataTableExits(); !exists {
-			if err := db.CreateExchangeDataTable(); err != nil {
-				log.Error("Error creating exchange data table: ", err)
-				return
-			}
-		}
-		wg.Add(1)
-		log.Info("Starting exchange storage goroutine")
-		go storeExchangeData(db, resultChan, quit, wg)
-		exchangeMap := make(map[string]int64)
-		for _, ex := range cfg.Exchanges {
-			exchangeMap[ex] = db.LastExchangeEntryTime(ex)
-		}
-
-		collector, err := exchanges.NewCollector(exchangeMap, cfg.CollectionInterval)
-
-		if err != nil {
+		log.Infof("Starting exchange ticker data collection for %v", cfg.Exchanges)
+		ticksHub, err := exchanges.NewTickHub(ctx, cfg.Exchanges, db)
+		if err == nil {
+			wg.Add(1)
+			go ticksHub.Run(ctx, wg)
+			// ticksHub.Collect(ctx)
+		} else {
 			log.Error(err)
-			close(quit)
-			return
 		}
-
-		excLog.Info("Starting historic sync")
-
-		errs := collector.HistoricSync(resultChan)
-
-		if len(errs) > 0 {
-			for _, err = range errs {
-				excLog.Error(err)
-			}
-			excLog.Error("Historic sync failed")
-			close(quit)
-			return
-		}
-
-		wg.Add(1)
-
-		excLog.Info("Starting periodic collection")
-		go collector.Collect(resultChan, wg, quit)
 	}
 
 	wg.Wait()
 	log.Info("Goodbye")
+	return nil
 }
 
-func storeExchangeData(db *postgres.PgDb, resultChan chan []exchanges.DataTick, quit chan struct{}, wg *sync.WaitGroup) {
-	for {
-		select {
-		case dataTick := <-resultChan:
-			err := db.AddExchangeData(dataTick)
-			if err != nil {
-				log.Errorf("Could not store exchange entry: %v", err)
-			}
-		case <-quit:
-			wg.Done()
-			return
+func main() {
+	// Create a context that is cancelled when a shutdown request is received
+	// via requestShutdown.
+	ctx := withShutdownCancel(context.Background())
+	// Listen for both interrupt signals and shutdown requests.
+	go shutdownListener()
+
+	if err := _main(ctx); err != nil {
+		if logRotator != nil {
+			log.Error(err)
 		}
+		os.Exit(1)
 	}
+	os.Exit(0)
 }

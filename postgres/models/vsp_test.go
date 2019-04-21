@@ -5,6 +5,7 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
@@ -40,19 +41,20 @@ func testVSPSDelete(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := o.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,19 +74,20 @@ func testVSPSQueryDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := VSPS().DeleteAll(tx); err != nil {
+	if rowsAff, err := VSPS().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,21 +107,22 @@ func testVSPSSliceDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := VSPSlice{o}
 
-	if rowsAff, err := slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,13 +142,14 @@ func testVSPSExists(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := VSPExists(tx, o.ID)
+	e, err := VSPExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if VSP exists: %s", err)
 	}
@@ -163,13 +168,14 @@ func testVSPSFind(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	vspFound, err := FindVSP(tx, o.ID)
+	vspFound, err := FindVSP(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -189,13 +195,14 @@ func testVSPSBind(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = VSPS().Bind(nil, tx, o); err != nil {
+	if err = VSPS().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -210,13 +217,14 @@ func testVSPSOne(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := VSPS().One(tx); err != nil {
+	if x, err := VSPS().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -237,16 +245,17 @@ func testVSPSAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = vspOne.Insert(tx, boil.Infer()); err != nil {
+	if err = vspOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = vspTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := VSPS().All(tx)
+	slice, err := VSPS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -270,16 +279,17 @@ func testVSPSCount(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = vspOne.Insert(tx, boil.Infer()); err != nil {
+	if err = vspOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = vspTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,13 +309,14 @@ func testVSPSInsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,13 +336,14 @@ func testVSPSInsertWhitelist(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Whitelist(vspColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(vspColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -343,8 +355,8 @@ func testVSPSInsertWhitelist(t *testing.T) {
 
 func testVSPToManyVSPTicks(t *testing.T) {
 	var err error
-
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a VSP
@@ -355,7 +367,7 @@ func testVSPToManyVSPTicks(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -369,14 +381,14 @@ func testVSPToManyVSPTicks(t *testing.T) {
 	b.VSPID = a.ID
 	c.VSPID = a.ID
 
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := a.VSPTicks().All(tx)
+	check, err := a.VSPTicks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,7 +411,7 @@ func testVSPToManyVSPTicks(t *testing.T) {
 	}
 
 	slice := VSPSlice{&a}
-	if err = a.L.LoadVSPTicks(tx, false, (*[]*VSP)(&slice), nil); err != nil {
+	if err = a.L.LoadVSPTicks(ctx, tx, false, (*[]*VSP)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.VSPTicks); got != 2 {
@@ -407,7 +419,7 @@ func testVSPToManyVSPTicks(t *testing.T) {
 	}
 
 	a.R.VSPTicks = nil
-	if err = a.L.LoadVSPTicks(tx, true, &a, nil); err != nil {
+	if err = a.L.LoadVSPTicks(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.VSPTicks); got != 2 {
@@ -422,7 +434,8 @@ func testVSPToManyVSPTicks(t *testing.T) {
 func testVSPToManyAddOpVSPTicks(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a VSP
@@ -439,13 +452,13 @@ func testVSPToManyAddOpVSPTicks(t *testing.T) {
 		}
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -455,7 +468,7 @@ func testVSPToManyAddOpVSPTicks(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddVSPTicks(tx, i != 0, x...)
+		err = a.AddVSPTicks(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -484,7 +497,7 @@ func testVSPToManyAddOpVSPTicks(t *testing.T) {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.VSPTicks().Count(tx)
+		count, err := a.VSPTicks().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -504,13 +517,14 @@ func testVSPSReload(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = o.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -525,15 +539,16 @@ func testVSPSReloadAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := VSPSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -548,13 +563,14 @@ func testVSPSSelect(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := VSPS().All(tx)
+	slice, err := VSPS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -565,7 +581,7 @@ func testVSPSSelect(t *testing.T) {
 }
 
 var (
-	vspDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `APIEnabled`: `boolean`, `APIVersionsSupported`: `ARRAYbigint`, `Network`: `text`, `URL`: `text`, `Launched`: `timestamp with time zone`, `LastUpdate`: `timestamp with time zone`}
+	vspDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `APIEnabled`: `boolean`, `APIVersionsSupported`: `ARRAYinteger`, `Network`: `text`, `URL`: `text`, `Launched`: `timestamp with time zone`}
 	_          = bytes.MinRead
 )
 
@@ -586,13 +602,14 @@ func testVSPSUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -605,7 +622,7 @@ func testVSPSUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	if rowsAff, err := o.Update(tx, boil.Infer()); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only affect one row but affected", rowsAff)
@@ -626,13 +643,14 @@ func testVSPSSliceUpdateAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -671,7 +689,7 @@ func testVSPSSliceUpdateAll(t *testing.T) {
 	}
 
 	slice := VSPSlice{o}
-	if rowsAff, err := slice.UpdateAll(tx, updateMap); err != nil {
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("wanted one record updated but got", rowsAff)
@@ -693,13 +711,14 @@ func testVSPSUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert VSP: %s", err)
 	}
 
-	count, err := VSPS().Count(tx)
+	count, err := VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -712,11 +731,11 @@ func testVSPSUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSP struct: %s", err)
 	}
 
-	if err = o.Upsert(tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert VSP: %s", err)
 	}
 
-	count, err = VSPS().Count(tx)
+	count, err = VSPS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

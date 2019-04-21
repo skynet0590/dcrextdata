@@ -4,6 +4,7 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -24,15 +25,15 @@ import (
 type VSPTick struct {
 	ID               int     `boil:"id" json:"id" toml:"id" yaml:"id"`
 	VSPID            int     `boil:"vsp_id" json:"vsp_id" toml:"vsp_id" yaml:"vsp_id"`
-	Immature         int64   `boil:"immature" json:"immature" toml:"immature" yaml:"immature"`
-	Live             int64   `boil:"live" json:"live" toml:"live" yaml:"live"`
-	Voted            int64   `boil:"voted" json:"voted" toml:"voted" yaml:"voted"`
-	Missed           int64   `boil:"missed" json:"missed" toml:"missed" yaml:"missed"`
+	Immature         int     `boil:"immature" json:"immature" toml:"immature" yaml:"immature"`
+	Live             int     `boil:"live" json:"live" toml:"live" yaml:"live"`
+	Voted            int     `boil:"voted" json:"voted" toml:"voted" yaml:"voted"`
+	Missed           int     `boil:"missed" json:"missed" toml:"missed" yaml:"missed"`
 	PoolFees         float64 `boil:"pool_fees" json:"pool_fees" toml:"pool_fees" yaml:"pool_fees"`
 	ProportionLive   float64 `boil:"proportion_live" json:"proportion_live" toml:"proportion_live" yaml:"proportion_live"`
 	ProportionMissed float64 `boil:"proportion_missed" json:"proportion_missed" toml:"proportion_missed" yaml:"proportion_missed"`
-	UserCount        int64   `boil:"user_count" json:"user_count" toml:"user_count" yaml:"user_count"`
-	UsersActive      int64   `boil:"users_active" json:"users_active" toml:"users_active" yaml:"users_active"`
+	UserCount        int     `boil:"user_count" json:"user_count" toml:"user_count" yaml:"user_count"`
+	UsersActive      int     `boil:"users_active" json:"users_active" toml:"users_active" yaml:"users_active"`
 
 	R *vspTickR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L vspTickL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -66,39 +67,30 @@ var VSPTickColumns = struct {
 
 // Generated where
 
-type whereHelperint64 struct{ field string }
-
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
 var VSPTickWhere = struct {
 	ID               whereHelperint
 	VSPID            whereHelperint
-	Immature         whereHelperint64
-	Live             whereHelperint64
-	Voted            whereHelperint64
-	Missed           whereHelperint64
+	Immature         whereHelperint
+	Live             whereHelperint
+	Voted            whereHelperint
+	Missed           whereHelperint
 	PoolFees         whereHelperfloat64
 	ProportionLive   whereHelperfloat64
 	ProportionMissed whereHelperfloat64
-	UserCount        whereHelperint64
-	UsersActive      whereHelperint64
+	UserCount        whereHelperint
+	UsersActive      whereHelperint
 }{
 	ID:               whereHelperint{field: `id`},
 	VSPID:            whereHelperint{field: `vsp_id`},
-	Immature:         whereHelperint64{field: `immature`},
-	Live:             whereHelperint64{field: `live`},
-	Voted:            whereHelperint64{field: `voted`},
-	Missed:           whereHelperint64{field: `missed`},
+	Immature:         whereHelperint{field: `immature`},
+	Live:             whereHelperint{field: `live`},
+	Voted:            whereHelperint{field: `voted`},
+	Missed:           whereHelperint{field: `missed`},
 	PoolFees:         whereHelperfloat64{field: `pool_fees`},
 	ProportionLive:   whereHelperfloat64{field: `proportion_live`},
 	ProportionMissed: whereHelperfloat64{field: `proportion_missed`},
-	UserCount:        whereHelperint64{field: `user_count`},
-	UsersActive:      whereHelperint64{field: `users_active`},
+	UserCount:        whereHelperint{field: `user_count`},
+	UsersActive:      whereHelperint{field: `users_active`},
 }
 
 // VSPTickRels is where relationship names are stored.
@@ -162,18 +154,13 @@ var (
 	_ = qmhelper.Where
 )
 
-// OneG returns a single vspTick record from the query using the global executor.
-func (q vspTickQuery) OneG() (*VSPTick, error) {
-	return q.One(boil.GetDB())
-}
-
 // One returns a single vspTick record from the query.
-func (q vspTickQuery) One(exec boil.Executor) (*VSPTick, error) {
+func (q vspTickQuery) One(ctx context.Context, exec boil.ContextExecutor) (*VSPTick, error) {
 	o := &VSPTick{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(nil, exec, o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -184,16 +171,11 @@ func (q vspTickQuery) One(exec boil.Executor) (*VSPTick, error) {
 	return o, nil
 }
 
-// AllG returns all VSPTick records from the query using the global executor.
-func (q vspTickQuery) AllG() (VSPTickSlice, error) {
-	return q.All(boil.GetDB())
-}
-
 // All returns all VSPTick records from the query.
-func (q vspTickQuery) All(exec boil.Executor) (VSPTickSlice, error) {
+func (q vspTickQuery) All(ctx context.Context, exec boil.ContextExecutor) (VSPTickSlice, error) {
 	var o []*VSPTick
 
-	err := q.Bind(nil, exec, &o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to VSPTick slice")
 	}
@@ -201,19 +183,14 @@ func (q vspTickQuery) All(exec boil.Executor) (VSPTickSlice, error) {
 	return o, nil
 }
 
-// CountG returns the count of all VSPTick records in the query, and panics on error.
-func (q vspTickQuery) CountG() (int64, error) {
-	return q.Count(boil.GetDB())
-}
-
 // Count returns the count of all VSPTick records in the query.
-func (q vspTickQuery) Count(exec boil.Executor) (int64, error) {
+func (q vspTickQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count vsp_tick rows")
 	}
@@ -221,20 +198,15 @@ func (q vspTickQuery) Count(exec boil.Executor) (int64, error) {
 	return count, nil
 }
 
-// ExistsG checks if the row exists in the table, and panics on error.
-func (q vspTickQuery) ExistsG() (bool, error) {
-	return q.Exists(boil.GetDB())
-}
-
 // Exists checks if the row exists in the table.
-func (q vspTickQuery) Exists(exec boil.Executor) (bool, error) {
+func (q vspTickQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if vsp_tick exists")
 	}
@@ -279,7 +251,7 @@ func (o *VSPTick) VSPTickTimes(mods ...qm.QueryMod) vspTickTimeQuery {
 
 // LoadVSP allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (vspTickL) LoadVSP(e boil.Executor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
+func (vspTickL) LoadVSP(ctx context.Context, e boil.ContextExecutor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
 	var slice []*VSPTick
 	var object *VSPTick
 
@@ -323,7 +295,7 @@ func (vspTickL) LoadVSP(e boil.Executor, singular bool, maybeVSPTick interface{}
 		mods.Apply(query)
 	}
 
-	results, err := query.Query(e)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load VSP")
 	}
@@ -372,7 +344,7 @@ func (vspTickL) LoadVSP(e boil.Executor, singular bool, maybeVSPTick interface{}
 
 // LoadVSPTickTimes allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (vspTickL) LoadVSPTickTimes(e boil.Executor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
+func (vspTickL) LoadVSPTickTimes(ctx context.Context, e boil.ContextExecutor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
 	var slice []*VSPTick
 	var object *VSPTick
 
@@ -414,7 +386,7 @@ func (vspTickL) LoadVSPTickTimes(e boil.Executor, singular bool, maybeVSPTick in
 		mods.Apply(query)
 	}
 
-	results, err := query.Query(e)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load vsp_tick_time")
 	}
@@ -458,21 +430,13 @@ func (vspTickL) LoadVSPTickTimes(e boil.Executor, singular bool, maybeVSPTick in
 	return nil
 }
 
-// SetVSPG of the vspTick to the related item.
-// Sets o.R.VSP to related.
-// Adds o to related.R.VSPTicks.
-// Uses the global database handle.
-func (o *VSPTick) SetVSPG(insert bool, related *VSP) error {
-	return o.SetVSP(boil.GetDB(), insert, related)
-}
-
 // SetVSP of the vspTick to the related item.
 // Sets o.R.VSP to related.
 // Adds o to related.R.VSPTicks.
-func (o *VSPTick) SetVSP(exec boil.Executor, insert bool, related *VSP) error {
+func (o *VSPTick) SetVSP(ctx context.Context, exec boil.ContextExecutor, insert bool, related *VSP) error {
 	var err error
 	if insert {
-		if err = related.Insert(exec, boil.Infer()); err != nil {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -489,7 +453,7 @@ func (o *VSPTick) SetVSP(exec boil.Executor, insert bool, related *VSP) error {
 		fmt.Fprintln(boil.DebugWriter, values)
 	}
 
-	if _, err = exec.Exec(updateQuery, values...); err != nil {
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 		return errors.Wrap(err, "failed to update local table")
 	}
 
@@ -513,25 +477,16 @@ func (o *VSPTick) SetVSP(exec boil.Executor, insert bool, related *VSP) error {
 	return nil
 }
 
-// AddVSPTickTimesG adds the given related objects to the existing relationships
-// of the vsp_tick, optionally inserting them as new records.
-// Appends related to o.R.VSPTickTimes.
-// Sets related.R.VSPTick appropriately.
-// Uses the global database handle.
-func (o *VSPTick) AddVSPTickTimesG(insert bool, related ...*VSPTickTime) error {
-	return o.AddVSPTickTimes(boil.GetDB(), insert, related...)
-}
-
 // AddVSPTickTimes adds the given related objects to the existing relationships
 // of the vsp_tick, optionally inserting them as new records.
 // Appends related to o.R.VSPTickTimes.
 // Sets related.R.VSPTick appropriately.
-func (o *VSPTick) AddVSPTickTimes(exec boil.Executor, insert bool, related ...*VSPTickTime) error {
+func (o *VSPTick) AddVSPTickTimes(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*VSPTickTime) error {
 	var err error
 	for _, rel := range related {
 		if insert {
 			rel.VSPTickID = o.ID
-			if err = rel.Insert(exec, boil.Infer()); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -540,14 +495,14 @@ func (o *VSPTick) AddVSPTickTimes(exec boil.Executor, insert bool, related ...*V
 				strmangle.SetParamNames("\"", "\"", 1, []string{"vsp_tick_id"}),
 				strmangle.WhereClause("\"", "\"", 2, vspTickTimePrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.VSPTickID, rel.UpdateTime}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.DebugMode {
 				fmt.Fprintln(boil.DebugWriter, updateQuery)
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
@@ -581,14 +536,9 @@ func VSPTicks(mods ...qm.QueryMod) vspTickQuery {
 	return vspTickQuery{NewQuery(mods...)}
 }
 
-// FindVSPTickG retrieves a single record by ID.
-func FindVSPTickG(iD int, selectCols ...string) (*VSPTick, error) {
-	return FindVSPTick(boil.GetDB(), iD, selectCols...)
-}
-
 // FindVSPTick retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindVSPTick(exec boil.Executor, iD int, selectCols ...string) (*VSPTick, error) {
+func FindVSPTick(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*VSPTick, error) {
 	vspTickObj := &VSPTick{}
 
 	sel := "*"
@@ -601,7 +551,7 @@ func FindVSPTick(exec boil.Executor, iD int, selectCols ...string) (*VSPTick, er
 
 	q := queries.Raw(query, iD)
 
-	err := q.Bind(nil, exec, vspTickObj)
+	err := q.Bind(ctx, exec, vspTickObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -612,14 +562,9 @@ func FindVSPTick(exec boil.Executor, iD int, selectCols ...string) (*VSPTick, er
 	return vspTickObj, nil
 }
 
-// InsertG a single record. See Insert for whitelist behavior description.
-func (o *VSPTick) InsertG(columns boil.Columns) error {
-	return o.Insert(boil.GetDB(), columns)
-}
-
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *VSPTick) Insert(exec boil.Executor, columns boil.Columns) error {
+func (o *VSPTick) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no vsp_tick provided for insertion")
 	}
@@ -673,9 +618,9 @@ func (o *VSPTick) Insert(exec boil.Executor, columns boil.Columns) error {
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -691,16 +636,10 @@ func (o *VSPTick) Insert(exec boil.Executor, columns boil.Columns) error {
 	return nil
 }
 
-// UpdateG a single VSPTick record using the global executor.
-// See Update for more documentation.
-func (o *VSPTick) UpdateG(columns boil.Columns) (int64, error) {
-	return o.Update(boil.GetDB(), columns)
-}
-
 // Update uses an executor to update the VSPTick.
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
-func (o *VSPTick) Update(exec boil.Executor, columns boil.Columns) (int64, error) {
+func (o *VSPTick) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
 	key := makeCacheKey(columns, nil)
 	vspTickUpdateCacheMut.RLock()
@@ -735,7 +674,7 @@ func (o *VSPTick) Update(exec boil.Executor, columns boil.Columns) (int64, error
 	}
 
 	var result sql.Result
-	result, err = exec.Exec(cache.query, values...)
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update vsp_tick row")
 	}
@@ -754,16 +693,11 @@ func (o *VSPTick) Update(exec boil.Executor, columns boil.Columns) (int64, error
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (q vspTickQuery) UpdateAllG(cols M) (int64, error) {
-	return q.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values.
-func (q vspTickQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (q vspTickQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all for vsp_tick")
 	}
@@ -776,13 +710,8 @@ func (q vspTickQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (o VSPTickSlice) UpdateAllG(cols M) (int64, error) {
-	return o.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o VSPTickSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (o VSPTickSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
 		return 0, nil
@@ -817,7 +746,7 @@ func (o VSPTickSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all in vspTick slice")
 	}
@@ -829,14 +758,9 @@ func (o VSPTickSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *VSPTick) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
-}
-
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *VSPTick) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *VSPTick) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no vsp_tick provided for upsert")
 	}
@@ -925,12 +849,12 @@ func (o *VSPTick) Upsert(exec boil.Executor, updateOnConflict bool, conflictColu
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert vsp_tick")
@@ -945,15 +869,9 @@ func (o *VSPTick) Upsert(exec boil.Executor, updateOnConflict bool, conflictColu
 	return nil
 }
 
-// DeleteG deletes a single VSPTick record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *VSPTick) DeleteG() (int64, error) {
-	return o.Delete(boil.GetDB())
-}
-
 // Delete deletes a single VSPTick record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *VSPTick) Delete(exec boil.Executor) (int64, error) {
+func (o *VSPTick) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no VSPTick provided for delete")
 	}
@@ -966,7 +884,7 @@ func (o *VSPTick) Delete(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete from vsp_tick")
 	}
@@ -980,14 +898,14 @@ func (o *VSPTick) Delete(exec boil.Executor) (int64, error) {
 }
 
 // DeleteAll deletes all matching rows.
-func (q vspTickQuery) DeleteAll(exec boil.Executor) (int64, error) {
+func (q vspTickQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
 		return 0, errors.New("models: no vspTickQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from vsp_tick")
 	}
@@ -1000,13 +918,8 @@ func (q vspTickQuery) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// DeleteAllG deletes all rows in the slice.
-func (o VSPTickSlice) DeleteAllG() (int64, error) {
-	return o.DeleteAll(boil.GetDB())
-}
-
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o VSPTickSlice) DeleteAll(exec boil.Executor) (int64, error) {
+func (o VSPTickSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no VSPTick slice provided for delete all")
 	}
@@ -1029,7 +942,7 @@ func (o VSPTickSlice) DeleteAll(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from vspTick slice")
 	}
@@ -1042,19 +955,10 @@ func (o VSPTickSlice) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *VSPTick) ReloadG() error {
-	if o == nil {
-		return errors.New("models: no VSPTick provided for reload")
-	}
-
-	return o.Reload(boil.GetDB())
-}
-
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *VSPTick) Reload(exec boil.Executor) error {
-	ret, err := FindVSPTick(exec, o.ID)
+func (o *VSPTick) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindVSPTick(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1063,19 +967,9 @@ func (o *VSPTick) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllG refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-func (o *VSPTickSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("models: empty VSPTickSlice provided for reload all")
-	}
-
-	return o.ReloadAll(boil.GetDB())
-}
-
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *VSPTickSlice) ReloadAll(exec boil.Executor) error {
+func (o *VSPTickSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
@@ -1092,7 +986,7 @@ func (o *VSPTickSlice) ReloadAll(exec boil.Executor) error {
 
 	q := queries.Raw(sql, args...)
 
-	err := q.Bind(nil, exec, &slice)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in VSPTickSlice")
 	}
@@ -1102,13 +996,8 @@ func (o *VSPTickSlice) ReloadAll(exec boil.Executor) error {
 	return nil
 }
 
-// VSPTickExistsG checks if the VSPTick row exists.
-func VSPTickExistsG(iD int) (bool, error) {
-	return VSPTickExists(boil.GetDB(), iD)
-}
-
 // VSPTickExists checks if the VSPTick row exists.
-func VSPTickExists(exec boil.Executor, iD int) (bool, error) {
+func VSPTickExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"vsp_tick\" where \"id\"=$1 limit 1)"
 
@@ -1117,7 +1006,7 @@ func VSPTickExists(exec boil.Executor, iD int) (bool, error) {
 		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, iD)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

@@ -5,10 +5,11 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
-
-	"github.com/volatiletech/sqlboiler/queries/qm"
 
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -17,127 +18,103 @@ import (
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
-type insertableG interface {
-	InsertG(boil.Columns) error
-}
+var (
+	vspTickExistsErr = fmt.Errorf("VSPTick exists")
+)
 
-type upsertableG interface {
-	UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error
-}
-
-// StoreVSPs attemps to store the vsp responses by calling storeVspResponseG and returning
+// StoreVSPs attempts to store the vsp responses by calling storeVspResponseG and returning
 // a slice of errors
-func (pg *PgDb) StoreVSPs(data vsp.Response) []error {
+func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
+	if ctx.Err() != nil {
+		return []error{ctx.Err()}
+	}
 	errs := make([]error, 0, len(data))
+	completed := make([]string, 0, len(data))
 	for name, tick := range data {
-		err := storeVspResponseG(name, tick)
-		if err != nil {
+		err := pg.storeVspResponse(ctx, name, tick)
+		if err == nil {
+			completed = append(completed, name)
+		} else if err != vspTickExistsErr {
+			log.Trace(err)
 			errs = append(errs, err)
 		}
+		if ctx.Err() != nil {
+			return append(errs, ctx.Err())
+		}
+	}
+	if len(completed) == 0 {
+		log.Info("Unable to store any pool entry")
+	} else {
+		log.Infof("Stored pool entries for %v", completed)
 	}
 	return errs
 }
 
-func storeVspResponseG(name string, resp *vsp.ResposeData) error {
-	txr, err := boil.Begin()
+func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.ResposeData) error {
+	txr, err := pg.db.Begin()
 	if err != nil {
 		return err
 	}
-	pool, err := models.VSPS(models.VSPWhere.Name.EQ(name)).OneG()
+
+	pool, err := models.VSPS(models.VSPWhere.Name.EQ(name)).One(ctx, pg.db)
 	if err == sql.ErrNoRows {
 		pool = responseToVSP(name, resp)
-		err := tryInsertG(txr, pool)
+		err := pg.tryInsert(ctx, txr, pool)
 		if err != nil {
 			return err
 		}
 	} else if err != nil {
 		return err
 	}
+
+	// log.Debugf("Pool ID: %d", pool.ID)
 
 	vspTick := responseToVSPTick(pool.ID, resp)
-	t := int64ToTime(resp.LastUpdated)
+	tickTime := time.Unix(int64(resp.LastUpdated), 0)
 
-	tw := models.VSPTickWhere
-	vTick, err := models.VSPTicks(qm.Expr(
-		tw.VSPID.EQ(pool.ID),
-		tw.Immature.EQ(vspTick.Immature),
-		tw.Live.EQ(vspTick.Live),
-		tw.Voted.EQ(vspTick.Voted),
-		tw.Missed.EQ(vspTick.Missed),
-		tw.PoolFees.EQ(vspTick.PoolFees),
-		tw.ProportionLive.EQ(vspTick.ProportionLive),
-		tw.ProportionMissed.EQ(vspTick.ProportionMissed),
-		tw.UserCount.EQ(vspTick.UserCount),
-		tw.UsersActive.EQ(vspTick.UsersActive))).OneG()
-
-	if err == sql.ErrNoRows {
-		err = tryInsertG(txr, vspTick)
+	err = vspTick.Insert(ctx, pg.db, boil.Infer())
+	if err != nil && strings.Contains(err.Error(), "unique constraint") {
+		log.Tracef("Tick exits for %s", name)
+		err = txr.Rollback()
 		if err != nil {
 			return err
 		}
-		vTick = vspTick
+		return vspTickExistsErr
 	} else if err != nil {
+		txr.Rollback()
+		return err
+	}
+	// vspTick.AddVSPTickTimes
+	// log.Debugf("Tick id %d", vspTick.ID)
+
+	vspTickTimeExits, err := models.VSPTickTimes(
+		models.VSPTickTimeWhere.UpdateTime.EQ(tickTime),
+		models.VSPTickTimeWhere.VSPTickID.EQ(vspTick.ID)).Exists(ctx, pg.db)
+
+	if err != nil {
+		txr.Rollback()
 		return err
 	}
 
-	tickTimeExists, err := models.VSPTickTimeExistsG(vTick.ID, t)
-	if err != nil {
-		return err
-	}
-	if tickTimeExists {
-		return vsp.PoolTickTimeExistsError{
-			PoolName: name,
-			TickTime: t,
+	if !vspTickTimeExits {
+		vtickTime := &models.VSPTickTime{
+			VSPTickID:  vspTick.ID,
+			UpdateTime: tickTime,
 		}
-	}
 
-	tickTime := &models.VSPTickTime{
-		VSPTickID:  vTick.ID,
-		UpdateTime: t,
-	}
-
-	err = tryInsertG(txr, tickTime)
-	if err != nil {
-		return err
-	}
-
-	pool.LastUpdate = t
-
-	err = pool.UpsertG(true, nil, boil.Infer(), boil.Infer())
-	if err != nil {
-		return err
+		err = pg.tryInsert(ctx, txr, vtickTime)
+		if err != nil {
+			log.Debugf("Tick time %v for %d", vtickTime.UpdateTime, vtickTime.VSPTickID)
+			return err
+		}
 	}
 
 	err = txr.Commit()
 	if err != nil {
-		return err
+		return txr.Rollback()
 	}
 
-	log.Infof("Added complete pool data for %s at %s", name, t.UTC().String())
-	return nil
-}
-
-func tryInsertG(txr boil.Transactor, data insertableG) error {
-	err := data.InsertG(boil.Infer())
-	if err != nil {
-		errT := txr.Rollback()
-		if errT != nil {
-			return errT
-		}
-		return err
-	}
-	return nil
-}
-
-func tryUpsertG(txr boil.Transactor, data upsertableG) error {
-	err := data.UpsertG(true, nil, boil.Infer(), boil.Infer())
-	if err != nil {
-		errT := txr.Rollback()
-		if errT != nil {
-			return errT
-		}
-		return err
-	}
+	log.Tracef("Added complete pool tick data for %s at %v", name, tickTime.UTC())
 	return nil
 }
 
@@ -148,7 +125,7 @@ func responseToVSP(name string, resp *vsp.ResposeData) *models.VSP {
 		APIVersionsSupported: types.Int64Array(resp.APIVersionsSupported),
 		Network:              resp.Network,
 		URL:                  resp.URL,
-		Launched:             int64ToTime(resp.Launched),
+		Launched:             time.Unix(int64(resp.Launched), 0),
 	}
 }
 
@@ -165,8 +142,4 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 		UserCount:        resp.UserCount,
 		UsersActive:      resp.UserCountActive,
 	}
-}
-
-func int64ToTime(t int64) time.Time {
-	return time.Unix(t, 0)
 }

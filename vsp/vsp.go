@@ -5,6 +5,7 @@
 package vsp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,23 +24,24 @@ func NewVspCollector(period int64, store DataStore) (*Collector, error) {
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	return &Collector{
-		client:    &http.Client{Timeout: 300 * time.Second},
+		client:    http.Client{Timeout: time.Minute},
 		period:    time.Duration(period),
 		request:   request,
 		dataStore: store,
 	}, nil
 }
 
-func (vsp *Collector) fetch(response interface{}) error {
+func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	log.Tracef("GET %v", requestURL)
-	resp, err := vsp.client.Do(vsp.request)
+	resp, err := vsp.client.Do(vsp.request.WithContext(ctx))
 	if err != nil {
 		return err
 	}
+	log.Tracef("GET successful")
 
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(response)
@@ -50,53 +52,57 @@ func (vsp *Collector) fetch(response interface{}) error {
 	return nil
 }
 
-func (vsp *Collector) Run(quit chan struct{}, wg *sync.WaitGroup) {
-	if err := vsp.CollectAndStore(time.Now()); err != nil {
-		log.Errorf("Could not start collection: %v", err)
+func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if ctx.Err() != nil {
+		return
 	}
 
-	ticker := time.NewTicker(vsp.period * time.Second)
+	if err := vsp.collectAndStore(ctx); err != nil {
+		log.Errorf("Could not start collection: %v", err)
+		return
+	}
 
-	defer func(wg *sync.WaitGroup) {
-		log.Info("Stopping collector")
-		ticker.Stop()
-		wg.Done()
-	}(wg)
+	log.Info("Started vsp ticker collection")
+	ticker := time.NewTicker(vsp.period * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
-		case t := <-ticker.C:
-			err := vsp.CollectAndStore(t)
-			if err != nil {
-				log.Error(err)
+		case <-ticker.C:
+			if err := vsp.collectAndStore(ctx); err != nil {
+				return
 			}
-		case <-quit:
+		case <-ctx.Done():
+			log.Infof("Shutting down VSP collection")
 			return
 		}
 	}
 }
 
-func (vsp *Collector) CollectAndStore(t time.Time) error {
+func (vsp *Collector) collectAndStore(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	resp := new(Response)
-	err := vsp.fetch(resp)
+	err := vsp.fetch(ctx, resp)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
 		}
 		log.Warn(err)
-		err = vsp.fetch(resp)
+		err = vsp.fetch(ctx, resp)
 	}
 
-	if resp != nil {
-		errs := vsp.dataStore.StoreVSPs(*resp)
-		for _, err = range errs {
-			if err != nil {
-				if e, ok := err.(PoolTickTimeExistsError); ok {
-					log.Trace(e)
-				} else {
-					log.Error(err)
-					return err
-				}
+	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
+	for _, err = range errs {
+		if err != nil {
+			if e, ok := err.(PoolTickTimeExistsError); ok {
+				log.Trace(e)
+			} else {
+				log.Error(err)
+				return err
 			}
 		}
 	}

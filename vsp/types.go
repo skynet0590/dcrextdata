@@ -5,6 +5,7 @@
 package vsp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,25 +18,25 @@ type ResposeData struct {
 	APIVersionsSupported []int64 `json:"APIVersionsSupported"`
 	Network              string  `json:"Network"`
 	URL                  string  `json:"URL"`
-	Launched             int64   `json:"Launched"`
-	LastUpdated          int64   `json:"LastUpdated"`
-	Immature             int64   `json:"Immature"`
-	Live                 int64   `json:"Live"`
-	Voted                int64   `json:"Voted"`
-	Missed               int64   `json:"Missed"`
+	Launched             int     `json:"Launched"`
+	LastUpdated          int     `json:"LastUpdated"`
+	Immature             int     `json:"Immature"`
+	Live                 int     `json:"Live"`
+	Voted                int     `json:"Voted"`
+	Missed               int     `json:"Missed"`
 	PoolFees             float64 `json:"PoolFees"`
 	ProportionLive       float64 `json:"ProportionLive"`
 	ProportionMissed     float64 `json:"ProportionMissed"`
-	UserCount            int64   `json:"UserCount"`
-	UserCountActive      int64   `json:"UserCountActive"`
+	UserCount            int     `json:"UserCount"`
+	UserCountActive      int     `json:"UserCountActive"`
 }
 
 type DataStore interface {
-	StoreVSPs(Response) []error
+	StoreVSPs(context.Context, Response) []error
 }
 
 type Collector struct {
-	client    *http.Client
+	client    http.Client
 	period    time.Duration
 	request   *http.Request
 	dataStore DataStore

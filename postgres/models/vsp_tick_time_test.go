@@ -5,6 +5,7 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
@@ -40,19 +41,20 @@ func testVSPTickTimesDelete(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := o.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,19 +74,20 @@ func testVSPTickTimesQueryDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := VSPTickTimes().DeleteAll(tx); err != nil {
+	if rowsAff, err := VSPTickTimes().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,21 +107,22 @@ func testVSPTickTimesSliceDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := VSPTickTimeSlice{o}
 
-	if rowsAff, err := slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,13 +142,14 @@ func testVSPTickTimesExists(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := VSPTickTimeExists(tx, o.VSPTickID, o.UpdateTime)
+	e, err := VSPTickTimeExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if VSPTickTime exists: %s", err)
 	}
@@ -163,13 +168,14 @@ func testVSPTickTimesFind(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	vspTickTimeFound, err := FindVSPTickTime(tx, o.VSPTickID, o.UpdateTime)
+	vspTickTimeFound, err := FindVSPTickTime(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -189,13 +195,14 @@ func testVSPTickTimesBind(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = VSPTickTimes().Bind(nil, tx, o); err != nil {
+	if err = VSPTickTimes().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -210,13 +217,14 @@ func testVSPTickTimesOne(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := VSPTickTimes().One(tx); err != nil {
+	if x, err := VSPTickTimes().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -237,16 +245,17 @@ func testVSPTickTimesAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = vspTickTimeOne.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTickTimeOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = vspTickTimeTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTickTimeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := VSPTickTimes().All(tx)
+	slice, err := VSPTickTimes().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -270,16 +279,17 @@ func testVSPTickTimesCount(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = vspTickTimeOne.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTickTimeOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = vspTickTimeTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = vspTickTimeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,13 +309,14 @@ func testVSPTickTimesInsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,13 +336,14 @@ func testVSPTickTimesInsertWhitelist(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Whitelist(vspTickTimeColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(vspTickTimeColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -342,8 +354,8 @@ func testVSPTickTimesInsertWhitelist(t *testing.T) {
 }
 
 func testVSPTickTimeToOneVSPTickUsingVSPTick(t *testing.T) {
-
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var local VSPTickTime
@@ -357,16 +369,16 @@ func testVSPTickTimeToOneVSPTickUsingVSPTick(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTick struct: %s", err)
 	}
 
-	if err := foreign.Insert(tx, boil.Infer()); err != nil {
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	local.VSPTickID = foreign.ID
-	if err := local.Insert(tx, boil.Infer()); err != nil {
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.VSPTick().One(tx)
+	check, err := local.VSPTick().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +388,7 @@ func testVSPTickTimeToOneVSPTickUsingVSPTick(t *testing.T) {
 	}
 
 	slice := VSPTickTimeSlice{&local}
-	if err = local.L.LoadVSPTick(tx, false, (*[]*VSPTickTime)(&slice), nil); err != nil {
+	if err = local.L.LoadVSPTick(ctx, tx, false, (*[]*VSPTickTime)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.VSPTick == nil {
@@ -384,7 +396,7 @@ func testVSPTickTimeToOneVSPTickUsingVSPTick(t *testing.T) {
 	}
 
 	local.R.VSPTick = nil
-	if err = local.L.LoadVSPTick(tx, true, &local, nil); err != nil {
+	if err = local.L.LoadVSPTick(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.VSPTick == nil {
@@ -395,7 +407,8 @@ func testVSPTickTimeToOneVSPTickUsingVSPTick(t *testing.T) {
 func testVSPTickTimeToOneSetOpVSPTickUsingVSPTick(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a VSPTickTime
@@ -412,15 +425,15 @@ func testVSPTickTimeToOneSetOpVSPTickUsingVSPTick(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
 	for i, x := range []*VSPTick{&b, &c} {
-		err = a.SetVSPTick(tx, i != 0, x)
+		err = a.SetVSPTick(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -436,12 +449,16 @@ func testVSPTickTimeToOneSetOpVSPTickUsingVSPTick(t *testing.T) {
 			t.Error("foreign key was wrong value", a.VSPTickID)
 		}
 
-		if exists, err := VSPTickTimeExists(tx, a.VSPTickID, a.UpdateTime); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
+		zero := reflect.Zero(reflect.TypeOf(a.VSPTickID))
+		reflect.Indirect(reflect.ValueOf(&a.VSPTickID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
 		}
 
+		if a.VSPTickID != x.ID {
+			t.Error("foreign key was wrong value", a.VSPTickID, x.ID)
+		}
 	}
 }
 
@@ -455,13 +472,14 @@ func testVSPTickTimesReload(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = o.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -476,15 +494,16 @@ func testVSPTickTimesReloadAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := VSPTickTimeSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -499,13 +518,14 @@ func testVSPTickTimesSelect(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := VSPTickTimes().All(tx)
+	slice, err := VSPTickTimes().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -516,7 +536,7 @@ func testVSPTickTimesSelect(t *testing.T) {
 }
 
 var (
-	vspTickTimeDBTypes = map[string]string{`VSPTickID`: `integer`, `UpdateTime`: `timestamp with time zone`}
+	vspTickTimeDBTypes = map[string]string{`ID`: `integer`, `VSPTickID`: `integer`, `UpdateTime`: `timestamp with time zone`}
 	_                  = bytes.MinRead
 )
 
@@ -537,13 +557,14 @@ func testVSPTickTimesUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -556,7 +577,7 @@ func testVSPTickTimesUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	if rowsAff, err := o.Update(tx, boil.Infer()); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only affect one row but affected", rowsAff)
@@ -577,13 +598,14 @@ func testVSPTickTimesSliceUpdateAll(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -622,7 +644,7 @@ func testVSPTickTimesSliceUpdateAll(t *testing.T) {
 	}
 
 	slice := VSPTickTimeSlice{o}
-	if rowsAff, err := slice.UpdateAll(tx, updateMap); err != nil {
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("wanted one record updated but got", rowsAff)
@@ -644,13 +666,14 @@ func testVSPTickTimesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert VSPTickTime: %s", err)
 	}
 
-	count, err := VSPTickTimes().Count(tx)
+	count, err := VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -663,11 +686,11 @@ func testVSPTickTimesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize VSPTickTime struct: %s", err)
 	}
 
-	if err = o.Upsert(tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert VSPTickTime: %s", err)
 	}
 
-	count, err = VSPTickTimes().Count(tx)
+	count, err = VSPTickTimes().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

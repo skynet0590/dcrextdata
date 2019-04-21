@@ -6,6 +6,7 @@ package helpers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -23,16 +24,20 @@ const (
 func GetResponse(client *http.Client, url string, destination interface{}) error {
 	resp := new(http.Response)
 
+	defer func() {
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+	}()
+
 	for i := 1; i <= maxRetryAttempts; i++ {
 		res, err := client.Get(url)
-		// log.Tracef("GET %s", url)
 		if err != nil {
-			if i == maxRetryAttempts {
-				return err
-			}
-			// log.Warn(err)
 			if res != nil {
 				res.Body.Close()
+			}
+			if i == maxRetryAttempts {
+				return err
 			}
 			time.Sleep(retryDelay)
 			continue
@@ -45,8 +50,6 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 	if err != nil {
 		return err
 	}
-
-	resp.Body.Close()
 	return nil
 }
 
@@ -69,8 +72,12 @@ func AddParams(base string, params map[string]interface{}) (string, error) {
 		switch vType.Kind() {
 		case reflect.String:
 			strBuilder.WriteString(reflect.ValueOf(value).String())
-		case reflect.Int64:
+		case reflect.Int64, reflect.Int:
 			strBuilder.WriteString(strconv.FormatInt(reflect.ValueOf(value).Int(), 10))
+		case reflect.Float64:
+			strBuilder.WriteString(strconv.FormatFloat(reflect.ValueOf(value).Float(), 'f', -1, 64))
+		default:
+			return strBuilder.String(), fmt.Errorf("Unsupported type: %v", vType.Kind())
 		}
 
 		strBuilder.WriteString("&")

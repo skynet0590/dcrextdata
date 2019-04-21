@@ -5,6 +5,7 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"testing"
 
@@ -40,19 +41,20 @@ func testExchangesDelete(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := o.Delete(tx); err != nil {
+	if rowsAff, err := o.Delete(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,19 +74,20 @@ func testExchangesQueryDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if rowsAff, err := Exchanges().DeleteAll(tx); err != nil {
+	if rowsAff, err := Exchanges().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -104,21 +107,22 @@ func testExchangesSliceDeleteAll(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := ExchangeSlice{o}
 
-	if rowsAff, err := slice.DeleteAll(tx); err != nil {
+	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,13 +142,14 @@ func testExchangesExists(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	e, err := ExchangeExists(tx, o.ID)
+	e, err := ExchangeExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if Exchange exists: %s", err)
 	}
@@ -163,13 +168,14 @@ func testExchangesFind(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	exchangeFound, err := FindExchange(tx, o.ID)
+	exchangeFound, err := FindExchange(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -189,13 +195,14 @@ func testExchangesBind(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = Exchanges().Bind(nil, tx, o); err != nil {
+	if err = Exchanges().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
@@ -210,13 +217,14 @@ func testExchangesOne(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if x, err := Exchanges().One(tx); err != nil {
+	if x, err := Exchanges().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
@@ -237,16 +245,17 @@ func testExchangesAll(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = exchangeOne.Insert(tx, boil.Infer()); err != nil {
+	if err = exchangeOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = exchangeTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = exchangeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Exchanges().All(tx)
+	slice, err := Exchanges().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -270,16 +279,17 @@ func testExchangesCount(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = exchangeOne.Insert(tx, boil.Infer()); err != nil {
+	if err = exchangeOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = exchangeTwo.Insert(tx, boil.Infer()); err != nil {
+	if err = exchangeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,13 +309,14 @@ func testExchangesInsert(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -325,13 +336,14 @@ func testExchangesInsertWhitelist(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Whitelist(exchangeColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(exchangeColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -343,8 +355,8 @@ func testExchangesInsertWhitelist(t *testing.T) {
 
 func testExchangeToManyExchangeTicks(t *testing.T) {
 	var err error
-
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Exchange
@@ -355,7 +367,7 @@ func testExchangeToManyExchangeTicks(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -366,26 +378,27 @@ func testExchangeToManyExchangeTicks(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries.Assign(&b.ExchangeID, a.ID)
-	queries.Assign(&c.ExchangeID, a.ID)
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	b.ExchangeID = a.ID
+	c.ExchangeID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := a.ExchangeTicks().All(tx)
+	check, err := a.ExchangeTicks().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if queries.Equal(v.ExchangeID, b.ExchangeID) {
+		if v.ExchangeID == b.ExchangeID {
 			bFound = true
 		}
-		if queries.Equal(v.ExchangeID, c.ExchangeID) {
+		if v.ExchangeID == c.ExchangeID {
 			cFound = true
 		}
 	}
@@ -398,7 +411,7 @@ func testExchangeToManyExchangeTicks(t *testing.T) {
 	}
 
 	slice := ExchangeSlice{&a}
-	if err = a.L.LoadExchangeTicks(tx, false, (*[]*Exchange)(&slice), nil); err != nil {
+	if err = a.L.LoadExchangeTicks(ctx, tx, false, (*[]*Exchange)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.ExchangeTicks); got != 2 {
@@ -406,7 +419,7 @@ func testExchangeToManyExchangeTicks(t *testing.T) {
 	}
 
 	a.R.ExchangeTicks = nil
-	if err = a.L.LoadExchangeTicks(tx, true, &a, nil); err != nil {
+	if err = a.L.LoadExchangeTicks(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.ExchangeTicks); got != 2 {
@@ -421,7 +434,8 @@ func testExchangeToManyExchangeTicks(t *testing.T) {
 func testExchangeToManyAddOpExchangeTicks(t *testing.T) {
 	var err error
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Exchange
@@ -438,13 +452,13 @@ func testExchangeToManyAddOpExchangeTicks(t *testing.T) {
 		}
 	}
 
-	if err := a.Insert(tx, boil.Infer()); err != nil {
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -454,7 +468,7 @@ func testExchangeToManyAddOpExchangeTicks(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddExchangeTicks(tx, i != 0, x...)
+		err = a.AddExchangeTicks(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -462,10 +476,10 @@ func testExchangeToManyAddOpExchangeTicks(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if !queries.Equal(a.ID, first.ExchangeID) {
+		if a.ID != first.ExchangeID {
 			t.Error("foreign key was wrong value", a.ID, first.ExchangeID)
 		}
-		if !queries.Equal(a.ID, second.ExchangeID) {
+		if a.ID != second.ExchangeID {
 			t.Error("foreign key was wrong value", a.ID, second.ExchangeID)
 		}
 
@@ -483,186 +497,13 @@ func testExchangeToManyAddOpExchangeTicks(t *testing.T) {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.ExchangeTicks().Count(tx)
+		count, err := a.ExchangeTicks().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := int64((i + 1) * 2); count != want {
 			t.Error("want", want, "got", count)
 		}
-	}
-}
-
-func testExchangeToManySetOpExchangeTicks(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Exchange
-	var b, c, d, e ExchangeTick
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, exchangeDBTypes, false, strmangle.SetComplement(exchangePrimaryKeyColumns, exchangeColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ExchangeTick{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, exchangeTickDBTypes, false, strmangle.SetComplement(exchangeTickPrimaryKeyColumns, exchangeTickColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetExchangeTicks(tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.ExchangeTicks().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetExchangeTicks(tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ExchangeTicks().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ExchangeID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ExchangeID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.ExchangeID) {
-		t.Error("foreign key was wrong value", a.ID, d.ExchangeID)
-	}
-	if !queries.Equal(a.ID, e.ExchangeID) {
-		t.Error("foreign key was wrong value", a.ID, e.ExchangeID)
-	}
-
-	if b.R.Exchange != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Exchange != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Exchange != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Exchange != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.ExchangeTicks[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.ExchangeTicks[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testExchangeToManyRemoveOpExchangeTicks(t *testing.T) {
-	var err error
-
-	tx := MustTx(boil.Begin())
-	defer func() { _ = tx.Rollback() }()
-
-	var a Exchange
-	var b, c, d, e ExchangeTick
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, exchangeDBTypes, false, strmangle.SetComplement(exchangePrimaryKeyColumns, exchangeColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ExchangeTick{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, exchangeTickDBTypes, false, strmangle.SetComplement(exchangeTickPrimaryKeyColumns, exchangeTickColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddExchangeTicks(tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.ExchangeTicks().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveExchangeTicks(tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.ExchangeTicks().Count(tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ExchangeID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ExchangeID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Exchange != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Exchange != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Exchange != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Exchange != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.ExchangeTicks) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.ExchangeTicks[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.ExchangeTicks[0] != &e {
-		t.Error("relationship to e should have been preserved")
 	}
 }
 
@@ -676,13 +517,14 @@ func testExchangesReload(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	if err = o.Reload(tx); err != nil {
+	if err = o.Reload(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -697,15 +539,16 @@ func testExchangesReloadAll(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
 	slice := ExchangeSlice{o}
 
-	if err = slice.ReloadAll(tx); err != nil {
+	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
@@ -720,13 +563,14 @@ func testExchangesSelect(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Exchanges().All(tx)
+	slice, err := Exchanges().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -737,7 +581,7 @@ func testExchangesSelect(t *testing.T) {
 }
 
 var (
-	exchangeDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `URL`: `text`, `StartTime`: `timestamp with time zone`, `LastUpdated`: `timestamp with time zone`}
+	exchangeDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `URL`: `text`, `TickShortInterval`: `integer`, `TickLongInterval`: `integer`, `TickHistoricInterval`: `integer`}
 	_               = bytes.MinRead
 )
 
@@ -758,13 +602,14 @@ func testExchangesUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -777,7 +622,7 @@ func testExchangesUpdate(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	if rowsAff, err := o.Update(tx, boil.Infer()); err != nil {
+	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only affect one row but affected", rowsAff)
@@ -798,13 +643,14 @@ func testExchangesSliceUpdateAll(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(tx, boil.Infer()); err != nil {
+	if err = o.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -843,7 +689,7 @@ func testExchangesSliceUpdateAll(t *testing.T) {
 	}
 
 	slice := ExchangeSlice{o}
-	if rowsAff, err := slice.UpdateAll(tx, updateMap); err != nil {
+	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("wanted one record updated but got", rowsAff)
@@ -865,13 +711,14 @@ func testExchangesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	tx := MustTx(boil.Begin())
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Upsert(tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Exchange: %s", err)
 	}
 
-	count, err := Exchanges().Count(tx)
+	count, err := Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -884,11 +731,11 @@ func testExchangesUpsert(t *testing.T) {
 		t.Errorf("Unable to randomize Exchange struct: %s", err)
 	}
 
-	if err = o.Upsert(tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
+	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		t.Errorf("Unable to upsert Exchange: %s", err)
 	}
 
-	count, err = Exchanges().Count(tx)
+	count, err = Exchanges().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

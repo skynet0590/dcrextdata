@@ -1,10 +1,11 @@
 module github.com/raedahgroup/dcrextdata
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/decred/dcrdata/pubsub v1.0.0 // indirect
 	github.com/decred/slog v1.0.0
 	github.com/ericlagergren/decimal v0.0.0-20190331172538-c787d12d14a5 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/golangci/golangci-lint v1.16.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
 	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12

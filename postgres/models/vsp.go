@@ -4,6 +4,7 @@
 package models
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"reflect"
@@ -30,7 +31,6 @@ type VSP struct {
 	Network              string           `boil:"network" json:"network" toml:"network" yaml:"network"`
 	URL                  string           `boil:"url" json:"url" toml:"url" yaml:"url"`
 	Launched             time.Time        `boil:"launched" json:"launched" toml:"launched" yaml:"launched"`
-	LastUpdate           time.Time        `boil:"last_update" json:"last_update" toml:"last_update" yaml:"last_update"`
 
 	R *vspR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L vspL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,7 +44,6 @@ var VSPColumns = struct {
 	Network              string
 	URL                  string
 	Launched             string
-	LastUpdate           string
 }{
 	ID:                   "id",
 	Name:                 "name",
@@ -53,7 +52,6 @@ var VSPColumns = struct {
 	Network:              "network",
 	URL:                  "url",
 	Launched:             "launched",
-	LastUpdate:           "last_update",
 }
 
 // Generated where
@@ -96,7 +94,6 @@ var VSPWhere = struct {
 	Network              whereHelperstring
 	URL                  whereHelperstring
 	Launched             whereHelpertime_Time
-	LastUpdate           whereHelpertime_Time
 }{
 	ID:                   whereHelperint{field: `id`},
 	Name:                 whereHelperstring{field: `name`},
@@ -105,7 +102,6 @@ var VSPWhere = struct {
 	Network:              whereHelperstring{field: `network`},
 	URL:                  whereHelperstring{field: `url`},
 	Launched:             whereHelpertime_Time{field: `launched`},
-	LastUpdate:           whereHelpertime_Time{field: `last_update`},
 }
 
 // VSPRels is where relationship names are stored.
@@ -129,8 +125,8 @@ func (*vspR) NewStruct() *vspR {
 type vspL struct{}
 
 var (
-	vspColumns               = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched", "last_update"}
-	vspColumnsWithoutDefault = []string{"name", "api_enabled", "api_versions_supported", "network", "url", "launched", "last_update"}
+	vspColumns               = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
+	vspColumnsWithoutDefault = []string{"name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
 	vspColumnsWithDefault    = []string{"id"}
 	vspPrimaryKeyColumns     = []string{"id"}
 )
@@ -166,18 +162,13 @@ var (
 	_ = qmhelper.Where
 )
 
-// OneG returns a single vsp record from the query using the global executor.
-func (q vspQuery) OneG() (*VSP, error) {
-	return q.One(boil.GetDB())
-}
-
 // One returns a single vsp record from the query.
-func (q vspQuery) One(exec boil.Executor) (*VSP, error) {
+func (q vspQuery) One(ctx context.Context, exec boil.ContextExecutor) (*VSP, error) {
 	o := &VSP{}
 
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Bind(nil, exec, o)
+	err := q.Bind(ctx, exec, o)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -188,16 +179,11 @@ func (q vspQuery) One(exec boil.Executor) (*VSP, error) {
 	return o, nil
 }
 
-// AllG returns all VSP records from the query using the global executor.
-func (q vspQuery) AllG() (VSPSlice, error) {
-	return q.All(boil.GetDB())
-}
-
 // All returns all VSP records from the query.
-func (q vspQuery) All(exec boil.Executor) (VSPSlice, error) {
+func (q vspQuery) All(ctx context.Context, exec boil.ContextExecutor) (VSPSlice, error) {
 	var o []*VSP
 
-	err := q.Bind(nil, exec, &o)
+	err := q.Bind(ctx, exec, &o)
 	if err != nil {
 		return nil, errors.Wrap(err, "models: failed to assign all query results to VSP slice")
 	}
@@ -205,19 +191,14 @@ func (q vspQuery) All(exec boil.Executor) (VSPSlice, error) {
 	return o, nil
 }
 
-// CountG returns the count of all VSP records in the query, and panics on error.
-func (q vspQuery) CountG() (int64, error) {
-	return q.Count(boil.GetDB())
-}
-
 // Count returns the count of all VSP records in the query.
-func (q vspQuery) Count(exec boil.Executor) (int64, error) {
+func (q vspQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: failed to count vsp rows")
 	}
@@ -225,20 +206,15 @@ func (q vspQuery) Count(exec boil.Executor) (int64, error) {
 	return count, nil
 }
 
-// ExistsG checks if the row exists in the table, and panics on error.
-func (q vspQuery) ExistsG() (bool, error) {
-	return q.Exists(boil.GetDB())
-}
-
 // Exists checks if the row exists in the table.
-func (q vspQuery) Exists(exec boil.Executor) (bool, error) {
+func (q vspQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
 	queries.SetCount(q.Query)
 	queries.SetLimit(q.Query, 1)
 
-	err := q.Query.QueryRow(exec).Scan(&count)
+	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
 		return false, errors.Wrap(err, "models: failed to check if vsp exists")
 	}
@@ -269,7 +245,7 @@ func (o *VSP) VSPTicks(mods ...qm.QueryMod) vspTickQuery {
 
 // LoadVSPTicks allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (vspL) LoadVSPTicks(e boil.Executor, singular bool, maybeVSP interface{}, mods queries.Applicator) error {
+func (vspL) LoadVSPTicks(ctx context.Context, e boil.ContextExecutor, singular bool, maybeVSP interface{}, mods queries.Applicator) error {
 	var slice []*VSP
 	var object *VSP
 
@@ -311,7 +287,7 @@ func (vspL) LoadVSPTicks(e boil.Executor, singular bool, maybeVSP interface{}, m
 		mods.Apply(query)
 	}
 
-	results, err := query.Query(e)
+	results, err := query.QueryContext(ctx, e)
 	if err != nil {
 		return errors.Wrap(err, "failed to eager load vsp_tick")
 	}
@@ -355,25 +331,16 @@ func (vspL) LoadVSPTicks(e boil.Executor, singular bool, maybeVSP interface{}, m
 	return nil
 }
 
-// AddVSPTicksG adds the given related objects to the existing relationships
-// of the vsp, optionally inserting them as new records.
-// Appends related to o.R.VSPTicks.
-// Sets related.R.VSP appropriately.
-// Uses the global database handle.
-func (o *VSP) AddVSPTicksG(insert bool, related ...*VSPTick) error {
-	return o.AddVSPTicks(boil.GetDB(), insert, related...)
-}
-
 // AddVSPTicks adds the given related objects to the existing relationships
 // of the vsp, optionally inserting them as new records.
 // Appends related to o.R.VSPTicks.
 // Sets related.R.VSP appropriately.
-func (o *VSP) AddVSPTicks(exec boil.Executor, insert bool, related ...*VSPTick) error {
+func (o *VSP) AddVSPTicks(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*VSPTick) error {
 	var err error
 	for _, rel := range related {
 		if insert {
 			rel.VSPID = o.ID
-			if err = rel.Insert(exec, boil.Infer()); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -389,7 +356,7 @@ func (o *VSP) AddVSPTicks(exec boil.Executor, insert bool, related ...*VSPTick) 
 				fmt.Fprintln(boil.DebugWriter, values)
 			}
 
-			if _, err = exec.Exec(updateQuery, values...); err != nil {
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
@@ -423,14 +390,9 @@ func VSPS(mods ...qm.QueryMod) vspQuery {
 	return vspQuery{NewQuery(mods...)}
 }
 
-// FindVSPG retrieves a single record by ID.
-func FindVSPG(iD int, selectCols ...string) (*VSP, error) {
-	return FindVSP(boil.GetDB(), iD, selectCols...)
-}
-
 // FindVSP retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindVSP(exec boil.Executor, iD int, selectCols ...string) (*VSP, error) {
+func FindVSP(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*VSP, error) {
 	vspObj := &VSP{}
 
 	sel := "*"
@@ -443,7 +405,7 @@ func FindVSP(exec boil.Executor, iD int, selectCols ...string) (*VSP, error) {
 
 	q := queries.Raw(query, iD)
 
-	err := q.Bind(nil, exec, vspObj)
+	err := q.Bind(ctx, exec, vspObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
@@ -454,14 +416,9 @@ func FindVSP(exec boil.Executor, iD int, selectCols ...string) (*VSP, error) {
 	return vspObj, nil
 }
 
-// InsertG a single record. See Insert for whitelist behavior description.
-func (o *VSP) InsertG(columns boil.Columns) error {
-	return o.Insert(boil.GetDB(), columns)
-}
-
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *VSP) Insert(exec boil.Executor, columns boil.Columns) error {
+func (o *VSP) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no vsp provided for insertion")
 	}
@@ -515,9 +472,9 @@ func (o *VSP) Insert(exec boil.Executor, columns boil.Columns) error {
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(queries.PtrsFromMapping(value, cache.retMapping)...)
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 
 	if err != nil {
@@ -533,16 +490,10 @@ func (o *VSP) Insert(exec boil.Executor, columns boil.Columns) error {
 	return nil
 }
 
-// UpdateG a single VSP record using the global executor.
-// See Update for more documentation.
-func (o *VSP) UpdateG(columns boil.Columns) (int64, error) {
-	return o.Update(boil.GetDB(), columns)
-}
-
 // Update uses an executor to update the VSP.
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
-func (o *VSP) Update(exec boil.Executor, columns boil.Columns) (int64, error) {
+func (o *VSP) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
 	key := makeCacheKey(columns, nil)
 	vspUpdateCacheMut.RLock()
@@ -577,7 +528,7 @@ func (o *VSP) Update(exec boil.Executor, columns boil.Columns) (int64, error) {
 	}
 
 	var result sql.Result
-	result, err = exec.Exec(cache.query, values...)
+	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update vsp row")
 	}
@@ -596,16 +547,11 @@ func (o *VSP) Update(exec boil.Executor, columns boil.Columns) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (q vspQuery) UpdateAllG(cols M) (int64, error) {
-	return q.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values.
-func (q vspQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (q vspQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all for vsp")
 	}
@@ -618,13 +564,8 @@ func (q vspQuery) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpdateAllG updates all rows with the specified column values.
-func (o VSPSlice) UpdateAllG(cols M) (int64, error) {
-	return o.UpdateAll(boil.GetDB(), cols)
-}
-
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o VSPSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
+func (o VSPSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
 		return 0, nil
@@ -659,7 +600,7 @@ func (o VSPSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to update all in vsp slice")
 	}
@@ -671,14 +612,9 @@ func (o VSPSlice) UpdateAll(exec boil.Executor, cols M) (int64, error) {
 	return rowsAff, nil
 }
 
-// UpsertG attempts an insert, and does an update or ignore on conflict.
-func (o *VSP) UpsertG(updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
-	return o.Upsert(boil.GetDB(), updateOnConflict, conflictColumns, updateColumns, insertColumns)
-}
-
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *VSP) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *VSP) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
 		return errors.New("models: no vsp provided for upsert")
 	}
@@ -767,12 +703,12 @@ func (o *VSP) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns 
 	}
 
 	if len(cache.retMapping) != 0 {
-		err = exec.QueryRow(cache.query, vals...).Scan(returns...)
+		err = exec.QueryRowContext(ctx, cache.query, vals...).Scan(returns...)
 		if err == sql.ErrNoRows {
 			err = nil // Postgres doesn't return anything when there's no update
 		}
 	} else {
-		_, err = exec.Exec(cache.query, vals...)
+		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert vsp")
@@ -787,15 +723,9 @@ func (o *VSP) Upsert(exec boil.Executor, updateOnConflict bool, conflictColumns 
 	return nil
 }
 
-// DeleteG deletes a single VSP record.
-// DeleteG will match against the primary key column to find the record to delete.
-func (o *VSP) DeleteG() (int64, error) {
-	return o.Delete(boil.GetDB())
-}
-
 // Delete deletes a single VSP record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *VSP) Delete(exec boil.Executor) (int64, error) {
+func (o *VSP) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no VSP provided for delete")
 	}
@@ -808,7 +738,7 @@ func (o *VSP) Delete(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args...)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete from vsp")
 	}
@@ -822,14 +752,14 @@ func (o *VSP) Delete(exec boil.Executor) (int64, error) {
 }
 
 // DeleteAll deletes all matching rows.
-func (q vspQuery) DeleteAll(exec boil.Executor) (int64, error) {
+func (q vspQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
 		return 0, errors.New("models: no vspQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
-	result, err := q.Query.Exec(exec)
+	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from vsp")
 	}
@@ -842,13 +772,8 @@ func (q vspQuery) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// DeleteAllG deletes all rows in the slice.
-func (o VSPSlice) DeleteAllG() (int64, error) {
-	return o.DeleteAll(boil.GetDB())
-}
-
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o VSPSlice) DeleteAll(exec boil.Executor) (int64, error) {
+func (o VSPSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
 		return 0, errors.New("models: no VSP slice provided for delete all")
 	}
@@ -871,7 +796,7 @@ func (o VSPSlice) DeleteAll(exec boil.Executor) (int64, error) {
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
 
-	result, err := exec.Exec(sql, args...)
+	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "models: unable to delete all from vsp slice")
 	}
@@ -884,19 +809,10 @@ func (o VSPSlice) DeleteAll(exec boil.Executor) (int64, error) {
 	return rowsAff, nil
 }
 
-// ReloadG refetches the object from the database using the primary keys.
-func (o *VSP) ReloadG() error {
-	if o == nil {
-		return errors.New("models: no VSP provided for reload")
-	}
-
-	return o.Reload(boil.GetDB())
-}
-
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *VSP) Reload(exec boil.Executor) error {
-	ret, err := FindVSP(exec, o.ID)
+func (o *VSP) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindVSP(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -905,19 +821,9 @@ func (o *VSP) Reload(exec boil.Executor) error {
 	return nil
 }
 
-// ReloadAllG refetches every row with matching primary key column values
-// and overwrites the original object slice with the newly updated slice.
-func (o *VSPSlice) ReloadAllG() error {
-	if o == nil {
-		return errors.New("models: empty VSPSlice provided for reload all")
-	}
-
-	return o.ReloadAll(boil.GetDB())
-}
-
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *VSPSlice) ReloadAll(exec boil.Executor) error {
+func (o *VSPSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
@@ -934,7 +840,7 @@ func (o *VSPSlice) ReloadAll(exec boil.Executor) error {
 
 	q := queries.Raw(sql, args...)
 
-	err := q.Bind(nil, exec, &slice)
+	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
 		return errors.Wrap(err, "models: unable to reload all in VSPSlice")
 	}
@@ -944,13 +850,8 @@ func (o *VSPSlice) ReloadAll(exec boil.Executor) error {
 	return nil
 }
 
-// VSPExistsG checks if the VSP row exists.
-func VSPExistsG(iD int) (bool, error) {
-	return VSPExists(boil.GetDB(), iD)
-}
-
 // VSPExists checks if the VSP row exists.
-func VSPExists(exec boil.Executor, iD int) (bool, error) {
+func VSPExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"vsp\" where \"id\"=$1 limit 1)"
 
@@ -959,7 +860,7 @@ func VSPExists(exec boil.Executor, iD int) (bool, error) {
 		fmt.Fprintln(boil.DebugWriter, iD)
 	}
 
-	row := exec.QueryRow(sql, iD)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {
