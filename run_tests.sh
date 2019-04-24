@@ -30,14 +30,13 @@ testrepo () {
 
   go version
   
-
   # Test application install
   go build
 
   # Get linter
   go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
-  env GORACE='halt_on_error=1' go test -v -race ./...
+  # env GORACE='halt_on_error=1' go test -v -race ./...
 
   # check linters
   golangci-lint run --deadline=10m --disable-all --enable govet --enable staticcheck \

@@ -5,6 +5,7 @@
 package helpers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,9 +22,13 @@ const (
 
 // GetResponse attempts to collect json data from the given url string and decodes it into
 // the destination
-func GetResponse(client *http.Client, url string, destination interface{}) error {
+func GetResponse(ctx context.Context, client *http.Client, url string, destination interface{}) error {
 	resp := new(http.Response)
-
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
 	defer func() {
 		if resp != nil && resp.Body != nil {
 			resp.Body.Close()
@@ -31,7 +36,7 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 	}()
 
 	for i := 1; i <= maxRetryAttempts; i++ {
-		res, err := client.Get(url)
+		res, err := client.Do(req)
 		if err != nil {
 			if res != nil {
 				res.Body.Close()
@@ -46,7 +51,7 @@ func GetResponse(client *http.Client, url string, destination interface{}) error
 		break
 	}
 
-	err := json.NewDecoder(resp.Body).Decode(destination)
+	err = json.NewDecoder(resp.Body).Decode(destination)
 	if err != nil {
 		return err
 	}

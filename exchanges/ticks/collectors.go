@@ -13,20 +13,22 @@ import (
 	"github.com/raedahgroup/dcrextdata/helpers"
 )
 
-const ()
-
 const (
-	Bittrex   = "bittrex"
-	Poloniex  = "poloniex"
-	Bleutrade = "bleutrade"
-	Binance   = "binance"
+	Bittrex         = "bittrex"
+	Bittrexusd      = Bittrex + "usd"
+	bittrexAPIURL   = "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
+	Poloniex        = "poloniex"
+	poloniexAPIURL  = "https://poloniex.com/public"
+	Bleutrade       = "bleutrade"
+	bleutradeAPIURL = "https://bleutrade.com/api/v3/public/getcandles"
+	Binance         = "binance"
+	binanceAPIURL   = "https://api.binance.com/api/v1/klines"
 
 	btcdcrPair = "BTC/DCR"
 	usdbtcPair = "USD/BTC"
 
 	fiveMin = time.Minute * 5
-	oneHour = time.Hour
-	oneDay  = oneHour * 24
+	oneDay  = time.Hour * 24
 
 	apprxBinanceStart  int64 = 1540353600
 	binanceVolumeLimit int64 = 1000
@@ -41,25 +43,15 @@ const (
 	IntervalHistoric = "historic"
 )
 
-type ExchangeData struct {
-	Name             string
-	WebsiteURL       string
-	apiURL           string
-	availableCPairs  map[string]string
-	ShortInterval    time.Duration
-	LongInterval     time.Duration
-	HistoricInterval time.Duration
-}
-
 var (
 	zeroTime time.Time
 
 	CollectorConstructors = map[string]func(context.Context, Store) (Collector, error){
-		Bittrex:         NewBittrexCollector,
-		Bittrex + "usd": NewBittrexUSDCollector,
-		Poloniex:        NewPoloniexCollector,
-		Bleutrade:       NewBleutradeCollector,
-		Binance:         NewBinanceCollector,
+		Bittrex:    NewBittrexCollector,
+		Bittrexusd: NewBittrexUSDCollector,
+		Poloniex:   NewPoloniexCollector,
+		Bleutrade:  NewBleutradeCollector,
+		Binance:    NewBinanceCollector,
 	}
 
 	bittrexIntervals = map[float64]string{
@@ -80,57 +72,86 @@ var (
 		3600:  "1h",
 		86400: "1d",
 	}
-)
 
-var (
 	poloniexData = ExchangeData{
 		Name:       Poloniex,
 		WebsiteURL: "https://poloniex.com",
-		apiURL:     "https://poloniex.com/public",
 		availableCPairs: map[string]string{
 			btcdcrPair: "BTC_DCR",
 		},
+		apiLimited:       true,
 		ShortInterval:    fiveMin,
-		LongInterval:     2 * oneHour,
+		LongInterval:     2 * time.Hour,
 		HistoricInterval: oneDay,
+		requester: func(last time.Time, interval time.Duration, cpair string) (string, error) {
+			return helpers.AddParams(poloniexAPIURL, map[string]interface{}{
+				"command":      "returnChartData",
+				"currencyPair": cpair,
+				"start":        last.Unix(),
+				"end":          time.Now().Unix(),
+				"period":       int(interval.Seconds()),
+			})
+		},
 	}
 
 	binanceData = ExchangeData{
 		Name:       Binance,
 		WebsiteURL: "https://binance.com",
-		apiURL:     "https://api.binance.com/api/v1/klines",
 		availableCPairs: map[string]string{
 			btcdcrPair: "DCRBTC",
 		},
+		apiLimited:       true,
 		ShortInterval:    fiveMin,
-		LongInterval:     oneHour,
+		LongInterval:     time.Hour,
 		HistoricInterval: oneDay,
+		requester: func(last time.Time, interval time.Duration, cpair string) (string, error) {
+			start := last.Unix() * 1000
+			end := start + binanceVolumeLimit*int64(interval.Seconds())*1000
+			return helpers.AddParams(binanceAPIURL, map[string]interface{}{
+				"symbol":    cpair,
+				"startTime": start,
+				"endTime":   end,
+				"interval":  binanceIntervals[interval.Seconds()],
+				"limit":     binanceVolumeLimit,
+			})
+		},
 	}
 
 	bittrexData = ExchangeData{
 		Name:       Bittrex,
 		WebsiteURL: "https://bittrex.com",
-		apiURL:     "https://bittrex.com/Api/v2.0/pub/market/GetTicks",
 		availableCPairs: map[string]string{
 			btcdcrPair: "BTC-DCR",
 			usdbtcPair: "USD-BTC",
 		},
+		apiLimited:       false,
 		ShortInterval:    fiveMin,
-		LongInterval:     oneHour,
+		LongInterval:     time.Hour,
 		HistoricInterval: oneDay,
+		requester: func(last time.Time, interval time.Duration, cpair string) (string, error) {
+			return helpers.AddParams(bittrexAPIURL, map[string]interface{}{
+				"marketName":   cpair,
+				"tickInterval": bittrexIntervals[interval.Seconds()],
+			})
+		},
 	}
 
 	bleutradeData = ExchangeData{
 		Name:       Bleutrade,
 		WebsiteURL: "https://bleutrade.com",
-		apiURL:     "https://bleutrade.com/api/v3/public/getcandles",
 		availableCPairs: map[string]string{
-			btcdcrPair: "BTC_DCR",
-			// usdbtcPair: "USD-BTC",
+			btcdcrPair: "DCR_BTC",
 		},
-		ShortInterval:    oneHour,
-		LongInterval:     4 * oneHour,
+		apiLimited:       false,
+		ShortInterval:    time.Hour,
+		LongInterval:     4 * time.Hour,
 		HistoricInterval: oneDay,
+		requester: func(last time.Time, interval time.Duration, cpair string) (string, error) {
+			return helpers.AddParams(bleutradeAPIURL, map[string]interface{}{
+				"market": cpair,
+				"period": bleutradeIntervals[interval.Seconds()],
+			})
+		},
 	}
 )
 
@@ -144,21 +165,6 @@ type commonExchange struct {
 	lastHistoric time.Time
 	respLock     sync.Mutex
 	apiResp      tickable
-	requestURLer func(time.Time, time.Duration, string) (string, error)
-}
-
-func newCommonExchange(exchange ExchangeData, store Store, resp tickable, lastShort, lastLong, lastHistoric time.Time, cpair string, requestUrler func(time.Time, time.Duration, string) (string, error)) *commonExchange {
-	return &commonExchange{
-		ExchangeData: &exchange,
-		client:       new(http.Client),
-		store:        store,
-		lastShort:    lastShort,
-		lastLong:     lastLong,
-		lastHistoric: lastHistoric,
-		requestURLer: requestUrler,
-		apiResp:      resp,
-		currencyPair: cpair,
-	}
 }
 
 func (xc *commonExchange) GetShort(ctx context.Context) error {
@@ -174,142 +180,83 @@ func (xc *commonExchange) GetHistoric(ctx context.Context) error {
 }
 
 func (xc *commonExchange) Get(ctx context.Context, last *time.Time, interval time.Duration, intervalStr string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	xc.respLock.Lock()
 	defer xc.respLock.Unlock()
 	for time.Now().Add(-interval).Unix() > last.Unix() {
-		requestURL, err := xc.requestURLer(*last, interval, xc.availableCPairs[xc.currencyPair])
+		requestURL, err := xc.requester(*last, interval, xc.availableCPairs[xc.currencyPair])
+		if err != nil {
+			return err
+		}
+		// fmt.Printf("Debug: %s\n", requestURL)
+		err = helpers.GetResponse(ctx, xc.client, requestURL, xc.apiResp)
 		if err != nil {
 			return err
 		}
 
-		err = helpers.GetResponse(xc.client, requestURL, xc.apiResp)
-		if err != nil {
-			return err
-		}
-
-		ticks := xc.apiResp.toTicks()
+		ticks := xc.apiResp.toTicks(last.Unix())
 
 		newLast, err := xc.store.StoreExchangeTicks(ctx, xc.Name, interval, intervalStr, xc.currencyPair, ticks)
-
+		if err != nil {
+			return err
+		}
 		if newLast != zeroTime {
 			*last = newLast
 		}
-
-		if err != nil {
-			return err
+		if !xc.apiLimited || len(ticks) == 1 {
+			break
 		}
 	}
 	return nil
 }
 
-func NewPoloniexCollector(ctx context.Context, store Store) (Collector, error) {
-	lshort, llong, lhistoric, err := store.RegisterExchange(ctx, poloniexData)
+func newCollector(ctx context.Context, store Store, exchange ExchangeData, currencyPair string, historicStart time.Time, response tickable) (Collector, error) {
+	lastShort, lastLong, lastHistoric, err := store.RegisterExchange(ctx, exchange)
 	if err != nil {
 		return nil, err
 	}
-	if lhistoric == zeroTime {
-		lhistoric = time.Unix(apprxPoloniexStart, 0)
+
+	now := time.Now()
+	if lastShort == zeroTime {
+		lastShort = now.Add((-14) * oneDay) // Two weeks ago
+	}
+	if lastLong == zeroTime {
+		lastLong = now.Add((-30) * oneDay)
+	}
+	if lastHistoric == zeroTime && historicStart != zeroTime {
+		lastHistoric = historicStart
 	}
 
-	if llong == zeroTime {
-		llong = time.Now().Add((-14) * oneDay)
-	}
-
-	if lshort == zeroTime {
-		lshort = time.Now().Add((-30) * oneDay)
-	}
-
-	requestUrler := func(last time.Time, interval time.Duration, cpair string) (string, error) {
-		return helpers.AddParams(poloniexData.apiURL, map[string]interface{}{
-			"command":      "returnChartData",
-			"currencyPair": cpair,
-			"start":        last.Unix(),
-			"end":          time.Now().Unix(),
-			"period":       int(interval.Seconds()),
-		})
-	}
-
-	return newCommonExchange(poloniexData, store, new(poloniexAPIResponse), lshort, llong, lhistoric, btcdcrPair, requestUrler), nil
+	return &commonExchange{
+		ExchangeData: &exchange,
+		client:       new(http.Client),
+		store:        store,
+		lastShort:    lastShort,
+		lastLong:     lastLong,
+		lastHistoric: lastHistoric,
+		apiResp:      response,
+		currencyPair: currencyPair,
+	}, nil
 }
 
-// func newBasicCommonExchange(exchange ExchangeData, store Store, resp tickable, pair string, reqUrler func(time.Time, time.Duration, string) (string, error)) *commonExchange {
-// 	return newCommonExchange(exchange, store, resp, zeroTime, zeroTime, zeroTime, cpair, reqUrler)
-// }
+func NewPoloniexCollector(ctx context.Context, store Store) (Collector, error) {
+	return newCollector(ctx, store, poloniexData, btcdcrPair, time.Unix(apprxPoloniexStart, 0), new(poloniexAPIResponse))
+}
 
 func NewBittrexCollector(ctx context.Context, store Store) (Collector, error) {
-	s, l, h, err := store.RegisterExchange(ctx, bittrexData)
-	if err != nil {
-		return nil, err
-	}
-
-	requestUrler := func(last time.Time, interval time.Duration, cpair string) (string, error) {
-		return helpers.AddParams(bittrexData.apiURL, map[string]interface{}{
-			"marketName":   cpair,
-			"tickInterval": bittrexIntervals[interval.Seconds()],
-		})
-
-	}
-	return newCommonExchange(bittrexData, store, new(bittrexAPIResponse), s, l, h, btcdcrPair, requestUrler), nil
+	return newCollector(ctx, store, bittrexData, btcdcrPair, zeroTime, new(bittrexAPIResponse))
 }
 
 func NewBittrexUSDCollector(ctx context.Context, store Store) (Collector, error) {
-	s, l, h, err := store.RegisterExchange(ctx, bittrexData)
-	if err != nil {
-		return nil, err
-	}
-
-	requestUrler := func(last time.Time, interval time.Duration, cpair string) (string, error) {
-		return helpers.AddParams(bittrexData.apiURL, map[string]interface{}{
-			"marketName":   cpair,
-			"tickInterval": bittrexIntervals[interval.Seconds()],
-		})
-
-	}
-	return newCommonExchange(bittrexData, store, new(bittrexAPIResponse), s, l, h, usdbtcPair, requestUrler), nil
+	return newCollector(ctx, store, bittrexData, usdbtcPair, zeroTime, new(bittrexAPIResponse))
 }
 
 func NewBleutradeCollector(ctx context.Context, store Store) (Collector, error) {
-	s, l, h, err := store.RegisterExchange(ctx, bleutradeData)
-	if err != nil {
-		return nil, err
-	}
-
-	requestUrler := func(last time.Time, interval time.Duration, cpair string) (string, error) {
-		return helpers.AddParams(bleutradeData.apiURL, map[string]interface{}{
-			"market": cpair,
-			"period": bleutradeIntervals[interval.Seconds()],
-		})
-
-	}
-	return newCommonExchange(bleutradeData, store, new(bleutradeAPIResponse), s, l, h, btcdcrPair, requestUrler), nil
+	return newCollector(ctx, store, bleutradeData, btcdcrPair, zeroTime, new(bleutradeAPIResponse))
 }
 
 func NewBinanceCollector(ctx context.Context, store Store) (Collector, error) {
-	lshort, llong, lhistoric, err := store.RegisterExchange(ctx, binanceData)
-	if err != nil {
-		return nil, err
-	}
-	if lhistoric == zeroTime {
-		lhistoric = time.Unix(apprxBinanceStart, 0)
-	}
-
-	if llong == zeroTime {
-		llong = time.Now().Add((-14) * oneDay)
-	}
-
-	if lshort == zeroTime {
-		lshort = time.Now().Add((-30) * oneDay)
-	}
-
-	requestUrler := func(last time.Time, interval time.Duration, cpair string) (string, error) {
-		return helpers.AddParams(binanceData.apiURL, map[string]interface{}{
-			"symbol":    cpair,
-			"startTime": last.Unix() * 1000,
-			"endTime":   time.Now().Unix() * 1000,
-			"interval":  binanceIntervals[interval.Seconds()],
-			"limit":     binanceVolumeLimit,
-		})
-
-	}
-	return newCommonExchange(binanceData, store, new(binanceAPIResponse), lshort, llong, lhistoric, btcdcrPair, requestUrler), nil
+	return newCollector(ctx, store, binanceData, btcdcrPair, time.Unix(apprxBinanceStart, 0), new(binanceAPIResponse))
 }

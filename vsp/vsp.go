@@ -36,13 +36,11 @@ func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	log.Tracef("GET %v", requestURL)
+	// log.Tracef("GET %v", requestURL)
 	resp, err := vsp.client.Do(vsp.request.WithContext(ctx))
 	if err != nil {
 		return err
 	}
-	log.Tracef("GET successful")
-
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
@@ -58,12 +56,12 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
+	log.Info("Starting collection cycle")
 	if err := vsp.collectAndStore(ctx); err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
 
-	log.Info("Started vsp ticker collection")
 	ticker := time.NewTicker(vsp.period * time.Second)
 	defer ticker.Stop()
 
@@ -74,7 +72,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 				return
 			}
 		case <-ctx.Done():
-			log.Infof("Shutting down VSP collection")
+			log.Infof("Shutting down collector")
 			return
 		}
 	}
@@ -94,6 +92,8 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 		log.Warn(err)
 		err = vsp.fetch(ctx, resp)
 	}
+
+	log.Infof("Collected data for %d pools", len(*resp))
 
 	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
 	for _, err = range errs {

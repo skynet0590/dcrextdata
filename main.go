@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"runtime"
 	"sync"
@@ -21,7 +22,6 @@ import (
 func _main(ctx context.Context) error {
 	cfg, err := loadConfig()
 	if err != nil {
-		// fmt.Printf("Unable to load config: %v\n", err)
 		return err
 	}
 
@@ -49,8 +49,7 @@ func _main(ctx context.Context) error {
 
 	wg := new(sync.WaitGroup)
 
-	if cfg.VSPEnabled {
-		log.Info("Starting VSP data collection")
+	if !cfg.DisableVSP {
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
 			wg.Add(1)
@@ -60,13 +59,11 @@ func _main(ctx context.Context) error {
 		}
 	}
 
-	if cfg.ExchangesEnabled {
-		log.Infof("Starting exchange ticker data collection for %v", cfg.Exchanges)
-		ticksHub, err := exchanges.NewTickHub(ctx, cfg.Exchanges, db)
+	if !cfg.DisableExchangeTicks {
+		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
 			wg.Add(1)
 			go ticksHub.Run(ctx, wg)
-			// ticksHub.Collect(ctx)
 		} else {
 			log.Error(err)
 		}
@@ -87,6 +84,8 @@ func main() {
 	if err := _main(ctx); err != nil {
 		if logRotator != nil {
 			log.Error(err)
+		} else {
+			fmt.Println(err)
 		}
 		os.Exit(1)
 	}

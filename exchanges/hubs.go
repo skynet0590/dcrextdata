@@ -23,28 +23,40 @@ type TickHub struct {
 	client     *http.Client
 }
 
-var NoTickCollectorsError = fmt.Errorf("No tick collectors")
-
-func NewTickHub(ctx context.Context, exchanges []string, store ticks.Store) (*TickHub, error) {
-	if len(exchanges) == 0 {
-		return nil, NoTickCollectorsError
+var (
+	availableExchanges = []string{
+		ticks.Bittrex,
+		ticks.Bittrexusd,
+		ticks.Binance,
+		ticks.Bleutrade,
+		ticks.Poloniex,
 	}
+)
 
-	collectors := make([]ticks.Collector, 0, len(exchanges))
-	for _, exchange := range exchanges {
-		if contructor, ok := ticks.CollectorConstructors[exchange]; ok {
-			collector, err := contructor(ctx, store)
+func NewTickHub(ctx context.Context, disabledexchanges []string, store ticks.Store) (*TickHub, error) {
+	collectors := make([]ticks.Collector, 0, len(availableExchanges)-len(disabledexchanges))
+	disabledMap := make(map[string]struct{})
+	for _, e := range disabledexchanges {
+		disabledMap[e] = struct{}{}
+	}
+	enabledExchanges := make([]string, 0, cap(collectors))
+	for _, exchange := range availableExchanges {
+		if _, ok := disabledMap[exchange]; !ok {
+			collector, err := ticks.CollectorConstructors[exchange](ctx, store)
 			if err != nil {
 				log.Error(err)
 				continue
 			}
 			collectors = append(collectors, collector)
+			enabledExchanges = append(enabledExchanges, exchange)
 		}
 	}
 
 	if len(collectors) == 0 {
-		return nil, NoTickCollectorsError
+		return nil, fmt.Errorf("No tick collectors")
 	}
+
+	log.Infof("Enabled exchange tick collection for %v", enabledExchanges)
 
 	return &TickHub{
 		collectors: collectors,
@@ -55,14 +67,18 @@ func NewTickHub(ctx context.Context, exchanges []string, store ticks.Store) (*Ti
 func (hub *TickHub) CollectShort(ctx context.Context) {
 	wg := new(sync.WaitGroup)
 	for _, collector := range hub.collectors {
+		if ctx.Err() != nil {
+			log.Error(ctx.Err())
+			break
+		}
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, collector ticks.Collector) {
+		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetShort(ctx)
 			if err != nil {
 				log.Error(err)
 			}
 			wg.Done()
-		}(wg, collector)
+		}(ctx, wg, collector)
 	}
 	wg.Wait()
 	log.Info("Completed short collection")
@@ -71,14 +87,18 @@ func (hub *TickHub) CollectShort(ctx context.Context) {
 func (hub *TickHub) CollectLong(ctx context.Context) {
 	wg := new(sync.WaitGroup)
 	for _, collector := range hub.collectors {
+		if ctx.Err() != nil {
+			log.Error(ctx.Err())
+			break
+		}
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, collector ticks.Collector) {
+		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetLong(ctx)
 			if err != nil {
 				log.Error(err)
 			}
 			wg.Done()
-		}(wg, collector)
+		}(ctx, wg, collector)
 	}
 	wg.Wait()
 	log.Info("Completed long collection")
@@ -87,14 +107,18 @@ func (hub *TickHub) CollectLong(ctx context.Context) {
 func (hub *TickHub) CollectHistoric(ctx context.Context) {
 	wg := new(sync.WaitGroup)
 	for _, collector := range hub.collectors {
+		if ctx.Err() != nil {
+			log.Error(ctx.Err())
+			break
+		}
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, collector ticks.Collector) {
+		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetHistoric(ctx)
 			if err != nil {
 				log.Error(err)
 			}
 			wg.Done()
-		}(wg, collector)
+		}(ctx, wg, collector)
 	}
 	wg.Wait()
 	log.Info("Completed historic collection")
@@ -102,7 +126,13 @@ func (hub *TickHub) CollectHistoric(ctx context.Context) {
 
 func (hub *TickHub) CollectAll(ctx context.Context) {
 	hub.CollectShort(ctx)
+	if ctx.Err() != nil {
+		return
+	}
 	hub.CollectLong(ctx)
+	if ctx.Err() != nil {
+		return
+	}
 	hub.CollectHistoric(ctx)
 }
 

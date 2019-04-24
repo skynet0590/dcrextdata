@@ -21,8 +21,21 @@ type Store interface {
 	StoreExchangeTicks(ctx context.Context, exchange string, interval time.Duration, intervalString, pair string, data []Tick) (time.Time, error)
 }
 
+type urlRequester func(time.Time, time.Duration, string) (string, error)
+
+type ExchangeData struct {
+	Name             string
+	WebsiteURL       string
+	apiLimited       bool
+	availableCPairs  map[string]string
+	ShortInterval    time.Duration
+	LongInterval     time.Duration
+	HistoricInterval time.Duration
+	requester        urlRequester
+}
+
 type tickable interface {
-	toTicks() []Tick
+	toTicks(int64) []Tick
 }
 
 // Tick represents an exchange data tick
@@ -46,17 +59,20 @@ type poloniexDataTick struct {
 	Time   int64   `json:"date"`
 }
 
-func (resp poloniexAPIResponse) toTicks() []Tick {
+func (resp poloniexAPIResponse) toTicks(start int64) []Tick {
 	res := []poloniexDataTick(resp)
 	dataTicks := make([]Tick, 0, len(res))
 	for _, v := range res {
+		if v.Time < start {
+			continue
+		}
 		dataTicks = append(dataTicks, Tick{
 			High:   v.High,
 			Low:    v.Low,
 			Open:   v.Open,
 			Close:  v.Close,
 			Volume: v.Volume,
-			Time:   time.Unix(v.Time, 0),
+			Time:   time.Unix(v.Time, 0).UTC(),
 		})
 	}
 	return dataTicks
@@ -75,12 +91,12 @@ type bittrexAPIResponse struct {
 	Result []bittrexDataTick `json:"result"`
 }
 
-func (resp bittrexAPIResponse) toTicks() []Tick {
+func (resp bittrexAPIResponse) toTicks(start int64) []Tick {
 	bTicks := resp.Result
 	dataTicks := make([]Tick, 0, len(bTicks))
 	for _, v := range bTicks {
 		t, err := time.Parse("2006-01-02T15:04:05", v.Time)
-		if err != nil {
+		if err != nil || t.Unix() < start {
 			continue
 		}
 		dataTicks = append(dataTicks, Tick{
@@ -89,7 +105,7 @@ func (resp bittrexAPIResponse) toTicks() []Tick {
 			Open:   v.Open,
 			Close:  v.Close,
 			Volume: v.Volume,
-			Time:   t,
+			Time:   t.UTC(),
 		})
 	}
 	return dataTicks
@@ -108,12 +124,13 @@ type bleutradeAPIResponse struct {
 	Result []bleutradeDataTick `json:"result"`
 }
 
-func (resp bleutradeAPIResponse) toTicks() []Tick {
+func (resp bleutradeAPIResponse) toTicks(start int64) []Tick {
 	res := resp.Result
 	dataTicks := make([]Tick, 0, len(res))
-	for _, v := range res {
+	for i := len(res) - 1; i >= 0; i-- {
+		v := res[i]
 		t, err := time.Parse("2006-01-02 15:04:05", v.Time)
-		if err != nil {
+		if err != nil || t.Unix() < start {
 			continue
 		}
 		dataTicks = append(dataTicks, Tick{
@@ -122,7 +139,7 @@ func (resp bleutradeAPIResponse) toTicks() []Tick {
 			Open:   v.Open,
 			Close:  v.Close,
 			Volume: v.Volume,
-			Time:   t,
+			Time:   t.UTC(),
 		})
 	}
 	return dataTicks
@@ -131,10 +148,18 @@ func (resp bleutradeAPIResponse) toTicks() []Tick {
 type binanceAPIResponse []binanceDataTick
 type binanceDataTick []interface{}
 
-func (resp binanceAPIResponse) toTicks() []Tick {
+func (resp binanceAPIResponse) toTicks(start int64) []Tick {
 	res := []binanceDataTick(resp)
 	dataTicks := make([]Tick, 0, len(res))
 	for _, j := range res {
+		// Converting unix time from milliseconds to seconds
+		secs := int64(j[0].(float64) / 1000)
+		t := time.Unix(secs, 0)
+
+		if secs < start {
+			continue
+		}
+
 		high, err := strconv.ParseFloat(j[2].(string), 64)
 		if err != nil {
 			continue
@@ -155,15 +180,14 @@ func (resp binanceAPIResponse) toTicks() []Tick {
 		if err != nil {
 			continue
 		}
-		// Converting unix time from milliseconds to seconds
-		t := time.Unix(int64(j[0].(float64)/1000), 0)
+
 		dataTicks = append(dataTicks, Tick{
 			High:   high,
 			Low:    low,
 			Open:   open,
 			Close:  close,
 			Volume: volume,
-			Time:   t,
+			Time:   t.UTC(),
 		})
 	}
 	return dataTicks

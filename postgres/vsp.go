@@ -29,11 +29,11 @@ func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
 		return []error{ctx.Err()}
 	}
 	errs := make([]error, 0, len(data))
-	completed := make([]string, 0, len(data))
+	completed := 0
 	for name, tick := range data {
 		err := pg.storeVspResponse(ctx, name, tick)
 		if err == nil {
-			completed = append(completed, name)
+			completed++
 		} else if err != vspTickExistsErr {
 			log.Trace(err)
 			errs = append(errs, err)
@@ -42,10 +42,8 @@ func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
 			return append(errs, ctx.Err())
 		}
 	}
-	if len(completed) == 0 {
+	if completed == 0 {
 		log.Info("Unable to store any pool entry")
-	} else {
-		log.Infof("Stored pool entries for %v", completed)
 	}
 	return errs
 }
@@ -67,8 +65,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 		return err
 	}
 
-	// log.Debugf("Pool ID: %d", pool.ID)
-
 	vspTick := responseToVSPTick(pool.ID, resp)
 	tickTime := time.Unix(int64(resp.LastUpdated), 0)
 
@@ -84,8 +80,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 		txr.Rollback()
 		return err
 	}
-	// vspTick.AddVSPTickTimes
-	// log.Debugf("Tick id %d", vspTick.ID)
 
 	vspTickTimeExits, err := models.VSPTickTimes(
 		models.VSPTickTimeWhere.UpdateTime.EQ(tickTime),

@@ -1,4 +1,4 @@
--- DROP TABLE IF EXISTS vsp_tick, vsp, exchange, exchange_tick, vsp_tick_time;
+DROP TABLE IF EXISTS vsp_tick_time, vsp_tick, vsp, exchange_tick, exchange;
 
 CREATE TABLE IF NOT EXISTS exchange (
     id SERIAL PRIMARY KEY,
@@ -33,7 +33,6 @@ CREATE TABLE IF NOT EXISTS vsp (
 	network TEXT NOT NULL,
 	url TEXT NOT NULL,
 	launched TIMESTAMPTZ NOT NULL
-    -- last_update TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS vsp_tick (
