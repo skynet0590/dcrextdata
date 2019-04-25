@@ -95,7 +95,6 @@ func main() {
 				return
 			}
 		}
-		wg.Add(1)
 		log.Info("Starting PoW data collection")
 		powMap := make(map[string]int64)
 		for _, pow := range cfg.Pows {

@@ -78,8 +78,8 @@ const (
 	// PoW table
 	CreatePowDataTable = `CREATE TABLE IF NOT EXISTS pow_data (
 		time INT,
-		network_hashrate INT,
-		pool_hashrate INT8,
+		network_hashrate INT8,
+		pool_hashrate FLOAT8,
 		workers INT,
 		network_difficulty FLOAT8,
 		coin_price VARCHAR(25),
