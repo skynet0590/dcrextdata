@@ -17,11 +17,15 @@ const (
 
 	F2pool    = "f2pool"
 	F2poolUrl = "https://api.f2pool.com/decred/"
+
+	Coinmine    = "coinmine"
+	CoinmineUrl = "https://www2.coinmine.pl/dcr/index.php?page=api&action=public"
 )
 
 var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
-	Luxor:  NewLuxor,
-	F2pool: NewF2pool,
+	Luxor:    NewLuxor,
+	F2pool:   NewF2pool,
+	Coinmine: NewCoinmine,
 }
 
 type Pow interface {
@@ -151,3 +155,53 @@ func (F2poolPow) fetch(res *f2poolAPIResponse, start int64) []PowData {
 }
 
 func (*F2poolPow) Name() string { return F2pool }
+
+type CoinminePow struct {
+	CommonInfo
+}
+
+func NewCoinmine(client *http.Client, lastUpdate int64) (Pow, error) {
+	if client == nil {
+		return nil, new(NilClientError)
+	}
+	return &CoinminePow{
+		CommonInfo: CommonInfo{
+			client:     client,
+			lastUpdate: lastUpdate,
+			baseUrl:    LuxorUrl,
+		},
+	}, nil
+}
+
+func (in *CoinminePow) Collect() ([]PowData, error) {
+	res := new(coinmineAPIResponse)
+	err := helpers.GetResponse(in.client, CoinmineUrl, res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := in.fetch(res, in.lastUpdate)
+	in.lastUpdate = result[len(result)-1].Time
+
+	return result, nil
+}
+
+func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
+	data := make([]PowData, 0, 1)
+	t := time.Now().Unix()
+
+	data = append(data, PowData{
+		Time:              t,
+		NetworkHashrate:   res.NetworkHashrate,
+		PoolHashrate:      res.PoolHashrate,
+		Workers:           res.Workers,
+		NetworkDifficulty: 0,
+		CoinPrice:         "",
+		BtcPrice:          "",
+		Source:            "coinmine",
+	})
+	return data
+}
+
+func (*CoinminePow) Name() string { return Coinmine }
