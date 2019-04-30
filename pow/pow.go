@@ -20,12 +20,16 @@ const (
 
 	Coinmine    = "coinmine"
 	CoinmineUrl = "https://www2.coinmine.pl/dcr/index.php?page=api&action=public"
+
+	Btc    = "btc"
+	BtcUrl = "https://pool.api.btc.com/v1/pool/status"
 )
 
 var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
 	Luxor:    NewLuxor,
 	F2pool:   NewF2pool,
 	Coinmine: NewCoinmine,
+	Btc:      NewBtc,
 }
 
 type Pow interface {
@@ -63,7 +67,7 @@ func NewLuxor(client *http.Client, lastUpdate int64) (Pow, error) {
 
 func (in *LuxorPow) Collect() ([]PowData, error) {
 	res := new(luxorAPIResponse)
-	err := helpers.GetResponse(in.client, LuxorUrl, res)
+	err := helpers.GetResponse(in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -119,7 +123,7 @@ func NewF2pool(client *http.Client, lastUpdate int64) (Pow, error) {
 
 func (in *F2poolPow) Collect() ([]PowData, error) {
 	res := new(f2poolAPIResponse)
-	err := helpers.GetResponse(in.client, F2poolUrl, res)
+	err := helpers.GetResponse(in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -168,14 +172,14 @@ func NewCoinmine(client *http.Client, lastUpdate int64) (Pow, error) {
 		CommonInfo: CommonInfo{
 			client:     client,
 			lastUpdate: lastUpdate,
-			baseUrl:    LuxorUrl,
+			baseUrl:    CoinmineUrl,
 		},
 	}, nil
 }
 
 func (in *CoinminePow) Collect() ([]PowData, error) {
 	res := new(coinmineAPIResponse)
-	err := helpers.GetResponse(in.client, CoinmineUrl, res)
+	err := helpers.GetResponse(in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -205,3 +209,56 @@ func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 }
 
 func (*CoinminePow) Name() string { return Coinmine }
+
+type BtcPow struct {
+	CommonInfo
+}
+
+func NewBtc(client *http.Client, lastUpdate int64) (Pow, error) {
+	if client == nil {
+		return nil, new(NilClientError)
+	}
+	return &BtcPow{
+		CommonInfo: CommonInfo{
+			client:     client,
+			lastUpdate: lastUpdate,
+			baseUrl:    BtcUrl,
+		},
+	}, nil
+}
+
+func (in *BtcPow) Collect() ([]PowData, error) {
+	res := new(btcAPIResponse)
+	err := helpers.GetResponse(in.client, in.baseUrl, res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := in.fetch(res, in.lastUpdate)
+	in.lastUpdate = result[len(result)-1].Time
+
+	return result, nil
+}
+
+func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
+	data := make([]PowData, 0, 1)
+	t := time.Now().Unix()
+
+	networkHashrate := 1000000000000000 * res.NetworkHashrate
+	poolHashrate := 1000000000000000 * res.PoolHashrate
+
+	data = append(data, PowData{
+		Time:              t,
+		NetworkHashrate:   networkHashrate,
+		PoolHashrate:      poolHashrate,
+		Workers:           0,
+		NetworkDifficulty: 0,
+		CoinPrice:         "",
+		BtcPrice:          res.CoinPrice,
+		Source:            "btc",
+	})
+	return data
+}
+
+func (*BtcPow) Name() string { return Btc }

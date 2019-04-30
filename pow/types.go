@@ -36,3 +36,9 @@ type coinmineAPIResponse struct {
 	PoolHashrate    float64 `json:"hashrate"`
 	Workers         int64   `json:"workers"`
 }
+
+type btcAPIResponse struct {
+	NetworkHashrate uint64  `json:"network_hashrate"`
+	PoolHashrate    float64 `json:"pool_hashrate"`
+	CoinPrice       string  `json:"DCR2USD"`
+}
