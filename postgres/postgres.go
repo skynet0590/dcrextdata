@@ -82,8 +82,8 @@ const (
 		pool_hashrate FLOAT8,
 		workers INT,
 		network_difficulty FLOAT8,
-		coin_price VARCHAR(25),
-		btc_price VARCHAR(25),
+		coin_price FLOAT8,
+		btc_price FLOAT8,
 		source VARCHAR(25),
 		PRIMARY KEY (time, source)
 	);`
