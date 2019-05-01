@@ -6,6 +6,7 @@ package pow
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/helpers"
@@ -88,14 +89,23 @@ func (LuxorPow) fetch(res *luxorAPIResponse, start int64) []PowData {
 			continue
 		}
 
+		coinPrice, err := strconv.ParseFloat(j.CoinPrice, 64)
+		if err != nil {
+			continue
+		}
+		btcPrice, err := strconv.ParseFloat(j.BtcPrice, 64)
+		if err != nil {
+			continue
+		}
+
 		data = append(data, PowData{
 			Time:              t.Unix(),
 			NetworkHashrate:   j.NetworkHashrate,
 			PoolHashrate:      j.PoolHashrate,
 			Workers:           j.Workers,
 			NetworkDifficulty: j.NetworkDifficulty,
-			CoinPrice:         j.CoinPrice,
-			BtcPrice:          j.BtcPrice,
+			CoinPrice:         coinPrice,
+			BtcPrice:          btcPrice,
 			Source:            "luxor",
 		})
 	}
@@ -150,8 +160,8 @@ func (F2poolPow) fetch(res *f2poolAPIResponse, start int64) []PowData {
 			PoolHashrate:      v,
 			Workers:           0,
 			NetworkDifficulty: 0,
-			CoinPrice:         "",
-			BtcPrice:          "",
+			CoinPrice:         0,
+			BtcPrice:          0,
 			Source:            "f2pool",
 		})
 	}
@@ -201,8 +211,8 @@ func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 		PoolHashrate:      res.PoolHashrate,
 		Workers:           res.Workers,
 		NetworkDifficulty: 0,
-		CoinPrice:         "",
-		BtcPrice:          "",
+		CoinPrice:         0,
+		BtcPrice:          0,
 		Source:            "coinmine",
 	})
 	return data
@@ -245,8 +255,17 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
 	t := time.Now().Unix()
 
-	networkHashrate := 1000000000000000 * res.NetworkHashrate
-	poolHashrate := 1000000000000000 * res.PoolHashrate
+	n, err := strconv.ParseFloat(res.BtcData.NetworkHashrate, 64)
+	if err != nil {
+		return nil
+	}
+	p, err := strconv.ParseFloat(res.BtcData.PoolHashrate, 64)
+	if err != nil {
+		return nil
+	}
+
+	networkHashrate := int64(1000000000000000 * n)
+	poolHashrate := 1000000000000000 * p
 
 	data = append(data, PowData{
 		Time:              t,
@@ -254,8 +273,8 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 		PoolHashrate:      poolHashrate,
 		Workers:           0,
 		NetworkDifficulty: 0,
-		CoinPrice:         "",
-		BtcPrice:          res.CoinPrice,
+		CoinPrice:         0,
+		BtcPrice:          res.BtcData.Rates.CoinPrice,
 		Source:            "btc",
 	})
 	return data
