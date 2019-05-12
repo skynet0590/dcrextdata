@@ -18,8 +18,8 @@ type ResposeData struct {
 	APIVersionsSupported []int64 `json:"APIVersionsSupported"`
 	Network              string  `json:"Network"`
 	URL                  string  `json:"URL"`
-	Launched             int     `json:"Launched"`
-	LastUpdated          int     `json:"LastUpdated"`
+	Launched             int64   `json:"Launched"`
+	LastUpdated          int64   `json:"LastUpdated"`
 	Immature             int     `json:"Immature"`
 	Live                 int     `json:"Live"`
 	Voted                int     `json:"Voted"`

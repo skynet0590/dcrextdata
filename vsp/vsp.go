@@ -93,7 +93,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 		err = vsp.fetch(ctx, resp)
 	}
 
-	log.Infof("Collected data for %d pools", len(*resp))
+	log.Infof("Collected data for %d vsps", len(*resp))
 
 	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
 	for _, err = range errs {

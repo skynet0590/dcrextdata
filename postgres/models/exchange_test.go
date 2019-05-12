@@ -581,7 +581,7 @@ func testExchangesSelect(t *testing.T) {
 }
 
 var (
-	exchangeDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `URL`: `text`, `TickShortInterval`: `integer`, `TickLongInterval`: `integer`, `TickHistoricInterval`: `integer`}
+	exchangeDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `URL`: `text`}
 	_               = bytes.MinRead
 )
 

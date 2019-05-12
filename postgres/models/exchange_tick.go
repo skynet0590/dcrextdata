@@ -30,7 +30,7 @@ type ExchangeTick struct {
 	Open         float64   `boil:"open" json:"open" toml:"open" yaml:"open"`
 	Close        float64   `boil:"close" json:"close" toml:"close" yaml:"close"`
 	Volume       float64   `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
-	Interval     string    `boil:"interval" json:"interval" toml:"interval" yaml:"interval"`
+	Interval     int       `boil:"interval" json:"interval" toml:"interval" yaml:"interval"`
 	CurrencyPair string    `boil:"currency_pair" json:"currency_pair" toml:"currency_pair" yaml:"currency_pair"`
 	Time         time.Time `boil:"time" json:"time" toml:"time" yaml:"time"`
 
@@ -108,7 +108,7 @@ var ExchangeTickWhere = struct {
 	Open         whereHelperfloat64
 	Close        whereHelperfloat64
 	Volume       whereHelperfloat64
-	Interval     whereHelperstring
+	Interval     whereHelperint
 	CurrencyPair whereHelperstring
 	Time         whereHelpertime_Time
 }{
@@ -119,7 +119,7 @@ var ExchangeTickWhere = struct {
 	Open:         whereHelperfloat64{field: `open`},
 	Close:        whereHelperfloat64{field: `close`},
 	Volume:       whereHelperfloat64{field: `volume`},
-	Interval:     whereHelperstring{field: `interval`},
+	Interval:     whereHelperint{field: `interval`},
 	CurrencyPair: whereHelperstring{field: `currency_pair`},
 	Time:         whereHelpertime_Time{field: `time`},
 }

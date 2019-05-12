@@ -35,27 +35,27 @@ func (pg *PgDb) RegisterExchange(ctx context.Context, exchange ticks.ExchangeDat
 	if err != nil {
 		if err == sql.ErrNoRows {
 			newXch := models.Exchange{
-				Name:                 exchange.Name,
-				URL:                  exchange.WebsiteURL,
-				TickShortInterval:    int(exchange.ShortInterval.Seconds()),
-				TickLongInterval:     int(exchange.LongInterval.Seconds()),
-				TickHistoricInterval: int(exchange.HistoricInterval.Seconds()),
+				Name: exchange.Name,
+				URL:  exchange.WebsiteURL,
 			}
 			err = newXch.Insert(ctx, pg.db, boil.Infer())
 		}
 		return zeroTime, zeroTime, zeroTime, err
 	}
 	var shortTime, longTime, historicTime time.Time
-	timeAsc := qm.OrderBy("time desc")
-	lastShort, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(ticks.IntervalShort), timeAsc)).One(ctx, pg.db)
+	toMin := func(t time.Duration) int {
+		return int(t.Minutes())
+	}
+	timeDesc := qm.OrderBy("time desc")
+	lastShort, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(toMin(exchange.ShortInterval)), timeDesc)).One(ctx, pg.db)
 	if err == nil {
 		shortTime = lastShort.Time
 	}
-	lastLong, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(ticks.IntervalLong), timeAsc)).One(ctx, pg.db)
+	lastLong, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(toMin(exchange.LongInterval)), timeDesc)).One(ctx, pg.db)
 	if err == nil {
 		longTime = lastLong.Time
 	}
-	lastHistoric, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(ticks.IntervalHistoric), timeAsc)).One(ctx, pg.db)
+	lastHistoric, err := models.ExchangeTicks(qm.Expr(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID), models.ExchangeTickWhere.Interval.EQ(toMin(exchange.HistoricInterval)), timeDesc)).One(ctx, pg.db)
 	if err == nil {
 		historicTime = lastHistoric.Time
 	}
@@ -68,7 +68,7 @@ func (pg *PgDb) RegisterExchange(ctx context.Context, exchange ticks.ExchangeDat
 }
 
 // StoreExchangeTicks
-func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval time.Duration, intervalString string, pair string, ticks []ticks.Tick) (time.Time, error) {
+func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval int, pair string, ticks []ticks.Tick) (time.Time, error) {
 	if len(ticks) == 0 {
 		return zeroTime, fmt.Errorf("No ticks recieved for %s", name)
 	}
@@ -80,12 +80,12 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval ti
 
 	var lastTime time.Time
 	lastTick, err := models.ExchangeTicks(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID),
-		models.ExchangeTickWhere.Interval.EQ(intervalString),
+		models.ExchangeTickWhere.Interval.EQ(interval),
 		models.ExchangeTickWhere.CurrencyPair.EQ(pair),
 		qm.OrderBy(models.ExchangeTickColumns.Time)).One(ctx, pg.db)
 
 	if err == sql.ErrNoRows {
-		lastTime = ticks[0].Time.Add(-interval)
+		lastTime = ticks[0].Time.Add(-time.Duration(interval))
 	} else if err != nil {
 		return lastTime, err
 	} else {
@@ -98,7 +98,7 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval ti
 		// if tick.Time.Unix() <= lastTime.Unix() {
 		// 	continue
 		// }
-		xcTick := tickToExchangeTick(xch.ID, pair, intervalString, tick)
+		xcTick := tickToExchangeTick(xch.ID, pair, interval, tick)
 		err = xcTick.Insert(ctx, pg.db, boil.Infer())
 		if err != nil && !strings.Contains(err.Error(), "unique constraint") {
 			return lastTime, err
@@ -108,17 +108,17 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval ti
 	}
 
 	if added == 0 {
-		log.Infof("No new ticks for %s(%s)", name, intervalString)
+		log.Infof("No new ticks for %s(%dm)", name, interval)
 	} else if added == 1 {
-		log.Infof("Stored an exchange tick for %s(%s) at %v", name, intervalString, firstTime)
+		log.Infof("Stored an exchange tick for %s(%dm) at %v", name, interval, firstTime)
 	} else {
-		log.Infof("Stored %d exchange ticks for %s(%s) from %v to %v", added, name, intervalString,
+		log.Infof("Stored %d exchange ticks for %s(%dm) from %v to %v", added, name, interval,
 			firstTime, lastTime)
 	}
 	return lastTime, nil
 }
 
-func tickToExchangeTick(exchangeID int, pair string, interval string, tick ticks.Tick) *models.ExchangeTick {
+func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
 	return &models.ExchangeTick{
 		ExchangeID:   exchangeID,
 		High:         tick.High,

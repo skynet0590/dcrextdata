@@ -198,7 +198,7 @@ func (xc *commonExchange) Get(ctx context.Context, last *time.Time, interval tim
 
 		ticks := xc.apiResp.toTicks(last.Unix())
 
-		newLast, err := xc.store.StoreExchangeTicks(ctx, xc.Name, interval, intervalStr, xc.currencyPair, ticks)
+		newLast, err := xc.store.StoreExchangeTicks(ctx, xc.Name, int(interval.Minutes()), xc.currencyPair, ticks)
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func newCollector(ctx context.Context, store Store, exchange ExchangeData, curre
 
 	now := time.Now()
 	if lastShort == zeroTime {
-		lastShort = now.Add((-14) * oneDay) // Two weeks ago
+		lastShort = now.Add((-14) * oneDay)
 	}
 	if lastLong == zeroTime {
 		lastLong = now.Add((-30) * oneDay)

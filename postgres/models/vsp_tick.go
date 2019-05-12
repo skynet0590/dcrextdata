@@ -23,17 +23,18 @@ import (
 
 // VSPTick is an object representing the database table.
 type VSPTick struct {
-	ID               int     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	VSPID            int     `boil:"vsp_id" json:"vsp_id" toml:"vsp_id" yaml:"vsp_id"`
-	Immature         int     `boil:"immature" json:"immature" toml:"immature" yaml:"immature"`
-	Live             int     `boil:"live" json:"live" toml:"live" yaml:"live"`
-	Voted            int     `boil:"voted" json:"voted" toml:"voted" yaml:"voted"`
-	Missed           int     `boil:"missed" json:"missed" toml:"missed" yaml:"missed"`
-	PoolFees         float64 `boil:"pool_fees" json:"pool_fees" toml:"pool_fees" yaml:"pool_fees"`
-	ProportionLive   float64 `boil:"proportion_live" json:"proportion_live" toml:"proportion_live" yaml:"proportion_live"`
-	ProportionMissed float64 `boil:"proportion_missed" json:"proportion_missed" toml:"proportion_missed" yaml:"proportion_missed"`
-	UserCount        int     `boil:"user_count" json:"user_count" toml:"user_count" yaml:"user_count"`
-	UsersActive      int     `boil:"users_active" json:"users_active" toml:"users_active" yaml:"users_active"`
+	ID               int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	VSPID            int       `boil:"vsp_id" json:"vsp_id" toml:"vsp_id" yaml:"vsp_id"`
+	Immature         int       `boil:"immature" json:"immature" toml:"immature" yaml:"immature"`
+	Live             int       `boil:"live" json:"live" toml:"live" yaml:"live"`
+	Voted            int       `boil:"voted" json:"voted" toml:"voted" yaml:"voted"`
+	Missed           int       `boil:"missed" json:"missed" toml:"missed" yaml:"missed"`
+	PoolFees         float64   `boil:"pool_fees" json:"pool_fees" toml:"pool_fees" yaml:"pool_fees"`
+	ProportionLive   float64   `boil:"proportion_live" json:"proportion_live" toml:"proportion_live" yaml:"proportion_live"`
+	ProportionMissed float64   `boil:"proportion_missed" json:"proportion_missed" toml:"proportion_missed" yaml:"proportion_missed"`
+	UserCount        int       `boil:"user_count" json:"user_count" toml:"user_count" yaml:"user_count"`
+	UsersActive      int       `boil:"users_active" json:"users_active" toml:"users_active" yaml:"users_active"`
+	Time             time.Time `boil:"time" json:"time" toml:"time" yaml:"time"`
 
 	R *vspTickR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L vspTickL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -51,6 +52,7 @@ var VSPTickColumns = struct {
 	ProportionMissed string
 	UserCount        string
 	UsersActive      string
+	Time             string
 }{
 	ID:               "id",
 	VSPID:            "vsp_id",
@@ -63,6 +65,7 @@ var VSPTickColumns = struct {
 	ProportionMissed: "proportion_missed",
 	UserCount:        "user_count",
 	UsersActive:      "users_active",
+	Time:             "time",
 }
 
 // Generated where
@@ -79,6 +82,7 @@ var VSPTickWhere = struct {
 	ProportionMissed whereHelperfloat64
 	UserCount        whereHelperint
 	UsersActive      whereHelperint
+	Time             whereHelpertime_Time
 }{
 	ID:               whereHelperint{field: `id`},
 	VSPID:            whereHelperint{field: `vsp_id`},
@@ -91,21 +95,19 @@ var VSPTickWhere = struct {
 	ProportionMissed: whereHelperfloat64{field: `proportion_missed`},
 	UserCount:        whereHelperint{field: `user_count`},
 	UsersActive:      whereHelperint{field: `users_active`},
+	Time:             whereHelpertime_Time{field: `time`},
 }
 
 // VSPTickRels is where relationship names are stored.
 var VSPTickRels = struct {
-	VSP          string
-	VSPTickTimes string
+	VSP string
 }{
-	VSP:          "VSP",
-	VSPTickTimes: "VSPTickTimes",
+	VSP: "VSP",
 }
 
 // vspTickR is where relationships are stored.
 type vspTickR struct {
-	VSP          *VSP
-	VSPTickTimes VSPTickTimeSlice
+	VSP *VSP
 }
 
 // NewStruct creates a new relationship struct
@@ -117,8 +119,8 @@ func (*vspTickR) NewStruct() *vspTickR {
 type vspTickL struct{}
 
 var (
-	vspTickColumns               = []string{"id", "vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active"}
-	vspTickColumnsWithoutDefault = []string{"vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active"}
+	vspTickColumns               = []string{"id", "vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active", "time"}
+	vspTickColumnsWithoutDefault = []string{"vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active", "time"}
 	vspTickColumnsWithDefault    = []string{"id"}
 	vspTickPrimaryKeyColumns     = []string{"id"}
 )
@@ -228,27 +230,6 @@ func (o *VSPTick) VSP(mods ...qm.QueryMod) vspQuery {
 	return query
 }
 
-// VSPTickTimes retrieves all the vsp_tick_time's VSPTickTimes with an executor.
-func (o *VSPTick) VSPTickTimes(mods ...qm.QueryMod) vspTickTimeQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"vsp_tick_time\".\"vsp_tick_id\"=?", o.ID),
-	)
-
-	query := VSPTickTimes(queryMods...)
-	queries.SetFrom(query.Query, "\"vsp_tick_time\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"vsp_tick_time\".*"})
-	}
-
-	return query
-}
-
 // LoadVSP allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (vspTickL) LoadVSP(ctx context.Context, e boil.ContextExecutor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
@@ -342,94 +323,6 @@ func (vspTickL) LoadVSP(ctx context.Context, e boil.ContextExecutor, singular bo
 	return nil
 }
 
-// LoadVSPTickTimes allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (vspTickL) LoadVSPTickTimes(ctx context.Context, e boil.ContextExecutor, singular bool, maybeVSPTick interface{}, mods queries.Applicator) error {
-	var slice []*VSPTick
-	var object *VSPTick
-
-	if singular {
-		object = maybeVSPTick.(*VSPTick)
-	} else {
-		slice = *maybeVSPTick.(*[]*VSPTick)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &vspTickR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &vspTickR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`vsp_tick_time`), qm.WhereIn(`vsp_tick_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load vsp_tick_time")
-	}
-
-	var resultSlice []*VSPTickTime
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice vsp_tick_time")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on vsp_tick_time")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for vsp_tick_time")
-	}
-
-	if singular {
-		object.R.VSPTickTimes = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &vspTickTimeR{}
-			}
-			foreign.R.VSPTick = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.VSPTickID {
-				local.R.VSPTickTimes = append(local.R.VSPTickTimes, foreign)
-				if foreign.R == nil {
-					foreign.R = &vspTickTimeR{}
-				}
-				foreign.R.VSPTick = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // SetVSP of the vspTick to the related item.
 // Sets o.R.VSP to related.
 // Adds o to related.R.VSPTicks.
@@ -474,59 +367,6 @@ func (o *VSPTick) SetVSP(ctx context.Context, exec boil.ContextExecutor, insert 
 		related.R.VSPTicks = append(related.R.VSPTicks, o)
 	}
 
-	return nil
-}
-
-// AddVSPTickTimes adds the given related objects to the existing relationships
-// of the vsp_tick, optionally inserting them as new records.
-// Appends related to o.R.VSPTickTimes.
-// Sets related.R.VSPTick appropriately.
-func (o *VSPTick) AddVSPTickTimes(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*VSPTickTime) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.VSPTickID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"vsp_tick_time\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"vsp_tick_id"}),
-				strmangle.WhereClause("\"", "\"", 2, vspTickTimePrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.DebugMode {
-				fmt.Fprintln(boil.DebugWriter, updateQuery)
-				fmt.Fprintln(boil.DebugWriter, values)
-			}
-
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.VSPTickID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &vspTickR{
-			VSPTickTimes: related,
-		}
-	} else {
-		o.R.VSPTickTimes = append(o.R.VSPTickTimes, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &vspTickTimeR{
-				VSPTick: o,
-			}
-		} else {
-			rel.R.VSPTick = o
-		}
-	}
 	return nil
 }
 

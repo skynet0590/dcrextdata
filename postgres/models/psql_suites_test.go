@@ -13,6 +13,4 @@ func TestUpsert(t *testing.T) {
 	t.Run("VSPS", testVSPSUpsert)
 
 	t.Run("VSPTicks", testVSPTicksUpsert)
-
-	t.Run("VSPTickTimes", testVSPTickTimesUpsert)
 }

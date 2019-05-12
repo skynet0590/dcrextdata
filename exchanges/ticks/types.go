@@ -18,7 +18,7 @@ type Collector interface {
 
 type Store interface {
 	RegisterExchange(ctx context.Context, exchange ExchangeData) (lastShort, lastLong, lastHistoric time.Time, err error)
-	StoreExchangeTicks(ctx context.Context, exchange string, interval time.Duration, intervalString, pair string, data []Tick) (time.Time, error)
+	StoreExchangeTicks(ctx context.Context, exchange string, interval int, pair string, data []Tick) (time.Time, error)
 }
 
 type urlRequester func(time.Time, time.Duration, string) (string, error)

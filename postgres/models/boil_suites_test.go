@@ -16,7 +16,6 @@ func TestParent(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicks)
 	t.Run("VSPS", testVSPS)
 	t.Run("VSPTicks", testVSPTicks)
-	t.Run("VSPTickTimes", testVSPTickTimes)
 }
 
 func TestDelete(t *testing.T) {
@@ -24,7 +23,6 @@ func TestDelete(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksDelete)
 	t.Run("VSPS", testVSPSDelete)
 	t.Run("VSPTicks", testVSPTicksDelete)
-	t.Run("VSPTickTimes", testVSPTickTimesDelete)
 }
 
 func TestQueryDeleteAll(t *testing.T) {
@@ -32,7 +30,6 @@ func TestQueryDeleteAll(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksQueryDeleteAll)
 	t.Run("VSPS", testVSPSQueryDeleteAll)
 	t.Run("VSPTicks", testVSPTicksQueryDeleteAll)
-	t.Run("VSPTickTimes", testVSPTickTimesQueryDeleteAll)
 }
 
 func TestSliceDeleteAll(t *testing.T) {
@@ -40,7 +37,6 @@ func TestSliceDeleteAll(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksSliceDeleteAll)
 	t.Run("VSPS", testVSPSSliceDeleteAll)
 	t.Run("VSPTicks", testVSPTicksSliceDeleteAll)
-	t.Run("VSPTickTimes", testVSPTickTimesSliceDeleteAll)
 }
 
 func TestExists(t *testing.T) {
@@ -48,7 +44,6 @@ func TestExists(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksExists)
 	t.Run("VSPS", testVSPSExists)
 	t.Run("VSPTicks", testVSPTicksExists)
-	t.Run("VSPTickTimes", testVSPTickTimesExists)
 }
 
 func TestFind(t *testing.T) {
@@ -56,7 +51,6 @@ func TestFind(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksFind)
 	t.Run("VSPS", testVSPSFind)
 	t.Run("VSPTicks", testVSPTicksFind)
-	t.Run("VSPTickTimes", testVSPTickTimesFind)
 }
 
 func TestBind(t *testing.T) {
@@ -64,7 +58,6 @@ func TestBind(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksBind)
 	t.Run("VSPS", testVSPSBind)
 	t.Run("VSPTicks", testVSPTicksBind)
-	t.Run("VSPTickTimes", testVSPTickTimesBind)
 }
 
 func TestOne(t *testing.T) {
@@ -72,7 +65,6 @@ func TestOne(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksOne)
 	t.Run("VSPS", testVSPSOne)
 	t.Run("VSPTicks", testVSPTicksOne)
-	t.Run("VSPTickTimes", testVSPTickTimesOne)
 }
 
 func TestAll(t *testing.T) {
@@ -80,7 +72,6 @@ func TestAll(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksAll)
 	t.Run("VSPS", testVSPSAll)
 	t.Run("VSPTicks", testVSPTicksAll)
-	t.Run("VSPTickTimes", testVSPTickTimesAll)
 }
 
 func TestCount(t *testing.T) {
@@ -88,7 +79,6 @@ func TestCount(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksCount)
 	t.Run("VSPS", testVSPSCount)
 	t.Run("VSPTicks", testVSPTicksCount)
-	t.Run("VSPTickTimes", testVSPTickTimesCount)
 }
 
 func TestInsert(t *testing.T) {
@@ -100,8 +90,6 @@ func TestInsert(t *testing.T) {
 	t.Run("VSPS", testVSPSInsertWhitelist)
 	t.Run("VSPTicks", testVSPTicksInsert)
 	t.Run("VSPTicks", testVSPTicksInsertWhitelist)
-	t.Run("VSPTickTimes", testVSPTickTimesInsert)
-	t.Run("VSPTickTimes", testVSPTickTimesInsertWhitelist)
 }
 
 // TestToOne tests cannot be run in parallel
@@ -109,7 +97,6 @@ func TestInsert(t *testing.T) {
 func TestToOne(t *testing.T) {
 	t.Run("ExchangeTickToExchangeUsingExchange", testExchangeTickToOneExchangeUsingExchange)
 	t.Run("VSPTickToVSPUsingVSP", testVSPTickToOneVSPUsingVSP)
-	t.Run("VSPTickTimeToVSPTickUsingVSPTick", testVSPTickTimeToOneVSPTickUsingVSPTick)
 }
 
 // TestOneToOne tests cannot be run in parallel
@@ -121,7 +108,6 @@ func TestOneToOne(t *testing.T) {}
 func TestToMany(t *testing.T) {
 	t.Run("ExchangeToExchangeTicks", testExchangeToManyExchangeTicks)
 	t.Run("VSPToVSPTicks", testVSPToManyVSPTicks)
-	t.Run("VSPTickToVSPTickTimes", testVSPTickToManyVSPTickTimes)
 }
 
 // TestToOneSet tests cannot be run in parallel
@@ -129,7 +115,6 @@ func TestToMany(t *testing.T) {
 func TestToOneSet(t *testing.T) {
 	t.Run("ExchangeTickToExchangeUsingExchangeTicks", testExchangeTickToOneSetOpExchangeUsingExchange)
 	t.Run("VSPTickToVSPUsingVSPTicks", testVSPTickToOneSetOpVSPUsingVSP)
-	t.Run("VSPTickTimeToVSPTickUsingVSPTickTimes", testVSPTickTimeToOneSetOpVSPTickUsingVSPTick)
 }
 
 // TestToOneRemove tests cannot be run in parallel
@@ -149,7 +134,6 @@ func TestOneToOneRemove(t *testing.T) {}
 func TestToManyAdd(t *testing.T) {
 	t.Run("ExchangeToExchangeTicks", testExchangeToManyAddOpExchangeTicks)
 	t.Run("VSPToVSPTicks", testVSPToManyAddOpVSPTicks)
-	t.Run("VSPTickToVSPTickTimes", testVSPTickToManyAddOpVSPTickTimes)
 }
 
 // TestToManySet tests cannot be run in parallel
@@ -165,7 +149,6 @@ func TestReload(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksReload)
 	t.Run("VSPS", testVSPSReload)
 	t.Run("VSPTicks", testVSPTicksReload)
-	t.Run("VSPTickTimes", testVSPTickTimesReload)
 }
 
 func TestReloadAll(t *testing.T) {
@@ -173,7 +156,6 @@ func TestReloadAll(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksReloadAll)
 	t.Run("VSPS", testVSPSReloadAll)
 	t.Run("VSPTicks", testVSPTicksReloadAll)
-	t.Run("VSPTickTimes", testVSPTickTimesReloadAll)
 }
 
 func TestSelect(t *testing.T) {
@@ -181,7 +163,6 @@ func TestSelect(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksSelect)
 	t.Run("VSPS", testVSPSSelect)
 	t.Run("VSPTicks", testVSPTicksSelect)
-	t.Run("VSPTickTimes", testVSPTickTimesSelect)
 }
 
 func TestUpdate(t *testing.T) {
@@ -189,7 +170,6 @@ func TestUpdate(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksUpdate)
 	t.Run("VSPS", testVSPSUpdate)
 	t.Run("VSPTicks", testVSPTicksUpdate)
-	t.Run("VSPTickTimes", testVSPTickTimesUpdate)
 }
 
 func TestSliceUpdateAll(t *testing.T) {
@@ -197,5 +177,4 @@ func TestSliceUpdateAll(t *testing.T) {
 	t.Run("ExchangeTicks", testExchangeTicksSliceUpdateAll)
 	t.Run("VSPS", testVSPSSliceUpdateAll)
 	t.Run("VSPTicks", testVSPTicksSliceUpdateAll)
-	t.Run("VSPTickTimes", testVSPTickTimesSliceUpdateAll)
 }

@@ -8,11 +8,9 @@ var TableNames = struct {
 	ExchangeTick string
 	VSP          string
 	VSPTick      string
-	VSPTickTime  string
 }{
 	Exchange:     "exchange",
 	ExchangeTick: "exchange_tick",
 	VSP:          "vsp",
 	VSPTick:      "vsp_tick",
-	VSPTickTime:  "vsp_tick_time",
 }

@@ -43,7 +43,7 @@ func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
 		}
 	}
 	if completed == 0 {
-		log.Info("Unable to store any pool entry")
+		log.Info("Unable to store any vsp entry")
 	}
 	return errs
 }
@@ -69,46 +69,56 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	tickTime := time.Unix(int64(resp.LastUpdated), 0)
 
 	err = vspTick.Insert(ctx, pg.db, boil.Infer())
-	if err != nil && strings.Contains(err.Error(), "unique constraint") {
-		log.Tracef("Tick exits for %s", name)
-		err = txr.Rollback()
-		if err != nil {
-			return err
-		}
-		return vspTickExistsErr
-	} else if err != nil {
-		txr.Rollback()
-		return err
-	}
-
-	vspTickTimeExits, err := models.VSPTickTimes(
-		models.VSPTickTimeWhere.UpdateTime.EQ(tickTime),
-		models.VSPTickTimeWhere.VSPTickID.EQ(vspTick.ID)).Exists(ctx, pg.db)
-
+	// if err != nil && strings.Contains(err.Error(), "unique constraint") {
+	// 	log.Tracef("Tick exits for %s", name)
+	// 	err = txr.Rollback()
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	return vspTickExistsErr
+	// } else if err != nil {
+	// 	txr.Rollback()
+	// 	return err
+	// }
 	if err != nil {
-		txr.Rollback()
+		errR := txr.Rollback()
+		if errR != nil {
+			return err
+		}
+		if strings.Contains(err.Error(), "unique constraint") {
+			return vspTickExistsErr
+		}
 		return err
 	}
 
-	if !vspTickTimeExits {
-		vtickTime := &models.VSPTickTime{
-			VSPTickID:  vspTick.ID,
-			UpdateTime: tickTime,
-		}
+	// vspTickTimeExits, err := models.VSPTickTimes(
+	// 	models.VSPTickTimeWhere.UpdateTime.EQ(tickTime),
+	// 	models.VSPTickTimeWhere.VSPTickID.EQ(vspTick.ID)).Exists(ctx, pg.db)
 
-		err = pg.tryInsert(ctx, txr, vtickTime)
-		if err != nil {
-			log.Debugf("Tick time %v for %d", vtickTime.UpdateTime, vtickTime.VSPTickID)
-			return err
-		}
-	}
+	// if err != nil {
+	// 	txr.Rollback()
+	// 	return err
+	// }
+
+	// if !vspTickTimeExits {
+	// 	vtickTime := &models.VSPTickTime{
+	// 		VSPTickID:  vspTick.ID,
+	// 		UpdateTime: tickTime,
+	// 	}
+
+	// 	err = pg.tryInsert(ctx, txr, vtickTime)
+	// 	if err != nil {
+	// 		log.Debugf("Tick time %v for %d", vtickTime.UpdateTime, vtickTime.VSPTickID)
+	// 		return err
+	// 	}
+	// }
 
 	err = txr.Commit()
 	if err != nil {
 		return txr.Rollback()
 	}
 
-	log.Tracef("Added complete pool tick data for %s at %v", name, tickTime.UTC())
+	log.Tracef("Stored data for vsp %s at %v", name, tickTime.UTC())
 	return nil
 }
 
@@ -119,7 +129,7 @@ func responseToVSP(name string, resp *vsp.ResposeData) *models.VSP {
 		APIVersionsSupported: types.Int64Array(resp.APIVersionsSupported),
 		Network:              resp.Network,
 		URL:                  resp.URL,
-		Launched:             time.Unix(int64(resp.Launched), 0),
+		Launched:             time.Unix(resp.Launched, 0),
 	}
 }
 
@@ -135,5 +145,6 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 		ProportionMissed: resp.ProportionMissed,
 		UserCount:        resp.UserCount,
 		UsersActive:      resp.UserCountActive,
+		Time:             time.Unix(resp.LastUpdated, 0),
 	}
 }

@@ -23,31 +23,22 @@ import (
 
 // Exchange is an object representing the database table.
 type Exchange struct {
-	ID                   int    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name                 string `boil:"name" json:"name" toml:"name" yaml:"name"`
-	URL                  string `boil:"url" json:"url" toml:"url" yaml:"url"`
-	TickShortInterval    int    `boil:"tick_short_interval" json:"tick_short_interval" toml:"tick_short_interval" yaml:"tick_short_interval"`
-	TickLongInterval     int    `boil:"tick_long_interval" json:"tick_long_interval" toml:"tick_long_interval" yaml:"tick_long_interval"`
-	TickHistoricInterval int    `boil:"tick_historic_interval" json:"tick_historic_interval" toml:"tick_historic_interval" yaml:"tick_historic_interval"`
+	ID   int    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name string `boil:"name" json:"name" toml:"name" yaml:"name"`
+	URL  string `boil:"url" json:"url" toml:"url" yaml:"url"`
 
 	R *exchangeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L exchangeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ExchangeColumns = struct {
-	ID                   string
-	Name                 string
-	URL                  string
-	TickShortInterval    string
-	TickLongInterval     string
-	TickHistoricInterval string
+	ID   string
+	Name string
+	URL  string
 }{
-	ID:                   "id",
-	Name:                 "name",
-	URL:                  "url",
-	TickShortInterval:    "tick_short_interval",
-	TickLongInterval:     "tick_long_interval",
-	TickHistoricInterval: "tick_historic_interval",
+	ID:   "id",
+	Name: "name",
+	URL:  "url",
 }
 
 // Generated where
@@ -71,19 +62,13 @@ func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.f
 func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var ExchangeWhere = struct {
-	ID                   whereHelperint
-	Name                 whereHelperstring
-	URL                  whereHelperstring
-	TickShortInterval    whereHelperint
-	TickLongInterval     whereHelperint
-	TickHistoricInterval whereHelperint
+	ID   whereHelperint
+	Name whereHelperstring
+	URL  whereHelperstring
 }{
-	ID:                   whereHelperint{field: `id`},
-	Name:                 whereHelperstring{field: `name`},
-	URL:                  whereHelperstring{field: `url`},
-	TickShortInterval:    whereHelperint{field: `tick_short_interval`},
-	TickLongInterval:     whereHelperint{field: `tick_long_interval`},
-	TickHistoricInterval: whereHelperint{field: `tick_historic_interval`},
+	ID:   whereHelperint{field: `id`},
+	Name: whereHelperstring{field: `name`},
+	URL:  whereHelperstring{field: `url`},
 }
 
 // ExchangeRels is where relationship names are stored.
@@ -107,8 +92,8 @@ func (*exchangeR) NewStruct() *exchangeR {
 type exchangeL struct{}
 
 var (
-	exchangeColumns               = []string{"id", "name", "url", "tick_short_interval", "tick_long_interval", "tick_historic_interval"}
-	exchangeColumnsWithoutDefault = []string{"name", "url", "tick_short_interval", "tick_long_interval", "tick_historic_interval"}
+	exchangeColumns               = []string{"id", "name", "url"}
+	exchangeColumnsWithoutDefault = []string{"name", "url"}
 	exchangeColumnsWithDefault    = []string{"id"}
 	exchangePrimaryKeyColumns     = []string{"id"}
 )
