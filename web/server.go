@@ -131,5 +131,4 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.GetExchangeTicks)
 	r.Get("/vspticks", s.GetVspTicks)
-
 }
