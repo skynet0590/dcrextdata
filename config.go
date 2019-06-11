@@ -36,6 +36,10 @@ type config struct {
 	DBPass string `long:"dbpass" description:"Database password"`
 	DBName string `long:"dbname" description:"Database name"`
 
+	// Http Server
+	HTTPHost  string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
+	HTTPPort  string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
+
 	// Exchange collector
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`

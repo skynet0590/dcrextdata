@@ -10,14 +10,18 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	// "context"
 
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/version"
-	"github.com/raedahgroup/dcrextdata/vsp"
+	// "github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/raedahgroup/dcrextdata/web"
 )
 
 // const dcrlaunchtime int64 = 1454889600
+// var opError error
+// var beginShutdown = make(chan bool)
 
 func _main(ctx context.Context) error {
 	cfg, err := loadConfig()
@@ -30,6 +34,9 @@ func _main(ctx context.Context) error {
 			logRotator.Close()
 		}
 	}()
+
+	// ctx, _ := context.WithCancel(context.Background())
+	enterHttpMode(cfg.HTTPHost, cfg.HTTPPort)
 
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
@@ -70,6 +77,7 @@ func _main(ctx context.Context) error {
 	}
 
 	wg.Wait()
+
 	log.Info("Goodbye")
 	return nil
 }
@@ -90,4 +98,10 @@ func main() {
 		os.Exit(1)
 	}
 	os.Exit(0)
+}
+
+func enterHttpMode(host, port string) {
+	web.StartHttpServer(host, port)
+	// only trigger shutdown if some error occurred, ctx.Err cases would already have triggered shutdown, so ignore
+	
 }
