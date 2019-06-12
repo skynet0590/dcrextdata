@@ -1,0 +1,10 @@
+[psql]
+    dbname = "exchange"
+    host = "localhost"
+    user = "dcrdata"
+    pass = "pass"
+    whitelist=["exchange", 
+        "exchange_tick",
+        "vsp",
+        "vsp_tick",
+        "vsp_tick_time"]

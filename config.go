@@ -37,19 +37,19 @@ type config struct {
 	DBName string `long:"dbname" description:"Database name"`
 
 	// Exchange collector
-	CollectionInterval int64    `short:"i" long:"collectioninterval" description:"Interval in seconds between successive ticker entries. Valid options are 300 and 1800"`
-	ExchangesEnabled   bool     `long:"exchangesON" description:"Enables collection of ticker data from exchanges"`
-	Exchanges          []string `long:"exchange" description:"Exchange to be tracked"`
+	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
+	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
 	// VSP
-	VSPEnabled  bool  `long:"vsp" description:"Enables periodic voting service pool status collection"`
-	VSPInterval int64 `long:"vspI" description:"Collection interval for vsp"`
+	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
+	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
 }
 
 var defaultCfg = config{
-	LogFile:    defaultLogFilename,
-	ConfigFile: defaultConfigFilename,
-	DebugLevel: defaultLogLevel,
+	LogFile:     defaultLogFilename,
+	ConfigFile:  defaultConfigFilename,
+	DebugLevel:  defaultLogLevel,
+	VSPInterval: 300,
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.
@@ -165,9 +165,9 @@ func loadConfig() (*config, error) {
 		return nil, err
 	}
 
-	if cfg.CollectionInterval != 300 && cfg.CollectionInterval != 1800 {
-		log.Warn("Invalid collection interval, setting to 300")
-		cfg.CollectionInterval = 300
+	if cfg.VSPInterval < 300 {
+		log.Warn("VSP collection interval cannot be less that 300, setting to 300")
+		cfg.VSPInterval = 300
 	}
 
 	return &cfg, nil

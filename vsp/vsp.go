@@ -5,6 +5,7 @@
 package vsp
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,38 +13,10 @@ import (
 	"time"
 )
 
-const requestURL = "https://api.decred.org/?c=gsd"
-
-type Response map[string]*ResposeData
-
-type ResposeData struct {
-	APIEnabled           bool    `json:"APIEnabled"`
-	APIVersionsSupported []int   `json:"APIVersionsSupported"`
-	Network              string  `json:"Network"`
-	URL                  string  `json:"URL"`
-	Launched             int     `json:"Launched"`
-	LastUpdated          int     `json:"LastUpdated"`
-	Immature             int     `json:"Immature"`
-	Live                 int     `json:"Live"`
-	Voted                int     `json:"Voted"`
-	Missed               int     `json:"Missed"`
-	PoolFees             float64 `json:"PoolFees"`
-	ProportionLive       float64 `json:"ProportionLive"`
-	ProportionMissed     float64 `json:"ProportionMissed"`
-	UserCount            int     `json:"UserCount"`
-	UserCountActive      int     `json:"UserCountActive"`
-}
-
-type DataStore interface {
-	StoreVSP(time.Time, Response) error
-	CreateVSPTables() error
-}
-type Collector struct {
-	client    *http.Client
-	period    time.Duration
-	request   *http.Request
-	dataStore DataStore
-}
+const (
+	requestURL = "https://api.decred.org/?c=gsd"
+	retryLimit = 3
+)
 
 func NewVspCollector(period int64, store DataStore) (*Collector, error) {
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
@@ -51,26 +24,23 @@ func NewVspCollector(period int64, store DataStore) (*Collector, error) {
 		return nil, err
 	}
 
-	err = store.CreateVSPTables()
-
-	if err != nil {
-		return nil, err
-	}
 	return &Collector{
-		client:    &http.Client{Timeout: 300 * time.Second},
+		client:    http.Client{Timeout: time.Minute},
 		period:    time.Duration(period),
 		request:   request,
 		dataStore: store,
 	}, nil
 }
 
-func (vsp *Collector) fetch(response interface{}) error {
-	log.Tracef("GET %v", requestURL)
-	resp, err := vsp.client.Do(vsp.request)
+func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	// log.Tracef("GET %v", requestURL)
+	resp, err := vsp.client.Do(vsp.request.WithContext(ctx))
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
@@ -80,41 +50,61 @@ func (vsp *Collector) fetch(response interface{}) error {
 	return nil
 }
 
-func (vsp *Collector) Run(quit chan struct{}, wg *sync.WaitGroup) {
-	if err := vsp.CollectAndStore(time.Now()); err != nil {
-		log.Error("Could not start collection: %v", err)
+func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if ctx.Err() != nil {
+		return
+	}
+
+	log.Info("Starting collection cycle")
+	if err := vsp.collectAndStore(ctx); err != nil {
+		log.Errorf("Could not start collection: %v", err)
+		return
 	}
 
 	ticker := time.NewTicker(vsp.period * time.Second)
-
-	defer func(wg *sync.WaitGroup) {
-		log.Info("Stopping collector")
-		ticker.Stop()
-		wg.Done()
-	}(wg)
+	defer ticker.Stop()
 
 	for {
 		select {
-		case t := <-ticker.C:
-			err := vsp.CollectAndStore(t)
-			if err != nil {
-				log.Error(err)
+		case <-ticker.C:
+			if err := vsp.collectAndStore(ctx); err != nil {
+				return
 			}
-		case <-quit:
+		case <-ctx.Done():
+			log.Infof("Shutting down collector")
 			return
 		}
 	}
 }
 
-func (vsp *Collector) CollectAndStore(t time.Time) error {
-	resp := new(Response)
-	err := vsp.fetch(resp)
-	if err != nil {
-		return err
+func (vsp *Collector) collectAndStore(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
-	err = vsp.dataStore.StoreVSP(t, *resp)
-	if err != nil {
-		return err
+
+	resp := new(Response)
+	err := vsp.fetch(ctx, resp)
+	for retry := 0; err != nil; retry++ {
+		if retry == retryLimit {
+			return err
+		}
+		log.Warn(err)
+		err = vsp.fetch(ctx, resp)
+	}
+
+	log.Infof("Collected data for %d vsps", len(*resp))
+
+	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
+	for _, err = range errs {
+		if err != nil {
+			if e, ok := err.(PoolTickTimeExistsError); ok {
+				log.Trace(e)
+			} else {
+				log.Error(err)
+				return err
+			}
+		}
 	}
 	return nil
 }

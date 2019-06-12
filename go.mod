@@ -1,12 +1,18 @@
 module github.com/raedahgroup/dcrextdata
 
 require (
+	github.com/decred/dcrdata/pubsub v1.0.0 // indirect
 	github.com/decred/slog v1.0.0
+	github.com/ericlagergren/decimal v0.0.0-20190331172538-c787d12d14a5 // indirect
+	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/golangci/golangci-lint v1.16.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jrick/logrotate v1.0.0
-	github.com/konsorten/go-windows-terminal-sequences v1.0.1
+	github.com/kat-co/vala v0.0.0-20170210184112-42e1d8b61f12
 	github.com/lib/pq v1.0.0
-	github.com/sirupsen/logrus v1.2.0
-	golang.org/x/crypto v0.0.0-20181030102418-4d3f4d9ffa16
-	golang.org/x/sys v0.0.0-20181031143558-9b800f95dbbc
+	github.com/pkg/errors v0.8.1
+	github.com/spf13/viper v1.3.2
+	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
+	github.com/volatiletech/null v8.0.0+incompatible
+	github.com/volatiletech/sqlboiler v3.2.0+incompatible
 )
