@@ -2,11 +2,17 @@ package web
 
 import (
 	"net/http"
+	"context"
 )
 
-func (s *Server) GetExchange(res http.ResponseWriter, req *http.Request) {
+func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
+	exhangeSlice, err := s.db.FetchExchangeTicks(context.Background(), "bittrex", 0, 30)
+	if err != nil {
+		panic(err)
+	}
+	
 	data := map[string]interface{}{
-		// "exchange": 	 s.db.GetExchangeDataTick(),
+		"exData" : exhangeSlice,
 	}
 
 	s.render("exchange.html", data, res)

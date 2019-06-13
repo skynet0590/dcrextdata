@@ -6,31 +6,34 @@
         {{ template "header" }}
         <div class="content">
             <div class="container">
-                <table class="table sticky-table d-none" data-target="history.stickyTableHeader">
-                    <thead>
-                    <tr>
-                        <th>Date (UTC)</th>
-                        <th>Type</th>
-                        <th>Direction</th>
-                        <th>Amount</th>
-                        <th>Fee</th>
-                        <th>Status</th>
-                    </tr>
-                    </thead>
-                </table>
-
                 <table class="table">
                     <thead>
-                        <tr>
-                            <th>Date (UTC)</th>
-                            
-                        </tr>
+                    <tr>
+                        <th>Exchange ID</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Open</th>
+                        <th>Close</th>
+                        <th>Volume</th>
+                        <th>Interval</th>
+                        <th>CurrencyPair</th>
+                        <th>Time</th>
+                    </tr>
                     </thead>
                     <tbody data-target="history.historyTable">
+                        {{range $index, $exchange := .exData}}
                         <tr>
-                            <td>im morrison</td>
-                            
+                            <td>{{$exchange.ExchangeID}}</th>
+                            <td>{{$exchange.High}}</th>
+                            <td>{{$exchange.Low}}</th>
+                            <td>{{$exchange.Open}}</th>
+                            <td>{{$exchange.Close}}</th>
+                            <td>{{$exchange.Volume}}</th>
+                            <td>{{$exchange.Interval}}</th>
+                            <td>{{$exchange.CurrencyPair}}</th>
+                            <td>{{$exchange.Time}}</th>
                         </tr>
+                        {{end}}
                     </tbody>
                 </table>
 

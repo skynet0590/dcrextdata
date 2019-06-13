@@ -10,18 +10,26 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"context"
 
 	"github.com/go-chi/chi"
-	"github.com/raedahgroup/dcrextdata/postgres"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 )
+
+type DataQuery interface {
+	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
+	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) (models.ExchangeTickSlice, error)
+	FetchVSPs(ctx context.Context) (models.VSPSlice, error) 
+	VSPTicks(ctx context.Context, vspName string, offset int, limit int) (models.VSPTickSlice, error)
+}
 
 type Server struct {
 	templates    map[string]*template.Template
 	lock         sync.RWMutex
-	db 		*postgres.PgDb
+	db 		DataQuery
 }
 
-func StartHttpServer(httpHost, httpPort string, db *postgres.PgDb) {
+func StartHttpServer(httpHost, httpPort string, db DataQuery) {
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db: db,
@@ -99,5 +107,5 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-	r.Get("/", s.GetExchange)
+	r.Get("/", s.GetExchangeTicks)
 }
