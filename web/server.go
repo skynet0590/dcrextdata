@@ -12,8 +12,7 @@ import (
 	"text/template"
 
 	"github.com/go-chi/chi"
-		"github.com/raedahgroup/dcrextdata/postgres"
-
+	"github.com/raedahgroup/dcrextdata/postgres"
 )
 
 type Server struct {
@@ -51,7 +50,7 @@ func StartHttpServer(httpHost, httpPort string, db *postgres.PgDb) {
 func (s *Server) loadTemplates() {
 	layout := "web/views/layout.html"
 	tpls := map[string]string{
-		"balance.html": "web/views/balance.html",
+		"exchange.html": "web/views/exchange.html",
 	}
 
 	for i, v := range tpls {
@@ -100,5 +99,5 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-	r.Get("/", s.GetBalance)
+	r.Get("/", s.GetExchange)
 }

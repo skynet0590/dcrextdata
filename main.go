@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"runtime"
 	"sync"
 	"time"
@@ -58,7 +57,7 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
 		version.Version(), runtime.Version())
-
+ 
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer func(db *postgres.PgDb) {
 		err := db.Close()
@@ -81,6 +80,7 @@ func _main(ctx context.Context) error {
 		}
 		log.Info("Tables dropped")
 	}
+	go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 
 	wg := new(sync.WaitGroup)
 
@@ -105,13 +105,12 @@ func _main(ctx context.Context) error {
 				}
 			}
 
-			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-			if err == nil {
-				wg.Add(1)
-				vspCollector.Run(ctx, wg)
-			} else {
-				log.Error(err)
-			}
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+		if err == nil {
+			wg.Add(1)
+			go vspCollector.Run(ctx, wg)
+		} else {
+			log.Error(err)
 		}
 
 		if !cfg.DisableExchangeTicks {
@@ -169,7 +168,6 @@ func _main(ctx context.Context) error {
 	}
 
 	wg.Wait()
-
 	log.Info("Goodbye")
 	return nil
 }
@@ -194,8 +192,6 @@ func _main(ctx context.Context) error {
 	return nil
 }
 
-func enterHttpMode(host, port string, db *postgres.PgDb) {
-	web.StartHttpServer(host, port, db)
-	// only trigger shutdown if some error occurred, ctx.Err cases would already have triggered shutdown, so ignore
-	
-}
+// func enterHttpMode(httpHost, httpPort string) {
+// 	web.StartHttpServer(httpHost, httpPort)
+// }
