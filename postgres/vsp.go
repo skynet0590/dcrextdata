@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/postgres/models"
-	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/types"
-
 	"github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
+	"github.com/volatiletech/sqlboiler/types"
 )
 
 var (
@@ -147,4 +147,19 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 		UsersActive:      resp.UserCountActive,
 		Time:             time.Unix(resp.LastUpdated, 0),
 	}
+}
+
+func (pg *PgDb) FetchVSPs(ctx context.Context) (models.VSPSlice, error) {
+	return models.VSPS().All(ctx, pg.db)
+}
+
+// VSPTicks
+func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit int) (models.VSPTickSlice, error) {
+	vsp, err := models.VSPS(models.VSPWhere.Name.EQ(vspName)).One(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vsp.ID)
+	return models.VSPTicks(vspIdQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
 }
