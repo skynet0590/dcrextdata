@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 	"sync"
 	"time"
@@ -16,7 +17,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/version"
-	// "github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
 
@@ -53,9 +54,6 @@ func _main(ctx context.Context) error {
 			logRotator.Close()
 		}
 	}()
-
-	// ctx, _ := context.WithCancel(context.Background())
-	enterHttpMode(cfg.HTTPHost, cfg.HTTPPort)
 
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
@@ -196,8 +194,8 @@ func _main(ctx context.Context) error {
 	return nil
 }
 
-func enterHttpMode(host, port string) {
-	web.StartHttpServer(host, port)
+func enterHttpMode(host, port string, db *postgres.PgDb) {
+	web.StartHttpServer(host, port, db)
 	// only trigger shutdown if some error occurred, ctx.Err cases would already have triggered shutdown, so ignore
 	
 }

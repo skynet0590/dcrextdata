@@ -1,13 +1,19 @@
 package web
 
 import (
+"fmt"
 	"net/http"
 )
 
-func (s *Server) GetBalance(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
+func (s *Server) GetExchange(res http.ResponseWriter, req *http.Request) {
+	
 
-	s.render("balance.html", data, res)
+	data := map[string]interface{}{
+		"exchange": 	 s.db.GetExchangeDataTick(),
+	}
+
+
+	s.render("exchange.html", data, res)
 }
 
 func (s *Server) GetSend(res http.ResponseWriter, req *http.Request) {

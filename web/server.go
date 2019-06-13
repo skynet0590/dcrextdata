@@ -9,20 +9,23 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-
 	"text/template"
 
 	"github.com/go-chi/chi"
+		"github.com/raedahgroup/dcrextdata/postgres"
+
 )
 
 type Server struct {
 	templates    map[string]*template.Template
 	lock         sync.RWMutex
+	db 		*postgres.PgDb
 }
 
-func StartHttpServer(httpHost, httpPort string) {
+func StartHttpServer(httpHost, httpPort string, db *postgres.PgDb) {
 	server := &Server{
 		templates:    map[string]*template.Template{},
+		db: db,
 	}
 
 	// load templates
@@ -98,7 +101,4 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 
 func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.GetBalance)
-	r.Get("/send", s.GetSend)
-	r.Post("/send", s.PostSend)
-	r.Get("/receive", s.GetReceive)
 }
