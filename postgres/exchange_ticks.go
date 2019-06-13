@@ -136,6 +136,13 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, name string, offset int,
 	return exchangeTickSlice, err
 }
 
+// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) (models.ExchangeTickSlice, error) {
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+
+	return exchangeTickSlice, err
+}
+
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
 	return &models.ExchangeTick{
 		ExchangeID:   exchangeID,

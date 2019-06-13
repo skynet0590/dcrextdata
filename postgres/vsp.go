@@ -163,3 +163,8 @@ func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit 
 	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vsp.ID)
 	return models.VSPTicks(vspIdQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
 }
+
+// VSPTicks
+func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) (models.VSPTickSlice, error) {
+	return models.VSPTicks(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+}
