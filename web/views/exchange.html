@@ -9,6 +9,7 @@
                 <table class="table">
                     <thead>
                     <tr>
+                        <th>ID</th>
                         <th>Exchange ID</th>
                         <th>High</th>
                         <th>Low</th>
@@ -23,6 +24,7 @@
                     <tbody data-target="history.historyTable">
                         {{range $index, $exchange := .exData}}
                         <tr>
+                            <td>{{$exchange.ID}}</th>
                             <td>{{$exchange.ExchangeID}}</th>
                             <td>{{$exchange.High}}</th>
                             <td>{{$exchange.Low}}</th>
