@@ -73,13 +73,13 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 		return zeroTime, fmt.Errorf("No ticks recieved for %s", name)
 	}
 
-	xch, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
+	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
 	if err != nil {
 		return zeroTime, err
 	}
 
 	var lastTime time.Time
-	lastTick, err := models.ExchangeTicks(models.ExchangeTickWhere.ExchangeID.EQ(xch.ID),
+	lastTick, err := models.ExchangeTicks(models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
 		models.ExchangeTickWhere.Interval.EQ(interval),
 		models.ExchangeTickWhere.CurrencyPair.EQ(pair),
 		qm.OrderBy(models.ExchangeTickColumns.Time)).One(ctx, pg.db)
@@ -98,7 +98,7 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 		// if tick.Time.Unix() <= lastTime.Unix() {
 		// 	continue
 		// }
-		xcTick := tickToExchangeTick(xch.ID, pair, interval, tick)
+		xcTick := tickToExchangeTick(exchange.ID, pair, interval, tick)
 		err = xcTick.Insert(ctx, pg.db, boil.Infer())
 		if err != nil && !strings.Contains(err.Error(), "unique constraint") {
 			return lastTime, err
@@ -116,6 +116,31 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 			firstTime, lastTime)
 	}
 	return lastTime, nil
+}
+
+// AllExchange fetches a slice of all exchange from the db
+func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
+	exchangeSlice, err := models.Exchanges().All(ctx, pg.db)
+	return exchangeSlice, err
+}
+
+// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
+func (pg *PgDb) FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) (models.ExchangeTickSlice, error) {
+	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+	idQuery := models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
+	exchangeTickSlice, err := models.ExchangeTicks(idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+
+	return exchangeTickSlice, err
+}
+
+// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) (models.ExchangeTickSlice, error) {
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+
+	return exchangeTickSlice, err
 }
 
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
