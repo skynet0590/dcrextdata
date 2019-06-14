@@ -5,6 +5,7 @@
 package pow
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,7 +35,7 @@ var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
 }
 
 type Pow interface {
-	Collect() ([]PowData, error)
+	Collect(ctx context.Context) ([]PowData, error)
 	LastUpdateTime() int64
 	Name() string
 }
@@ -66,9 +67,9 @@ func NewLuxor(client *http.Client, lastUpdate int64) (Pow, error) {
 	}, nil
 }
 
-func (in *LuxorPow) Collect() ([]PowData, error) {
+func (in *LuxorPow) Collect(ctx context.Context) ([]PowData, error) {
 	res := new(luxorAPIResponse)
-	err := helpers.GetResponse(in.client, in.baseUrl, res)
+	err := helpers.GetResponse(ctx, in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -131,9 +132,9 @@ func NewF2pool(client *http.Client, lastUpdate int64) (Pow, error) {
 	}, nil
 }
 
-func (in *F2poolPow) Collect() ([]PowData, error) {
+func (in *F2poolPow) Collect(ctx context.Context) ([]PowData, error) {
 	res := new(f2poolAPIResponse)
-	err := helpers.GetResponse(in.client, in.baseUrl, res)
+	err := helpers.GetResponse(ctx, in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -187,9 +188,9 @@ func NewCoinmine(client *http.Client, lastUpdate int64) (Pow, error) {
 	}, nil
 }
 
-func (in *CoinminePow) Collect() ([]PowData, error) {
+func (in *CoinminePow) Collect(ctx context.Context) ([]PowData, error) {
 	res := new(coinmineAPIResponse)
-	err := helpers.GetResponse(in.client, in.baseUrl, res)
+	err := helpers.GetResponse(ctx, in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err
@@ -237,9 +238,9 @@ func NewBtc(client *http.Client, lastUpdate int64) (Pow, error) {
 	}, nil
 }
 
-func (in *BtcPow) Collect() ([]PowData, error) {
+func (in *BtcPow) Collect(ctx context.Context) ([]PowData, error) {
 	res := new(btcAPIResponse)
-	err := helpers.GetResponse(in.client, in.baseUrl, res)
+	err := helpers.GetResponse(ctx, in.client, in.baseUrl, res)
 
 	if err != nil {
 		return nil, err

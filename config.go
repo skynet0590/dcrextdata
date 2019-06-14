@@ -41,7 +41,7 @@ type config struct {
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
 	// PoW collector
-	PowEnabled  bool     `long:"powON" description:"Enables collection of data from pows"`
+	DisablePow  bool     `long:"disablepow" description:"Disables collection of data for pows"`
 	Pows        []string `long:"pow" description:"pows to be tracked"`
 	PowInterval int64    `long:"powI" description:"Collection interval for Pow"`
 
@@ -55,6 +55,7 @@ var defaultCfg = config{
 	ConfigFile:  defaultConfigFilename,
 	DebugLevel:  defaultLogLevel,
 	VSPInterval: 300,
+	PowInterval: 300,
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.

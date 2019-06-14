@@ -5,6 +5,7 @@
 package pow
 
 import (
+	"context"
 	"net/http"
 	"sync"
 	"time"
@@ -49,7 +50,7 @@ func NewCollector(powLasts map[string]int64, period int64, store PowDataStore) (
 	}, nil
 }
 
-func (pc *Collector) Collect(quit chan struct{}, wg *sync.WaitGroup) {
+func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
 	for {
 		select {
@@ -57,7 +58,7 @@ func (pc *Collector) Collect(quit chan struct{}, wg *sync.WaitGroup) {
 			log.Trace("Triggering PoW collectors")
 			for _, in := range pc.pows {
 				go func(info Pow) {
-					data, err := info.Collect()
+					data, err := info.Collect(ctx)
 					if err != nil {
 						log.Error(err)
 					}
@@ -67,7 +68,7 @@ func (pc *Collector) Collect(quit chan struct{}, wg *sync.WaitGroup) {
 					}
 				}(in)
 			}
-		case <-quit:
+		case <-ctx.Done():
 			log.Infof("Stopping collector")
 			wg.Done()
 			return

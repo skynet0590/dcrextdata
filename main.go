@@ -49,6 +49,17 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
+	if cfg.Reset {
+		log.Info("Dropping tables")
+		err = db.DropAllTables()
+		if err != nil {
+			db.Close()
+			log.Error("Could not drop tables: ", err)
+			return err
+		}
+		log.Info("Tables dropped")
+	}
+
 	wg := new(sync.WaitGroup)
 
 	if !cfg.DisableVSP {
@@ -62,6 +73,12 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableExchangeTicks {
+		if exists := db.ExchangeDataTableExits(); !exists {
+			if err := db.CreateExchangeDataTable(); err != nil {
+				log.Error("Error creating exchange data table: ", err)
+				return err
+			}
+		}
 		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
 			wg.Add(1)
@@ -70,11 +87,12 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
-	if cfg.PowEnabled {
+
+	if !cfg.DisablePow {
 		if exists := db.PowDataTableExits(); !exists {
 			if err := db.CreatePowDataTable(); err != nil {
 				log.Error("Error creating PoW data table: ", err)
-				return
+				return err
 			}
 		}
 		log.Info("Starting PoW data collection")
@@ -85,33 +103,11 @@ func _main(ctx context.Context) error {
 		powCollector, err := pow.NewCollector(powMap, cfg.PowInterval, db)
 		if err == nil {
 			wg.Add(1)
-			go powCollector.Collect(quit, wg)
+			go powCollector.Collect(ctx, wg)
 		} else {
 			log.Error(err)
 		}
 
-	}
-
-	if cfg.ExchangesEnabled {
-		if exists := db.ExchangeDataTableExits(); !exists {
-			if err := db.CreateExchangeDataTable(); err != nil {
-				log.Error("Error creating exchange data table: ", err)
-				return
-			}
-		}
-		wg.Add(1)
-		log.Info("Starting exchange storage goroutine")
-		go storeExchangeData(db, resultChan, quit, wg)
-		exchangeMap := make(map[string]int64)
-		for _, ex := range cfg.Exchanges {
-			exchangeMap[ex] = db.LastExchangeEntryTime(ex)
-		}
-
-		collector, err := exchanges.NewCollector(exchangeMap, cfg.CollectionInterval)
-
-		if err != nil {
-			log.Error(err)
-		}
 	}
 
 	wg.Wait()
