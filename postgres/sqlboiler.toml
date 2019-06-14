@@ -3,6 +3,7 @@
     host = "localhost"
     user = "postgres"
     pass = "ojima123"
+    sslmode = "disable"
     whitelist=["exchange", 
         "exchange_tick",
         "vsp",

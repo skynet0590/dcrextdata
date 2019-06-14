@@ -591,7 +591,7 @@ func testVSPSUpdate(t *testing.T) {
 	if 0 == len(vspPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(vspColumns) == len(vspPrimaryKeyColumns) {
+	if len(vspAllColumns) == len(vspPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -632,7 +632,7 @@ func testVSPSUpdate(t *testing.T) {
 func testVSPSSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(vspColumns) == len(vspPrimaryKeyColumns) {
+	if len(vspAllColumns) == len(vspPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -665,11 +665,11 @@ func testVSPSSliceUpdateAll(t *testing.T) {
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(vspColumns, vspPrimaryKeyColumns) {
-		fields = vspColumns
+	if strmangle.StringSliceMatch(vspAllColumns, vspPrimaryKeyColumns) {
+		fields = vspAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			vspColumns,
+			vspAllColumns,
 			vspPrimaryKeyColumns,
 		)
 	}
@@ -699,7 +699,7 @@ func testVSPSSliceUpdateAll(t *testing.T) {
 func testVSPSUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(vspColumns) == len(vspPrimaryKeyColumns) {
+	if len(vspAllColumns) == len(vspPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 

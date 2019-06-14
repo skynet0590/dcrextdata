@@ -6,11 +6,13 @@ package models
 var TableNames = struct {
 	Exchange     string
 	ExchangeTick string
+	PowData      string
 	VSP          string
 	VSPTick      string
 }{
 	Exchange:     "exchange",
 	ExchangeTick: "exchange_tick",
+	PowData:      "pow_data",
 	VSP:          "vsp",
 	VSPTick:      "vsp_tick",
 }

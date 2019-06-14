@@ -25,12 +25,12 @@ import (
 type ExchangeTick struct {
 	ID           int       `boil:"id" json:"id" toml:"id" yaml:"id"`
 	ExchangeID   int       `boil:"exchange_id" json:"exchange_id" toml:"exchange_id" yaml:"exchange_id"`
+	Interval     int       `boil:"interval" json:"interval" toml:"interval" yaml:"interval"`
 	High         float64   `boil:"high" json:"high" toml:"high" yaml:"high"`
 	Low          float64   `boil:"low" json:"low" toml:"low" yaml:"low"`
 	Open         float64   `boil:"open" json:"open" toml:"open" yaml:"open"`
 	Close        float64   `boil:"close" json:"close" toml:"close" yaml:"close"`
 	Volume       float64   `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
-	Interval     int       `boil:"interval" json:"interval" toml:"interval" yaml:"interval"`
 	CurrencyPair string    `boil:"currency_pair" json:"currency_pair" toml:"currency_pair" yaml:"currency_pair"`
 	Time         time.Time `boil:"time" json:"time" toml:"time" yaml:"time"`
 
@@ -41,23 +41,23 @@ type ExchangeTick struct {
 var ExchangeTickColumns = struct {
 	ID           string
 	ExchangeID   string
+	Interval     string
 	High         string
 	Low          string
 	Open         string
 	Close        string
 	Volume       string
-	Interval     string
 	CurrencyPair string
 	Time         string
 }{
 	ID:           "id",
 	ExchangeID:   "exchange_id",
+	Interval:     "interval",
 	High:         "high",
 	Low:          "low",
 	Open:         "open",
 	Close:        "close",
 	Volume:       "volume",
-	Interval:     "interval",
 	CurrencyPair: "currency_pair",
 	Time:         "time",
 }
@@ -103,25 +103,25 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 var ExchangeTickWhere = struct {
 	ID           whereHelperint
 	ExchangeID   whereHelperint
+	Interval     whereHelperint
 	High         whereHelperfloat64
 	Low          whereHelperfloat64
 	Open         whereHelperfloat64
 	Close        whereHelperfloat64
 	Volume       whereHelperfloat64
-	Interval     whereHelperint
 	CurrencyPair whereHelperstring
 	Time         whereHelpertime_Time
 }{
-	ID:           whereHelperint{field: `id`},
-	ExchangeID:   whereHelperint{field: `exchange_id`},
-	High:         whereHelperfloat64{field: `high`},
-	Low:          whereHelperfloat64{field: `low`},
-	Open:         whereHelperfloat64{field: `open`},
-	Close:        whereHelperfloat64{field: `close`},
-	Volume:       whereHelperfloat64{field: `volume`},
-	Interval:     whereHelperint{field: `interval`},
-	CurrencyPair: whereHelperstring{field: `currency_pair`},
-	Time:         whereHelpertime_Time{field: `time`},
+	ID:           whereHelperint{field: "\"exchange_tick\".\"id\""},
+	ExchangeID:   whereHelperint{field: "\"exchange_tick\".\"exchange_id\""},
+	Interval:     whereHelperint{field: "\"exchange_tick\".\"interval\""},
+	High:         whereHelperfloat64{field: "\"exchange_tick\".\"high\""},
+	Low:          whereHelperfloat64{field: "\"exchange_tick\".\"low\""},
+	Open:         whereHelperfloat64{field: "\"exchange_tick\".\"open\""},
+	Close:        whereHelperfloat64{field: "\"exchange_tick\".\"close\""},
+	Volume:       whereHelperfloat64{field: "\"exchange_tick\".\"volume\""},
+	CurrencyPair: whereHelperstring{field: "\"exchange_tick\".\"currency_pair\""},
+	Time:         whereHelpertime_Time{field: "\"exchange_tick\".\"time\""},
 }
 
 // ExchangeTickRels is where relationship names are stored.
@@ -145,8 +145,8 @@ func (*exchangeTickR) NewStruct() *exchangeTickR {
 type exchangeTickL struct{}
 
 var (
-	exchangeTickColumns               = []string{"id", "exchange_id", "high", "low", "open", "close", "volume", "interval", "currency_pair", "time"}
-	exchangeTickColumnsWithoutDefault = []string{"exchange_id", "high", "low", "open", "close", "volume", "interval", "currency_pair", "time"}
+	exchangeTickAllColumns            = []string{"id", "exchange_id", "interval", "high", "low", "open", "close", "volume", "currency_pair", "time"}
+	exchangeTickColumnsWithoutDefault = []string{"exchange_id", "interval", "high", "low", "open", "close", "volume", "currency_pair", "time"}
 	exchangeTickColumnsWithDefault    = []string{"id"}
 	exchangeTickPrimaryKeyColumns     = []string{"id"}
 )
@@ -446,7 +446,7 @@ func (o *ExchangeTick) Insert(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			exchangeTickColumns,
+			exchangeTickAllColumns,
 			exchangeTickColumnsWithDefault,
 			exchangeTickColumnsWithoutDefault,
 			nzDefaults,
@@ -514,7 +514,7 @@ func (o *ExchangeTick) Update(ctx context.Context, exec boil.ContextExecutor, co
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			exchangeTickColumns,
+			exchangeTickAllColumns,
 			exchangeTickPrimaryKeyColumns,
 		)
 
@@ -669,13 +669,13 @@ func (o *ExchangeTick) Upsert(ctx context.Context, exec boil.ContextExecutor, up
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			exchangeTickColumns,
+			exchangeTickAllColumns,
 			exchangeTickColumnsWithDefault,
 			exchangeTickColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			exchangeTickColumns,
+			exchangeTickAllColumns,
 			exchangeTickPrimaryKeyColumns,
 		)
 
@@ -786,10 +786,6 @@ func (q exchangeTickQuery) DeleteAll(ctx context.Context, exec boil.ContextExecu
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ExchangeTickSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no ExchangeTick slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

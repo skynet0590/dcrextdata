@@ -95,13 +95,13 @@ var VSPWhere = struct {
 	URL                  whereHelperstring
 	Launched             whereHelpertime_Time
 }{
-	ID:                   whereHelperint{field: `id`},
-	Name:                 whereHelperstring{field: `name`},
-	APIEnabled:           whereHelperbool{field: `api_enabled`},
-	APIVersionsSupported: whereHelpertypes_Int64Array{field: `api_versions_supported`},
-	Network:              whereHelperstring{field: `network`},
-	URL:                  whereHelperstring{field: `url`},
-	Launched:             whereHelpertime_Time{field: `launched`},
+	ID:                   whereHelperint{field: "\"vsp\".\"id\""},
+	Name:                 whereHelperstring{field: "\"vsp\".\"name\""},
+	APIEnabled:           whereHelperbool{field: "\"vsp\".\"api_enabled\""},
+	APIVersionsSupported: whereHelpertypes_Int64Array{field: "\"vsp\".\"api_versions_supported\""},
+	Network:              whereHelperstring{field: "\"vsp\".\"network\""},
+	URL:                  whereHelperstring{field: "\"vsp\".\"url\""},
+	Launched:             whereHelpertime_Time{field: "\"vsp\".\"launched\""},
 }
 
 // VSPRels is where relationship names are stored.
@@ -125,7 +125,7 @@ func (*vspR) NewStruct() *vspR {
 type vspL struct{}
 
 var (
-	vspColumns               = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
+	vspAllColumns            = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
 	vspColumnsWithoutDefault = []string{"name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
 	vspColumnsWithDefault    = []string{"id"}
 	vspPrimaryKeyColumns     = []string{"id"}
@@ -434,7 +434,7 @@ func (o *VSP) Insert(ctx context.Context, exec boil.ContextExecutor, columns boi
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspColumnsWithDefault,
 			vspColumnsWithoutDefault,
 			nzDefaults,
@@ -502,7 +502,7 @@ func (o *VSP) Update(ctx context.Context, exec boil.ContextExecutor, columns boi
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspPrimaryKeyColumns,
 		)
 
@@ -657,13 +657,13 @@ func (o *VSP) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCon
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspColumnsWithDefault,
 			vspColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspPrimaryKeyColumns,
 		)
 
@@ -774,10 +774,6 @@ func (q vspQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o VSPSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no VSP slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}
