@@ -6,3 +6,4 @@ vendor
 logs
 *.log
 .idea
+postgres/sqlboiler.toml

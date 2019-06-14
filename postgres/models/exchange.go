@@ -66,9 +66,9 @@ var ExchangeWhere = struct {
 	Name whereHelperstring
 	URL  whereHelperstring
 }{
-	ID:   whereHelperint{field: `id`},
-	Name: whereHelperstring{field: `name`},
-	URL:  whereHelperstring{field: `url`},
+	ID:   whereHelperint{field: "\"exchange\".\"id\""},
+	Name: whereHelperstring{field: "\"exchange\".\"name\""},
+	URL:  whereHelperstring{field: "\"exchange\".\"url\""},
 }
 
 // ExchangeRels is where relationship names are stored.
@@ -92,7 +92,7 @@ func (*exchangeR) NewStruct() *exchangeR {
 type exchangeL struct{}
 
 var (
-	exchangeColumns               = []string{"id", "name", "url"}
+	exchangeAllColumns            = []string{"id", "name", "url"}
 	exchangeColumnsWithoutDefault = []string{"name", "url"}
 	exchangeColumnsWithDefault    = []string{"id"}
 	exchangePrimaryKeyColumns     = []string{"id"}
@@ -401,7 +401,7 @@ func (o *Exchange) Insert(ctx context.Context, exec boil.ContextExecutor, column
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			exchangeColumns,
+			exchangeAllColumns,
 			exchangeColumnsWithDefault,
 			exchangeColumnsWithoutDefault,
 			nzDefaults,
@@ -469,7 +469,7 @@ func (o *Exchange) Update(ctx context.Context, exec boil.ContextExecutor, column
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			exchangeColumns,
+			exchangeAllColumns,
 			exchangePrimaryKeyColumns,
 		)
 
@@ -624,13 +624,13 @@ func (o *Exchange) Upsert(ctx context.Context, exec boil.ContextExecutor, update
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			exchangeColumns,
+			exchangeAllColumns,
 			exchangeColumnsWithDefault,
 			exchangeColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			exchangeColumns,
+			exchangeAllColumns,
 			exchangePrimaryKeyColumns,
 		)
 
@@ -741,10 +741,6 @@ func (q exchangeQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o ExchangeSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no Exchange slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

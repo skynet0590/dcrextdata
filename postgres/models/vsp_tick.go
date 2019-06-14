@@ -84,18 +84,18 @@ var VSPTickWhere = struct {
 	UsersActive      whereHelperint
 	Time             whereHelpertime_Time
 }{
-	ID:               whereHelperint{field: `id`},
-	VSPID:            whereHelperint{field: `vsp_id`},
-	Immature:         whereHelperint{field: `immature`},
-	Live:             whereHelperint{field: `live`},
-	Voted:            whereHelperint{field: `voted`},
-	Missed:           whereHelperint{field: `missed`},
-	PoolFees:         whereHelperfloat64{field: `pool_fees`},
-	ProportionLive:   whereHelperfloat64{field: `proportion_live`},
-	ProportionMissed: whereHelperfloat64{field: `proportion_missed`},
-	UserCount:        whereHelperint{field: `user_count`},
-	UsersActive:      whereHelperint{field: `users_active`},
-	Time:             whereHelpertime_Time{field: `time`},
+	ID:               whereHelperint{field: "\"vsp_tick\".\"id\""},
+	VSPID:            whereHelperint{field: "\"vsp_tick\".\"vsp_id\""},
+	Immature:         whereHelperint{field: "\"vsp_tick\".\"immature\""},
+	Live:             whereHelperint{field: "\"vsp_tick\".\"live\""},
+	Voted:            whereHelperint{field: "\"vsp_tick\".\"voted\""},
+	Missed:           whereHelperint{field: "\"vsp_tick\".\"missed\""},
+	PoolFees:         whereHelperfloat64{field: "\"vsp_tick\".\"pool_fees\""},
+	ProportionLive:   whereHelperfloat64{field: "\"vsp_tick\".\"proportion_live\""},
+	ProportionMissed: whereHelperfloat64{field: "\"vsp_tick\".\"proportion_missed\""},
+	UserCount:        whereHelperint{field: "\"vsp_tick\".\"user_count\""},
+	UsersActive:      whereHelperint{field: "\"vsp_tick\".\"users_active\""},
+	Time:             whereHelpertime_Time{field: "\"vsp_tick\".\"time\""},
 }
 
 // VSPTickRels is where relationship names are stored.
@@ -119,7 +119,7 @@ func (*vspTickR) NewStruct() *vspTickR {
 type vspTickL struct{}
 
 var (
-	vspTickColumns               = []string{"id", "vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active", "time"}
+	vspTickAllColumns            = []string{"id", "vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active", "time"}
 	vspTickColumnsWithoutDefault = []string{"vsp_id", "immature", "live", "voted", "missed", "pool_fees", "proportion_live", "proportion_missed", "user_count", "users_active", "time"}
 	vspTickColumnsWithDefault    = []string{"id"}
 	vspTickPrimaryKeyColumns     = []string{"id"}
@@ -420,7 +420,7 @@ func (o *VSPTick) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			vspTickColumns,
+			vspTickAllColumns,
 			vspTickColumnsWithDefault,
 			vspTickColumnsWithoutDefault,
 			nzDefaults,
@@ -488,7 +488,7 @@ func (o *VSPTick) Update(ctx context.Context, exec boil.ContextExecutor, columns
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			vspTickColumns,
+			vspTickAllColumns,
 			vspTickPrimaryKeyColumns,
 		)
 
@@ -643,13 +643,13 @@ func (o *VSPTick) Upsert(ctx context.Context, exec boil.ContextExecutor, updateO
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			vspTickColumns,
+			vspTickAllColumns,
 			vspTickColumnsWithDefault,
 			vspTickColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			vspTickColumns,
+			vspTickAllColumns,
 			vspTickPrimaryKeyColumns,
 		)
 
@@ -760,10 +760,6 @@ func (q vspTickQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o VSPTickSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no VSPTick slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

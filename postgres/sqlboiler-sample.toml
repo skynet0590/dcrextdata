@@ -1,10 +1,11 @@
 [psql]
-    dbname = "exchange"
+    dbname = "dcrextdata"
     host = "localhost"
-    user = "dcrdata"
+    user = "user"
     pass = "pass"
+    sslmode = "disable"
     whitelist=["exchange", 
         "exchange_tick",
         "vsp",
         "vsp_tick",
-        "vsp_tick_time"]
+        "pow_data"]

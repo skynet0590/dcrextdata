@@ -40,6 +40,11 @@ type config struct {
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
+	// PoW collector
+	DisablePow   bool     `long:"disablepow" description:"Disables collection of data for pows"`
+	DisabledPows []string `long:"disabledpow" description:"Disable data collection for this Pow"`
+	PowInterval  int64    `long:"powI" description:"Collection interval for Pow"`
+
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
@@ -50,6 +55,7 @@ var defaultCfg = config{
 	ConfigFile:  defaultConfigFilename,
 	DebugLevel:  defaultLogLevel,
 	VSPInterval: 300,
+	PowInterval: 300,
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.

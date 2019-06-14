@@ -536,7 +536,7 @@ func testExchangeTicksSelect(t *testing.T) {
 }
 
 var (
-	exchangeTickDBTypes = map[string]string{`ID`: `integer`, `ExchangeID`: `integer`, `High`: `double precision`, `Low`: `double precision`, `Open`: `double precision`, `Close`: `double precision`, `Volume`: `double precision`, `Interval`: `integer`, `CurrencyPair`: `text`, `Time`: `timestamp with time zone`}
+	exchangeTickDBTypes = map[string]string{`ID`: `integer`, `ExchangeID`: `integer`, `Interval`: `integer`, `High`: `double precision`, `Low`: `double precision`, `Open`: `double precision`, `Close`: `double precision`, `Volume`: `double precision`, `CurrencyPair`: `text`, `Time`: `timestamp with time zone`}
 	_                   = bytes.MinRead
 )
 
@@ -546,7 +546,7 @@ func testExchangeTicksUpdate(t *testing.T) {
 	if 0 == len(exchangeTickPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(exchangeTickColumns) == len(exchangeTickPrimaryKeyColumns) {
+	if len(exchangeTickAllColumns) == len(exchangeTickPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -587,7 +587,7 @@ func testExchangeTicksUpdate(t *testing.T) {
 func testExchangeTicksSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(exchangeTickColumns) == len(exchangeTickPrimaryKeyColumns) {
+	if len(exchangeTickAllColumns) == len(exchangeTickPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -620,11 +620,11 @@ func testExchangeTicksSliceUpdateAll(t *testing.T) {
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(exchangeTickColumns, exchangeTickPrimaryKeyColumns) {
-		fields = exchangeTickColumns
+	if strmangle.StringSliceMatch(exchangeTickAllColumns, exchangeTickPrimaryKeyColumns) {
+		fields = exchangeTickAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			exchangeTickColumns,
+			exchangeTickAllColumns,
 			exchangeTickPrimaryKeyColumns,
 		)
 	}
@@ -654,7 +654,7 @@ func testExchangeTicksSliceUpdateAll(t *testing.T) {
 func testExchangeTicksUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(exchangeTickColumns) == len(exchangeTickPrimaryKeyColumns) {
+	if len(exchangeTickAllColumns) == len(exchangeTickPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 

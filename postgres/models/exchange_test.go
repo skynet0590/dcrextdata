@@ -591,7 +591,7 @@ func testExchangesUpdate(t *testing.T) {
 	if 0 == len(exchangePrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(exchangeColumns) == len(exchangePrimaryKeyColumns) {
+	if len(exchangeAllColumns) == len(exchangePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -632,7 +632,7 @@ func testExchangesUpdate(t *testing.T) {
 func testExchangesSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(exchangeColumns) == len(exchangePrimaryKeyColumns) {
+	if len(exchangeAllColumns) == len(exchangePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
@@ -665,11 +665,11 @@ func testExchangesSliceUpdateAll(t *testing.T) {
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(exchangeColumns, exchangePrimaryKeyColumns) {
-		fields = exchangeColumns
+	if strmangle.StringSliceMatch(exchangeAllColumns, exchangePrimaryKeyColumns) {
+		fields = exchangeAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			exchangeColumns,
+			exchangeAllColumns,
 			exchangePrimaryKeyColumns,
 		)
 	}
@@ -699,7 +699,7 @@ func testExchangesSliceUpdateAll(t *testing.T) {
 func testExchangesUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(exchangeColumns) == len(exchangePrimaryKeyColumns) {
+	if len(exchangeAllColumns) == len(exchangePrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
