@@ -581,7 +581,7 @@ func testVSPSSelect(t *testing.T) {
 }
 
 var (
-	vspDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `APIEnabled`: `boolean`, `APIVersionsSupported`: `ARRAYinteger`, `Network`: `text`, `URL`: `text`, `Launched`: `timestamp with time zone`}
+	vspDBTypes = map[string]string{`ID`: `integer`, `Name`: `text`, `APIEnabled`: `boolean`, `APIVersionsSupported`: `ARRAYbigint`, `Network`: `text`, `URL`: `text`, `Launched`: `timestamp with time zone`}
 	_          = bytes.MinRead
 )
 

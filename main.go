@@ -117,11 +117,7 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		powMap := make(map[string]int64)
-		for _, pow := range cfg.Pows {
-			powMap[pow] = db.LastPowEntryTime(pow)
-		}
-		powCollector, err := pow.NewCollector(powMap, cfg.PowInterval, db)
+		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 		if err == nil {
 			wg.Add(1)
 			go powCollector.Collect(ctx, wg)

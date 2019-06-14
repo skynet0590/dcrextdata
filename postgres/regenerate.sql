@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS vsp_tick, vsp, exchange_tick, exchange;
+DROP TABLE IF EXISTS vsp_tick, vsp, exchange_tick, exchange, pow_data;
 
 CREATE TABLE IF NOT EXISTS exchange (
     id SERIAL PRIMARY KEY,
@@ -59,8 +59,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS vsp_tick_idx ON vsp_tick (vsp_id,immature,live
 
 CREATE TABLE IF NOT EXISTS pow_data (
 	time INT,
-	network_hashrate INT,
-	pool_hashrate FLOAT8,
+	network_hashrate VARCHAR(25),
+	pool_hashrate VARCHAR(25),
 	workers INT,
 	network_difficulty FLOAT8,
 	coin_price VARCHAR(25),

@@ -41,9 +41,9 @@ type config struct {
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
 	// PoW collector
-	DisablePow  bool     `long:"disablepow" description:"Disables collection of data for pows"`
-	Pows        []string `long:"pow" description:"pows to be tracked"`
-	PowInterval int64    `long:"powI" description:"Collection interval for Pow"`
+	DisablePow   bool     `long:"disablepow" description:"Disables collection of data for pows"`
+	DisabledPows []string `long:"disabledpow" description:"Disable data collection for this Pow"`
+	PowInterval  int64    `long:"powI" description:"Collection interval for Pow"`
 
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`

@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/volatiletech/null"
 	"strings"
 	"time"
 
@@ -54,7 +55,7 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 		return err
 	}
 
-	pool, err := models.VSPS(models.VSPWhere.Name.EQ(name)).One(ctx, pg.db)
+	pool, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(name))).One(ctx, pg.db)
 	if err == sql.ErrNoRows {
 		pool = responseToVSP(name, resp)
 		err := pg.tryInsert(ctx, txr, pool)
@@ -124,12 +125,12 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 
 func responseToVSP(name string, resp *vsp.ResposeData) *models.VSP {
 	return &models.VSP{
-		Name:                 name,
-		APIEnabled:           resp.APIEnabled,
+		Name:                 null.StringFrom(name),
+		APIEnabled:           null.BoolFrom(resp.APIEnabled),
 		APIVersionsSupported: types.Int64Array(resp.APIVersionsSupported),
-		Network:              resp.Network,
-		URL:                  resp.URL,
-		Launched:             time.Unix(resp.Launched, 0),
+		Network:              null.StringFrom(resp.Network),
+		URL:                  null.StringFrom(resp.URL),
+		Launched:             null.TimeFrom(time.Unix(resp.Launched, 0)),
 	}
 }
 
@@ -155,7 +156,7 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) (models.VSPSlice, error) {
 
 // VSPTicks
 func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit int) (models.VSPTickSlice, error) {
-	vsp, err := models.VSPS(models.VSPWhere.Name.EQ(vspName)).One(ctx, pg.db)
+	vsp, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}

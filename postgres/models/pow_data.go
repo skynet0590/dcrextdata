@@ -25,8 +25,8 @@ import (
 // PowDatum is an object representing the database table.
 type PowDatum struct {
 	Time              int          `boil:"time" json:"time" toml:"time" yaml:"time"`
-	NetworkHashrate   null.Int     `boil:"network_hashrate" json:"network_hashrate,omitempty" toml:"network_hashrate" yaml:"network_hashrate,omitempty"`
-	PoolHashrate      null.Float64 `boil:"pool_hashrate" json:"pool_hashrate,omitempty" toml:"pool_hashrate" yaml:"pool_hashrate,omitempty"`
+	NetworkHashrate   null.String  `boil:"network_hashrate" json:"network_hashrate,omitempty" toml:"network_hashrate" yaml:"network_hashrate,omitempty"`
+	PoolHashrate      null.String  `boil:"pool_hashrate" json:"pool_hashrate,omitempty" toml:"pool_hashrate" yaml:"pool_hashrate,omitempty"`
 	Workers           null.Int     `boil:"workers" json:"workers,omitempty" toml:"workers" yaml:"workers,omitempty"`
 	NetworkDifficulty null.Float64 `boil:"network_difficulty" json:"network_difficulty,omitempty" toml:"network_difficulty" yaml:"network_difficulty,omitempty"`
 	CoinPrice         null.String  `boil:"coin_price" json:"coin_price,omitempty" toml:"coin_price" yaml:"coin_price,omitempty"`
@@ -58,6 +58,29 @@ var PowDatumColumns = struct {
 }
 
 // Generated where
+
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
 
 type whereHelpernull_Int struct{ field string }
 
@@ -105,33 +128,10 @@ func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var PowDatumWhere = struct {
 	Time              whereHelperint
-	NetworkHashrate   whereHelpernull_Int
-	PoolHashrate      whereHelpernull_Float64
+	NetworkHashrate   whereHelpernull_String
+	PoolHashrate      whereHelpernull_String
 	Workers           whereHelpernull_Int
 	NetworkDifficulty whereHelpernull_Float64
 	CoinPrice         whereHelpernull_String
@@ -139,8 +139,8 @@ var PowDatumWhere = struct {
 	Source            whereHelperstring
 }{
 	Time:              whereHelperint{field: "\"pow_data\".\"time\""},
-	NetworkHashrate:   whereHelpernull_Int{field: "\"pow_data\".\"network_hashrate\""},
-	PoolHashrate:      whereHelpernull_Float64{field: "\"pow_data\".\"pool_hashrate\""},
+	NetworkHashrate:   whereHelpernull_String{field: "\"pow_data\".\"network_hashrate\""},
+	PoolHashrate:      whereHelpernull_String{field: "\"pow_data\".\"pool_hashrate\""},
 	Workers:           whereHelpernull_Int{field: "\"pow_data\".\"workers\""},
 	NetworkDifficulty: whereHelpernull_Float64{field: "\"pow_data\".\"network_difficulty\""},
 	CoinPrice:         whereHelpernull_String{field: "\"pow_data\".\"coin_price\""},

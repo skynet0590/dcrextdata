@@ -35,11 +35,11 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 		added++
 	}
 	if len(data) == 1 {
-		log.Infof("Added %d entry from %s (%s)", added, data[0].Source,
+		log.Infof("Added %d pow entry from %s (%s)", added, data[0].Source,
 			UnixTimeToString(data[0].Time))
 	} else {
 		last := data[len(data)-1]
-		log.Infof("Added %d entries from %s (%s to %s)", added, last.Source,
+		log.Infof("Added %d pow entries from %s (%s to %s)", added, last.Source,
 			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
 	}
 
@@ -51,8 +51,8 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
 		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
 		NetworkDifficulty: null.Float64From(data.NetworkDifficulty),
-		NetworkHashrate:   null.IntFrom(int(data.NetworkHashrate)),
-		PoolHashrate:      null.Float64From(data.PoolHashrate),
+		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate)),
+		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate)),
 		Source:            data.Source,
 		Time:              int(data.Time),
 		Workers:           null.IntFrom(int(data.Workers)),

@@ -6,16 +6,24 @@ package pow
 
 import (
 	"context"
+	"github.com/raedahgroup/dcrextdata/helpers"
 	"net/http"
 	"sync"
 	"time"
+)
 
-	"github.com/raedahgroup/dcrextdata/helpers"
+var (
+	availablePows = []string{
+		Coinmine,
+		Luxor,
+		F2pool,
+		Btc,
+	}
 )
 
 type PowDataStore interface {
 	AddPowData(context.Context, []PowData) error
-	CreatePowDataTable() error
+	LastPowEntryTime(source string) (time int64)
 }
 
 type Collector struct {
@@ -24,18 +32,26 @@ type Collector struct {
 	store  PowDataStore
 }
 
-func NewCollector(powLasts map[string]int64, period int64, store PowDataStore) (*Collector, error) {
-	pows := make([]Pow, 0, len(powLasts))
+func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Collector, error) {
+	pows := make([]Pow, 0, len(availablePows)-len(disabledPows))
+	disabledMap := make(map[string]struct{})
+	for _, pow := range disabledPows {
+		disabledMap[pow] = struct{}{}
+	}
 
-	for pow, last := range powLasts {
+	for _, pow := range availablePows {
+		if _, disabled := disabledMap[pow]; disabled {
+			continue
+		}
+
 		if contructor, ok := PowConstructors[pow]; ok {
-
-			in, err := contructor(&http.Client{Timeout: 300 * time.Second}, last) // Consider if sharing a single client is better
+			lastEntryTime := store.LastPowEntryTime(pow)
+			in, err := contructor(&http.Client{Timeout: 300 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err
 			}
 			lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
-			if last == 0 {
+			if lastEntryTime == 0 {
 				lastStr = "never"
 			}
 			log.Infof("Starting PoW collector for %s, last collect time: %s", pow, lastStr)

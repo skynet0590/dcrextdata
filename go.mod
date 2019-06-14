@@ -2,7 +2,6 @@ module github.com/raedahgroup/dcrextdata
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/decred/slog v1.0.0
 	github.com/ericlagergren/decimal v0.0.0-20190331172538-c787d12d14a5 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
