@@ -4,9 +4,9 @@ import "fmt"
 
 const (
 	CreateExchangeTable = `CREATE TABLE IF NOT EXISTS exchange (
-			id SERIAL PRIMARY KEY,
-			name TEXT NOT NULL,
-			url TEXT NOT NULL);`
+		id SERIAL PRIMARY KEY,
+		name TEXT NOT NULL,
+		url TEXT NOT NULL);`
 
 	CreateExchangeTickTable = `CREATE TABLE IF NOT EXISTS exchange_tick (
 		id SERIAL PRIMARY KEY,

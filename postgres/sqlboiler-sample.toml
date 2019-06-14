@@ -1,8 +1,8 @@
 [psql]
     dbname = "dcrextdata"
     host = "localhost"
-    user = "postgres"
-    pass = "ojima123"
+    user = "user"
+    pass = "pass"
     sslmode = "disable"
     whitelist=["exchange", 
         "exchange_tick",

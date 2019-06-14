@@ -11,10 +11,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/raedahgroup/dcrextdata/pow"
-
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
+	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/version"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
