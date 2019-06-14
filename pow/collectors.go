@@ -14,7 +14,7 @@ import (
 )
 
 type PowDataStore interface {
-	AddPowData([]PowData) error
+	AddPowData(context.Context, []PowData) error
 	CreatePowDataTable() error
 }
 
@@ -62,7 +62,7 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 					if err != nil {
 						log.Error(err)
 					}
-					err = pc.store.AddPowData(data)
+					err = pc.store.AddPowData(ctx, data)
 					if err != nil {
 						log.Error(err)
 					}
