@@ -74,6 +74,11 @@ func _main(ctx context.Context) error {
 				log.Error("Error creating vsp data table: ", err)
 				return err
 			}
+
+			if err := db.CreateVSPTickIndex(); err != nil {
+				log.Error("Error creating vsp data index: ", err)
+				return err
+			}
 		}
 
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
@@ -96,6 +101,11 @@ func _main(ctx context.Context) error {
 		if exists := db.ExchangeTickTableExits(); !exists {
 			if err := db.CreateExchangeTickTable(); err != nil {
 				log.Error("Error creating exchange tick table: ", err)
+				return err
+			}
+
+			if err := db.CreateExchangeTickIndex(); err != nil {
+				log.Error("Error creating exchange tick index: ", err)
 				return err
 			}
 		}

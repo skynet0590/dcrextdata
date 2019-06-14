@@ -80,11 +80,11 @@ func (pg *PgDb) ExchangeTableExits() bool {
 func (pg *PgDb) CreateExchangeTickTable() error {
 	log.Trace("Creating exchange tick table")
 	_, err := pg.db.Exec(createExchangeTickTable)
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	_, err = pg.db.Exec(createExchangeTickIndex)
+func (pg *PgDb) CreateExchangeTickIndex() error {
+	_, err := pg.db.Exec(createExchangeTickIndex)
 	return err
 }
 
@@ -95,11 +95,7 @@ func (pg *PgDb) ExchangeTickTableExits() bool {
 
 func (pg *PgDb) CreateVSPInfoTables() error {
 	_, err := pg.db.Exec(createVSPInfoTable)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (pg *PgDb) VSPInfoTableExits() bool {
@@ -109,11 +105,11 @@ func (pg *PgDb) VSPInfoTableExits() bool {
 
 func (pg *PgDb) CreateVSPTickTables() error {
 	_, err := pg.db.Exec(createVSPTickTable)
-	if err != nil {
-		return err
-	}
+	return err
+}
 
-	_, err = pg.db.Exec(createVSPTickIndex)
+func (pg *PgDb) CreateVSPTickIndex() error {
+	_, err := pg.db.Exec(createVSPTickIndex)
 
 	return err
 }
