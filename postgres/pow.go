@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"strings"
-	
+
 	"github.com/raedahgroup/dcrextdata/pow"
 )
 
