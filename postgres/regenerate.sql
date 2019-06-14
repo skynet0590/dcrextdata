@@ -60,7 +60,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS vsp_tick_idx ON vsp_tick (vsp_id,immature,live
 CREATE TABLE IF NOT EXISTS pow_data (
 	time INT,
 	network_hashrate INT,
-	pool_hashrate INT8,
+	pool_hashrate FLOAT8,
 	workers INT,
 	network_difficulty FLOAT8,
 	coin_price VARCHAR(25),

@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -29,12 +28,14 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 	for _, d := range data {
 		powModel, err := responseToPowModel(d)
 		if err != nil {
+			txr.Rollback()
 			return err
 		}
-		err = powModel.Insert(ctx, txr, boil.Infer())
 
+		err = powModel.Insert(ctx, txr, boil.Infer())
 		if err != nil {
 			if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+				txr.Rollback()
 				return err
 			}
 		}
@@ -49,21 +50,21 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
 	}
 
+	err = txr.Commit()
+	if err != nil {
+		return txr.Rollback()
+	}
+
 	return nil
 }
 
 func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
-	poolHashRate, err := strconv.ParseInt(fmt.Sprint(data.PoolHashrate), 10, 64)
-	if err != nil {
-		return models.PowDatum{}, fmt.Errorf("invalid pool hash rate: %s", err.Error())
-	}
-
 	return models.PowDatum{
 		BTCPrice:null.StringFrom(fmt.Sprint(data.BtcPrice)),
 		CoinPrice: null.StringFrom(fmt.Sprint(data.CoinPrice)),
 		NetworkDifficulty: null.Float64From(data.NetworkDifficulty),
 		NetworkHashrate: null.IntFrom(int(data.NetworkHashrate)),
-		PoolHashrate: null.Int64From(int64(poolHashRate)),
+		PoolHashrate: null.Float64From(data.PoolHashrate),
 		Source: data.Source,
 		Time: int(data.Time),
 		Workers: null.IntFrom(int(data.Workers)),
