@@ -63,6 +63,20 @@ func _main(ctx context.Context) error {
 	wg := new(sync.WaitGroup)
 
 	if !cfg.DisableVSP {
+		if exists := db.VSPInfoTableExits(); !exists {
+			if err := db.CreateVSPInfoTables(); err != nil {
+				log.Error("Error creating vsp info table: ", err)
+				return err
+			}
+		}
+
+		if exists := db.VSPTickTableExits(); !exists {
+			if err := db.CreateVSPTickTables(); err != nil {
+				log.Error("Error creating vsp data table: ", err)
+				return err
+			}
+		}
+
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
 			wg.Add(1)
@@ -73,12 +87,20 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableExchangeTicks {
-		if exists := db.ExchangeDataTableExits(); !exists {
-			if err := db.CreateExchangeDataTable(); err != nil {
-				log.Error("Error creating exchange data table: ", err)
+		if exists := db.ExchangeTableExits(); !exists {
+			if err := db.CreateExchangeTable(); err != nil {
+				log.Error("Error creating exchange table: ", err)
 				return err
 			}
 		}
+
+		if exists := db.ExchangeTickTableExits(); !exists {
+			if err := db.CreateExchangeTickTable(); err != nil {
+				log.Error("Error creating exchange tick table: ", err)
+				return err
+			}
+		}
+
 		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
 			wg.Add(1)

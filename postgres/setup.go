@@ -3,14 +3,23 @@ package postgres
 import "fmt"
 
 const (
-	CreateExchangeDataTable = `CREATE TABLE IF NOT EXISTS exchange_data (
-		high FLOAT8,
-		low FLOAT8,
-		open FLOAT8,
-		close FLOAT8,
-		time INT,
-		exchange TEXT, 
-		CONSTRAINT tick PRIMARY KEY (time, exchange));`
+	CreateExchangeTable = `CREATE TABLE IF NOT EXISTS exchange (
+			id SERIAL PRIMARY KEY,
+			name TEXT NOT NULL,
+			url TEXT NOT NULL);`
+
+	CreateExchangeTickTable = `CREATE TABLE IF NOT EXISTS exchange_tick (
+		id SERIAL PRIMARY KEY,
+		exchange_id INT REFERENCES exchange(id) NOT NULL, 
+		interval INT NOT NULL,
+		high FLOAT NOT NULL,
+		low FLOAT NOT NULL,
+		open FLOAT NOT NULL,
+		close FLOAT NOT NULL,
+		volume FLOAT NOT NULL,
+		currency_pair TEXT NOT NULL,
+		time TIMESTAMPTZ NOT NULL
+	);`
 
 	createVSPInfoTable = `CREATE TABLE IF NOT EXISTS vsp (
 		id SERIAL PRIMARY KEY,
@@ -22,20 +31,19 @@ const (
 		launched TIMESTAMPTZ
 	);`
 
-	createVSPDataTable = `CREATE TABLE IF NOT EXISTS vsp_data (
+	createVSPTickTable = `CREATE TABLE IF NOT EXISTS vsp_tick (
 		id SERIAL PRIMARY KEY,
-		vsp_id INT REFERENCES vsp(id),
-		last_updated TIMESTAMPTZ,
-		immature INT8,
-		live INT8,
-		voted INT8,
-		missed INT8,
-		pool_fees FLOAT8,
-		proportion_live FLOAT8,
-		proportion_missed FLOAT8,
-		user_count INT8,
-		users_active INT8,
-		time TIMESTAMPTZ
+		vsp_id INT REFERENCES vsp(id) NOT NULL,
+		immature INT NOT NULL,
+		live INT NOT NULL,
+		voted INT NOT NULL,
+		missed INT NOT NULL,
+		pool_fees FLOAT NOT NULL,
+		proportion_live FLOAT NOT NULL,
+		proportion_missed FLOAT NOT NULL,
+		user_count INT NOT NULL,
+		users_active INT NOT NULL,
+		time TIMESTAMPTZ NOT NULL
 	);`
 
 	// PoW table
@@ -51,12 +59,58 @@ const (
 		PRIMARY KEY (time, source)
 	);`
 
-	InsertPowData = `INSERT INTO pow_data (
-		time, network_hashrate, pool_hashrate, workers, network_difficulty, coin_price, btc_price, source)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
-
 	LastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
 )
+
+func (pg *PgDb) CreateExchangeTable() error {
+	log.Trace("Creating exchange tick table")
+	_, err := pg.db.Exec(CreateExchangeTable)
+	return err
+}
+
+func (pg *PgDb) ExchangeTableExits() bool {
+	exists, _ := pg.tableExists("exchange")
+	return exists
+}
+
+func (pg *PgDb) CreateExchangeTickTable() error {
+	log.Trace("Creating exchange tick table")
+	_, err := pg.db.Exec(CreateExchangeTickTable)
+	return err
+}
+
+func (pg *PgDb) ExchangeTickTableExits() bool {
+	exists, _ := pg.tableExists("exchange_tick")
+	return exists
+}
+
+func (pg *PgDb) CreateVSPInfoTables() error {
+	_, err := pg.db.Exec(createVSPInfoTable)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) VSPInfoTableExits() bool {
+	exists, _ := pg.tableExists("vsp")
+	return exists
+}
+
+func (pg *PgDb) CreateVSPTickTables() error {
+	_, err := pg.db.Exec(createVSPTickTable)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) VSPTickTableExits() bool {
+	exists, _ := pg.tableExists("vsp_tick")
+	return exists
+}
 
 func (pg *PgDb) CreatePowDataTable() error {
 	_, err := pg.db.Exec(CreatePowDataTable)
@@ -66,31 +120,6 @@ func (pg *PgDb) CreatePowDataTable() error {
 func (pg *PgDb) PowDataTableExits() bool {
 	exists, _ := pg.tableExists("pow_data")
 	return exists
-}
-
-func (pg *PgDb) CreateExchangeDataTable() error {
-	log.Trace("Creating exchange data table")
-	_, err := pg.db.Exec(CreateExchangeDataTable)
-	return err
-}
-
-func (pg *PgDb) ExchangeDataTableExits() bool {
-	exists, _ := pg.tableExists("exchange_data")
-	return exists
-}
-
-func (pg *PgDb) CreateVSPTables() error {
-	_, err := pg.db.Exec(createVSPInfoTable)
-	if err != nil {
-		return err
-	}
-
-	_, err = pg.db.Exec(createVSPDataTable)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (pg *PgDb) tableExists(name string) (bool, error) {
@@ -113,14 +142,17 @@ func (pg *PgDb) dropTable(name string) error {
 }
 
 func (pg *PgDb) DropAllTables() error {
-	if err := pg.dropTable("vsp_data"); err != nil {
+	if err := pg.dropTable("vsp_tick"); err != nil {
 		return err
 	}
 	if err := pg.dropTable("vsp"); err != nil {
 		return err
 	}
-	if err := pg.dropTable("pow_data"); err != nil {
+	if err := pg.dropTable("exchange_tick"); err != nil {
 		return err
 	}
-	return pg.dropTable("exchange_data")
+	if err := pg.dropTable("exchange"); err != nil {
+		return err
+	}
+	return pg.dropTable("pow_data")
 }
