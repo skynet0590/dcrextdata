@@ -51,26 +51,38 @@ func NewCollector(powLasts map[string]int64, period int64, store PowDataStore) (
 }
 
 func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if ctx.Err() != nil {
+		return
+	}
+
+	runPowCollectors := func() {
+		log.Trace("Triggering PoW collectors")
+		for _, in := range pc.pows {
+			go func(info Pow) {
+				data, err := info.Collect(ctx)
+				if err != nil {
+					log.Error(err)
+				}
+				err = pc.store.AddPowData(ctx, data)
+				if err != nil {
+					log.Error(err)
+				}
+			}(in)
+		}
+	}
+
+	runPowCollectors()
+
 	ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ticker.C:
-			log.Trace("Triggering PoW collectors")
-			for _, in := range pc.pows {
-				go func(info Pow) {
-					data, err := info.Collect(ctx)
-					if err != nil {
-						log.Error(err)
-					}
-					err = pc.store.AddPowData(ctx, data)
-					if err != nil {
-						log.Error(err)
-					}
-				}(in)
-			}
+			runPowCollectors()
 		case <-ctx.Done():
 			log.Infof("Stopping collector")
-			wg.Done()
 			return
 		}
 

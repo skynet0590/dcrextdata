@@ -117,7 +117,7 @@ func _main(ctx context.Context) error {
 				return err
 			}
 		}
-		log.Info("Starting PoW data collection")
+
 		powMap := make(map[string]int64)
 		for _, pow := range cfg.Pows {
 			powMap[pow] = db.LastPowEntryTime(pow)
