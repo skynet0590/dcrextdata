@@ -4,8 +4,6 @@
 
 package pow
 
-type NilClientError struct{}
+import "errors"
 
-func (err NilClientError) Error() string {
-	return "Cannot use a nil http client"
-}
+var nilClientError = errors.New("Cannot use a nil http client.")

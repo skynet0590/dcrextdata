@@ -56,7 +56,7 @@ type LuxorPow struct {
 
 func NewLuxor(client *http.Client, lastUpdate int64) (Pow, error) {
 	if client == nil {
-		return nil, new(NilClientError)
+		return nil, nilClientError
 	}
 	return &LuxorPow{
 		CommonInfo: CommonInfo{
@@ -121,7 +121,7 @@ type F2poolPow struct {
 
 func NewF2pool(client *http.Client, lastUpdate int64) (Pow, error) {
 	if client == nil {
-		return nil, new(NilClientError)
+		return nil, nilClientError
 	}
 	return &F2poolPow{
 		CommonInfo: CommonInfo{
@@ -177,7 +177,7 @@ type CoinminePow struct {
 
 func NewCoinmine(client *http.Client, lastUpdate int64) (Pow, error) {
 	if client == nil {
-		return nil, new(NilClientError)
+		return nil, nilClientError
 	}
 	return &CoinminePow{
 		CommonInfo: CommonInfo{
@@ -227,7 +227,7 @@ type BtcPow struct {
 
 func NewBtc(client *http.Client, lastUpdate int64) (Pow, error) {
 	if client == nil {
-		return nil, new(NilClientError)
+		return nil, nilClientError
 	}
 	return &BtcPow{
 		CommonInfo: CommonInfo{
