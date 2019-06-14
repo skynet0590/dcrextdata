@@ -48,13 +48,13 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 
 func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
-		BTCPrice:null.StringFrom(fmt.Sprint(data.BtcPrice)),
-		CoinPrice: null.StringFrom(fmt.Sprint(data.CoinPrice)),
+		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
+		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
 		NetworkDifficulty: null.Float64From(data.NetworkDifficulty),
-		NetworkHashrate: null.IntFrom(int(data.NetworkHashrate)),
-		PoolHashrate: null.Float64From(data.PoolHashrate),
-		Source: data.Source,
-		Time: int(data.Time),
-		Workers: null.IntFrom(int(data.Workers)),
+		NetworkHashrate:   null.IntFrom(int(data.NetworkHashrate)),
+		PoolHashrate:      null.Float64From(data.PoolHashrate),
+		Source:            data.Source,
+		Time:              int(data.Time),
+		Workers:           null.IntFrom(int(data.Workers)),
 	}, nil
 }
