@@ -98,7 +98,7 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 		case <-ticker.C:
 			runPowCollectors()
 		case <-ctx.Done():
-			log.Infof("Stopping collector")
+			log.Infof("Stopping collectors")
 			return
 		}
 
