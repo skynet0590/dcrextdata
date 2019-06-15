@@ -62,7 +62,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	ticker := time.NewTicker(vsp.period * time.Second)
+	/*ticker := time.NewTicker(vsp.period * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -75,7 +75,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 			log.Infof("Shutting down collector")
 			return
 		}
-	}
+	}*/
 }
 
 func (vsp *Collector) collectAndStore(ctx context.Context) error {

@@ -10,7 +10,8 @@ import (
 	"os"
 	"runtime"
 	"sync"
-
+	"time"
+	
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
@@ -19,6 +20,24 @@ import (
 )
 
 // const dcrlaunchtime int64 = 1454889600
+
+func main() {
+	// Create a context that is cancelled when a shutdown request is received
+	// via requestShutdown.
+	ctx := withShutdownCancel(context.Background())
+	// Listen for both interrupt signals and shutdown requests.
+	go shutdownListener()
+
+	if err := _main(ctx); err != nil {
+		if logRotator != nil {
+			log.Error(err)
+		} else {
+			fmt.Println(err)
+		}
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
 
 func _main(ctx context.Context) error {
 	cfg, err := loadConfig()
@@ -61,101 +80,108 @@ func _main(ctx context.Context) error {
 
 	wg := new(sync.WaitGroup)
 
-	if !cfg.DisableVSP {
-		if exists := db.VSPInfoTableExits(); !exists {
-			if err := db.CreateVSPInfoTables(); err != nil {
-				log.Error("Error creating vsp info table: ", err)
-				return err
+	collectData := func() error {
+		if !cfg.DisableVSP {
+			if exists := db.VSPInfoTableExits(); !exists {
+				if err := db.CreateVSPInfoTables(); err != nil {
+					log.Error("Error creating vsp info table: ", err)
+					return err
+				}
+			}
+
+			if exists := db.VSPTickTableExits(); !exists {
+				if err := db.CreateVSPTickTables(); err != nil {
+					log.Error("Error creating vsp data table: ", err)
+					return err
+				}
+
+				if err := db.CreateVSPTickIndex(); err != nil {
+					log.Error("Error creating vsp data index: ", err)
+					return err
+				}
+			}
+
+			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+			if err == nil {
+				wg.Add(1)
+				vspCollector.Run(ctx, wg)
+			} else {
+				log.Error(err)
 			}
 		}
 
-		if exists := db.VSPTickTableExits(); !exists {
-			if err := db.CreateVSPTickTables(); err != nil {
-				log.Error("Error creating vsp data table: ", err)
-				return err
+		if !cfg.DisableExchangeTicks {
+			if exists := db.ExchangeTableExits(); !exists {
+				if err := db.CreateExchangeTable(); err != nil {
+					log.Error("Error creating exchange table: ", err)
+					return err
+				}
 			}
 
-			if err := db.CreateVSPTickIndex(); err != nil {
-				log.Error("Error creating vsp data index: ", err)
-				return err
+			if exists := db.ExchangeTickTableExits(); !exists {
+				if err := db.CreateExchangeTickTable(); err != nil {
+					log.Error("Error creating exchange tick table: ", err)
+					return err
+				}
+
+				if err := db.CreateExchangeTickIndex(); err != nil {
+					log.Error("Error creating exchange tick index: ", err)
+					return err
+				}
+			}
+
+			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
+			if err == nil {
+				wg.Add(1)
+				ticksHub.Run(ctx, wg)
+			} else {
+				log.Error(err)
 			}
 		}
 
-		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-		if err == nil {
-			wg.Add(1)
-			go vspCollector.Run(ctx, wg)
-		} else {
-			log.Error(err)
+		if !cfg.DisablePow {
+			if exists := db.PowDataTableExits(); !exists {
+				if err := db.CreatePowDataTable(); err != nil {
+					log.Error("Error creating PoW data table: ", err)
+					return err
+				}
+			}
+
+			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
+			if err == nil {
+				wg.Add(1)
+				powCollector.Collect(ctx, wg)
+			} else {
+				log.Error(err)
+			}
+
 		}
+
+		return nil
 	}
 
-	if !cfg.DisableExchangeTicks {
-		if exists := db.ExchangeTableExits(); !exists {
-			if err := db.CreateExchangeTable(); err != nil {
-				log.Error("Error creating exchange table: ", err)
-				return err
-			}
-		}
-
-		if exists := db.ExchangeTickTableExits(); !exists {
-			if err := db.CreateExchangeTickTable(); err != nil {
-				log.Error("Error creating exchange tick table: ", err)
-				return err
-			}
-
-			if err := db.CreateExchangeTickIndex(); err != nil {
-				log.Error("Error creating exchange tick index: ", err)
-				return err
-			}
-		}
-
-		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
-		if err == nil {
-			wg.Add(1)
-			go ticksHub.Run(ctx, wg)
-		} else {
-			log.Error(err)
-		}
-	}
-
-	if !cfg.DisablePow {
-		if exists := db.PowDataTableExits(); !exists {
-			if err := db.CreatePowDataTable(); err != nil {
-				log.Error("Error creating PoW data table: ", err)
-				return err
-			}
-		}
-
-		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
-		if err == nil {
-			wg.Add(1)
-			go powCollector.Collect(ctx, wg)
-		} else {
-			log.Error(err)
-		}
-
+	if err = collectData(); err != nil {
+		return err
 	}
 
 	wg.Wait()
-	log.Info("Goodbye")
-	return nil
-}
 
-func main() {
-	// Create a context that is cancelled when a shutdown request is received
-	// via requestShutdown.
-	ctx := withShutdownCancel(context.Background())
-	// Listen for both interrupt signals and shutdown requests.
-	go shutdownListener()
+	ticker := time.NewTicker(300 * time.Second)
+	defer ticker.Stop()
 
-	if err := _main(ctx); err != nil {
-		if logRotator != nil {
-			log.Error(err)
-		} else {
-			fmt.Println(err)
+	for {
+		select {
+		case <-ticker.C:
+			if err := collectData(); err != nil {
+				log.Error(err)
+				log.Info("Goodbye")
+				os.Exit(1)
+			}
+		case <-ctx.Done():
+			log.Infof("Shutting down collector")
+			log.Info("Goodbye")
+			return nil
 		}
-		os.Exit(1)
 	}
-	os.Exit(0)
+	return nil
 }

@@ -50,11 +50,6 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 			if err != nil {
 				return nil, err
 			}
-			lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
-			if lastEntryTime == 0 {
-				lastStr = "never"
-			}
-			log.Infof("Starting PoW collector for %s, last collect time: %s", pow, lastStr)
 			pows = append(pows, in)
 		}
 	}
@@ -75,8 +70,15 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	runPowCollectors := func() {
 		log.Trace("Triggering PoW collectors")
 		for _, in := range pc.pows {
-			go func(info Pow) {
-				data, err := info.Collect(ctx)
+			func(powInfo Pow) {
+				lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
+				lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
+				if lastEntryTime == 0 {
+					lastStr = "never"
+				}
+				log.Infof("Starting PoW collector for %s, last collect time: %s", powInfo.Name(), lastStr)
+
+				data, err := powInfo.Collect(ctx)
 				if err != nil {
 					log.Error(err)
 				}
@@ -90,7 +92,7 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 
 	runPowCollectors()
 
-	ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
+	/*ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -102,5 +104,5 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		}
 
-	}
+	}*/
 }
