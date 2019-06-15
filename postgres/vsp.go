@@ -119,7 +119,7 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 		return txr.Rollback()
 	}
 
-	log.Infof("%v - Stored data for vsp %s", tickTime.UTC(), name)
+	log.Infof("Stored data for VSP %10s %v", name, tickTime.UTC().Format(dateTemplate))
 	return nil
 }
 

@@ -12,6 +12,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+const dateTemplate = "2006-01-02 15:04"
+
 type insertable interface {
 	Insert(context.Context, boil.ContextExecutor, boil.Columns) error
 }
