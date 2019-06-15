@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	
+
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"

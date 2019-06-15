@@ -36,7 +36,7 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 	}
 	if len(data) == 1 {
 		log.Infof("%s - Added %d pow entry from %s", UnixTimeToString(data[0].Time), added, data[0].Source)
-	} else {
+	} else if len(data) > 1 {
 		last := data[len(data)-1]
 		log.Infof("%s to %s - Added %d pow entries from %s",
 			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time), added, last.Source)
