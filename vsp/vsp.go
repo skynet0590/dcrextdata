@@ -56,7 +56,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	log.Info("Starting collection cycle")
+	log.Info("Starting VSP collection cycle")
 	if err := vsp.collectAndStore(ctx); err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
