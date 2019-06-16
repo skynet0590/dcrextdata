@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"reflect"
 
 	"github.com/decred/slog"
 	flags "github.com/jessevdk/go-flags"
@@ -17,11 +18,16 @@ import (
 const (
 	defaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
-	// defaultLogDirname     = "logs"
 	defaultLogLevel = "info"
+	hint = `Run dcrextdata --mode=http to start http server or just dcrextdata`
 )
 
 type config struct {
+	configFileOptions
+	CommandLineOptions
+}
+
+type configFileOptions struct {
 	// General application behaviour
 	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	LogFile    string `short:"L" long:"logfile" description:"File name of the log file"`
@@ -54,12 +60,32 @@ type config struct {
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
 }
 
-var defaultCfg = config{
-	LogFile:     defaultLogFilename,
-	ConfigFile:  defaultConfigFilename,
-	DebugLevel:  defaultLogLevel,
-	VSPInterval: 300,
-	PowInterval: 300,
+// CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
+type CommandLineOptions struct {
+	InterfaceMode string `long:"mode" description:"Interface mode to run" choice:"http" choice:"run only dcrexrdata"`
+}
+
+func defaultCommandLineOptions() CommandLineOptions {
+	return CommandLineOptions{
+		InterfaceMode: " ",
+	}
+}
+
+func defaultFileOptions() configFileOptions {
+	return configFileOptions{
+		LogFile:     defaultLogFilename,
+		ConfigFile:  defaultConfigFilename,
+		DebugLevel:  defaultLogLevel,
+		VSPInterval: 300,
+		PowInterval: 300,
+	}
+}
+
+func defaultConfig() config {
+	return config{
+		configFileOptions:    defaultFileOptions(),
+		CommandLineOptions: defaultCommandLineOptions(),
+	}
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.
@@ -133,52 +159,96 @@ func parseAndSetDebugLevels(debugLevel string) error {
 	return nil
 }
 
-func loadConfig() (*config, error) {
-	cfg := defaultCfg
-	parser := flags.NewParser(&cfg, flags.Default)
-	err := flags.NewIniParser(parser).ParseFile(cfg.ConfigFile)
+func loadConfig() (*config, []string, error) {
+	// check if any of the command-line args belong in the config file and alert user to set such values in config file only
+	if hasConfigFileOption(os.Args) {
+		return nil, nil, fmt.Errorf("Unexpected command-line flag/option")
+	}
+
+	cfg := defaultConfig()
+	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
+	err := flags.NewIniParser(parser).ParseFile(cfg.configFileOptions.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			fmt.Printf("Missing config file %s in current directory\n", cfg.ConfigFile)
+			fmt.Printf("Missing config file %s in current directory\n", cfg.configFileOptions.ConfigFile)
 		} else {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	_, err = parser.Parse()
+	unknownArg, err := parser.Parse()
 	if err != nil {
 		e, ok := err.(*flags.Error)
 		if ok && e.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	initLogRotator(cfg.LogFile)
+	initLogRotator(cfg.configFileOptions.LogFile)
 
 	// Special show command to list supported subsystems and exit.
-	if cfg.DebugLevel == "show" {
+	if cfg.configFileOptions.DebugLevel == "show" {
 		fmt.Println("Supported subsystems", supportedSubsystems())
 		os.Exit(0)
 	}
 
 	// Parse, validate, and set debug log level(s).
 	if cfg.Quiet {
-		cfg.DebugLevel = "error"
+		cfg.configFileOptions.DebugLevel = "error"
 	}
 
 	// Parse, validate, and set debug log level(s).
-	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+	if err := parseAndSetDebugLevels(cfg.configFileOptions.DebugLevel); err != nil {
 		err = fmt.Errorf("%s: %v", "loadConfig", err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
-		return nil, err
+		return nil, nil, err
 	}
 
-	if cfg.VSPInterval < 300 {
+	if cfg.configFileOptions.VSPInterval < 300 {
 		log.Warn("VSP collection interval cannot be less that 300, setting to 300")
-		cfg.VSPInterval = 300
+		cfg.configFileOptions.VSPInterval = 300
 	}
 
-	return &cfg, nil
+	return &cfg, unknownArg, nil
+}
+
+// configFileOptions returns a slice of the short names and long names of all config file options
+func confFileOptions() (options []string) {
+	tConfFileOptions := reflect.TypeOf(configFileOptions{})
+	for i := 0; i < tConfFileOptions.NumField(); i++ {
+		fieldTag := tConfFileOptions.Field(i).Tag
+
+		if shortName, ok := fieldTag.Lookup("short"); ok {
+			options = append(options, "-"+shortName)
+		}
+
+		if longName, ok := fieldTag.Lookup("long"); ok {
+			options = append(options, "--"+longName)
+		}
+	}
+	return
+}
+
+// hasConfigFileOption checks if an unknown arg found in command-line is a config file option that should only be set in the config file
+func hasConfigFileOption(commandLineArgs []string) bool {
+	confFileOptions := confFileOptions()
+	isConfigFileOption := func(option string) bool {
+		for _, confFileOption := range confFileOptions {
+			if strings.EqualFold(confFileOption, option) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, argAndValue := range commandLineArgs {
+		arg := strings.Split(argAndValue, "=")[0]
+		if isConfigFileOption(strings.TrimSpace(arg)) {
+			return true
+		}
+	}
+
+	return false
 }
