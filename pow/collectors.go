@@ -6,7 +6,6 @@ package pow
 
 import (
 	"context"
-	"github.com/raedahgroup/dcrextdata/helpers"
 	"net/http"
 	"sync"
 	"time"
@@ -68,15 +67,15 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 	}
 
 	runPowCollectors := func() {
-		log.Trace("Triggering PoW collectors")
+		log.Info("Triggering PoW collectors")
 		for _, in := range pc.pows {
 			func(powInfo Pow) {
-				lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
+				/*lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
 				lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
 				if lastEntryTime == 0 {
 					lastStr = "never"
 				}
-				log.Infof("Starting PoW collector for %s, last collect time: %s", powInfo.Name(), lastStr)
+				log.Infof("Starting PoW collector for %s, last collect time: %s", powInfo.Name(), lastStr)*/
 
 				data, err := powInfo.Collect(ctx)
 				if err != nil {

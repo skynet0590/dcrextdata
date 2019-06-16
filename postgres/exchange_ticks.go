@@ -110,13 +110,13 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 	if added == 0 {
 		log.Infof("No new ticks on %s(%dm) for", name, pair, interval)
 	} else if added == 1 {
-		log.Infof("%10s %7s, received %6dm ticks, storing      1 entries %s", name, pair,
+		log.Infof("%-9s %7s, received %6dm ticks, storing      1 entries %s", name, pair,
 			interval, firstTime.Format(dateTemplate))
 
 		/*log.Infof("%10s %7s, received      1  tick %14s %s", name, pair,
 			fmt.Sprintf("(%dm)", interval), firstTime.Format(dateTemplate))*/
 	} else {
-		log.Infof("%10s %7s, received %6dm ticks, storing %6v entries %s to %s", name, pair,
+		log.Infof("%-9s %7s, received %6dm ticks, storing %6v entries %s to %s", name, pair,
 			interval, added, firstTime.Format(dateTemplate), lastTime.Format(dateTemplate))
 
 		/*log.Infof("%10s %7s, received %6v ticks %14s %s to %s",

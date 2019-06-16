@@ -23,7 +23,7 @@ type upsertable interface {
 }
 
 func UnixTimeToString(t int64) string {
-	return time.Unix(t, 0).UTC().String()
+	return time.Unix(t, 0).UTC().Format(dateTemplate)
 }
 
 func int64ToTime(t int64) time.Time {
