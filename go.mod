@@ -14,7 +14,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/viper v1.3.2
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
-	github.com/volatiletech/null v8.0.0+incompatible // indirect
+	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.2.0+incompatible
 	golang.org/x/sys v0.0.0-20190312061237-fead79001313 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
