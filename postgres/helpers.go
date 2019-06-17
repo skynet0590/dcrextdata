@@ -12,6 +12,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
+const dateTemplate = "2006-01-02 15:04"
+
 type insertable interface {
 	Insert(context.Context, boil.ContextExecutor, boil.Columns) error
 }
@@ -21,7 +23,7 @@ type upsertable interface {
 }
 
 func UnixTimeToString(t int64) string {
-	return time.Unix(t, 0).UTC().String()
+	return time.Unix(t, 0).UTC().Format(dateTemplate)
 }
 
 func int64ToTime(t int64) time.Time {

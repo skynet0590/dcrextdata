@@ -19,6 +19,10 @@ func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
 
 //
 func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
 	added := 0
 	for _, d := range data {
 		powModel, err := responseToPowModel(d)
@@ -35,12 +39,11 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 		added++
 	}
 	if len(data) == 1 {
-		log.Infof("Added %d pow entry from %s (%s)", added, data[0].Source,
-			UnixTimeToString(data[0].Time))
-	} else {
+		log.Infof("Added %4d PoW   entry from %10s %s", added, data[0].Source, UnixTimeToString(data[0].Time))
+	} else if len(data) > 1 {
 		last := data[len(data)-1]
-		log.Infof("Added %d pow entries from %s (%s to %s)", added, last.Source,
-			UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
+		log.Infof("Added %4d PoW entries from %10s %s to %s",
+			added, last.Source, UnixTimeToString(data[0].Time), UnixTimeToString(last.Time),)
 	}
 
 	return nil
