@@ -121,7 +121,7 @@ func _main(ctx context.Context) error {
 		} else {
 			log.Error(err)
 		}
-
+	}
 		if !cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
@@ -176,10 +176,7 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	wg.Wait()
-	log.Info("Goodbye")
-	return nil
-}
+	
 
 	ticker := time.NewTicker(300 * time.Second)
 	defer ticker.Stop()
