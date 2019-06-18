@@ -9,7 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"reflect"
+	// "reflect"
 
 	"github.com/decred/slog"
 	flags "github.com/jessevdk/go-flags"
@@ -62,13 +62,7 @@ type configFileOptions struct {
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
-	InterfaceMode string `long:"mode" description:"Interface mode to run" choice:"http" choice:"run only dcrexrdata"`
-}
-
-func defaultCommandLineOptions() CommandLineOptions {
-	return CommandLineOptions{
-		InterfaceMode: " ",
-	}
+	HttpMode bool `long:"http" description:"Launch http server"`
 }
 
 func defaultFileOptions() configFileOptions {
@@ -84,7 +78,6 @@ func defaultFileOptions() configFileOptions {
 func defaultConfig() config {
 	return config{
 		configFileOptions:    defaultFileOptions(),
-		CommandLineOptions: defaultCommandLineOptions(),
 	}
 }
 
@@ -160,11 +153,6 @@ func parseAndSetDebugLevels(debugLevel string) error {
 }
 
 func loadConfig() (*config, []string, error) {
-	// check if any of the command-line args belong in the config file and alert user to set such values in config file only
-	if hasConfigFileOption(os.Args) {
-		return nil, nil, fmt.Errorf("Unexpected command-line flag/option")
-	}
-
 	cfg := defaultConfig()
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
 	err := flags.NewIniParser(parser).ParseFile(cfg.configFileOptions.ConfigFile)
@@ -212,43 +200,4 @@ func loadConfig() (*config, []string, error) {
 	}
 
 	return &cfg, unknownArg, nil
-}
-
-// configFileOptions returns a slice of the short names and long names of all config file options
-func confFileOptions() (options []string) {
-	tConfFileOptions := reflect.TypeOf(configFileOptions{})
-	for i := 0; i < tConfFileOptions.NumField(); i++ {
-		fieldTag := tConfFileOptions.Field(i).Tag
-
-		if shortName, ok := fieldTag.Lookup("short"); ok {
-			options = append(options, "-"+shortName)
-		}
-
-		if longName, ok := fieldTag.Lookup("long"); ok {
-			options = append(options, "--"+longName)
-		}
-	}
-	return
-}
-
-// hasConfigFileOption checks if an unknown arg found in command-line is a config file option that should only be set in the config file
-func hasConfigFileOption(commandLineArgs []string) bool {
-	confFileOptions := confFileOptions()
-	isConfigFileOption := func(option string) bool {
-		for _, confFileOption := range confFileOptions {
-			if strings.EqualFold(confFileOption, option) {
-				return true
-			}
-		}
-		return false
-	}
-
-	for _, argAndValue := range commandLineArgs {
-		arg := strings.Split(argAndValue, "=")[0]
-		if isConfigFileOption(strings.TrimSpace(arg)) {
-			return true
-		}
-	}
-
-	return false
 }

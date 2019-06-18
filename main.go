@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	"strings"
 
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/postgres"
@@ -44,7 +43,7 @@ func main() {
 }
 
 func _main(ctx context.Context) error {
-	cfg, arg, err := loadConfig()
+	cfg, _, err := loadConfig()
 	if err != nil {
 		return err
 	}
@@ -54,11 +53,6 @@ func _main(ctx context.Context) error {
 			logRotator.Close()
 		}
 	}()
-
-	if len(arg) > 0 {
-		fmt.Fprintf(os.Stderr, "unexpected command or flag %s Hint: %s\n", strings.Join(arg, " "), hint)
-		os.Exit(1)
-	}
 
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
@@ -87,7 +81,7 @@ func _main(ctx context.Context) error {
 		log.Info("Tables dropped")
 	}
 
-	if cfg.InterfaceMode == "http" {
+	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 
