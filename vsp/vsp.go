@@ -56,13 +56,14 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	log.Info("Starting collection cycle")
+	log.Info("Starting VSP collection cycle")
+	log.Info("Fetching VSP from source")
 	if err := vsp.collectAndStore(ctx); err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
 
-	ticker := time.NewTicker(vsp.period * time.Second)
+	/*ticker := time.NewTicker(vsp.period * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -75,7 +76,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 			log.Infof("Shutting down collector")
 			return
 		}
-	}
+	}*/
 }
 
 func (vsp *Collector) collectAndStore(ctx context.Context) error {
@@ -93,7 +94,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 		err = vsp.fetch(ctx, resp)
 	}
 
-	log.Infof("Collected data for %d vsps", len(*resp))
+	// log.Infof("Collected data for %d vsps", len(*resp))
 
 	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
 	for _, err = range errs {

@@ -72,7 +72,7 @@ func (hub *TickHub) CollectShort(ctx context.Context) {
 			break
 		}
 		wg.Add(1)
-		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
+		func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetShort(ctx)
 			if err != nil {
 				log.Error(err)
@@ -92,7 +92,7 @@ func (hub *TickHub) CollectLong(ctx context.Context) {
 			break
 		}
 		wg.Add(1)
-		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
+		func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetLong(ctx)
 			if err != nil {
 				log.Error(err)
@@ -112,7 +112,7 @@ func (hub *TickHub) CollectHistoric(ctx context.Context) {
 			break
 		}
 		wg.Add(1)
-		go func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
+		func(ctx context.Context, wg *sync.WaitGroup, collector ticks.Collector) {
 			err := collector.GetHistoric(ctx)
 			if err != nil {
 				log.Error(err)
@@ -125,7 +125,29 @@ func (hub *TickHub) CollectHistoric(ctx context.Context) {
 }
 
 func (hub *TickHub) CollectAll(ctx context.Context) {
-	hub.CollectShort(ctx)
+	for _, collector := range hub.collectors {
+		if ctx.Err() != nil {
+			log.Error(ctx.Err())
+			break
+		}
+
+		err := collector.GetShort(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+
+		err = collector.GetLong(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+
+		err = collector.GetHistoric(ctx)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	/*hub.CollectShort(ctx)
 	if ctx.Err() != nil {
 		return
 	}
@@ -133,18 +155,18 @@ func (hub *TickHub) CollectAll(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
-	hub.CollectHistoric(ctx)
+	hub.CollectHistoric(ctx)*/
 }
 
 func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	shortTicker := time.NewTicker(5 * time.Minute)
+	/*shortTicker := time.NewTicker(5 * time.Minute)
 	longTicker := time.NewTicker(time.Hour)
 	dayTicker := time.NewTicker(24 * time.Hour)
 	defer shortTicker.Stop()
 	defer longTicker.Stop()
-	defer dayTicker.Stop()
+	defer dayTicker.Stop()*/
 
 	if ctx.Err() != nil {
 		log.Error(ctx.Err())
@@ -152,7 +174,7 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 	}
 	hub.CollectAll(ctx)
 
-	for {
+	/*for {
 		select {
 		case <-shortTicker.C:
 			hub.CollectShort(ctx)
@@ -163,5 +185,5 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 		case <-ctx.Done():
 			return
 		}
-	}
+	}*/
 }

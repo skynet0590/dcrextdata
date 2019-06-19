@@ -2,22 +2,31 @@ package web
 
 import (
 	"net/http"
+	"context"
 )
 
-func (s *Server) GetBalance(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
+func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
+	allExhangeSlice, err := s.db.AllExchangeTicks(context.Background(),0,30)
+	if err != nil {
+		panic(err)
+	}
+	
+	data := map[string]interface{}{
+		"exData" : allExhangeSlice,
+	}
 
-	s.render("balance.html", data, res)
+	s.render("exchange.html", data, res)
 }
 
-func (s *Server) GetSend(res http.ResponseWriter, req *http.Request) {
+func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
+	allVSPSlice, err := s.db.AllVSPTicks(context.Background(),0, 30)
+	if err != nil {
+		panic(err)
+	}
 
-}
+	data := map[string]interface{}{
+		"vspData" : allVSPSlice,
+	}
 
-func (s *Server) PostSend(res http.ResponseWriter, req *http.Request) {
-
-}
-
-func (s *Server) GetReceive(res http.ResponseWriter, req *http.Request) {
-
+	s.render("vsp.html", data, res)
 }

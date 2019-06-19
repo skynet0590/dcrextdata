@@ -6,7 +6,7 @@
 
     <meta name="description" content="godcr - decred wallet">
     <meta name="author" content="The Decred developers">
-    <title>GoDCR</title>
+    <title>Dcrextdata</title>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/jquery.min.js"></script>
@@ -20,10 +20,7 @@
         <div class="inner">
             <div class="container">
                 <div class="text-center">
-                    <h3>GoDCR</h3>
-                    {{ if . }}
-                        <span class="text-muted">Blockchain status: {{ . }}</span>
-                    {{ end }}
+                    <h3>Dcrextdata</h3>
                 </div>
             </div>
         </div>
@@ -37,22 +34,12 @@
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
                         <a class="nav-link" id="nav-balance" href="/">
-                            <span class="text">Balance</span>
+                            <span class="text">Exchange Ticks</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" id="nav-send" href="/send">
-                            <span class="text">Send</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="nav-receive" href="/receive">
-                            <span class="text">Receive</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" id="nav-history" href="/history">
-                            <span class="text">History</span>
+                        <a class="nav-link" id="nav-balance" href="/vspticks">
+                            <span class="text">Vsp Ticks</span>
                         </a>
                     </li>
                 </ul>
@@ -68,11 +55,9 @@
         var pathname = window.location.pathname;
         var paths = pathname.split("/")
         var currentNavItem = "#nav-balance";
-
         if (pathname != "/" && paths.length > 1) {
             currentNavItem = "#nav-" + paths[1];
         }
-
         $(currentNavItem).addClass("active");
     });
 </script>

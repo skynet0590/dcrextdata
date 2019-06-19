@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	// "reflect"
 
 	"github.com/decred/slog"
 	flags "github.com/jessevdk/go-flags"
@@ -17,11 +18,16 @@ import (
 const (
 	defaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
-	// defaultLogDirname     = "logs"
 	defaultLogLevel = "info"
+	hint = `Run dcrextdata --mode=http to start http server or just dcrextdata`
 )
 
 type config struct {
+	configFileOptions
+	CommandLineOptions
+}
+
+type configFileOptions struct {
 	// General application behaviour
 	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	LogFile    string `short:"L" long:"logfile" description:"File name of the log file"`
@@ -44,16 +50,35 @@ type config struct {
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
 
+	// PoW collector
+	DisablePow   bool     `long:"disablepow" description:"Disables collection of data for pows"`
+	DisabledPows []string `long:"disabledpow" description:"Disable data collection for this Pow"`
+	PowInterval  int64    `long:"powI" description:"Collection interval for Pow"`
+
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
 }
 
-var defaultCfg = config{
-	LogFile:     defaultLogFilename,
-	ConfigFile:  defaultConfigFilename,
-	DebugLevel:  defaultLogLevel,
-	VSPInterval: 300,
+// CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
+type CommandLineOptions struct {
+	HttpMode bool `long:"http" description:"Launch http server"`
+}
+
+func defaultFileOptions() configFileOptions {
+	return configFileOptions{
+		LogFile:     defaultLogFilename,
+		ConfigFile:  defaultConfigFilename,
+		DebugLevel:  defaultLogLevel,
+		VSPInterval: 300,
+		PowInterval: 300,
+	}
+}
+
+func defaultConfig() config {
+	return config{
+		configFileOptions:    defaultFileOptions(),
+	}
 }
 
 // validLogLevel returns whether or not logLevel is a valid debug log level.
@@ -127,52 +152,52 @@ func parseAndSetDebugLevels(debugLevel string) error {
 	return nil
 }
 
-func loadConfig() (*config, error) {
-	cfg := defaultCfg
-	parser := flags.NewParser(&cfg, flags.Default)
-	err := flags.NewIniParser(parser).ParseFile(cfg.ConfigFile)
+func loadConfig() (*config, []string, error) {
+	cfg := defaultConfig()
+	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
+	err := flags.NewIniParser(parser).ParseFile(cfg.configFileOptions.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			fmt.Printf("Missing config file %s in current directory\n", cfg.ConfigFile)
+			fmt.Printf("Missing config file %s in current directory\n", cfg.configFileOptions.ConfigFile)
 		} else {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	_, err = parser.Parse()
+	unknownArg, err := parser.Parse()
 	if err != nil {
 		e, ok := err.(*flags.Error)
 		if ok && e.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
-		return nil, err
+		return nil, nil, err
 	}
 
-	initLogRotator(cfg.LogFile)
+	initLogRotator(cfg.configFileOptions.LogFile)
 
 	// Special show command to list supported subsystems and exit.
-	if cfg.DebugLevel == "show" {
+	if cfg.configFileOptions.DebugLevel == "show" {
 		fmt.Println("Supported subsystems", supportedSubsystems())
 		os.Exit(0)
 	}
 
 	// Parse, validate, and set debug log level(s).
 	if cfg.Quiet {
-		cfg.DebugLevel = "error"
+		cfg.configFileOptions.DebugLevel = "error"
 	}
 
 	// Parse, validate, and set debug log level(s).
-	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+	if err := parseAndSetDebugLevels(cfg.configFileOptions.DebugLevel); err != nil {
 		err = fmt.Errorf("%s: %v", "loadConfig", err.Error())
 		fmt.Fprintln(os.Stderr, err)
 		parser.WriteHelp(os.Stderr)
-		return nil, err
+		return nil, nil, err
 	}
 
-	if cfg.VSPInterval < 300 {
+	if cfg.configFileOptions.VSPInterval < 300 {
 		log.Warn("VSP collection interval cannot be less that 300, setting to 300")
-		cfg.VSPInterval = 300
+		cfg.configFileOptions.VSPInterval = 300
 	}
 
-	return &cfg, nil
+	return &cfg, unknownArg, nil
 }

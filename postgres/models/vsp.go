@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -25,12 +26,12 @@ import (
 // VSP is an object representing the database table.
 type VSP struct {
 	ID                   int              `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name                 string           `boil:"name" json:"name" toml:"name" yaml:"name"`
-	APIEnabled           bool             `boil:"api_enabled" json:"api_enabled" toml:"api_enabled" yaml:"api_enabled"`
-	APIVersionsSupported types.Int64Array `boil:"api_versions_supported" json:"api_versions_supported" toml:"api_versions_supported" yaml:"api_versions_supported"`
-	Network              string           `boil:"network" json:"network" toml:"network" yaml:"network"`
-	URL                  string           `boil:"url" json:"url" toml:"url" yaml:"url"`
-	Launched             time.Time        `boil:"launched" json:"launched" toml:"launched" yaml:"launched"`
+	Name                 null.String      `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
+	APIEnabled           null.Bool        `boil:"api_enabled" json:"api_enabled,omitempty" toml:"api_enabled" yaml:"api_enabled,omitempty"`
+	APIVersionsSupported types.Int64Array `boil:"api_versions_supported" json:"api_versions_supported,omitempty" toml:"api_versions_supported" yaml:"api_versions_supported,omitempty"`
+	Network              null.String      `boil:"network" json:"network,omitempty" toml:"network" yaml:"network,omitempty"`
+	URL                  null.String      `boil:"url" json:"url,omitempty" toml:"url" yaml:"url,omitempty"`
+	Launched             null.Time        `boil:"launched" json:"launched,omitempty" toml:"launched" yaml:"launched,omitempty"`
 
 	R *vspR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L vspL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,23 +57,39 @@ var VSPColumns = struct {
 
 // Generated where
 
-type whereHelperbool struct{ field string }
+type whereHelpernull_Bool struct{ field string }
 
-func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
 
 type whereHelpertypes_Int64Array struct{ field string }
 
 func (w whereHelpertypes_Int64Array) EQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
+	return qmhelper.WhereNullEQ(w.field, false, x)
 }
 func (w whereHelpertypes_Int64Array) NEQ(x types.Int64Array) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+	return qmhelper.WhereNullEQ(w.field, true, x)
 }
+func (w whereHelpertypes_Int64Array) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpertypes_Int64Array) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 func (w whereHelpertypes_Int64Array) LT(x types.Int64Array) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
@@ -86,22 +103,45 @@ func (w whereHelpertypes_Int64Array) GTE(x types.Int64Array) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_Time struct{ field string }
+
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var VSPWhere = struct {
 	ID                   whereHelperint
-	Name                 whereHelperstring
-	APIEnabled           whereHelperbool
+	Name                 whereHelpernull_String
+	APIEnabled           whereHelpernull_Bool
 	APIVersionsSupported whereHelpertypes_Int64Array
-	Network              whereHelperstring
-	URL                  whereHelperstring
-	Launched             whereHelpertime_Time
+	Network              whereHelpernull_String
+	URL                  whereHelpernull_String
+	Launched             whereHelpernull_Time
 }{
-	ID:                   whereHelperint{field: `id`},
-	Name:                 whereHelperstring{field: `name`},
-	APIEnabled:           whereHelperbool{field: `api_enabled`},
-	APIVersionsSupported: whereHelpertypes_Int64Array{field: `api_versions_supported`},
-	Network:              whereHelperstring{field: `network`},
-	URL:                  whereHelperstring{field: `url`},
-	Launched:             whereHelpertime_Time{field: `launched`},
+	ID:                   whereHelperint{field: "\"vsp\".\"id\""},
+	Name:                 whereHelpernull_String{field: "\"vsp\".\"name\""},
+	APIEnabled:           whereHelpernull_Bool{field: "\"vsp\".\"api_enabled\""},
+	APIVersionsSupported: whereHelpertypes_Int64Array{field: "\"vsp\".\"api_versions_supported\""},
+	Network:              whereHelpernull_String{field: "\"vsp\".\"network\""},
+	URL:                  whereHelpernull_String{field: "\"vsp\".\"url\""},
+	Launched:             whereHelpernull_Time{field: "\"vsp\".\"launched\""},
 }
 
 // VSPRels is where relationship names are stored.
@@ -125,7 +165,7 @@ func (*vspR) NewStruct() *vspR {
 type vspL struct{}
 
 var (
-	vspColumns               = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
+	vspAllColumns            = []string{"id", "name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
 	vspColumnsWithoutDefault = []string{"name", "api_enabled", "api_versions_supported", "network", "url", "launched"}
 	vspColumnsWithDefault    = []string{"id"}
 	vspPrimaryKeyColumns     = []string{"id"}
@@ -434,7 +474,7 @@ func (o *VSP) Insert(ctx context.Context, exec boil.ContextExecutor, columns boi
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspColumnsWithDefault,
 			vspColumnsWithoutDefault,
 			nzDefaults,
@@ -502,7 +542,7 @@ func (o *VSP) Update(ctx context.Context, exec boil.ContextExecutor, columns boi
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspPrimaryKeyColumns,
 		)
 
@@ -657,13 +697,13 @@ func (o *VSP) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCon
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspColumnsWithDefault,
 			vspColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			vspColumns,
+			vspAllColumns,
 			vspPrimaryKeyColumns,
 		)
 
@@ -774,10 +814,6 @@ func (q vspQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int
 
 // DeleteAll deletes all rows in the slice, using an executor.
 func (o VSPSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
-	if o == nil {
-		return 0, errors.New("models: no VSP slice provided for delete all")
-	}
-
 	if len(o) == 0 {
 		return 0, nil
 	}

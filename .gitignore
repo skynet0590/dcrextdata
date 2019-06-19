@@ -5,3 +5,6 @@ vendor
 .vscode
 logs
 *.log
+*.log.*
+.idea
+postgres/sqlboiler.toml
