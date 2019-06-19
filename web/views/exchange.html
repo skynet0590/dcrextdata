@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "html-head" }}
+<body data-controller="receive">
+    <div class="body">
+        {{ template "header" }}
+        <div class="content">
+            <div class="container">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Exchange ID</th>
+                        <th>High</th>
+                        <th>Low</th>
+                        <th>Open</th>
+                        <th>Close</th>
+                        <th>Volume</th>
+                        <th>Interval</th>
+                        <th>CurrencyPair</th>
+                        <th>Time</th>
+                    </tr>
+                    </thead>
+                    <tbody data-target="history.historyTable">
+                        {{range $index, $exchange := .exData}}
+                        <tr>
+                            <td>{{$exchange.ID}}</th>
+                            <td>{{$exchange.ExchangeID}}</th>
+                            <td>{{$exchange.High}}</th>
+                            <td>{{$exchange.Low}}</th>
+                            <td>{{$exchange.Open}}</th>
+                            <td>{{$exchange.Close}}</th>
+                            <td>{{$exchange.Volume}}</th>
+                            <td>{{$exchange.Interval}}</th>
+                            <td>{{$exchange.CurrencyPair}}</th>
+                            <td>{{$exchange.Time}}</th>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+
+            </div>
+        </div>
+    </div>
+    {{ template "footer" }}
+</body>
+</html>

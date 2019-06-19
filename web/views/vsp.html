@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "html-head" }}
+<body data-controller="receive">
+<div class="body">
+    {{ template "header" }}
+    <div class="content">
+        <div class="container">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>VSP ID</th>
+                    <th>Immature</th>
+                    <th>Live</th>
+                    <th>Voted</th>
+                    <th>Missed</th>
+                    <th>PoolFees</th>
+                    <th>ProportionLive</th>
+                    <th>ProportionMissed</th>
+                    <th>UserCount</th>
+                    <th>UsersActive</th>
+                    <th>Time</th>
+                </tr>
+                </thead>
+                <tbody data-target="history.historyTable">
+                {{range $index, $vspticks := .vspData}}
+                    <tr>
+                        <td>{{$vspticks.ID}}</th>
+                        <td>{{$vspticks.VSPID}}</th>
+                        <td>{{$vspticks.Immature}}</th>
+                        <td>{{$vspticks.Live}}</th>
+                        <td>{{$vspticks.Voted}}</th>
+                        <td>{{$vspticks.Missed}}</th>
+                        <td>{{$vspticks.PoolFees}}</th>
+                        <td>{{$vspticks.ProportionLive}}</th>
+                        <td>{{$vspticks.ProportionMissed}}</th>
+                        <td>{{$vspticks.UserCount}}</th>
+                        <td>{{$vspticks.UsersActive}}</th>
+                        <td>{{$vspticks.Time}}</th>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{ template "footer" }}
+</body>
+</html>

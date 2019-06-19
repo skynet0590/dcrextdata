@@ -17,9 +17,12 @@ import (
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/version"
 	"github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/raedahgroup/dcrextdata/web"
 )
 
 // const dcrlaunchtime int64 = 1454889600
+// var opError error
+// var beginShutdown = make(chan bool)
 
 func main() {
 	// Create a context that is cancelled when a shutdown request is received
@@ -40,7 +43,7 @@ func main() {
 }
 
 func _main(ctx context.Context) error {
-	cfg, err := loadConfig()
+	cfg, _, err := loadConfig()
 	if err != nil {
 		return err
 	}
@@ -54,7 +57,7 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
 		version.Version(), runtime.Version())
-
+ 
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer func(db *postgres.PgDb) {
 		err := db.Close()
@@ -76,6 +79,10 @@ func _main(ctx context.Context) error {
 			return err
 		}
 		log.Info("Tables dropped")
+	}
+
+	if cfg.HttpMode {
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 
 	wg := new(sync.WaitGroup)
@@ -101,15 +108,14 @@ func _main(ctx context.Context) error {
 				}
 			}
 
-			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-			if err == nil {
-				wg.Add(1)
-				vspCollector.Run(ctx, wg)
-			} else {
-				log.Error(err)
-			}
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+		if err == nil {
+			wg.Add(1)
+			go vspCollector.Run(ctx, wg)
+		} else {
+			log.Error(err)
 		}
-
+	}
 		if !cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
@@ -164,7 +170,7 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	wg.Wait()
+	
 
 	ticker := time.NewTicker(300 * time.Second)
 	defer ticker.Stop()
