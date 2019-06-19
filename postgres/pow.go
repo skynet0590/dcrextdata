@@ -43,7 +43,7 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 	} else if len(data) > 1 {
 		last := data[len(data)-1]
 		log.Infof("Added %4d PoW entries from %10s %s to %s",
-			added, last.Source, UnixTimeToString(data[0].Time), UnixTimeToString(last.Time),)
+			added, last.Source, UnixTimeToString(data[0].Time), UnixTimeToString(last.Time))
 	}
 
 	return nil

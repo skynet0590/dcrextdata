@@ -9,8 +9,7 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>VSP ID</th>
+                    <th>VSP</th>
                     <th>Immature</th>
                     <th>Live</th>
                     <th>Voted</th>
@@ -26,8 +25,7 @@
                 <tbody data-target="history.historyTable">
                 {{range $index, $vspticks := .vspData}}
                     <tr>
-                        <td>{{$vspticks.ID}}</th>
-                        <td>{{$vspticks.VSPID}}</th>
+                        <td>{{$vspticks.VSP}}</th>
                         <td>{{$vspticks.Immature}}</th>
                         <td>{{$vspticks.Live}}</th>
                         <td>{{$vspticks.Voted}}</th>
