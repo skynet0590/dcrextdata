@@ -190,6 +190,10 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) ([]
 	return tickDtos, err
 }
 
+func (pg *PgDb) AllExchangeTicksCount(ctx context.Context) (int64, error) {
+	return models.ExchangeTicks().Count(ctx, pg.db)
+}
+
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
 	return &models.ExchangeTick{
 		ExchangeID:   exchangeID,

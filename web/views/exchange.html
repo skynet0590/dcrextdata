@@ -37,7 +37,16 @@
                     </tbody>
                 </table>
 
+                <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                    &lt; Previous
+                </a>
 
+                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
+
+                <a href="?page={{ .nextPage }}"
+                   data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                    Next &gt;
+                </a>
             </div>
         </div>
     </div>

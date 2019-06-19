@@ -20,6 +20,7 @@ import (
 
 type DataQuery interface {
 	AllExchangeTicks(ctx context.Context, offset int, limit int) ([]ticks.TickDto, error)
+	AllExchangeTicksCount(ctx context.Context) (int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
 	FetchVSPs(ctx context.Context) (models.VSPSlice, error)
