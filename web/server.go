@@ -26,6 +26,7 @@ type DataQuery interface {
 	FetchVSPs(ctx context.Context) (models.VSPSlice, error)
 	VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
+	AllVSPTickCount(ctx context.Context) (int64, error)
 }
 
 type Server struct {

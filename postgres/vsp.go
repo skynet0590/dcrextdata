@@ -217,3 +217,7 @@ func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.V
 
 	return vspTicks, nil
 }
+
+func (pg *PgDb) AllVSPTickCount(ctx context.Context) (int64, error) {
+	return models.VSPTicks().Count(ctx, pg.db)
+}
