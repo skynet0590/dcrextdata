@@ -15,7 +15,7 @@ import (
 )
 
 func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
-	rows := pg.db.QueryRow(LastPowEntryTime, source)
+	rows := pg.db.QueryRow(lastPowEntryTime, source)
 	_ = rows.Scan(&time)
 	return
 }

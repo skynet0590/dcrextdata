@@ -61,6 +61,19 @@ const (
 			source VARCHAR(25),
 			PRIMARY KEY (time, source)
 		);
+
+		CREATE TABLE IF NOT EXISTS mempool (
+			first_seen_time INT,
+			block_receive_time INT,
+			total_sent FLOAT8,
+			last_block_height FLOAT8,
+			size INT,
+			regular_transaction_count INT,
+			ticket_count INT,
+			vote_count INT,
+			revocation_count INT,
+			PRIMARY KEY (first_seen_time)
+		);
 	`
 
 	dropTablesAndIndices = `
