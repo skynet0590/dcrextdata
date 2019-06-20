@@ -42,7 +42,6 @@ func main() {
 	os.Exit(0)
 }
 
-
 func _main(ctx context.Context) error {
 	cfg, _, err := loadConfig()
 	if err != nil {
@@ -171,7 +170,6 @@ func _main(ctx context.Context) error {
 	if err = collectData(); err != nil {
 		return err
 	}
-
 
 	ticker := time.NewTicker(300 * time.Second)
 	defer ticker.Stop()

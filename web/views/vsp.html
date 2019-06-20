@@ -6,6 +6,24 @@
     {{ template "header" }}
     <div class="content">
         <div class="container">
+        <div class="row">
+        <form method="post" action="/vspticks">
+        <div class="col-md-3 col-sm-12 mb-2">
+        <select id="selectedFilter" name="vsp"
+                class="form-control" style="width: 150px;">
+                {{$selectedFilter := .selectedFilter}}
+            <option value="All">All</option>
+
+                {{ range $index, $filter := .allVspData}}
+            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+            {{ end }}
+        </select>
+        </div>
+        <div class="col-md-3 col-sm-12 mb-2">
+        <button type="submit">Filter</button>
+        </div>
+        </form>
+        </div>
             <table class="table">
                 <thead>
                 <tr>
@@ -41,13 +59,11 @@
                 </tbody>
             </table>
 
-            <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                &lt; Previous
-            </a>
-
+            <a href="?page={{ .previousPage }}&vsp={{.selectedFilter}}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                    &lt; Previous</a>
             <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
 
-            <a href="?page={{ .nextPage }}"
+            <a href="?page={{ .nextPage }}&vsp={{.selectedFilter}}"
                data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
                 Next &gt;
             </a>

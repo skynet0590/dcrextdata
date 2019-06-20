@@ -13,6 +13,15 @@ import (
 
 type Response map[string]*ResposeData
 
+type VSPDto struct {
+	Name                 string    `json:"vsp"`
+	APIEnabled           bool      `json:"immature"`
+	APIVersionsSupported []int64   `json:"live"`
+	Network              string    `json:"voted"`
+	URL                  string    `json:"missed"`
+	Launched             time.Time `json:"pool_fees"`
+}
+
 type VSPTickDto struct {
 	ID               int       `json:"id"`
 	VSP              string    `json:"vsp"`

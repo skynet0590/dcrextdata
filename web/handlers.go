@@ -5,6 +5,9 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+
+	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
+	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
 const (
@@ -14,6 +17,14 @@ const (
 func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	filter := req.Form["exchange"]
+
+	var selectedFilter string
+	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
+		selectedFilter = "All"
+	} else {
+		selectedFilter = filter[0]
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -24,12 +35,21 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
-	if err != nil {
-		panic(err)
+	var allExhangeTicksSlice []ticks.TickDto
+	// var err error
+	if selectedFilter == "All" {
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	allExhangeSlice, err := AllExchange(ctx context.Context)
+	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -40,11 +60,12 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"exData":                      allExhangeTicksSlice,
-		"allExData": allExhangeSlice,
-		"currentPage":              int(pageToLoad),
-		"previousPage":             int(pageToLoad - 1),
-		"totalPages":               int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"exData":         allExhangeTicksSlice,
+		"allExData":      allExhangeSlice,
+		"selectedFilter": selectedFilter,
+		"currentPage":    int(pageToLoad),
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -58,6 +79,14 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	filter := req.Form["vsp"]
+
+	var selectedFilter string
+	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
+		selectedFilter = "All"
+	} else {
+		selectedFilter = filter[0]
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -69,7 +98,20 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	allVSPSlice, err := s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+	var allVSPSlice []vsp.VSPTickDto
+	if selectedFilter == "All" {
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	allVspData, err := s.db.FetchVSPs(ctx)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -80,10 +122,12 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"vspData":      allVSPSlice,
-		"currentPage":  int(pageToLoad),
-		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"vspData":        allVSPSlice,
+		"allVspData":     allVspData,
+		"selectedFilter": selectedFilter,
+		"currentPage":    int(pageToLoad),
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
