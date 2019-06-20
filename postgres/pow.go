@@ -65,11 +65,10 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	}, nil
 }
 
-
 func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error) {
 	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	var result []pow.PowDataDto
@@ -100,14 +99,14 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time: time.Unix(int64(item.Time), 0).UTC(),
-			NetworkHashrate: networkHashRate,
-			PoolHashrate:poolHashRate,
-			Workers: int64(item.Workers.Int),
-			Source: item.Source,
+			Time:              time.Unix(int64(item.Time), 0).UTC(),
+			NetworkHashrate:   networkHashRate,
+			PoolHashrate:      poolHashRate,
+			Workers:           int64(item.Workers.Int),
+			Source:            item.Source,
 			NetworkDifficulty: networkHashrate,
-			CoinPrice: coinPrice,
-			BtcPrice: bTCPrice,
+			CoinPrice:         coinPrice,
+			BtcPrice:          bTCPrice,
 		})
 	}
 
@@ -121,7 +120,7 @@ func (pg *PgDb) CountPowData(ctx context.Context) (int64, error) {
 func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error) {
 	powDatum, err := models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 
 	var result []pow.PowDataDto
@@ -152,14 +151,14 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time: time.Unix(int64(item.Time), 0).UTC(),
-			NetworkHashrate: networkHashRate,
-			PoolHashrate:poolHashRate,
-			Workers: int64(item.Workers.Int),
-			Source: item.Source,
+			Time:              time.Unix(int64(item.Time), 0).UTC(),
+			NetworkHashrate:   networkHashRate,
+			PoolHashrate:      poolHashRate,
+			Workers:           int64(item.Workers.Int),
+			Source:            item.Source,
 			NetworkDifficulty: networkHashrate,
-			CoinPrice: coinPrice,
-			BtcPrice: bTCPrice,
+			CoinPrice:         coinPrice,
+			BtcPrice:          bTCPrice,
 		})
 	}
 
@@ -169,4 +168,3 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64, error) {
 	return models.PowData(models.PowDatumWhere.Source.EQ(source)).Count(ctx, pg.db)
 }
-
