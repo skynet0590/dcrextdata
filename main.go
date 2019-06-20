@@ -57,7 +57,7 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
 		version.Version(), runtime.Version())
- 
+
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 	defer func(db *postgres.PgDb) {
 		err := db.Close()
@@ -108,14 +108,14 @@ func _main(ctx context.Context) error {
 				}
 			}
 
-		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-		if err == nil {
-			wg.Add(1)
-			go vspCollector.Run(ctx, wg)
-		} else {
-			log.Error(err)
+			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+			if err == nil {
+				wg.Add(1)
+				go vspCollector.Run(ctx, wg)
+			} else {
+				log.Error(err)
+			}
 		}
-	}
 		if !cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
@@ -169,8 +169,6 @@ func _main(ctx context.Context) error {
 	if err = collectData(); err != nil {
 		return err
 	}
-
-	
 
 	ticker := time.NewTicker(300 * time.Second)
 	defer ticker.Stop()

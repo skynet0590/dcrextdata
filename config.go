@@ -18,8 +18,8 @@ import (
 const (
 	defaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
-	defaultLogLevel = "info"
-	hint = `Run dcrextdata --mode=http to start http server or just dcrextdata`
+	defaultLogLevel       = "info"
+	hint                  = `Run dcrextdata --mode=http to start http server or just dcrextdata`
 )
 
 type config struct {
@@ -43,8 +43,8 @@ type configFileOptions struct {
 	DBName string `long:"dbname" description:"Database name"`
 
 	// Http Server
-	HTTPHost  string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
-	HTTPPort  string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
+	HTTPHost string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
+	HTTPPort string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
 
 	// Exchange collector
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
@@ -77,7 +77,7 @@ func defaultFileOptions() configFileOptions {
 
 func defaultConfig() config {
 	return config{
-		configFileOptions:    defaultFileOptions(),
+		configFileOptions: defaultFileOptions(),
 	}
 }
 

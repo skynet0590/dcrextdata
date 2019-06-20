@@ -9,8 +9,7 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>VSP ID</th>
+                    <th>VSP</th>
                     <th>Immature</th>
                     <th>Live</th>
                     <th>Voted</th>
@@ -26,8 +25,7 @@
                 <tbody data-target="history.historyTable">
                 {{range $index, $vspticks := .vspData}}
                     <tr>
-                        <td>{{$vspticks.ID}}</th>
-                        <td>{{$vspticks.VSPID}}</th>
+                        <td>{{$vspticks.VSP}}</th>
                         <td>{{$vspticks.Immature}}</th>
                         <td>{{$vspticks.Live}}</th>
                         <td>{{$vspticks.Voted}}</th>
@@ -42,6 +40,17 @@
                 {{end}}
                 </tbody>
             </table>
+
+            <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                &lt; Previous
+            </a>
+
+            <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
+
+            <a href="?page={{ .nextPage }}"
+               data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                Next &gt;
+            </a>
         </div>
     </div>
 </div>
