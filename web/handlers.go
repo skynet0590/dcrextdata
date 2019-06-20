@@ -1,7 +1,6 @@
 package web
 
 import (
-<<<<<<< HEAD
 	"context"
 	"math"
 	"net/http"
@@ -31,6 +30,9 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	}
 
 	totalCount, err := s.db.AllExchangeTicksCount(ctx)
+	if err != nil {
+		panic(err)
+	}
 
 	data := map[string]interface{}{
 		"exData":                      allExhangeSlice,
@@ -67,6 +69,9 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 	}
 
 	totalCount, err := s.db.AllVSPTickCount(ctx)
+	if err != nil {
+		panic(err)
+	}
 
 	data := map[string]interface{}{
 		"vspData":                      allVSPSlice,
@@ -84,13 +89,39 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
-	allPowDataSlice, err := s.db.FetchPowData(context.Background(),0, 30)
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	var txPerPage int = recordsPerPage
+	offset := (int(pageToLoad) - 1) * txPerPage
+
+	ctx := context.Background()
+
+	allPowDataSlice, err := s.db.FetchPowData(context.Background(), offset, recordsPerPage)
+	if err != nil {
+		panic(err)
+	}
+
+	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
 		panic(err)
 	}
 
 	data := map[string]interface{}{
 		"powData" : allPowDataSlice,
+		"currentPage":              int(pageToLoad),
+		"previousPage":             int(pageToLoad - 1),
+		"totalPages":               int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(allPowDataSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
 	}
 
 	s.render("pow.html", data, res)

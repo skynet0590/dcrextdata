@@ -55,9 +55,6 @@ func _main(ctx context.Context) error {
 		}
 	}()
 
-	// ctx, _ := context.WithCancel(context.Background())
-	enterHttpMode(cfg.HTTPHost, cfg.HTTPPort)
-
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", version.AppName,
 		version.Version(), runtime.Version())
@@ -120,12 +117,8 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 		}
-<<<<<<< HEAD
-		if !cfg.DisableExchangeTicks {
-=======
-	}
+
 		if cfg.DisableExchangeTicks {
->>>>>>> added powdata to ui
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
 					log.Error("Error creating exchange table: ", err)
@@ -197,10 +190,4 @@ func _main(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func enterHttpMode(host, port string) {
-	web.StartHttpServer(host, port)
-	// only trigger shutdown if some error occurred, ctx.Err cases would already have triggered shutdown, so ignore
-	
 }
