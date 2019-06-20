@@ -120,7 +120,12 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 		}
+<<<<<<< HEAD
 		if !cfg.DisableExchangeTicks {
+=======
+	}
+		if cfg.DisableExchangeTicks {
+>>>>>>> added powdata to ui
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
 					log.Error("Error creating exchange table: ", err)
@@ -149,7 +154,7 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		if !cfg.DisablePow {
+		if cfg.DisablePow {
 			if exists := db.PowDataTableExits(); !exists {
 				if err := db.CreatePowDataTable(); err != nil {
 					log.Error("Error creating PoW data table: ", err)

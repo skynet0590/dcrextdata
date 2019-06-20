@@ -129,7 +129,7 @@ func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
 }
 
 var PowDatumWhere = struct {
-	Time              whereHelperint
+	Time              whereHelpertime_Time
 	NetworkHashrate   whereHelpernull_String
 	PoolHashrate      whereHelpernull_String
 	Workers           whereHelpernull_Int
@@ -138,7 +138,7 @@ var PowDatumWhere = struct {
 	BTCPrice          whereHelpernull_String
 	Source            whereHelperstring
 }{
-	Time:              whereHelperint{field: "\"pow_data\".\"time\""},
+	Time:              whereHelpertime_Time{field: "\"pow_data\".\"time\""},
 	NetworkHashrate:   whereHelpernull_String{field: "\"pow_data\".\"network_hashrate\""},
 	PoolHashrate:      whereHelpernull_String{field: "\"pow_data\".\"pool_hashrate\""},
 	Workers:           whereHelpernull_Int{field: "\"pow_data\".\"workers\""},
@@ -150,7 +150,10 @@ var PowDatumWhere = struct {
 
 // PowDatumRels is where relationship names are stored.
 var PowDatumRels = struct {
-}{}
+	PowData string
+}{
+	PowData: "PowData",
+}
 
 // powDatumR is where relationships are stored.
 type powDatumR struct {

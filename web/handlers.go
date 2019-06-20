@@ -82,3 +82,16 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 
 	s.render("vsp.html", data, res)
 }
+
+func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
+	allPowDataSlice, err := s.db.FetchPowData(context.Background(),0, 30)
+	if err != nil {
+		panic(err)
+	}
+
+	data := map[string]interface{}{
+		"powData" : allPowDataSlice,
+	}
+
+	s.render("pow.html", data, res)
+}
