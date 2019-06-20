@@ -13,6 +13,21 @@ import (
 
 type Response map[string]*ResposeData
 
+type VSPTickDto struct {
+	ID               int       `json:"id"`
+	VSP              string    `json:"vsp"`
+	Immature         int       `json:"immature"`
+	Live             int       `json:"live"`
+	Voted            int       `json:"voted"`
+	Missed           int       `json:"missed"`
+	PoolFees         float64   `json:"pool_fees"`
+	ProportionLive   float64   `json:"proportion_live"`
+	ProportionMissed float64   `json:"proportion_missed"`
+	UserCount        int       `json:"user_count"`
+	UsersActive      int       `json:"users_active"`
+	Time             time.Time `json:"time"`
+}
+
 type ResposeData struct {
 	APIEnabled           bool    `json:"APIEnabled"`
 	APIVersionsSupported []int64 `json:"APIVersionsSupported"`

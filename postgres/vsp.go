@@ -8,12 +8,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/volatiletech/null"
 	"strings"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/types"
@@ -155,17 +155,69 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) (models.VSPSlice, error) {
 }
 
 // VSPTicks
-func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit int) (models.VSPTickSlice, error) {
-	vsp, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
+func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error) {
+	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vsp.ID)
-	return models.VSPTicks(vspIdQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vspInfo.ID)
+	vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+
+	if err != nil {
+		return nil, err
+	}
+
+	vspTicks := []vsp.VSPTickDto{}
+	for _, tick := range vspTickSlice {
+		vspTicks = append(vspTicks, vsp.VSPTickDto{
+			ID:               tick.ID,
+			VSP:              tick.R.VSP.Name.String,
+			Time:             tick.Time,
+			Immature:         tick.Immature,
+			Live:             tick.Live,
+			Missed:           tick.Missed,
+			PoolFees:         tick.PoolFees,
+			ProportionLive:   tick.ProportionLive,
+			ProportionMissed: tick.ProportionMissed,
+			UserCount:        tick.UserCount,
+			UsersActive:      tick.UsersActive,
+			Voted:            tick.Voted,
+		})
+	}
+
+	return vspTicks, nil
 }
 
 // VSPTicks
-func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) (models.VSPTickSlice, error) {
-	return models.VSPTicks(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error) {
+	vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+
+	if err != nil {
+		return nil, err
+	}
+
+	vspTicks := []vsp.VSPTickDto{}
+	for _, tick := range vspTickSlice {
+		vspTicks = append(vspTicks, vsp.VSPTickDto{
+			ID:               tick.ID,
+			VSP:              tick.R.VSP.Name.String,
+			Time:             tick.Time,
+			Immature:         tick.Immature,
+			Live:             tick.Live,
+			Missed:           tick.Missed,
+			PoolFees:         tick.PoolFees,
+			ProportionLive:   tick.ProportionLive,
+			ProportionMissed: tick.ProportionMissed,
+			UserCount:        tick.UserCount,
+			UsersActive:      tick.UsersActive,
+			Voted:            tick.Voted,
+		})
+	}
+
+	return vspTicks, nil
+}
+
+func (pg *PgDb) AllVSPTickCount(ctx context.Context) (int64, error) {
+	return models.VSPTicks().Count(ctx, pg.db)
 }

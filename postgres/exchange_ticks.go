@@ -114,13 +114,13 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 			interval, firstTime.Format(dateTemplate))
 
 		/*log.Infof("%10s %7s, received      1  tick %14s %s", name, pair,
-			fmt.Sprintf("(%dm)", interval), firstTime.Format(dateTemplate))*/
+		fmt.Sprintf("(%dm)", interval), firstTime.Format(dateTemplate))*/
 	} else {
 		log.Infof("%-9s %7s, received %6dm ticks, storing %6v entries %s to %s", name, pair,
 			interval, added, firstTime.Format(dateTemplate), lastTime.Format(dateTemplate))
 
 		/*log.Infof("%10s %7s, received %6v ticks %14s %s to %s",
-			name, pair, added, fmt.Sprintf("(%dm each)", interval), firstTime.Format(dateTemplate), lastTime.Format(dateTemplate))*/
+		name, pair, added, fmt.Sprintf("(%dm each)", interval), firstTime.Format(dateTemplate), lastTime.Format(dateTemplate))*/
 	}
 	return lastTime, nil
 }
@@ -132,22 +132,66 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-func (pg *PgDb) FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) (models.ExchangeTickSlice, error) {
+func (pg *PgDb) FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 	idQuery := models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
-	exchangeTickSlice, err := models.ExchangeTicks(idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
 
-	return exchangeTickSlice, err
+	if err != nil {
+		return nil, err
+	}
+
+	tickDtos := []ticks.TickDto{}
+	for _, tick := range exchangeTickSlice {
+		tickDtos = append(tickDtos, ticks.TickDto{
+			ExchangeID:   tick.ExchangeID,
+			Interval:     tick.Interval,
+			CurrencyPair: tick.CurrencyPair,
+			Time:         tick.Time,
+			Close:        tick.Close,
+			ExchangeName: tick.R.Exchange.Name,
+			High:         tick.High,
+			Low:          tick.Low,
+			Open:         tick.Open,
+			Volume:       tick.Volume,
+		})
+	}
+
+	return tickDtos, err
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) (models.ExchangeTickSlice, error) {
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) ([]ticks.TickDto, error) {
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
 
-	return exchangeTickSlice, err
+	if err != nil {
+		return nil, err
+	}
+
+	tickDtos := []ticks.TickDto{}
+	for _, tick := range exchangeTickSlice {
+		tickDtos = append(tickDtos, ticks.TickDto{
+			ExchangeID:   tick.ExchangeID,
+			Interval:     tick.Interval,
+			CurrencyPair: tick.CurrencyPair,
+			Time:         tick.Time,
+			Close:        tick.Close,
+			ExchangeName: tick.R.Exchange.Name,
+			High:         tick.High,
+			Low:          tick.Low,
+			Open:         tick.Open,
+			Volume:       tick.Volume,
+		})
+	}
+
+	return tickDtos, err
+}
+
+func (pg *PgDb) AllExchangeTicksCount(ctx context.Context) (int64, error) {
+	return models.ExchangeTicks().Count(ctx, pg.db)
 }
 
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
