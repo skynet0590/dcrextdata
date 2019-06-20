@@ -24,24 +24,30 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	allExhangeSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	if err != nil {
+		panic(err)
+	}
+
+	allExhangeSlice, err := AllExchange(ctx context.Context)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
 
 	totalCount, err := s.db.AllExchangeTicksCount(ctx)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		panic(err)
 	}
 
 	data := map[string]interface{}{
-		"exData":       allExhangeSlice,
-		"currentPage":  int(pageToLoad),
-		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"exData":                      allExhangeTicksSlice,
+		"allExData": allExhangeSlice,
+		"currentPage":              int(pageToLoad),
+		"previousPage":             int(pageToLoad - 1),
+		"totalPages":               int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
-	totalTxLoaded := int(offset) + len(allExhangeSlice)
+	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}

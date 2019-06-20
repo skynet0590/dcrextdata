@@ -6,6 +6,15 @@
         {{ template "header" }}
         <div class="content">
             <div class="container">
+                <div class="row">
+                    <div class="col-md-3 col-sm-12 mb-2">
+                        <select data-target="history.selectedFilter" data-action="change->history#selectedFilterChanged"
+                                class="form-control" style="width: 150px;">
+                            <option value=""></option>
+                            
+                            <option value=""></option>
+                        </select>
+                    </div>
                 <table class="table">
                     <thead>
                     <tr>
