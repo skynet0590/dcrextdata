@@ -10,6 +10,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("ExchangeTicks", testExchangeTicksUpsert)
 
+	t.Run("Mempools", testMempoolsUpsert)
+
 	t.Run("PowData", testPowDataUpsert)
 
 	t.Run("VSPS", testVSPSUpsert)

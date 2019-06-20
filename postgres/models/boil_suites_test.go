@@ -14,6 +14,7 @@ import "testing"
 func TestParent(t *testing.T) {
 	t.Run("Exchanges", testExchanges)
 	t.Run("ExchangeTicks", testExchangeTicks)
+	t.Run("Mempools", testMempools)
 	t.Run("PowData", testPowData)
 	t.Run("VSPS", testVSPS)
 	t.Run("VSPTicks", testVSPTicks)
@@ -22,6 +23,7 @@ func TestParent(t *testing.T) {
 func TestDelete(t *testing.T) {
 	t.Run("Exchanges", testExchangesDelete)
 	t.Run("ExchangeTicks", testExchangeTicksDelete)
+	t.Run("Mempools", testMempoolsDelete)
 	t.Run("PowData", testPowDataDelete)
 	t.Run("VSPS", testVSPSDelete)
 	t.Run("VSPTicks", testVSPTicksDelete)
@@ -30,6 +32,7 @@ func TestDelete(t *testing.T) {
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Exchanges", testExchangesQueryDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksQueryDeleteAll)
+	t.Run("Mempools", testMempoolsQueryDeleteAll)
 	t.Run("PowData", testPowDataQueryDeleteAll)
 	t.Run("VSPS", testVSPSQueryDeleteAll)
 	t.Run("VSPTicks", testVSPTicksQueryDeleteAll)
@@ -38,6 +41,7 @@ func TestQueryDeleteAll(t *testing.T) {
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Exchanges", testExchangesSliceDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceDeleteAll)
+	t.Run("Mempools", testMempoolsSliceDeleteAll)
 	t.Run("PowData", testPowDataSliceDeleteAll)
 	t.Run("VSPS", testVSPSSliceDeleteAll)
 	t.Run("VSPTicks", testVSPTicksSliceDeleteAll)
@@ -46,6 +50,7 @@ func TestSliceDeleteAll(t *testing.T) {
 func TestExists(t *testing.T) {
 	t.Run("Exchanges", testExchangesExists)
 	t.Run("ExchangeTicks", testExchangeTicksExists)
+	t.Run("Mempools", testMempoolsExists)
 	t.Run("PowData", testPowDataExists)
 	t.Run("VSPS", testVSPSExists)
 	t.Run("VSPTicks", testVSPTicksExists)
@@ -54,6 +59,7 @@ func TestExists(t *testing.T) {
 func TestFind(t *testing.T) {
 	t.Run("Exchanges", testExchangesFind)
 	t.Run("ExchangeTicks", testExchangeTicksFind)
+	t.Run("Mempools", testMempoolsFind)
 	t.Run("PowData", testPowDataFind)
 	t.Run("VSPS", testVSPSFind)
 	t.Run("VSPTicks", testVSPTicksFind)
@@ -62,6 +68,7 @@ func TestFind(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Run("Exchanges", testExchangesBind)
 	t.Run("ExchangeTicks", testExchangeTicksBind)
+	t.Run("Mempools", testMempoolsBind)
 	t.Run("PowData", testPowDataBind)
 	t.Run("VSPS", testVSPSBind)
 	t.Run("VSPTicks", testVSPTicksBind)
@@ -70,6 +77,7 @@ func TestBind(t *testing.T) {
 func TestOne(t *testing.T) {
 	t.Run("Exchanges", testExchangesOne)
 	t.Run("ExchangeTicks", testExchangeTicksOne)
+	t.Run("Mempools", testMempoolsOne)
 	t.Run("PowData", testPowDataOne)
 	t.Run("VSPS", testVSPSOne)
 	t.Run("VSPTicks", testVSPTicksOne)
@@ -78,6 +86,7 @@ func TestOne(t *testing.T) {
 func TestAll(t *testing.T) {
 	t.Run("Exchanges", testExchangesAll)
 	t.Run("ExchangeTicks", testExchangeTicksAll)
+	t.Run("Mempools", testMempoolsAll)
 	t.Run("PowData", testPowDataAll)
 	t.Run("VSPS", testVSPSAll)
 	t.Run("VSPTicks", testVSPTicksAll)
@@ -86,6 +95,7 @@ func TestAll(t *testing.T) {
 func TestCount(t *testing.T) {
 	t.Run("Exchanges", testExchangesCount)
 	t.Run("ExchangeTicks", testExchangeTicksCount)
+	t.Run("Mempools", testMempoolsCount)
 	t.Run("PowData", testPowDataCount)
 	t.Run("VSPS", testVSPSCount)
 	t.Run("VSPTicks", testVSPTicksCount)
@@ -96,6 +106,8 @@ func TestInsert(t *testing.T) {
 	t.Run("Exchanges", testExchangesInsertWhitelist)
 	t.Run("ExchangeTicks", testExchangeTicksInsert)
 	t.Run("ExchangeTicks", testExchangeTicksInsertWhitelist)
+	t.Run("Mempools", testMempoolsInsert)
+	t.Run("Mempools", testMempoolsInsertWhitelist)
 	t.Run("PowData", testPowDataInsert)
 	t.Run("PowData", testPowDataInsertWhitelist)
 	t.Run("VSPS", testVSPSInsert)
@@ -159,6 +171,7 @@ func TestToManyRemove(t *testing.T) {}
 func TestReload(t *testing.T) {
 	t.Run("Exchanges", testExchangesReload)
 	t.Run("ExchangeTicks", testExchangeTicksReload)
+	t.Run("Mempools", testMempoolsReload)
 	t.Run("PowData", testPowDataReload)
 	t.Run("VSPS", testVSPSReload)
 	t.Run("VSPTicks", testVSPTicksReload)
@@ -167,6 +180,7 @@ func TestReload(t *testing.T) {
 func TestReloadAll(t *testing.T) {
 	t.Run("Exchanges", testExchangesReloadAll)
 	t.Run("ExchangeTicks", testExchangeTicksReloadAll)
+	t.Run("Mempools", testMempoolsReloadAll)
 	t.Run("PowData", testPowDataReloadAll)
 	t.Run("VSPS", testVSPSReloadAll)
 	t.Run("VSPTicks", testVSPTicksReloadAll)
@@ -175,6 +189,7 @@ func TestReloadAll(t *testing.T) {
 func TestSelect(t *testing.T) {
 	t.Run("Exchanges", testExchangesSelect)
 	t.Run("ExchangeTicks", testExchangeTicksSelect)
+	t.Run("Mempools", testMempoolsSelect)
 	t.Run("PowData", testPowDataSelect)
 	t.Run("VSPS", testVSPSSelect)
 	t.Run("VSPTicks", testVSPTicksSelect)
@@ -183,6 +198,7 @@ func TestSelect(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	t.Run("Exchanges", testExchangesUpdate)
 	t.Run("ExchangeTicks", testExchangeTicksUpdate)
+	t.Run("Mempools", testMempoolsUpdate)
 	t.Run("PowData", testPowDataUpdate)
 	t.Run("VSPS", testVSPSUpdate)
 	t.Run("VSPTicks", testVSPTicksUpdate)
@@ -191,6 +207,7 @@ func TestUpdate(t *testing.T) {
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Exchanges", testExchangesSliceUpdateAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceUpdateAll)
+	t.Run("Mempools", testMempoolsSliceUpdateAll)
 	t.Run("PowData", testPowDataSliceUpdateAll)
 	t.Run("VSPS", testVSPSSliceUpdateAll)
 	t.Run("VSPTicks", testVSPTicksSliceUpdateAll)

@@ -27,7 +27,7 @@ func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) (*Collector
 
 func (c Collector) Collect(ctx context.Context, wg sync.WaitGroup) error {
 	defer wg.Done()
-
+	log.Info("Starting historic mempool data collector")
 	client, err := rpcclient.New(c.dcrdClientConfig, nil)
 	if err != nil {
 		return err
@@ -57,7 +57,8 @@ func (c Collector) Collect(ctx context.Context, wg sync.WaitGroup) error {
 				}
 
 				if lastBlockInfo.NextHash == "" {
-					// we are done fetching historic data, current mempool will be gotten on the fly
+					// we are done fetching historic data, start checking at intervals to fetch current data
+
 					return nil
 				}
 

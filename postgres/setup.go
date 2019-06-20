@@ -63,7 +63,20 @@ const (
 		PRIMARY KEY (time, source)
 	);`
 
-	LastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+
+	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
+		first_seen_time INT,
+		block_receive_time INT,
+		total_sent FLOAT8,
+		last_block_height FLOAT8,
+		size INT,
+		regular_transaction_count INT,
+		ticket_count INT,
+		vote_count INT,
+		revocation_count INT,
+		PRIMARY KEY (first_seen_time)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -126,6 +139,16 @@ func (pg *PgDb) CreatePowDataTable() error {
 
 func (pg *PgDb) PowDataTableExits() bool {
 	exists, _ := pg.tableExists("pow_data")
+	return exists
+}
+
+func (pg *PgDb) CreateMempoolDataTable() error {
+	_, err := pg.db.Exec(createMempoolTable)
+	return err
+}
+
+func (pg *PgDb) MempoolDataTableExits() bool {
+	exists, _ := pg.tableExists("mempool")
 	return exists
 }
 
