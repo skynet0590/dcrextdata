@@ -65,7 +65,7 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	}, nil
 }
 
-<<<<<<< HEAD
+
 func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error) {
 	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
@@ -169,15 +169,4 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64, error) {
 	return models.PowData(models.PowDatumWhere.Source.EQ(source)).Count(ctx, pg.db)
 }
-=======
-// All returns all PowDatum records from the query.
-// func AllPowData(ctx context.Context) {
-// 	exchangeSlice, err := models.pow_data().All(ctx, pg.db)
-// 	return powdataSlice, err
-// }
 
-func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) (models.PowDatumSlice, error) {
-	return models.PowData(qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
-}
-
->>>>>>> added powdata to ui
