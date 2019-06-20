@@ -14,15 +14,22 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
+	"github.com/raedahgroup/dcrextdata/pow"
 )
 
 type DataQuery interface {
 	AllExchangeTicks(ctx context.Context, offset int, limit int) (models.ExchangeTickSlice, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) (models.ExchangeTickSlice, error)
-	FetchVSPs(ctx context.Context) (models.VSPSlice, error) 
+
+	FetchVSPs(ctx context.Context) (models.VSPSlice, error)
 	VSPTicks(ctx context.Context, vspName string, offset int, limit int) (models.VSPTickSlice, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) (models.VSPTickSlice, error)
+
+	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
+	CountPowData(ctx context.Context) (int64, error)
+	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
+	CountPowDataBySource(ctx context.Context, source string) (int64, error)
 }
 
 type Server struct {
