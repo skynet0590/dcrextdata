@@ -6,28 +6,27 @@ package mempool
 
 import (
 	"context"
-	"time"
-
 	"github.com/decred/dcrd/rpcclient"
 )
 
 type Mempool struct {
-	Date time.Time
-	TotalSent float64
-	LastBlockHeight int64
-	Size float64
+	FirstSeenTime           int64
+	BlockReceiveTime        int64
+	TotalSent               float64
+	LastBlockHeight         int64
+	Size                    int32
 	RegularTransactionCount int
-	TicketsCount int
-	VoteCount int
-	RevocationCount int
+	TicketsCount            uint8
+	VoteCount               uint16
+	RevocationCount         uint8
 }
 
 type DataStore interface {
-	StoreMempool(context.Context, Mempool) []error
+	StoreMempool(context.Context, Mempool) error
 	LastMempool(ctx context.Context) (Mempool, error)
 }
 
 type Collector struct {
-	dcrdClient  *rpcclient.Client
+	dcrdClientConfig  *rpcclient.ConnConfig
 	dataStore     DataStore
 }
