@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	recordsPerPage  = 20
+	recordsPerPage = 20
 )
 
 func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -32,10 +32,10 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	totalCount, err := s.db.AllExchangeTicksCount(ctx)
 
 	data := map[string]interface{}{
-		"exData":                      allExhangeSlice,
-		"currentPage":              int(pageToLoad),
-		"previousPage":             int(pageToLoad - 1),
-		"totalPages":               int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"exData":       allExhangeSlice,
+		"currentPage":  int(pageToLoad),
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeSlice)
@@ -68,10 +68,10 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 	totalCount, err := s.db.AllVSPTickCount(ctx)
 
 	data := map[string]interface{}{
-		"vspData":                      allVSPSlice,
-		"currentPage":              int(pageToLoad),
-		"previousPage":             int(pageToLoad - 1),
-		"totalPages":               int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"vspData":      allVSPSlice,
+		"currentPage":  int(pageToLoad),
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)

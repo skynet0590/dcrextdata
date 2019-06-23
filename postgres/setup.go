@@ -66,17 +66,17 @@ const (
 	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
 
 	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
-		first_seen_time INT,
-		block_receive_time INT,
-		total_sent FLOAT8,
-		last_block_height FLOAT8,
+		first_seen_time INT8,
+		number_of_transactions INT,
 		size INT,
-		regular_transaction_count INT,
-		ticket_count INT,
-		vote_count INT,
-		revocation_count INT,
-		PRIMARY KEY (first_seen_time)
+		block_receive_time INT8,
+		block_internal_time INT8,
+		block_height INT,
+		block_hash VARCHAR(128),
+		PRIMARY KEY (block_height,block_hash)
 	);`
+
+	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -195,7 +195,17 @@ func (pg *PgDb) DropAllTables() error {
 	}
 
 	// pow_data
-	return pg.dropTable("pow_data")
+	if err := pg.dropTable("pow_data"); err != nil {
+		return err
+	}
+
+	// mempool
+	if err := pg.dropTable("mempool"); err != nil {
+		return err
+	}
+
+	// pow_data
+	return nil
 }
 
 func (pg *PgDb) dropTable(name string) error {

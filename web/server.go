@@ -15,8 +15,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
-	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/pow"
+	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
 type DataQuery interface {
@@ -24,7 +24,7 @@ type DataQuery interface {
 	AllExchangeTicksCount(ctx context.Context) (int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
-	
+
 	FetchVSPs(ctx context.Context) (models.VSPSlice, error)
 	VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)

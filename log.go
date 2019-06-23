@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"os"
 
 	"github.com/decred/slog"
@@ -40,6 +41,7 @@ var (
 	pqLog      = backendLog.Logger("PSQL")
 	vspLog     = backendLog.Logger("VSPC")
 	powLog     = backendLog.Logger("POWL")
+	mempoolLog = backendLog.Logger("MEMP")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -49,6 +51,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"PSQL": pqLog,
 	"VSPC": vspLog,
 	"POWL": powLog,
+	"MEMP": mempoolLog,
 }
 
 func init() {
@@ -56,6 +59,7 @@ func init() {
 	exchanges.UseLogger(excLog)
 	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)
+	mempool.UseLogger(mempoolLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and

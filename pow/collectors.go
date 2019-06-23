@@ -68,8 +68,9 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 
 	runPowCollectors := func() {
 		log.Info("Triggering PoW collectors")
-		for _, in := range pc.pows {
-			func(powInfo Pow) {
+		for _, powInfo := range pc.pows {
+			select {
+			default:
 				/*lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
 				lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
 				if lastEntryTime == 0 {
@@ -85,7 +86,9 @@ func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
 				if err != nil {
 					log.Error(err)
 				}
-			}(in)
+			case <-ctx.Done():
+				return
+			}
 		}
 	}
 
