@@ -56,6 +56,12 @@ type configFileOptions struct {
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
+
+	// Mempool
+	DisableMempool  bool   `long:"disablemempool" description:"Disable mempool data collection"`
+	DcrdRpcServer   string `long:"dcrdrpcserver"`
+	DcrdRpcUser     string `long:"dcrdrpcuser"`
+	DcrdRpcPassword string `long:"dcrdrpcpaswword"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu

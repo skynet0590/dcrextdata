@@ -7,7 +7,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/decred/dcrd/dcrutil"
+	"github.com/decred/dcrd/rpcclient"
+	"github.com/raedahgroup/dcrextdata/mempool"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"time"
@@ -163,6 +168,32 @@ func _main(ctx context.Context) error {
 			}
 
 		}
+		log.Info("All PoW collected")
+
+		if !cfg.DisableMempool {
+			if !db.MempoolDataTableExits() {
+				if err := db.CreateMempoolDataTable(); err != nil {
+					log.Error("Error creating mempool table: ", err)
+				}
+			}
+			dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
+			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
+			if err != nil {
+				log.Error("Error in reading dcrd cert: ", err)
+			}
+
+			connCfg := &rpcclient.ConnConfig{
+				Host:         cfg.DcrdRpcServer,
+				Endpoint:     "ws",
+				User:         cfg.DcrdRpcUser,
+				Pass:         cfg.DcrdRpcPassword,
+				Certificates: certs,
+			}
+
+			collector := mempool.NewCollector(connCfg, db)
+			wg.Add(1)
+			go collector.StartMonitoring(ctx, wg)
+		}
 
 		return nil
 	}
@@ -171,12 +202,13 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(3000 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
+			log.Info("Starting a new periodic collection cycle")
 			if err := collectData(); err != nil {
 				log.Error(err)
 				log.Info("Goodbye")
