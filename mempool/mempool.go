@@ -6,7 +6,6 @@ package mempool
 
 import (
 	"context"
-	"github.com/decred/dcrd/wire"
 	"sync"
 	"time"
 
@@ -21,64 +20,43 @@ func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) *Collector 
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
+func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
-	ntfnHandlers := rpcclient.NotificationHandlers{
-		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
-			if c.currentMempool == nil {
-				c.currentMempool = &Mempool{
-					FirstSeenTime: time.Now(),
-				}
-			}
-			c.currentMempool.NumberOfTransactions++
-		},
-		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
-			blockHeader := new(wire.BlockHeader)
-			err := blockHeader.FromBytes(blockHeaderSerialized)
-			if err != nil {
-				log.Error("Failed to deserialize blockHeader in new block notification: %v", err)
-				return
-			}
 
-			if c.currentMempool == nil {
-				return
-			}
-
-			mempool := *c.currentMempool
-			c.currentMempool = nil
-
-			mempool.Size = blockHeader.Size
-			mempool.BlockReceiveTime = time.Now()
-			mempool.BlockInternalTime = blockHeader.Timestamp
-			mempool.BlockHeight = blockHeader.Height
-			mempool.BlockHash = blockHeader.BlockHash().String()
-
-			err = c.dataStore.StoreMempool(ctx, mempool)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-		},
-	}
-
-	client, err := rpcclient.New(c.dcrdClientConfig, &ntfnHandlers)
+	client, err := rpcclient.New(c.dcrdClientConfig, nil)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	if err := client.NotifyNewTransactions(true); err != nil {
-		log.Error(err)
-	}
-
-	if err := client.NotifyBlocks(); err != nil {
-		log.Error(err)
-	}
-
 	defer client.Shutdown()
+
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
+		case <-ticker.C:
+			mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
+			if err != nil {
+				log.Error(err)
+				break
+			}
+
+			mempoolDto := Mempool{
+				NumberOfTransactions:len(mempoolTransactionMap),
+				Time : time.Now(),
+				FirstSeenTime:time.Now(),
+			}
+
+			for _, tx := range mempoolTransactionMap {
+				mempoolDto.Fee += tx.Fee
+				mempoolDto.Size += tx.Size
+				if mempoolDto.FirstSeenTime.Unix() < tx.Time {
+					mempoolDto.FirstSeenTime = time.Unix(tx.Time, 0)
+				}
+			}
+			break
 		case <-ctx.Done():
 			return
 		}

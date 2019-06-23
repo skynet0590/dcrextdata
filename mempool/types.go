@@ -13,11 +13,15 @@ import (
 type Mempool struct {
 	FirstSeenTime        time.Time
 	NumberOfTransactions int
-	Size                 uint32
+	Voters               uint32
+	Size                 int32
+	Fee 				 float64
+	Total 				 float64
 	BlockReceiveTime     time.Time
 	BlockInternalTime    time.Time
 	BlockHeight          uint32
 	BlockHash            string
+	Time                 time.Time
 }
 
 type DataStore interface {
@@ -28,5 +32,4 @@ type DataStore interface {
 type Collector struct {
 	dcrdClientConfig *rpcclient.ConnConfig
 	dataStore        DataStore
-	currentMempool   *Mempool
 }
