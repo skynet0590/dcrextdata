@@ -73,7 +73,7 @@ const (
 		tickets INT,
 		revocations INT,
 		size INT,
-		fee FLOAT8,
+		total_fee FLOAT8,
 		total FLOAT8,
 		PRIMARY KEY (time)
 	);`

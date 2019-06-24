@@ -21,8 +21,8 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 		}
 		return err
 	}
-	log.Infof("Added mempool entry, First Seen: %s, Tx Count: %2d, Size: %2d, Fee: %f",
-		mempoolDto.FirstSeenTime.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.Fee)
+	log.Infof("Added mempool entry, Timestamp: %s, Tx Count: %2d, Size: %2d, Total Fee: %f",
+		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
 	return nil
 }
 
@@ -36,7 +36,7 @@ func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 		Tickets:              null.IntFrom(mempoolDto.Tickets),
 		Voters:               null.IntFrom(mempoolDto.Voters),
 		Total:                null.Float64From(mempoolDto.Total),
-		Fee:                  null.Float64From(mempoolDto.Fee),
+		Fee:                  null.Float64From(mempoolDto.TotalFee),
 	}
 }
 
@@ -58,15 +58,15 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	var result []mempool.Mempool
 	for _, m := range mempoolSlice {
 		result = append(result, mempool.Mempool{
-			Fee:m.Fee.Float64,
-			FirstSeenTime: int64ToTime(m.FirstSeenTime.Int64),
-			Total:m.Total.Float64,
-			Voters:m.Voters.Int,
-			Tickets:m.Tickets.Int,
-			Revocations:m.Revocations.Int,
-			Time:time.Unix(m.Time, 0),
-			Size:int32(m.Size.Int),
-			NumberOfTransactions:m.NumberOfTransactions.Int,
+			TotalFee:             m.Fee.Float64,
+			FirstSeenTime:        int64ToTime(m.FirstSeenTime.Int64),
+			Total:                m.Total.Float64,
+			Voters:               m.Voters.Int,
+			Tickets:              m.Tickets.Int,
+			Revocations:          m.Revocations.Int,
+			Time:                 time.Unix(m.Time, 0),
+			Size:                 int32(m.Size.Int),
+			NumberOfTransactions: m.NumberOfTransactions.Int,
 		})
 	}
 	return result, nil

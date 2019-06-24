@@ -67,7 +67,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 			}
 
 			mempoolDto.Total += totalOut
-			mempoolDto.Fee += tx.Fee
+			mempoolDto.TotalFee += tx.Fee
 			mempoolDto.Size += tx.Size
 			if mempoolDto.FirstSeenTime.Unix() > tx.Time {
 				mempoolDto.FirstSeenTime = time.Unix(tx.Time, 0)

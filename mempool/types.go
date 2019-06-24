@@ -18,7 +18,7 @@ type Mempool struct {
 	Tickets              int
 	Revocations          int
 	Size                 int32
-	Fee                  float64
+	TotalFee             float64
 	Total                float64
 
 	BlockReceiveTime     time.Time
