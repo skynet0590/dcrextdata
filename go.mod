@@ -2,12 +2,10 @@ module github.com/raedahgroup/dcrextdata
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/decred/dcrd/chaincfg/chainhash v1.0.1
 	github.com/decred/dcrd/dcrjson v1.0.0
 	github.com/decred/dcrd/dcrutil v1.1.1
 	github.com/decred/dcrd/rpcclient v1.1.0
-	github.com/decred/dcrd/wire v1.2.0
 	github.com/decred/slog v1.0.0
 	github.com/ericlagergren/decimal v0.0.0-20190331172538-c787d12d14a5 // indirect
 	github.com/go-chi/chi v4.0.2+incompatible
