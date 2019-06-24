@@ -11,17 +11,20 @@ import (
 )
 
 type Mempool struct {
+	Time                 time.Time
 	FirstSeenTime        time.Time
 	NumberOfTransactions int
-	Voters               uint32
+	Voters               int
+	Tickets              int
+	Revocations          int
 	Size                 int32
-	Fee 				 float64
-	Total 				 float64
+	Fee                  float64
+	Total                float64
+
 	BlockReceiveTime     time.Time
 	BlockInternalTime    time.Time
 	BlockHeight          uint32
 	BlockHash            string
-	Time                 time.Time
 }
 
 type DataStore interface {

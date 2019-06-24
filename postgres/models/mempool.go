@@ -24,37 +24,52 @@ import (
 
 // Mempool is an object representing the database table.
 type Mempool struct {
-	FirstSeenTime        null.Int64 `boil:"first_seen_time" json:"first_seen_time,omitempty" toml:"first_seen_time" yaml:"first_seen_time,omitempty"`
-	NumberOfTransactions null.Int   `boil:"number_of_transactions" json:"number_of_transactions,omitempty" toml:"number_of_transactions" yaml:"number_of_transactions,omitempty"`
-	Size                 null.Int   `boil:"size" json:"size,omitempty" toml:"size" yaml:"size,omitempty"`
-	BlockReceiveTime     null.Int64 `boil:"block_receive_time" json:"block_receive_time,omitempty" toml:"block_receive_time" yaml:"block_receive_time,omitempty"`
-	BlockInternalTime    null.Int64 `boil:"block_internal_time" json:"block_internal_time,omitempty" toml:"block_internal_time" yaml:"block_internal_time,omitempty"`
-	BlockHeight          int        `boil:"block_height" json:"block_height" toml:"block_height" yaml:"block_height"`
-	BlockHash            string     `boil:"block_hash" json:"block_hash" toml:"block_hash" yaml:"block_hash"`
+	Time                 int64        `boil:"time" json:"time" toml:"time" yaml:"time"`
+	FirstSeenTime        null.Int64   `boil:"first_seen_time" json:"first_seen_time,omitempty" toml:"first_seen_time" yaml:"first_seen_time,omitempty"`
+	NumberOfTransactions null.Int     `boil:"number_of_transactions" json:"number_of_transactions,omitempty" toml:"number_of_transactions" yaml:"number_of_transactions,omitempty"`
+	Voters               null.Int     `boil:"voters" json:"voters,omitempty" toml:"voters" yaml:"voters,omitempty"`
+	Tickets              null.Int     `boil:"tickets" json:"tickets,omitempty" toml:"tickets" yaml:"tickets,omitempty"`
+	Revocations          null.Int     `boil:"revocations" json:"revocations,omitempty" toml:"revocations" yaml:"revocations,omitempty"`
+	Size                 null.Int     `boil:"size" json:"size,omitempty" toml:"size" yaml:"size,omitempty"`
+	Fee                  null.Float64 `boil:"fee" json:"fee,omitempty" toml:"fee" yaml:"fee,omitempty"`
+	Total                null.Float64 `boil:"total" json:"total,omitempty" toml:"total" yaml:"total,omitempty"`
 
 	R *mempoolR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L mempoolL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var MempoolColumns = struct {
+	Time                 string
 	FirstSeenTime        string
 	NumberOfTransactions string
+	Voters               string
+	Tickets              string
+	Revocations          string
 	Size                 string
-	BlockReceiveTime     string
-	BlockInternalTime    string
-	BlockHeight          string
-	BlockHash            string
+	Fee                  string
+	Total                string
 }{
+	Time:                 "time",
 	FirstSeenTime:        "first_seen_time",
 	NumberOfTransactions: "number_of_transactions",
+	Voters:               "voters",
+	Tickets:              "tickets",
+	Revocations:          "revocations",
 	Size:                 "size",
-	BlockReceiveTime:     "block_receive_time",
-	BlockInternalTime:    "block_internal_time",
-	BlockHeight:          "block_height",
-	BlockHash:            "block_hash",
+	Fee:                  "fee",
+	Total:                "total",
 }
 
 // Generated where
+
+type whereHelperint64 struct{ field string }
+
+func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelpernull_Int64 struct{ field string }
 
@@ -102,22 +117,49 @@ func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelpernull_Float64 struct{ field string }
+
+func (w whereHelpernull_Float64) EQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Float64) NEQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Float64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Float64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Float64) LT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Float64) LTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Float64) GT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var MempoolWhere = struct {
+	Time                 whereHelperint64
 	FirstSeenTime        whereHelpernull_Int64
 	NumberOfTransactions whereHelpernull_Int
+	Voters               whereHelpernull_Int
+	Tickets              whereHelpernull_Int
+	Revocations          whereHelpernull_Int
 	Size                 whereHelpernull_Int
-	BlockReceiveTime     whereHelpernull_Int64
-	BlockInternalTime    whereHelpernull_Int64
-	BlockHeight          whereHelperint
-	BlockHash            whereHelperstring
+	Fee                  whereHelpernull_Float64
+	Total                whereHelpernull_Float64
 }{
+	Time:                 whereHelperint64{field: "\"mempool\".\"time\""},
 	FirstSeenTime:        whereHelpernull_Int64{field: "\"mempool\".\"first_seen_time\""},
 	NumberOfTransactions: whereHelpernull_Int{field: "\"mempool\".\"number_of_transactions\""},
+	Voters:               whereHelpernull_Int{field: "\"mempool\".\"voters\""},
+	Tickets:              whereHelpernull_Int{field: "\"mempool\".\"tickets\""},
+	Revocations:          whereHelpernull_Int{field: "\"mempool\".\"revocations\""},
 	Size:                 whereHelpernull_Int{field: "\"mempool\".\"size\""},
-	BlockReceiveTime:     whereHelpernull_Int64{field: "\"mempool\".\"block_receive_time\""},
-	BlockInternalTime:    whereHelpernull_Int64{field: "\"mempool\".\"block_internal_time\""},
-	BlockHeight:          whereHelperint{field: "\"mempool\".\"block_height\""},
-	BlockHash:            whereHelperstring{field: "\"mempool\".\"block_hash\""},
+	Fee:                  whereHelpernull_Float64{field: "\"mempool\".\"fee\""},
+	Total:                whereHelpernull_Float64{field: "\"mempool\".\"total\""},
 }
 
 // MempoolRels is where relationship names are stored.
@@ -137,10 +179,10 @@ func (*mempoolR) NewStruct() *mempoolR {
 type mempoolL struct{}
 
 var (
-	mempoolAllColumns            = []string{"first_seen_time", "number_of_transactions", "size", "block_receive_time", "block_internal_time", "block_height", "block_hash"}
-	mempoolColumnsWithoutDefault = []string{"first_seen_time", "number_of_transactions", "size", "block_receive_time", "block_internal_time", "block_height", "block_hash"}
+	mempoolAllColumns            = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "fee", "total"}
+	mempoolColumnsWithoutDefault = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "fee", "total"}
 	mempoolColumnsWithDefault    = []string{}
-	mempoolPrimaryKeyColumns     = []string{"block_height", "block_hash"}
+	mempoolPrimaryKeyColumns     = []string{"time"}
 )
 
 type (
@@ -242,7 +284,7 @@ func Mempools(mods ...qm.QueryMod) mempoolQuery {
 
 // FindMempool retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindMempool(ctx context.Context, exec boil.ContextExecutor, blockHeight int, blockHash string, selectCols ...string) (*Mempool, error) {
+func FindMempool(ctx context.Context, exec boil.ContextExecutor, time int64, selectCols ...string) (*Mempool, error) {
 	mempoolObj := &Mempool{}
 
 	sel := "*"
@@ -250,10 +292,10 @@ func FindMempool(ctx context.Context, exec boil.ContextExecutor, blockHeight int
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"mempool\" where \"block_height\"=$1 AND \"block_hash\"=$2", sel,
+		"select %s from \"mempool\" where \"time\"=$1", sel,
 	)
 
-	q := queries.Raw(query, blockHeight, blockHash)
+	q := queries.Raw(query, time)
 
 	err := q.Bind(ctx, exec, mempoolObj)
 	if err != nil {
@@ -581,7 +623,7 @@ func (o *Mempool) Delete(ctx context.Context, exec boil.ContextExecutor) (int64,
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), mempoolPrimaryKeyMapping)
-	sql := "DELETE FROM \"mempool\" WHERE \"block_height\"=$1 AND \"block_hash\"=$2"
+	sql := "DELETE FROM \"mempool\" WHERE \"time\"=$1"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
@@ -658,7 +700,7 @@ func (o MempoolSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Mempool) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindMempool(ctx, exec, o.BlockHeight, o.BlockHash)
+	ret, err := FindMempool(ctx, exec, o.Time)
 	if err != nil {
 		return err
 	}
@@ -697,16 +739,16 @@ func (o *MempoolSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // MempoolExists checks if the Mempool row exists.
-func MempoolExists(ctx context.Context, exec boil.ContextExecutor, blockHeight int, blockHash string) (bool, error) {
+func MempoolExists(ctx context.Context, exec boil.ContextExecutor, time int64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"mempool\" where \"block_height\"=$1 AND \"block_hash\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"mempool\" where \"time\"=$1 limit 1)"
 
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, sql)
-		fmt.Fprintln(boil.DebugWriter, blockHeight, blockHash)
+		fmt.Fprintln(boil.DebugWriter, time)
 	}
 
-	row := exec.QueryRowContext(ctx, sql, blockHeight, blockHash)
+	row := exec.QueryRowContext(ctx, sql, time)
 
 	err := row.Scan(&exists)
 	if err != nil {

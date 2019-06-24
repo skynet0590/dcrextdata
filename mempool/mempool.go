@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/dcrjson"
 	"github.com/decred/dcrd/rpcclient"
 )
@@ -31,31 +32,84 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	defer client.Shutdown()
 
+	collectMempool := func() {
+		mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		if len(mempoolTransactionMap) == 0 {
+			return
+		}
+
+		mempoolDto := Mempool{
+			NumberOfTransactions:len(mempoolTransactionMap),
+			Time : time.Now(),
+			FirstSeenTime:time.Now(),
+		}
+
+		for hashString, tx := range mempoolTransactionMap {
+			hash, err := chainhash.NewHashFromStr(hashString)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			rawTx, err := client.GetRawTransactionVerbose(hash)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			totalOut := 0.0
+			for _, v := range rawTx.Vout {
+				totalOut += v.Value
+			}
+
+			mempoolDto.Total += totalOut
+			mempoolDto.Fee += tx.Fee
+			mempoolDto.Size += tx.Size
+			if mempoolDto.FirstSeenTime.Unix() > tx.Time {
+				mempoolDto.FirstSeenTime = time.Unix(tx.Time, 0)
+			}
+
+		}
+
+		votes, err := client.GetRawMempool(dcrjson.GRMVotes)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		mempoolDto.Voters = len(votes)
+
+		tickets, err := client.GetRawMempool(dcrjson.GRMTickets)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		mempoolDto.Tickets = len(tickets)
+
+		revocations, err := client.GetRawMempool(dcrjson.GRMRevocations)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		mempoolDto.Revocations = len(revocations)
+
+		err = c.dataStore.StoreMempool(ctx, mempoolDto)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	collectMempool()
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-
-			mempoolDto := Mempool{
-				NumberOfTransactions:len(mempoolTransactionMap),
-				Time : time.Now(),
-				FirstSeenTime:time.Now(),
-			}
-
-			for _, tx := range mempoolTransactionMap {
-				mempoolDto.Fee += tx.Fee
-				mempoolDto.Size += tx.Size
-				if mempoolDto.FirstSeenTime.Unix() < tx.Time {
-					mempoolDto.FirstSeenTime = time.Unix(tx.Time, 0)
-				}
-			}
+			collectMempool()
 			break
 		case <-ctx.Done():
 			return
