@@ -9,7 +9,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-	// "reflect"
 
 	"github.com/decred/slog"
 	flags "github.com/jessevdk/go-flags"
@@ -45,7 +44,6 @@ type configFileOptions struct {
 	// Http Server
 	HTTPHost string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
 	HTTPPort string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
-
 	// Exchange collector
 	DisableExchangeTicks bool     `long:"disablexcticks" decription:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`

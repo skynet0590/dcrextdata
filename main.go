@@ -116,6 +116,7 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 		}
+
 		if !cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {

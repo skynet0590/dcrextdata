@@ -9,30 +9,28 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>Exchange</th>
-                        <th>High</th>
-                        <th>Low</th>
-                        <th>Open</th>
-                        <th>Close</th>
-                        <th>Volume</th>
-                        <th>Interval</th>
-                        <th>CurrencyPair</th>
+                        <th>Source</th>
+                        <th>Coin Price</th>
+                        <th>BTC Price</th>
+                        <th>Network Hashrate</th>
+                        <th>Pool Hashrate</th>
+                        <th>Workers</th>
+                        <th>Network Difficulty</th>
                         <th>Time</th>
                     </tr>
                     </thead>
                     <tbody data-target="">
-                        {{range $index, $exchange := .exData}}
+                        {{range $index, $powdata := .powData}}
                         <tr>
-                            <td>{{$exchange.ExchangeName}}</th>
-                            <td>{{$exchange.High}}</th>
-                            <td>{{$exchange.Low}}</th>
-                            <td>{{$exchange.Open}}</th>
-                            <td>{{$exchange.Close}}</th>
-                            <td>{{$exchange.Volume}}</th>
-                            <td>{{$exchange.Interval}}</th>
-                            <td>{{$exchange.CurrencyPair}}</th>
-                            <td>{{$exchange.Time}}</th>
-                        </tr>
+                            <td>{{$powdata.Source}}</th>
+                            <td>{{$powdata.CoinPrice}}</th>
+                            <td>{{$powdata.BtcPrice}}</th>
+                            <td>{{$powdata.NetworkHashrate}}</th>
+                            <td>{{$powdata.PoolHashrate}}</th>
+                            <td>{{$powdata.Workers}}</th>
+                            <td>{{$powdata.NetworkDifficulty}}</th>
+                            <td>{{$powdata.Time}}</th>
+                         </tr>
                         {{end}}
                     </tbody>
                 </table>
