@@ -12,6 +12,7 @@ import (
 	"github.com/decred/dcrd/chaincfg/chainhash"
 	"github.com/decred/dcrd/dcrjson"
 	"github.com/decred/dcrd/rpcclient"
+	"github.com/decred/dcrd/wire"
 )
 
 func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) *Collector {
@@ -24,13 +25,35 @@ func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) *Collector 
 func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	client, err := rpcclient.New(c.dcrdClientConfig, nil)
+	ntfnHandlers := rpcclient.NotificationHandlers{
+		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
+
+		},
+		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
+			blockHeader := new(wire.BlockHeader)
+			err := blockHeader.FromBytes(blockHeaderSerialized)
+			if err != nil {
+				log.Error("Failed to deserialize blockHeader in new block notification: %v", err)
+				return
+			}
+		},
+	}
+
+	client, err := rpcclient.New(c.dcrdClientConfig, &ntfnHandlers)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	defer client.Shutdown()
+
+	if err := client.NotifyNewTransactions(true); err != nil {
+		log.Error(err)
+	}
+
+	if err := client.NotifyBlocks(); err != nil {
+		log.Error(err)
+	}
 
 	collectMempool := func() {
 		mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
