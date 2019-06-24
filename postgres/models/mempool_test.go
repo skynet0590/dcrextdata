@@ -149,7 +149,7 @@ func testMempoolsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := MempoolExists(ctx, tx, o.BlockHeight, o.BlockHash)
+	e, err := MempoolExists(ctx, tx, o.Time)
 	if err != nil {
 		t.Errorf("Unable to check if Mempool exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testMempoolsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	mempoolFound, err := FindMempool(ctx, tx, o.BlockHeight, o.BlockHash)
+	mempoolFound, err := FindMempool(ctx, tx, o.Time)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,7 +427,7 @@ func testMempoolsSelect(t *testing.T) {
 }
 
 var (
-	mempoolDBTypes = map[string]string{`FirstSeenTime`: `bigint`, `NumberOfTransactions`: `integer`, `Size`: `integer`, `BlockReceiveTime`: `bigint`, `BlockInternalTime`: `bigint`, `BlockHeight`: `integer`, `BlockHash`: `character varying`}
+	mempoolDBTypes = map[string]string{`Time`: `bigint`, `FirstSeenTime`: `bigint`, `NumberOfTransactions`: `integer`, `Voters`: `integer`, `Tickets`: `integer`, `Revocations`: `integer`, `Size`: `integer`, `Fee`: `double precision`, `Total`: `double precision`}
 	_              = bytes.MinRead
 )
 

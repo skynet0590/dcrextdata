@@ -247,7 +247,9 @@ func (in *BtcPow) Collect(ctx context.Context) ([]PowData, error) {
 	}
 
 	result := in.fetch(res, in.lastUpdate)
-	in.lastUpdate = result[len(result)-1].Time
+	if len(result) > 0 {
+		in.lastUpdate = result[len(result)-1].Time
+	}
 
 	return result, nil
 }

@@ -19,20 +19,22 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 		}
 		return err
 	}
-	log.Infof("Added mempool entry, Block Height: %6d, Tx Count: %2d, Size: %2d, Timestamp: %s",
-		mempoolDto.BlockHeight, mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.BlockInternalTime.Format(dateTemplate))
+	log.Infof("Added mempool entry, First Seen: %s, Tx Count: %2d, Size: %2d, Fee: %f",
+		mempoolDto.FirstSeenTime.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.Fee)
 	return nil
 }
 
 func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 	return models.Mempool{
+		Time:                 mempoolDto.Time.Unix(),
 		FirstSeenTime:        null.Int64From(mempoolDto.FirstSeenTime.Unix()),
-		BlockReceiveTime:     null.Int64From(mempoolDto.BlockReceiveTime.Unix()),
-		BlockInternalTime:    null.Int64From(mempoolDto.BlockInternalTime.Unix()),
-		BlockHeight:          int(mempoolDto.BlockHeight),
 		Size:                 null.IntFrom(int(mempoolDto.Size)),
 		NumberOfTransactions: null.IntFrom(mempoolDto.NumberOfTransactions),
-		BlockHash:            mempoolDto.BlockHash,
+		Revocations:          null.IntFrom(mempoolDto.Revocations),
+		Tickets:              null.IntFrom(mempoolDto.Tickets),
+		Voters:               null.IntFrom(mempoolDto.Voters),
+		Total:                null.Float64From(mempoolDto.Total),
+		Fee:                  null.Float64From(mempoolDto.Fee),
 	}
 }
 

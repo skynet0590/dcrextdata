@@ -66,14 +66,16 @@ const (
 	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
 
 	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
+		time INT8,
 		first_seen_time INT8,
 		number_of_transactions INT,
+		voters INT,
+		tickets INT,
+		revocations INT,
 		size INT,
-		block_receive_time INT8,
-		block_internal_time INT8,
-		block_height INT,
-		block_hash VARCHAR(128),
-		PRIMARY KEY (block_height,block_hash)
+		fee FLOAT8,
+		total FLOAT8,
+		PRIMARY KEY (time)
 	);`
 
 	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
