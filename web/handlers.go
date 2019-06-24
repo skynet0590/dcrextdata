@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	recordsPerPage = 20
+	txPerPage  = 20
 )
 
 func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -31,19 +31,18 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	var recordsPerPage int = recordsPerPage
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * txPerPage 
 
 	ctx := context.Background()
 	var allExhangeTicksSlice []ticks.TickDto
 	// var err error
 	if selectedFilter == "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, txPerPage )
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, txPerPage )
 		if err != nil {
 			panic(err)
 		}
@@ -93,19 +92,18 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	var recordsPerPage int = recordsPerPage
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * txPerPage 
 
 	ctx := context.Background()
 
 	var allVSPSlice []vsp.VSPTickDto
 	if selectedFilter == "All" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, txPerPage )
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, txPerPage )
 		if err != nil {
 			panic(err)
 		}
@@ -147,11 +145,11 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * txPerPage 
 
 	ctx := context.Background()
 
-	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
+	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, txPerPage )
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -165,7 +163,7 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		"powData":      allPowDataSlice,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(txPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allPowDataSlice)

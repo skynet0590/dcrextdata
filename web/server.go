@@ -133,6 +133,6 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.GetExchangeTicks)
 	r.Post("/", s.GetExchangeTicks)
 	r.Get("/vspticks", s.GetVspTicks)
-	r.Get("/pow", s.GetPowData)
 	r.Post("/vspticks", s.GetVspTicks)
+	r.Get("/pow", s.GetPowData)
 }
