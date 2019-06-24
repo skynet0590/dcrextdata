@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
+	"time"
 
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -42,4 +44,30 @@ func (pg *PgDb) LastMempoolBlockHeight() (height int64, err error) {
 	rows := pg.db.QueryRow(lastMempoolBlockHeight)
 	err = rows.Scan(&height)
 	return
+}
+
+func (pg *PgDb) MempoolCount(ctx context.Context) (int64, error) {
+	return models.Mempools().Count(ctx, pg.db)
+}
+
+func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error) {
+	mempoolSlice, err := models.Mempools(qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+	var result []mempool.Mempool
+	for _, m := range mempoolSlice {
+		result = append(result, mempool.Mempool{
+			Fee:m.Fee.Float64,
+			FirstSeenTime: int64ToTime(m.FirstSeenTime.Int64),
+			Total:m.Total.Float64,
+			Voters:m.Voters.Int,
+			Tickets:m.Tickets.Int,
+			Revocations:m.Revocations.Int,
+			Time:time.Unix(m.Time, 0),
+			Size:int32(m.Size.Int),
+			NumberOfTransactions:m.NumberOfTransactions.Int,
+		})
+	}
+	return result, nil
 }
