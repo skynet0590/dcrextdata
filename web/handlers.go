@@ -38,11 +38,7 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"exData":       allExhangeSlice,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
-<<<<<<< HEAD
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
-=======
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(txPerPage))),
->>>>>>> mempool
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeSlice)
