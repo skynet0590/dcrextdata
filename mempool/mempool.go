@@ -44,9 +44,9 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		}
 
 		mempoolDto := Mempool{
-			NumberOfTransactions:len(mempoolTransactionMap),
-			Time : time.Now(),
-			FirstSeenTime:time.Now(),
+			NumberOfTransactions: len(mempoolTransactionMap),
+			Time:                 time.Now(),
+			FirstSeenTime:        time.Now(),
 		}
 
 		for hashString, tx := range mempoolTransactionMap {

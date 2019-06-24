@@ -168,7 +168,7 @@ func _main(ctx context.Context) error {
 			}
 
 		}
-		log.Info("All PoW collected")
+		log.Info("All PoW pool data collected")
 
 		if !cfg.DisableMempool {
 			if !db.MempoolDataTableExits() {

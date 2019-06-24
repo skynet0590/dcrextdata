@@ -20,11 +20,13 @@ type Mempool struct {
 	Size                 int32
 	TotalFee             float64
 	Total                float64
+}
 
-	BlockReceiveTime     time.Time
-	BlockInternalTime    time.Time
-	BlockHeight          uint32
-	BlockHash            string
+type Block struct {
+	BlockReceiveTime  time.Time
+	BlockInternalTime time.Time
+	BlockHeight       uint32
+	BlockHash         string
 }
 
 type DataStore interface {

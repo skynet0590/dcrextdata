@@ -36,7 +36,7 @@ func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 		Tickets:              null.IntFrom(mempoolDto.Tickets),
 		Voters:               null.IntFrom(mempoolDto.Voters),
 		Total:                null.Float64From(mempoolDto.Total),
-		Fee:                  null.Float64From(mempoolDto.TotalFee),
+		TotalFee:             null.Float64From(mempoolDto.TotalFee),
 	}
 }
 
@@ -58,7 +58,7 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	var result []mempool.Mempool
 	for _, m := range mempoolSlice {
 		result = append(result, mempool.Mempool{
-			TotalFee:             m.Fee.Float64,
+			TotalFee:             m.TotalFee.Float64,
 			FirstSeenTime:        int64ToTime(m.FirstSeenTime.Int64),
 			Total:                m.Total.Float64,
 			Voters:               m.Voters.Int,

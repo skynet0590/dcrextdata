@@ -31,7 +31,7 @@ type Mempool struct {
 	Tickets              null.Int     `boil:"tickets" json:"tickets,omitempty" toml:"tickets" yaml:"tickets,omitempty"`
 	Revocations          null.Int     `boil:"revocations" json:"revocations,omitempty" toml:"revocations" yaml:"revocations,omitempty"`
 	Size                 null.Int     `boil:"size" json:"size,omitempty" toml:"size" yaml:"size,omitempty"`
-	Fee                  null.Float64 `boil:"fee" json:"fee,omitempty" toml:"fee" yaml:"fee,omitempty"`
+	TotalFee             null.Float64 `boil:"total_fee" json:"total_fee,omitempty" toml:"total_fee" yaml:"total_fee,omitempty"`
 	Total                null.Float64 `boil:"total" json:"total,omitempty" toml:"total" yaml:"total,omitempty"`
 
 	R *mempoolR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -46,7 +46,7 @@ var MempoolColumns = struct {
 	Tickets              string
 	Revocations          string
 	Size                 string
-	Fee                  string
+	TotalFee             string
 	Total                string
 }{
 	Time:                 "time",
@@ -56,7 +56,7 @@ var MempoolColumns = struct {
 	Tickets:              "tickets",
 	Revocations:          "revocations",
 	Size:                 "size",
-	Fee:                  "fee",
+	TotalFee:             "total_fee",
 	Total:                "total",
 }
 
@@ -148,7 +148,7 @@ var MempoolWhere = struct {
 	Tickets              whereHelpernull_Int
 	Revocations          whereHelpernull_Int
 	Size                 whereHelpernull_Int
-	Fee                  whereHelpernull_Float64
+	TotalFee             whereHelpernull_Float64
 	Total                whereHelpernull_Float64
 }{
 	Time:                 whereHelperint64{field: "\"mempool\".\"time\""},
@@ -158,7 +158,7 @@ var MempoolWhere = struct {
 	Tickets:              whereHelpernull_Int{field: "\"mempool\".\"tickets\""},
 	Revocations:          whereHelpernull_Int{field: "\"mempool\".\"revocations\""},
 	Size:                 whereHelpernull_Int{field: "\"mempool\".\"size\""},
-	Fee:                  whereHelpernull_Float64{field: "\"mempool\".\"fee\""},
+	TotalFee:             whereHelpernull_Float64{field: "\"mempool\".\"total_fee\""},
 	Total:                whereHelpernull_Float64{field: "\"mempool\".\"total\""},
 }
 
@@ -179,8 +179,8 @@ func (*mempoolR) NewStruct() *mempoolR {
 type mempoolL struct{}
 
 var (
-	mempoolAllColumns            = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "fee", "total"}
-	mempoolColumnsWithoutDefault = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "fee", "total"}
+	mempoolAllColumns            = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "total_fee", "total"}
+	mempoolColumnsWithoutDefault = []string{"time", "first_seen_time", "number_of_transactions", "voters", "tickets", "revocations", "size", "total_fee", "total"}
 	mempoolColumnsWithDefault    = []string{}
 	mempoolPrimaryKeyColumns     = []string{"time"}
 )

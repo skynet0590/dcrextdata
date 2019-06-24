@@ -104,10 +104,7 @@ var PowDatumWhere = struct {
 
 // PowDatumRels is where relationship names are stored.
 var PowDatumRels = struct {
-	PowData string
-}{
-	PowData: "PowData",
-}
+}{}
 
 // powDatumR is where relationships are stored.
 type powDatumR struct {
