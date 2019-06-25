@@ -38,6 +38,9 @@ type DataQuery interface {
 
 	MempoolCount(ctx context.Context) (int64, error)
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error)
+
+	BlockCount(ctx context.Context) (int64, error)
+	Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error)
 }
 
 type Server struct {

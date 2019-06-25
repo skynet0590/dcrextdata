@@ -94,3 +94,27 @@ func blockDtoToModel(block mempool.Block) models.Block {
 		ReceiveTime: null.Int64From(block.BlockInternalTime.Unix()),
 	}
 }
+
+func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
+	return models.Blocks().Count(ctx, pg.db)
+}
+
+func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error) {
+	blockSlice, err := models.Blocks(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var blocks []mempool.Block
+
+	for _, block := range blockSlice {
+		blocks = append(blocks, mempool.Block{
+			BlockHash:block.Hash.String,
+			BlockHeight:uint32(block.Height),
+			BlockInternalTime:int64ToTime(block.InternalTimestamp.Int64),
+			BlockReceiveTime:int64ToTime(block.ReceiveTime.Int64),
+		})
+	}
+
+	return blocks, nil
+}
