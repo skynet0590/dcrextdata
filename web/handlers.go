@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	txPerPage  = 20
+	recordsPerPage   = 20
 )
 
 func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -31,20 +31,20 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * txPerPage 
+	offset := (int(pageToLoad) - 1) * recordsPerPage  
 
 	ctx := context.Background()
 	var allExhangeTicksSlice []ticks.TickDto
 	// var err error
 	if selectedFilter == "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, txPerPage )
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage  )
 		if err != nil {
-			panic(err)
+			panic(err)  // todo add appropraite error handler
 		}
 	} else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, txPerPage )
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage  )
 		if err != nil {
-			panic(err)
+			panic(err)  // todo add appropraite error handler
 		}
 	}
 
@@ -62,9 +62,9 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
 		"selectedFilter": selectedFilter,
-		"currentPage":    int(pageToLoad),
+		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -92,20 +92,20 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * txPerPage 
+	offset := (int(pageToLoad) - 1) * recordsPerPage  
 
 	ctx := context.Background()
 
 	var allVSPSlice []vsp.VSPTickDto
 	if selectedFilter == "All" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, txPerPage )
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage  )
 		if err != nil {
-			panic(err)
+			panic(err)  // todo add appropraite error handler
 		}
 	} else {
-		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, txPerPage )
+		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage  )
 		if err != nil {
-			panic(err)
+			panic(err)  // todo add appropraite error handler
 		}
 	}
 
@@ -116,16 +116,16 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 
 	totalCount, err := s.db.AllVSPTickCount(ctx)
 	if err != nil {
-		panic(err)
+		panic(err)  // todo add appropraite error handler
 	}
 
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
 		"allVspData":     allVspData,
 		"selectedFilter": selectedFilter,
-		"currentPage":    int(pageToLoad),
+		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
@@ -145,11 +145,11 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * txPerPage 
+	offset := (int(pageToLoad) - 1) * recordsPerPage  
 
 	ctx := context.Background()
 
-	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, txPerPage )
+	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage  )
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -163,7 +163,7 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		"powData":      allPowDataSlice,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(txPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
 	}
 
 	totalTxLoaded := int(offset) + len(allPowDataSlice)

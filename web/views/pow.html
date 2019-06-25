@@ -8,29 +8,29 @@
             <div class="container">
                 <table class="table">
                     <thead>
-                    <tr>
-                        <th>Source</th>
-                        <th>Coin Price</th>
-                        <th>BTC Price</th>
-                        <th>Network Hashrate</th>
-                        <th>Pool Hashrate</th>
-                        <th>Workers</th>
-                        <th>Network Difficulty</th>
-                        <th>Time</th>
-                    </tr>
+                        <tr>
+                            <th>Source</th>
+                            <th>Coin Price</th>
+                            <th>BTC Price</th>
+                            <th>Network Hashrate</th>
+                            <th>Pool Hashrate</th>
+                            <th>Workers</th>
+                            <th>Network Difficulty</th>
+                            <th>Time</th>
+                        </tr>
                     </thead>
                     <tbody data-target="">
                         {{range $index, $powdata := .powData}}
                         <tr>
-                            <td>{{$powdata.Source}}</th>
-                            <td>{{$powdata.CoinPrice}}</th>
-                            <td>{{$powdata.BtcPrice}}</th>
-                            <td>{{$powdata.NetworkHashrate}}</th>
-                            <td>{{$powdata.PoolHashrate}}</th>
-                            <td>{{$powdata.Workers}}</th>
-                            <td>{{$powdata.NetworkDifficulty}}</th>
-                            <td>{{$powdata.Time}}</th>
-                         </tr>
+                            <td>{{$powdata.Source}}</td>
+                            <td>{{$powdata.CoinPrice}}</td>
+                            <td>{{$powdata.BtcPrice}}</td>
+                            <td>{{$powdata.NetworkHashrate}}</td>
+                            <td>{{$powdata.PoolHashrate}}</td>
+                            <td>{{$powdata.Workers}}</td>
+                            <td>{{$powdata.NetworkDifficulty}}</td>
+                            <td>{{$powdata.Time}}</td>
+                        </tr>
                         {{end}}
                     </tbody>
                 </table>
@@ -42,12 +42,12 @@
                 <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
 
                 <a href="?page={{ .nextPage }}"
-                   data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                    Next &gt;
-                </a>
-            </div>
+                data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                Next &gt;
+            </a>
         </div>
     </div>
-    {{ template "footer" }}
+</div>
+{{ template "footer" }}
 </body>
 </html>

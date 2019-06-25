@@ -2,69 +2,69 @@
 <html lang="en">
 {{ template "html-head" }}
 <body data-controller="receive">
-<div class="body">
-    {{ template "header" }}
-    <div class="content">
-        <div class="container">
-        <div class="row">
-        <form method="post" action="/vspticks">
-        <div class="col-md-3 col-sm-12 mb-2">
-        <select id="selectedFilter" name="vsp"
-                class="form-control" style="width: 150px;">
-                {{$selectedFilter := .selectedFilter}}
-            <option value="All">All</option>
+    <div class="body">
+        {{ template "header" }}
+        <div class="content">
+            <div class="container">
+                <div class="row">
+                    <form method="post" action="/vspticks">
+                        <div class="col-md-3 col-sm-12 mb-2">
+                            <select id="selectedFilter" name="vsp"
+                            class="form-control" style="width: 150px;">
+                            {{$selectedFilter := .selectedFilter}}
+                            <option value="All">All</option>
 
-                {{ range $index, $filter := .allVspData}}
-            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
-            {{ end }}
-        </select>
-        </div>
-        <div class="col-md-3 col-sm-12 mb-2">
-        <button type="submit">Filter</button>
-        </div>
-        </form>
-        </div>
+                            {{ range $index, $filter := .allVspData}}
+                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-12 mb-2">
+                        <button type="submit">Filter</button>
+                    </div>
+                </form>
+            </div>
             <table class="table">
                 <thead>
-                <tr>
-                    <th>VSP</th>
-                    <th>Immature</th>
-                    <th>Live</th>
-                    <th>Voted</th>
-                    <th>Missed</th>
-                    <th>PoolFees</th>
-                    <th>ProportionLive</th>
-                    <th>ProportionMissed</th>
-                    <th>UserCount</th>
-                    <th>UsersActive</th>
-                    <th>Time</th>
-                </tr>
+                    <tr>
+                        <th>VSP</th>
+                        <th>Immature</th>
+                        <th>Live</th>
+                        <th>Voted</th>
+                        <th>Missed</th>
+                        <th>PoolFees</th>
+                        <th>ProportionLive</th>
+                        <th>ProportionMissed</th>
+                        <th>UserCount</th>
+                        <th>UsersActive</th>
+                        <th>Time</th>
+                    </tr>
                 </thead>
                 <tbody data-target="history.historyTable">
-                {{range $index, $vspticks := .vspData}}
+                    {{range $index, $vspticks := .vspData}}
                     <tr>
-                        <td>{{$vspticks.VSP}}</th>
-                        <td>{{$vspticks.Immature}}</th>
-                        <td>{{$vspticks.Live}}</th>
-                        <td>{{$vspticks.Voted}}</th>
-                        <td>{{$vspticks.Missed}}</th>
-                        <td>{{$vspticks.PoolFees}}</th>
-                        <td>{{$vspticks.ProportionLive}}</th>
-                        <td>{{$vspticks.ProportionMissed}}</th>
-                        <td>{{$vspticks.UserCount}}</th>
-                        <td>{{$vspticks.UsersActive}}</th>
-                        <td>{{$vspticks.Time}}</th>
+                        <td>{{$vspticks.VSP}}</td>
+                        <td>{{$vspticks.Immature}}</td>
+                        <td>{{$vspticks.Live}}</td>
+                        <td>{{$vspticks.Voted}}</td>
+                        <td>{{$vspticks.Missed}}</td>
+                        <td>{{$vspticks.PoolFees}}</td>
+                        <td>{{$vspticks.ProportionLive}}</td>
+                        <td>{{$vspticks.ProportionMissed}}</td>
+                        <td>{{$vspticks.UserCount}}</td>
+                        <td>{{$vspticks.UsersActive}}</td>
+                        <td>{{$vspticks.Time}}</td>
                     </tr>
-                {{end}}
+                    {{end}}
                 </tbody>
             </table>
 
             <a href="?page={{ .previousPage }}&vsp={{.selectedFilter}}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                    &lt; Previous</a>
-            <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
+                &lt; Previous</a>
+                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
 
-            <a href="?page={{ .nextPage }}&vsp={{.selectedFilter}}"
-               data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                <a href="?page={{ .nextPage }}&vsp={{.selectedFilter}}"
+                data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
                 Next &gt;
             </a>
         </div>
