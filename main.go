@@ -176,6 +176,13 @@ func _main(ctx context.Context) error {
 					log.Error("Error creating mempool table: ", err)
 				}
 			}
+
+			if !db.BlockTableExits() {
+				if err := db.CreateBlockTable(); err != nil {
+					log.Error("Error creating block table: ", err)
+				}
+			}
+
 			dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
 			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
 			if err != nil {

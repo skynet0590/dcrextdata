@@ -21,7 +21,7 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 		}
 		return err
 	}
-	log.Infof("Added mempool entry, Timestamp: %s, Tx Count: %2d, Size: %2d, Total Fee: %f",
+	log.Infof("Added mempool entry, Timestamp: %s, Tx Count: %2d, Size: %6d, Total Fee: %f",
 		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
 	return nil
 }
@@ -70,4 +70,27 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 		})
 	}
 	return result, nil
+}
+
+func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
+	blockModel := blockDtoToModel(block)
+	err := blockModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return err
+		}
+		return err
+	}
+	log.Infof("New block received, Timestamp: %s, Height: %d",
+		block.BlockInternalTime.Format(dateTemplate), block.BlockHeight)
+	return nil
+}
+
+func blockDtoToModel(block mempool.Block) models.Block {
+	return models.Block{
+		Height: int(block.BlockHeight),
+		Hash: null.StringFrom(block.BlockHash),
+		InternalTimestamp: null.Int64From(block.BlockInternalTime.Unix()),
+		ReceiveTime: null.Int64From(block.BlockInternalTime.Unix()),
+	}
 }

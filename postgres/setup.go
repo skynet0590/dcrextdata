@@ -78,6 +78,14 @@ const (
 		PRIMARY KEY (time)
 	);`
 
+	createBlockTable = `CREATE TABLE IF NOT EXISTS block (
+		height INT,
+		receive_time INT8,
+		internal_timestamp INT8,
+		hash VARCHAR(128),
+		PRIMARY KEY (height)
+	);`
+
 	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
 )
 
@@ -151,6 +159,16 @@ func (pg *PgDb) CreateMempoolDataTable() error {
 
 func (pg *PgDb) MempoolDataTableExits() bool {
 	exists, _ := pg.tableExists("mempool")
+	return exists
+}
+
+func (pg *PgDb) CreateBlockTable() error {
+	_, err := pg.db.Exec(createBlockTable)
+	return err
+}
+
+func (pg *PgDb) BlockTableExits() bool {
+	exists, _ := pg.tableExists("block")
 	return exists
 }
 

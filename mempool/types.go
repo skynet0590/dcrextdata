@@ -31,7 +31,7 @@ type Block struct {
 
 type DataStore interface {
 	StoreMempool(context.Context, Mempool) error
-	LastMempoolBlockHeight() (height int64, err error)
+	SaveBlock(context.Context, Block) error
 }
 
 type Collector struct {

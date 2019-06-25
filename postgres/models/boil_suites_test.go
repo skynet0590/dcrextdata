@@ -12,6 +12,7 @@ import "testing"
 // It does NOT run each operation group in parallel.
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
+	t.Run("Blocks", testBlocks)
 	t.Run("Exchanges", testExchanges)
 	t.Run("ExchangeTicks", testExchangeTicks)
 	t.Run("Mempools", testMempools)
@@ -21,6 +22,7 @@ func TestParent(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Run("Blocks", testBlocksDelete)
 	t.Run("Exchanges", testExchangesDelete)
 	t.Run("ExchangeTicks", testExchangeTicksDelete)
 	t.Run("Mempools", testMempoolsDelete)
@@ -30,6 +32,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestQueryDeleteAll(t *testing.T) {
+	t.Run("Blocks", testBlocksQueryDeleteAll)
 	t.Run("Exchanges", testExchangesQueryDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksQueryDeleteAll)
 	t.Run("Mempools", testMempoolsQueryDeleteAll)
@@ -39,6 +42,7 @@ func TestQueryDeleteAll(t *testing.T) {
 }
 
 func TestSliceDeleteAll(t *testing.T) {
+	t.Run("Blocks", testBlocksSliceDeleteAll)
 	t.Run("Exchanges", testExchangesSliceDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceDeleteAll)
 	t.Run("Mempools", testMempoolsSliceDeleteAll)
@@ -48,6 +52,7 @@ func TestSliceDeleteAll(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
+	t.Run("Blocks", testBlocksExists)
 	t.Run("Exchanges", testExchangesExists)
 	t.Run("ExchangeTicks", testExchangeTicksExists)
 	t.Run("Mempools", testMempoolsExists)
@@ -57,6 +62,7 @@ func TestExists(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
+	t.Run("Blocks", testBlocksFind)
 	t.Run("Exchanges", testExchangesFind)
 	t.Run("ExchangeTicks", testExchangeTicksFind)
 	t.Run("Mempools", testMempoolsFind)
@@ -66,6 +72,7 @@ func TestFind(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	t.Run("Blocks", testBlocksBind)
 	t.Run("Exchanges", testExchangesBind)
 	t.Run("ExchangeTicks", testExchangeTicksBind)
 	t.Run("Mempools", testMempoolsBind)
@@ -75,6 +82,7 @@ func TestBind(t *testing.T) {
 }
 
 func TestOne(t *testing.T) {
+	t.Run("Blocks", testBlocksOne)
 	t.Run("Exchanges", testExchangesOne)
 	t.Run("ExchangeTicks", testExchangeTicksOne)
 	t.Run("Mempools", testMempoolsOne)
@@ -84,6 +92,7 @@ func TestOne(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Run("Blocks", testBlocksAll)
 	t.Run("Exchanges", testExchangesAll)
 	t.Run("ExchangeTicks", testExchangeTicksAll)
 	t.Run("Mempools", testMempoolsAll)
@@ -93,6 +102,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Run("Blocks", testBlocksCount)
 	t.Run("Exchanges", testExchangesCount)
 	t.Run("ExchangeTicks", testExchangeTicksCount)
 	t.Run("Mempools", testMempoolsCount)
@@ -102,6 +112,8 @@ func TestCount(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	t.Run("Blocks", testBlocksInsert)
+	t.Run("Blocks", testBlocksInsertWhitelist)
 	t.Run("Exchanges", testExchangesInsert)
 	t.Run("Exchanges", testExchangesInsertWhitelist)
 	t.Run("ExchangeTicks", testExchangeTicksInsert)
@@ -169,6 +181,7 @@ func TestToManySet(t *testing.T) {}
 func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
+	t.Run("Blocks", testBlocksReload)
 	t.Run("Exchanges", testExchangesReload)
 	t.Run("ExchangeTicks", testExchangeTicksReload)
 	t.Run("Mempools", testMempoolsReload)
@@ -178,6 +191,7 @@ func TestReload(t *testing.T) {
 }
 
 func TestReloadAll(t *testing.T) {
+	t.Run("Blocks", testBlocksReloadAll)
 	t.Run("Exchanges", testExchangesReloadAll)
 	t.Run("ExchangeTicks", testExchangeTicksReloadAll)
 	t.Run("Mempools", testMempoolsReloadAll)
@@ -187,6 +201,7 @@ func TestReloadAll(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
+	t.Run("Blocks", testBlocksSelect)
 	t.Run("Exchanges", testExchangesSelect)
 	t.Run("ExchangeTicks", testExchangeTicksSelect)
 	t.Run("Mempools", testMempoolsSelect)
@@ -196,6 +211,7 @@ func TestSelect(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Run("Blocks", testBlocksUpdate)
 	t.Run("Exchanges", testExchangesUpdate)
 	t.Run("ExchangeTicks", testExchangeTicksUpdate)
 	t.Run("Mempools", testMempoolsUpdate)
@@ -205,6 +221,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestSliceUpdateAll(t *testing.T) {
+	t.Run("Blocks", testBlocksSliceUpdateAll)
 	t.Run("Exchanges", testExchangesSliceUpdateAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceUpdateAll)
 	t.Run("Mempools", testMempoolsSliceUpdateAll)

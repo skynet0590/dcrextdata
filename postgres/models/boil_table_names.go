@@ -4,6 +4,7 @@
 package models
 
 var TableNames = struct {
+	Block        string
 	Exchange     string
 	ExchangeTick string
 	Mempool      string
@@ -11,6 +12,7 @@ var TableNames = struct {
 	VSP          string
 	VSPTick      string
 }{
+	Block:        "block",
 	Exchange:     "exchange",
 	ExchangeTick: "exchange_tick",
 	Mempool:      "mempool",

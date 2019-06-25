@@ -27,7 +27,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
-
+			
 		},
 		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
 			blockHeader := new(wire.BlockHeader)
@@ -35,6 +35,15 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 			if err != nil {
 				log.Error("Failed to deserialize blockHeader in new block notification: %v", err)
 				return
+			}
+			block := Block{
+				BlockInternalTime:blockHeader.Timestamp,
+				BlockReceiveTime:time.Now(),
+				BlockHash:blockHeader.BlockHash().String(),
+				BlockHeight: blockHeader.Height,
+			}
+			if err = c.dataStore.SaveBlock(ctx, block); err != nil {
+				log.Error(err)
 			}
 		},
 	}
