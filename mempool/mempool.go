@@ -27,7 +27,6 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
-			
 		},
 		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
 			blockHeader := new(wire.BlockHeader)
@@ -64,7 +63,12 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		log.Error(err)
 	}
 
+	var mu sync.Mutex
+
 	collectMempool := func() {
+		mu.Lock()
+		defer mu.Unlock()
+
 		mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
 		if err != nil {
 			log.Error(err)
@@ -78,7 +82,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),
 			Time:                 time.Now(),
-			FirstSeenTime:        time.Now(),
+			FirstSeenTime:        time.Now(),//todo: use the time of the first tx in the mempool
 		}
 
 		for hashString, tx := range mempoolTransactionMap {

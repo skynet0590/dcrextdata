@@ -19,7 +19,6 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return err
 		}
-		return err
 	}
 	log.Infof("Added mempool entry, Timestamp: %s, Tx Count: %2d, Size: %6d, Total Fee: %f",
 		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
@@ -79,7 +78,6 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return err
 		}
-		return err
 	}
 	log.Infof("New block received, Timestamp: %s, Height: %d",
 		block.BlockInternalTime.Format(dateTemplate), block.BlockHeight)
