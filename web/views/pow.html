@@ -9,33 +9,41 @@
                 <table class="table">
                     <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>NetworkHashrate</th>
-                        <th>PoolHashrate</th>
-                        <th>Workers</th>
-                        <th>NetworkDifficulty</th>
-                        <th>CoinPrice</th>
-                        <th>BTCPrice</th>
                         <th>Source</th>
+                        <th>Coin Price</th>
+                        <th>BTC Price</th>
+                        <th>Network Hashrate</th>
+                        <th>Pool Hashrate</th>
+                        <th>Workers</th>
+                        <th>Network Difficulty</th>
+                        <th>Time</th>
                     </tr>
                     </thead>
-                    <tbody data-target="history.historyTable">
+                    <tbody data-target="">
                         {{range $index, $powdata := .powData}}
                         <tr>
-                            <td>{{$powdata.Time}}</th>
+                            <td>{{$powdata.Source}}</th>
+                            <td>{{$powdata.CoinPrice}}</th>
+                            <td>{{$powdata.BtcPrice}}</th>
                             <td>{{$powdata.NetworkHashrate}}</th>
                             <td>{{$powdata.PoolHashrate}}</th>
                             <td>{{$powdata.Workers}}</th>
                             <td>{{$powdata.NetworkDifficulty}}</th>
-                            <td>{{$powdata.CoinPrice}}</th>
-                            <td>{{$powdata.BTCPrice}}</th>
-                            <td>{{$powdata.Source}}</th>
+                            <td>{{$powdata.Time}}</th>
                          </tr>
                         {{end}}
                     </tbody>
                 </table>
+                <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                    &lt; Previous
+                </a>
 
+                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
 
+                <a href="?page={{ .nextPage }}"
+                   data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                    Next &gt;
+                </a>
             </div>
         </div>
     </div>

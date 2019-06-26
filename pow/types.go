@@ -1,7 +1,20 @@
 package pow
 
+import "time"
+
 type PowData struct {
 	Time              int64
+	NetworkHashrate   int64
+	PoolHashrate      float64
+	Workers           int64
+	NetworkDifficulty float64
+	CoinPrice         float64
+	BtcPrice          float64
+	Source            string
+}
+
+type PowDataDto struct {
+	Time              time.Time
 	NetworkHashrate   int64
 	PoolHashrate      float64
 	Workers           int64

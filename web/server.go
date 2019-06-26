@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
+	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -23,10 +24,16 @@ type DataQuery interface {
 	AllExchangeTicksCount(ctx context.Context) (int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
+
 	FetchVSPs(ctx context.Context) (models.VSPSlice, error)
 	VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTickCount(ctx context.Context) (int64, error)
+
+	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
+	CountPowData(ctx context.Context) (int64, error)
+	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
+	CountPowDataBySource(ctx context.Context, source string) (int64, error)
 }
 
 type Server struct {
@@ -66,6 +73,7 @@ func (s *Server) loadTemplates() {
 	tpls := map[string]string{
 		"exchange.html": "web/views/exchange.html",
 		"vsp.html":      "web/views/vsp.html",
+		"pow.html":      "web/views/pow.html",
 	}
 
 	for i, v := range tpls {
@@ -124,5 +132,5 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.GetExchangeTicks)
 	r.Get("/vspticks", s.GetVspTicks)
-
+	r.Get("/pow", s.GetPowData)
 }
