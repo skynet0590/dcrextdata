@@ -48,14 +48,15 @@ func StartHttpServer(httpHost, httpPort string, db DataQuery) {
 		db:        db,
 	}
 
-	// load templates
-	server.loadTemplates()
-
 	router := chi.NewRouter()
 	workDir, _ := os.Getwd()
-	filesDir := filepath.Join(workDir, "web/public")
+
+	filesDir := filepath.Join(workDir, "web/public/dist")
 	FileServer(router, "/static", http.Dir(filesDir))
 	server.registerHandlers(router)
+
+	// load templates
+	server.loadTemplates()
 
 	address := net.JoinHostPort(httpHost, httpPort)
 
