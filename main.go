@@ -167,8 +167,8 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 
+			log.Info("All PoW pool data collected")
 		}
-		log.Info("All PoW pool data collected")
 
 		if !cfg.DisableMempool {
 			if !db.MempoolDataTableExits() {
@@ -180,6 +180,12 @@ func _main(ctx context.Context) error {
 			if !db.BlockTableExits() {
 				if err := db.CreateBlockTable(); err != nil {
 					log.Error("Error creating block table: ", err)
+				}
+			}
+
+			if !db.VoteTableExits() {
+				if err := db.CreateVoteTable(); err != nil {
+					log.Error("Error creating vote table: ", err)
 				}
 			}
 

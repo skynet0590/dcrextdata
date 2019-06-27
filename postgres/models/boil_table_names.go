@@ -9,6 +9,7 @@ var TableNames = struct {
 	ExchangeTick string
 	Mempool      string
 	PowData      string
+	Vote         string
 	VSP          string
 	VSPTick      string
 }{
@@ -17,6 +18,7 @@ var TableNames = struct {
 	ExchangeTick: "exchange_tick",
 	Mempool:      "mempool",
 	PowData:      "pow_data",
+	Vote:         "vote",
 	VSP:          "vsp",
 	VSPTick:      "vsp_tick",
 }

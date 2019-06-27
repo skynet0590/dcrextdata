@@ -82,11 +82,18 @@ const (
 		height INT,
 		receive_time INT8,
 		internal_timestamp INT8,
-		hash VARCHAR(128),
+		hash VARCHAR(512),
 		PRIMARY KEY (height)
 	);`
 
 	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
+
+	createVoteTable = `CREATE TABLE IF NOT EXISTS vote (
+		hash VARCHAR(128),
+		block_height INT8,
+		receive_time INT8,
+		PRIMARY KEY (hash)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -162,6 +169,7 @@ func (pg *PgDb) MempoolDataTableExits() bool {
 	return exists
 }
 
+// block table
 func (pg *PgDb) CreateBlockTable() error {
 	_, err := pg.db.Exec(createBlockTable)
 	return err
@@ -169,6 +177,17 @@ func (pg *PgDb) CreateBlockTable() error {
 
 func (pg *PgDb) BlockTableExits() bool {
 	exists, _ := pg.tableExists("block")
+	return exists
+}
+
+// vote table
+func (pg *PgDb) CreateVoteTable() error {
+	_, err := pg.db.Exec(createVoteTable)
+	return err
+}
+
+func (pg *PgDb) VoteTableExits() bool {
+	exists, _ := pg.tableExists("vote")
 	return exists
 }
 
@@ -221,6 +240,11 @@ func (pg *PgDb) DropAllTables() error {
 
 	// mempool
 	if err := pg.dropTable("mempool"); err != nil {
+		return err
+	}
+
+	// vote
+	if err := pg.dropTable("vote"); err != nil {
 		return err
 	}
 

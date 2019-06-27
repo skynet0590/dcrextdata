@@ -26,6 +26,8 @@ func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) *Collector 
 func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
+	var lastBlockHeight uint32
+
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
 			msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
@@ -40,8 +42,8 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 			vote := Vote{
 				ReceiveTime:time.Now(),
-				BlockHeight: txDetails.BlockHeight,
-				Hash: txDetails.BlockHash,
+				BlockHeight: int64(lastBlockHeight),
+				Hash: txDetails.Txid,
 			}
 
 			if err = c.dataStore.SaveVote(ctx, vote); err != nil {
@@ -55,6 +57,8 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 				log.Error("Failed to deserialize blockHeader in new block notification: %v", err)
 				return
 			}
+
+			lastBlockHeight = blockHeader.Height
 			block := Block{
 				BlockInternalTime:blockHeader.Timestamp,
 				BlockReceiveTime:time.Now(),

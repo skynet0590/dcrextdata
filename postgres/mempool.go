@@ -118,11 +118,42 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 }
 
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
+	voteModel := models.Vote{
+		Hash:vote.Hash,
+		BlockHeight:null.Int64From(vote.BlockHeight),
+		ReceiveTime:null.Int64From(vote.ReceiveTime.Unix()),
+	}
+	err := voteModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return err
+		}
+	}
+	log.Infof("New vote received at %s, Height: %d, Hash: ...%s",
+		vote.ReceiveTime.Format(dateTemplate), vote.BlockHeight, vote.Hash[len(vote.Hash)-23:])
 	return nil
 }
 
 func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vote, error) {
-	return nil, nil
+	voteSlice, err := models.Votes(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var votes []mempool.Vote
+	for _, vote := range voteSlice {
+		votes = append(votes, mempool.Vote{
+			Hash: vote.Hash,
+			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64),
+			BlockHeight: vote.BlockHeight.Int64,
+		})
+	}
+
+	return votes, nil
+}
+
+func (pg *PgDb) VotesCount(ctx context.Context) (int64, error) {
+	return models.Votes().Count(ctx, pg.db)
 }
 
 func (pg *PgDb) CountVotes(ctx context.Context) (int64, error) {
