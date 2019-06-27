@@ -164,8 +164,9 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, name string, offset int,
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
+// todo impliment sorting for Exchange ticks as it is currently been sorted by time
 func (pg *PgDb) AllExchangeTicks(ctx context.Context, offset int, limit int) ([]ticks.TickDto, error) {
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
