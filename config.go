@@ -60,6 +60,7 @@ type configFileOptions struct {
 	// Mempool
 	DisableMempool  bool   `long:"disablemempool" description:"Disable mempool data collection"`
 	DcrdRpcServer   string `long:"dcrdrpcserver"`
+	DcrdNetworkType string `long:"dcrdnetworktype"`
 	DcrdRpcUser     string `long:"dcrdrpcuser"`
 	DcrdRpcPassword string `long:"dcrdrpcpaswword"`
 }
@@ -71,11 +72,12 @@ type CommandLineOptions struct {
 
 func defaultFileOptions() configFileOptions {
 	return configFileOptions{
-		LogFile:     defaultLogFilename,
-		ConfigFile:  defaultConfigFilename,
-		DebugLevel:  defaultLogLevel,
-		VSPInterval: 300,
-		PowInterval: 300,
+		LogFile:         defaultLogFilename,
+		ConfigFile:      defaultConfigFilename,
+		DebugLevel:      defaultLogLevel,
+		VSPInterval:     300,
+		PowInterval:     300,
+		DcrdNetworkType: "mainnet",
 	}
 }
 

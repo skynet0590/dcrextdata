@@ -90,8 +90,9 @@ const (
 
 	createVoteTable = `CREATE TABLE IF NOT EXISTS vote (
 		hash VARCHAR(128),
-		block_height INT8,
+		voting_on INT8,
 		receive_time INT8,
+		validator_id INT,
 		PRIMARY KEY (hash)
 	);`
 )

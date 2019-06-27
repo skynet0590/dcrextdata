@@ -6,8 +6,10 @@ package mempool
 
 import (
 	"context"
-	"github.com/decred/dcrd/rpcclient"
 	"time"
+	
+	"github.com/decred/dcrd/chaincfg"
+	"github.com/decred/dcrd/rpcclient"
 )
 
 type Mempool struct {
@@ -30,9 +32,10 @@ type Block struct {
 }
 
 type Vote struct {
-	Hash string
+	Hash        string
 	ReceiveTime time.Time
-	BlockHeight uint32
+	VotingOn    int64
+	ValidatorId int
 }
 
 type DataStore interface {
@@ -44,4 +47,5 @@ type DataStore interface {
 type Collector struct {
 	dcrdClientConfig *rpcclient.ConnConfig
 	dataStore        DataStore
+	activeChain  *chaincfg.Params
 }

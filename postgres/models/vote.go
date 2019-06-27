@@ -25,8 +25,9 @@ import (
 // Vote is an object representing the database table.
 type Vote struct {
 	Hash        string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	BlockHeight null.Int64 `boil:"block_height" json:"block_height,omitempty" toml:"block_height" yaml:"block_height,omitempty"`
+	VotingOn    null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
 	ReceiveTime null.Int64 `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	ValidatorID null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
 
 	R *voteR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L voteL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -34,24 +35,28 @@ type Vote struct {
 
 var VoteColumns = struct {
 	Hash        string
-	BlockHeight string
+	VotingOn    string
 	ReceiveTime string
+	ValidatorID string
 }{
 	Hash:        "hash",
-	BlockHeight: "block_height",
+	VotingOn:    "voting_on",
 	ReceiveTime: "receive_time",
+	ValidatorID: "validator_id",
 }
 
 // Generated where
 
 var VoteWhere = struct {
 	Hash        whereHelperstring
-	BlockHeight whereHelpernull_Int64
+	VotingOn    whereHelpernull_Int64
 	ReceiveTime whereHelpernull_Int64
+	ValidatorID whereHelpernull_Int
 }{
 	Hash:        whereHelperstring{field: "\"vote\".\"hash\""},
-	BlockHeight: whereHelpernull_Int64{field: "\"vote\".\"block_height\""},
+	VotingOn:    whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
 	ReceiveTime: whereHelpernull_Int64{field: "\"vote\".\"receive_time\""},
+	ValidatorID: whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
 }
 
 // VoteRels is where relationship names are stored.
@@ -71,8 +76,8 @@ func (*voteR) NewStruct() *voteR {
 type voteL struct{}
 
 var (
-	voteAllColumns            = []string{"hash", "block_height", "receive_time"}
-	voteColumnsWithoutDefault = []string{"hash", "block_height", "receive_time"}
+	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "validator_id"}
+	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "validator_id"}
 	voteColumnsWithDefault    = []string{}
 	votePrimaryKeyColumns     = []string{"hash"}
 )

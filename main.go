@@ -7,17 +7,19 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/decred/dcrd/dcrutil"
-	"github.com/decred/dcrd/rpcclient"
-	"github.com/raedahgroup/dcrextdata/mempool"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg"
+	"github.com/decred/dcrd/dcrutil"
+	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/version"
@@ -203,7 +205,7 @@ func _main(ctx context.Context) error {
 				Certificates: certs,
 			}
 
-			collector := mempool.NewCollector(connCfg, db)
+			collector := mempool.NewCollector(connCfg, netParams(cfg.DcrdNetworkType), db)
 			wg.Add(1)
 			go collector.StartMonitoring(ctx, wg)
 		}
@@ -234,4 +236,15 @@ func _main(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func netParams(netType string) *chaincfg.Params {
+	switch strings.ToLower(netType) {
+	case strings.ToLower(chaincfg.MainNetParams.Name):
+		return &chaincfg.MainNetParams
+	case strings.ToLower(chaincfg.TestNet3Params.Name):
+		return &chaincfg.TestNet3Params
+	default:
+		return nil
+	}
 }
