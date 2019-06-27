@@ -20,7 +20,8 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 			return err
 		}
 	}
-	log.Infof("Added mempool entry at %s, Tx Count: %2d, Size: %6d, Total Fee: %f",
+	//  tx count 76, total size 54205 B, fees 0.00367100
+	log.Infof("Added mempool entry at %s, tx count %2d, total size: %6d B, Total Fee: %010.8f",
 		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
 	return nil
 }
