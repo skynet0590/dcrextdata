@@ -7,7 +7,7 @@ package mempool
 import (
 	"context"
 	"time"
-	
+
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/rpcclient"
 )

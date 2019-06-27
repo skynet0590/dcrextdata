@@ -131,7 +131,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 		}
 		return err
 	}
-	log.Infof("New vote received at %s for %d, Validator ID: %3d, Hash: ...%s",
+	log.Infof("New vote received at %s for %d, Validator Id %d, Hash ...%s",
 		vote.ReceiveTime.Format(dateMiliTemplate), vote.VotingOn, vote.ValidatorId, vote.Hash[len(vote.Hash)-23:])
 	return nil
 }
