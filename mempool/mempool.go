@@ -13,6 +13,7 @@ import (
 	"github.com/decred/dcrd/dcrjson"
 	"github.com/decred/dcrd/rpcclient"
 	"github.com/decred/dcrd/wire"
+	"github.com/decred/dcrdata/txhelpers/v2"
 )
 
 func NewCollector(config *rpcclient.ConnConfig, dataStore DataStore) *Collector {
@@ -27,6 +28,25 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
+			msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
+			if err != nil {
+				log.Errorf("Failed to decode transaction hex: %v", err)
+				return
+			}
+
+			if txType := txhelpers.DetermineTxTypeString(msgTx); txType != "Vote" {
+				return
+			}
+
+			vote := Vote{
+				ReceiveTime:time.Now(),
+				BlockHeight: txDetails.BlockHeight,
+				Hash: txDetails.BlockHash,
+			}
+
+			if err = c.dataStore.SaveVote(ctx, vote); err != nil {
+				log.Error(err)
+			}
 		},
 		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
 			blockHeader := new(wire.BlockHeader)

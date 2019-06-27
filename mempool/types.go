@@ -29,9 +29,16 @@ type Block struct {
 	BlockHash         string
 }
 
+type Vote struct {
+	Hash string
+	ReceiveTime time.Time
+	BlockHeight int64
+}
+
 type DataStore interface {
 	StoreMempool(context.Context, Mempool) error
 	SaveBlock(context.Context, Block) error
+	SaveVote(ctx context.Context, vote Vote) error
 }
 
 type Collector struct {

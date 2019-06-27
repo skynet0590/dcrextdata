@@ -20,7 +20,7 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 			return err
 		}
 	}
-	log.Infof("Added mempool entry, Timestamp: %s, Tx Count: %2d, Size: %6d, Total Fee: %f",
+	log.Infof("Added mempool entry at %s, Tx Count: %2d, Size: %6d, Total Fee: %f",
 		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
 	return nil
 }
@@ -79,7 +79,7 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
 			return err
 		}
 	}
-	log.Infof("New block received, Timestamp: %s, Height: %d, Hash: ...%s",
+	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
 		block.BlockInternalTime.Format(dateTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash) - 23:])
 	return nil
 }
@@ -115,4 +115,16 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	}
 
 	return blocks, nil
+}
+
+func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
+	return nil
+}
+
+func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vote, error) {
+	return nil, nil
+}
+
+func (pg *PgDb) CountVotes(ctx context.Context) (int64, error) {
+	return 0, nil
 }
