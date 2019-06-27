@@ -13,6 +13,7 @@ import (
 )
 
 const dateTemplate = "2006-01-02 15:04"
+const dateMiliTemplate = "2006-01-02 15:04:05.999999999"
 
 type insertable interface {
 	Insert(context.Context, boil.ContextExecutor, boil.Columns) error

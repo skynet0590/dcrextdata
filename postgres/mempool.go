@@ -80,7 +80,7 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
 		}
 	}
 	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
-		block.BlockInternalTime.Format(dateTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash) - 23:])
+		block.BlockInternalTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash) - 23:])
 	return nil
 }
 
@@ -120,17 +120,18 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	voteModel := models.Vote{
 		Hash:vote.Hash,
-		BlockHeight:null.Int64From(vote.BlockHeight),
+		BlockHeight:null.Int64From(int64(vote.BlockHeight)),
 		ReceiveTime:null.Int64From(vote.ReceiveTime.Unix()),
 	}
 	err := voteModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
-		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-			return err
+		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return nil
 		}
+		return err
 	}
 	log.Infof("New vote received at %s, Height: %d, Hash: ...%s",
-		vote.ReceiveTime.Format(dateTemplate), vote.BlockHeight, vote.Hash[len(vote.Hash)-23:])
+		vote.ReceiveTime.Format(dateMiliTemplate), vote.BlockHeight, vote.Hash[len(vote.Hash)-23:])
 	return nil
 }
 
@@ -145,7 +146,7 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 		votes = append(votes, mempool.Vote{
 			Hash: vote.Hash,
 			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64),
-			BlockHeight: vote.BlockHeight.Int64,
+			BlockHeight: uint32(vote.BlockHeight.Int64),
 		})
 	}
 

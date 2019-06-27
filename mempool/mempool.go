@@ -42,7 +42,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 			vote := Vote{
 				ReceiveTime:time.Now(),
-				BlockHeight: int64(lastBlockHeight),
+				BlockHeight: lastBlockHeight,
 				Hash: txDetails.Txid,
 			}
 

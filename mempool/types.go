@@ -32,7 +32,7 @@ type Block struct {
 type Vote struct {
 	Hash string
 	ReceiveTime time.Time
-	BlockHeight int64
+	BlockHeight uint32
 }
 
 type DataStore interface {
