@@ -123,10 +123,7 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 		}
-<<<<<<< HEAD
-=======
 
->>>>>>> optimize filter feature
 		if !cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
