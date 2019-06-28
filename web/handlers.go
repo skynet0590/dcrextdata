@@ -14,7 +14,7 @@ const (
 	recordsPerPage   = 20
 )
 
-func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
+func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
 	filter := req.Form["exchange"]
@@ -75,7 +75,7 @@ func (s *Server) GetExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("exchange.html", data, res)
 }
 
-func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
+func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
 	filter := req.Form["vsp"]
@@ -136,7 +136,7 @@ func (s *Server) GetVspTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("vsp.html", data, res)
 }
 
-func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
+func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
 
@@ -172,4 +172,42 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 	}
 
 	s.render("pow.html", data, res)
+}
+
+func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	mempoolSlice, err := s.db.Mempools(ctx, offset, recordsPerPage  )
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
+	totalCount, err := s.db.MempoolCount(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
+	data := map[string]interface{}{
+		"mempoolData":      mempoolSlice,
+		"currentPage":  int(pageToLoad),
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
+	}
+
+	totalTxLoaded := int(offset) + len(mempoolSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	s.render("mempool.html", data, res)
 }
