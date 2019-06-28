@@ -63,7 +63,38 @@ const (
 		PRIMARY KEY (time, source)
 	);`
 
-	LastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+
+	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
+		time INT8,
+		first_seen_time INT8,
+		number_of_transactions INT,
+		voters INT,
+		tickets INT,
+		revocations INT,
+		size INT,
+		total_fee FLOAT8,
+		total FLOAT8,
+		PRIMARY KEY (time)
+	);`
+
+	createBlockTable = `CREATE TABLE IF NOT EXISTS block (
+		height INT,
+		receive_time INT8,
+		internal_timestamp INT8,
+		hash VARCHAR(512),
+		PRIMARY KEY (height)
+	);`
+
+	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
+
+	createVoteTable = `CREATE TABLE IF NOT EXISTS vote (
+		hash VARCHAR(128),
+		voting_on INT8,
+		receive_time INT8,
+		validator_id INT,
+		PRIMARY KEY (hash)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -129,6 +160,38 @@ func (pg *PgDb) PowDataTableExits() bool {
 	return exists
 }
 
+func (pg *PgDb) CreateMempoolDataTable() error {
+	_, err := pg.db.Exec(createMempoolTable)
+	return err
+}
+
+func (pg *PgDb) MempoolDataTableExits() bool {
+	exists, _ := pg.tableExists("mempool")
+	return exists
+}
+
+// block table
+func (pg *PgDb) CreateBlockTable() error {
+	_, err := pg.db.Exec(createBlockTable)
+	return err
+}
+
+func (pg *PgDb) BlockTableExits() bool {
+	exists, _ := pg.tableExists("block")
+	return exists
+}
+
+// vote table
+func (pg *PgDb) CreateVoteTable() error {
+	_, err := pg.db.Exec(createVoteTable)
+	return err
+}
+
+func (pg *PgDb) VoteTableExits() bool {
+	exists, _ := pg.tableExists("vote")
+	return exists
+}
+
 func (pg *PgDb) tableExists(name string) (bool, error) {
 	rows, err := pg.db.Query(`SELECT relname FROM pg_class WHERE relname = $1`, name)
 	if err == nil {
@@ -172,7 +235,22 @@ func (pg *PgDb) DropAllTables() error {
 	}
 
 	// pow_data
-	return pg.dropTable("pow_data")
+	if err := pg.dropTable("pow_data"); err != nil {
+		return err
+	}
+
+	// mempool
+	if err := pg.dropTable("mempool"); err != nil {
+		return err
+	}
+
+	// vote
+	if err := pg.dropTable("vote"); err != nil {
+		return err
+	}
+
+	// pow_data
+	return nil
 }
 
 func (pg *PgDb) dropTable(name string) error {

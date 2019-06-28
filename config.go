@@ -56,6 +56,13 @@ type configFileOptions struct {
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
+
+	// Mempool
+	DisableMempool  bool   `long:"disablemempool" description:"Disable mempool data collection"`
+	DcrdRpcServer   string `long:"dcrdrpcserver"`
+	DcrdNetworkType string `long:"dcrdnetworktype"`
+	DcrdRpcUser     string `long:"dcrdrpcuser"`
+	DcrdRpcPassword string `long:"dcrdrpcpaswword"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
@@ -65,11 +72,12 @@ type CommandLineOptions struct {
 
 func defaultFileOptions() configFileOptions {
 	return configFileOptions{
-		LogFile:     defaultLogFilename,
-		ConfigFile:  defaultConfigFilename,
-		DebugLevel:  defaultLogLevel,
-		VSPInterval: 300,
-		PowInterval: 300,
+		LogFile:         defaultLogFilename,
+		ConfigFile:      defaultConfigFilename,
+		DebugLevel:      defaultLogLevel,
+		VSPInterval:     300,
+		PowInterval:     300,
+		DcrdNetworkType: "mainnet",
 	}
 }
 

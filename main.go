@@ -7,12 +7,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg"
+	"github.com/decred/dcrd/dcrutil"
+	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/version"
@@ -162,6 +169,45 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 
+			log.Info("All PoW pool data collected")
+		}
+
+		if !cfg.DisableMempool {
+			if !db.MempoolDataTableExits() {
+				if err := db.CreateMempoolDataTable(); err != nil {
+					log.Error("Error creating mempool table: ", err)
+				}
+			}
+
+			if !db.BlockTableExits() {
+				if err := db.CreateBlockTable(); err != nil {
+					log.Error("Error creating block table: ", err)
+				}
+			}
+
+			if !db.VoteTableExits() {
+				if err := db.CreateVoteTable(); err != nil {
+					log.Error("Error creating vote table: ", err)
+				}
+			}
+
+			dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
+			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
+			if err != nil {
+				log.Error("Error in reading dcrd cert: ", err)
+			}
+
+			connCfg := &rpcclient.ConnConfig{
+				Host:         cfg.DcrdRpcServer,
+				Endpoint:     "ws",
+				User:         cfg.DcrdRpcUser,
+				Pass:         cfg.DcrdRpcPassword,
+				Certificates: certs,
+			}
+
+			collector := mempool.NewCollector(connCfg, netParams(cfg.DcrdNetworkType), db)
+			wg.Add(1)
+			go collector.StartMonitoring(ctx, wg)
 		}
 
 		return nil
@@ -171,12 +217,13 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	ticker := time.NewTicker(300 * time.Second)
+	ticker := time.NewTicker(3000 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
+			log.Info("Starting a new periodic collection cycle")
 			if err := collectData(); err != nil {
 				log.Error(err)
 				log.Info("Goodbye")
@@ -190,4 +237,15 @@ func _main(ctx context.Context) error {
 	}
 	
 	return nil
+}
+
+func netParams(netType string) *chaincfg.Params {
+	switch strings.ToLower(netType) {
+	case strings.ToLower(chaincfg.MainNetParams.Name):
+		return &chaincfg.MainNetParams
+	case strings.ToLower(chaincfg.TestNet3Params.Name):
+		return &chaincfg.TestNet3Params
+	default:
+		return nil
+	}
 }

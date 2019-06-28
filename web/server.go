@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -34,6 +35,12 @@ type DataQuery interface {
 	CountPowData(ctx context.Context) (int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
+
+	MempoolCount(ctx context.Context) (int64, error)
+	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error)
+
+	BlockCount(ctx context.Context) (int64, error)
+	Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error)
 }
 
 type Server struct {

@@ -5,7 +5,9 @@
     pass = "pass"
     sslmode = "disable"
     whitelist=["exchange", 
-        "exchange_tick",
-        "vsp",
-        "vsp_tick",
-        "pow_data"]
+            "exchange_tick",
+            "vsp",
+            "vsp_tick",
+            "pow_data",
+            "mempool",
+            "block"]
