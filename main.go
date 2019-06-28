@@ -88,7 +88,7 @@ func _main(ctx context.Context) error {
 	wg := new(sync.WaitGroup)
 
 	collectData := func() error {
-		if !cfg.DisableVSP {
+		if 	cfg.DisableVSP {
 			if exists := db.VSPInfoTableExits(); !exists {
 				if err := db.CreateVSPInfoTables(); err != nil {
 					log.Error("Error creating vsp info table: ", err)
@@ -116,8 +116,8 @@ func _main(ctx context.Context) error {
 				log.Error(err)
 			}
 		}
-
-		if !cfg.DisableExchangeTicks {
+		
+		if cfg.DisableExchangeTicks {
 			if exists := db.ExchangeTableExits(); !exists {
 				if err := db.CreateExchangeTable(); err != nil {
 					log.Error("Error creating exchange table: ", err)
@@ -146,7 +146,7 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		if !cfg.DisablePow {
+		if cfg.DisablePow {
 			if exists := db.PowDataTableExits(); !exists {
 				if err := db.CreatePowDataTable(); err != nil {
 					log.Error("Error creating PoW data table: ", err)

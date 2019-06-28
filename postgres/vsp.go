@@ -150,8 +150,26 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 	}
 }
 
-func (pg *PgDb) FetchVSPs(ctx context.Context) (models.VSPSlice, error) {
-	return models.VSPS().All(ctx, pg.db)
+func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
+	vspData, err := models.VSPS().All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []vsp.VSPDto
+	for _, item := range vspData {
+
+		result = append(result, vsp.VSPDto{
+			Name:                 item.Name.String,
+			APIEnabled:           item.APIEnabled.Bool,
+			APIVersionsSupported: item.APIVersionsSupported,
+			Network:              item.Network.String,
+			URL:                  item.URL.String,
+			Launched:             item.Launched.Time,
+		})
+	}
+
+	return result, nil
 }
 
 // VSPTicks

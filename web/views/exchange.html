@@ -6,8 +6,26 @@
         {{ template "header" }}
         <div class="content">
             <div class="container">
-                <table class="table">
-                    <thead>
+                <div class="row">
+                    <form method="post" action="/">
+                        <div class="col-md-3 col-sm-12 mb-2">
+                            <select id="selectedFilter" name="exchange"
+                            class="form-control" style="width: 150px;">
+                            {{$selectedFilter := .selectedFilter}}
+                            <option value="All">All</option>
+
+                            {{ range $index, $filter := .allExData}}
+                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-12 mb-2">
+                        <button type="submit">Filter</button>
+                    </div>
+                </form>
+            </div>
+            <table class="table">
+                <thead>
                     <tr>
                         <th>Exchange</th>
                         <th>High</th>
@@ -19,37 +37,37 @@
                         <th>CurrencyPair</th>
                         <th>Time</th>
                     </tr>
-                    </thead>
-                    <tbody data-target="">
-                        {{range $index, $exchange := .exData}}
-                        <tr>
-                            <td>{{$exchange.ExchangeName}}</th>
-                            <td>{{$exchange.High}}</th>
-                            <td>{{$exchange.Low}}</th>
-                            <td>{{$exchange.Open}}</th>
-                            <td>{{$exchange.Close}}</th>
-                            <td>{{$exchange.Volume}}</th>
-                            <td>{{$exchange.Interval}}</th>
-                            <td>{{$exchange.CurrencyPair}}</th>
-                            <td>{{$exchange.Time}}</th>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+                </thead>
+                <tbody data-target="">
+                    {{range $index, $exchange := .exData}}
+                    <tr>
+                        <td>{{$exchange.ExchangeName}}</td>
+                        <td>{{$exchange.High}}</td>
+                        <td>{{$exchange.Low}}</td>
+                        <td>{{$exchange.Open}}</td>
+                        <td>{{$exchange.Close}}</td>
+                        <td>{{$exchange.Volume}}</td>
+                        <td>{{$exchange.Interval}}</td>
+                        <td>{{$exchange.CurrencyPair}}</td>
+                        <td>{{$exchange.Time}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
 
-                <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                    &lt; Previous
-                </a>
+            <a href="?page={{ .previousPage }}&exchange={{.selectedFilter}}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                &lt; Previous
+            </a>
 
-                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
+            <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
 
-                <a href="?page={{ .nextPage }}"
-                   data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                    Next &gt;
-                </a>
-            </div>
-        </div>
+            <a href="?page={{ .nextPage }}&exchange={{.selectedFilter}}"
+            data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
+            Next &gt;
+        </a>
     </div>
-    {{ template "footer" }}
+</div>
+</div>
+{{ template "footer" }}
 </body>
 </html>
