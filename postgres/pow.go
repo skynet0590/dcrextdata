@@ -71,7 +71,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var result []pow.PowDataDto
 	for _, item := range powDatum {
 		networkHashRate, err := strconv.ParseInt(item.NetworkHashrate.String, 10, 64)

@@ -5,6 +5,7 @@ import { hide, show, date } from '../utils'
 export default class extends Controller {
   static get targets () {
     return [
+<<<<<<< HEAD
       'selectedFilter', 'exchangeTable', 'selectedCpair',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'exRowTemplate', 'currentPage', 'selectedNum'

@@ -27,6 +27,53 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
+	var allExhangeTicksSlice []ticks.TickDto
+	
+	// var err error
+	allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
+	allExhangeSlice, err := s.db.AllExchange(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
+	totalCount, err := s.db.AllExchangeTicksCount(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	data := map[string]interface{}{
+		"exData":         allExhangeTicksSlice,
+		"allExData":      allExhangeSlice,
+		"currentPage":    pageToLoad,
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	s.render("exchange.html", data, res)
+}
+
+func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedFilter := req.FormValue("filter")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
 	
 	// var err error
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
@@ -44,11 +91,6 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	// totalCount, err := s.db.AllExchangeTicksCount(ctx)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
@@ -59,12 +101,12 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"selectedFilter": "All",
 	}
 
+	defer RenderJSON(data, res)
+
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
-
-	s.render("exchange.html", data, res)
 }
 
 func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
