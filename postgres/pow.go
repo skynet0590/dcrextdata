@@ -71,7 +71,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 	if err != nil {
 		return nil, err
 	}
-
+	
 	var result []pow.PowDataDto
 	for _, item := range powDatum {
 		networkHashRate, err := strconv.ParseInt(item.NetworkHashrate.String, 10, 64)
@@ -100,7 +100,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time:              time.Unix(int64(item.Time), 0),
+			Time:              time.Unix(int64(item.Time), 0).UTC(),
 			NetworkHashrate:   networkHashRate,
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),
@@ -152,7 +152,7 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time:              time.Unix(int64(item.Time), 0),
+			Time:              time.Unix(int64(item.Time), 0).UTC(),
 			NetworkHashrate:   networkHashRate,
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),

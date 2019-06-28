@@ -8,29 +8,25 @@
             <div class="container">
                 <table class="table">
                     <thead>
-                        <tr>
-                            <th>Source</th>
-                            <th>Coin Price</th>
-                            <th>BTC Price</th>
-                            <th>Network Hashrate</th>
-                            <th>Pool Hashrate</th>
-                            <th>Workers</th>
-                            <th>Network Difficulty</th>
-                            <th>Time</th>
-                        </tr>
+                    <tr>
+                        <th>Source</th>
+                        <th>Network Hashrate</th>
+                        <th>Pool Hashrate</th>
+                        <th>Workers</th>
+                        <th>Network Difficulty</th>
+                        <th>Time</th>
+                    </tr>
                     </thead>
                     <tbody data-target="">
                         {{range $index, $powdata := .powData}}
                         <tr>
-                            <td>{{$powdata.Source}}</td>
-                            <td>{{$powdata.CoinPrice}}</td>
-                            <td>{{$powdata.BtcPrice}}</td>
-                            <td>{{$powdata.NetworkHashrate}}</td>
-                            <td>{{$powdata.PoolHashrate}}</td>
-                            <td>{{$powdata.Workers}}</td>
-                            <td>{{$powdata.NetworkDifficulty}}</td>
-                            <td>{{$powdata.Time}}</td>
-                        </tr>
+                            <td>{{$powdata.Source}}</th>
+                            <td>{{$powdata.NetworkHashrate}}</th>
+                            <td>{{$powdata.PoolHashrate}}</th>
+                            <td>{{$powdata.Workers}}</th>
+                            <td>{{$powdata.NetworkDifficulty}}</th>
+                            <td>{{$powdata.Time}}</th>
+                         </tr>
                         {{end}}
                     </tbody>
                 </table>
