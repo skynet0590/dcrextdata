@@ -49,6 +49,12 @@ export default class extends Controller {
         // _this.previousPageButtonTarget.textContent = result.selectedFilter
         _this.nextPage = result.nextPage
         _this.selectedFilter = result.selectedFilter
+        if (result.nextPage >= 2) {
+          _this.previousPageButtonTarget.setAttribute('href', `?page=${result.nextPage - 1}&exchange=${_this.selectedFilterTarget.value}`)
+        } else {
+          _this.previousPageButtonTarget.setAttribute('href', `?page=1&exchange=${_this.selectedFilterTarget.value}`)
+        }
+        _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&exchange=${_this.selectedFilterTarget.value}`)
         _this.displayExchange(result.exData)
       }).catch(function (e) {
         console.log(e)
