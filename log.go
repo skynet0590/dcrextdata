@@ -6,12 +6,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/raedahgroup/dcrextdata/mempool"
 	"os"
 
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
 	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"

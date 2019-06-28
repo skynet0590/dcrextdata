@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 	"strings"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) error {
@@ -51,7 +51,7 @@ func (pg *PgDb) MempoolCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error) {
-	mempoolSlice, err := models.Mempools(qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	mempoolSlice, err := models.Mempools(qm.OrderBy(models.MempoolColumns.Time), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error) {
-	blockSlice, err := models.Blocks(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	blockSlice, err := models.Blocks(qm.OrderBy(models.BlockColumns.ReceiveTime),qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 }
 
 func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vote, error) {
-	voteSlice, err := models.Votes(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	voteSlice, err := models.Votes(qm.OrderBy(models.VoteColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +158,4 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 
 func (pg *PgDb) VotesCount(ctx context.Context) (int64, error) {
 	return models.Votes().Count(ctx, pg.db)
-}
-
-func (pg *PgDb) CountVotes(ctx context.Context) (int64, error) {
-	return 0, nil
 }
