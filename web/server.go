@@ -25,12 +25,14 @@ type DataQuery interface {
 	AllExchangeTicksCount(ctx context.Context) (int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
+	FetchExchangeTicksCount(ctx context.Context, name string) (int64, error)
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
-	VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
+	FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
+	FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error) 
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTickCount(ctx context.Context) (int64, error)
-
+	
 	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowData(ctx context.Context) (int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)

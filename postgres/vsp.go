@@ -173,7 +173,7 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
 }
 
 // VSPTicks
-func (pg *PgDb) VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error) {
+func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error) {
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
@@ -239,4 +239,15 @@ func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.V
 
 func (pg *PgDb) AllVSPTickCount(ctx context.Context) (int64, error) {
 	return models.VSPTicks().Count(ctx, pg.db)
+}
+
+// VSPTicks count by vsp names
+func (pg *PgDb) FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error) {
+	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
+	if err != nil {
+		return 0, err
+	}
+
+	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vspInfo.ID)
+	return models.VSPTicks(qm.Load("VSP"), vspIdQuery).Count(ctx, pg.db)
 }

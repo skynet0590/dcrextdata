@@ -10,7 +10,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
-const (
+var (
 	recordsPerPage = 20
 )
 
@@ -27,10 +27,9 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	var allExhangeTicksSlice []ticks.TickDto
 	
 	// var err error
-	allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -66,6 +65,14 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	req.ParseForm()
 	page := req.FormValue("page")
 	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	}else {
+		recordsPerPage = numRows
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -76,27 +83,33 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 	ctx := context.Background()
 	var allExhangeTicksSlice []ticks.TickDto
-	// var err error
-	if selectedFilter == "All" {
+	var totalCount int64
+	if selectedFilter == "All" || selectedFilter == "" {
 		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
+		}
+
+		totalCount, err = s.db.AllExchangeTicksCount(ctx)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
 	} else {
 		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
+
+		totalCount, err = s.db.FetchExchangeTicksCount(ctx, selectedFilter)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	totalCount, err := s.db.AllExchangeTicksCount(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
@@ -149,7 +162,7 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else {
-		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -185,8 +198,74 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("vsp.html", data, res)
 }
 
-// /pow
-func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
+func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	filter := req.Form["vsp"]
+
+	var selectedFilter string
+	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
+		selectedFilter = "All"
+	} else {
+		selectedFilter = filter[0]
+	}
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	var allVSPSlice []vsp.VSPTickDto
+	var totalCount int64
+	if selectedFilter == "All" {
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalCount, err = s.db.AllVSPTickCount(ctx)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+	} else {
+		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalCount, err = s.db.FiltredVSPTicksCount(ctx, selectedFilter)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+	}
+
+	allVspData, err := s.db.FetchVSPs(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
+	data := map[string]interface{}{
+		"vspData":        allVSPSlice,
+		"allVspData":     allVspData,
+		"selectedFilter": selectedFilter,
+		"currentPage":    pageToLoad,
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(allVSPSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	s.render("vsp.html", data, res)
+}
+
+func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
 

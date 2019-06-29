@@ -2,24 +2,42 @@
 <html lang="en">
 {{ template "html-head" }}
 <body>
-<div data-controller="exchange">
-    <div class="body">
+    <div class="body" data-controller="exchange">
+
         {{ template "header" }}
         <div class="content">
             <div class="container">
-                <div class="row">
+                <div class="row align-items-center">
                     <div class="col-md-3 col-sm-12 mb-2">
                         <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                             class="form-control" style="width: 150px;">
-                            {{$selectedFilter := .selectedFilter}}
                             <option value="All">All</option>
-
                             {{ range $index, $filter := .allExData}}
                             <option value="{{$filter.Name}}">{{$filter.Name}}</option>
                             {{ end }}
                         </select>
                     </div>
+                    <div class="col-md-4 float-md-right offset-md-5">
+                    <div class="d-flex float-md-right">
+                        <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="150">150</option>
+                        </select>
+                    
+                        <div class="row float-md-right">
+                        <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                             <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                        </div>
+                    </div> 
+                    </div>
                 </div>
+
                 <table class="table">
                     <thead>
                         <tr>
@@ -64,20 +82,9 @@
                         <td></td>
                     </tr>
                 </template>
-
-                <a href="?page={{ .previousPage }}&exchange={{.selectedFilter}}" data-target="exchange.previousPageButton" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                    &lt; Previous
-                </a>
-
-                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
-
-                <a href="?page={{ .nextPage }}&exchange={{.selectedFilter}}" data-target="exchange.nextPageButton" data-next-page="{{ .nextPage }}"  data-filter="{{ .selectedFilter }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                Next &gt;
-            </a>
+            </div>
         </div>
     </div>
-</div>
-</div>
-{{ template "footer" }}
+    {{ template "footer" }}
 </body>
 </html>

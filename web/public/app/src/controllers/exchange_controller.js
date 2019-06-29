@@ -1,28 +1,36 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
+import { hide, show } from '../utils'
 
 export default class extends Controller {
   static get targets () {
     return [
       'selectedFilter', 'exchangeTable',
-      'previousPageButton', 'pageReport', 'nextPageButton',
-      'exRowTemplate'
+      'previousPageButton', 'totalPageCount', 'nextPageButton',
+      'exRowTemplate', 'currentPage', 'selectedNum'
     ]
   }
 
-  initialize () {
-    // hide next page button to use infinite scroll
-    // hide(this.previousPageButtonTarget)
-    // hide(this.nextPageButtonTarget)
-    // hide(this.pageReportTarget)
-
-    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.selectedFilter = this.nextPageButtonTarget.getAttribute('data-filter')
-
-    if (this.nextPage) {
-      // check if there is space at the bottom to load more now
-      this.fetchExchange()
+  loadPreviousPage () {
+    this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
+    if (this.nextPage <= 1) {
+      hide(this.previousPageButtonTarget)
     }
+    this.exchangeTableTarget.innerHTML = ''
+    this.fetchExchange()
+  }
+
+  loadNextPage () {
+    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
+    this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
+    if (this.nextPage > 1) {
+      show(this.previousPageButtonTarget)
+    }
+    if (this.totalPages === this.nextPage) {
+      hide(this.nextPageButtonTarget)
+    }
+    this.exchangeTableTarget.innerHTML = ''
+    this.fetchExchange()
   }
 
   selectedFilterChanged () {
@@ -31,30 +39,31 @@ export default class extends Controller {
     this.fetchExchange()
   }
 
+  NumberOfRowsChanged () {
+    this.exchangeTableTarget.innerHTML = ''
+    this.nextPage = 1
+    this.fetchExchange()
+  }
+
   fetchExchange () {
     const selectedFilter = this.selectedFilterTarget.value
+    const numberOfRows = this.selectedNumTarget.value
 
     const _this = this
-    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}`)
+    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
       // since results are appended to the table, discard this response
       // if the user has changed the filter before the result is gotten
         if (_this.selectedFilterTarget.value !== selectedFilter) {
           return
         }
-        console.log(response.data)
 
         let result = response.data
-        // _this.nextPageButtonTarget = result.selectedFilter
-        // _this.previousPageButtonTarget.textContent = result.selectedFilter
-        _this.nextPage = result.nextPage
-        _this.selectedFilter = result.selectedFilter
-        if (result.nextPage >= 2) {
-          _this.previousPageButtonTarget.setAttribute('href', `?page=${result.nextPage - 1}&exchange=${_this.selectedFilterTarget.value}`)
-        } else {
-          _this.previousPageButtonTarget.setAttribute('href', `?page=1&exchange=${_this.selectedFilterTarget.value}`)
-        }
-        _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&exchange=${_this.selectedFilterTarget.value}`)
+        _this.totalPageCountTarget.textContent = result.totalPages
+        _this.currentPageTarget.textContent = result.currentPage
+        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+        _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
         _this.displayExchange(result.exData)
       }).catch(function (e) {
         console.log(e)
