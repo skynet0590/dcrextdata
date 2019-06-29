@@ -286,6 +286,11 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
 	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
@@ -294,6 +299,7 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 
 	data := map[string]interface{}{
 		"powData":      allPowDataSlice,
+		"powSource": powSource,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),

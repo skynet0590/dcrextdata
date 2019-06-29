@@ -169,3 +169,20 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64, error) {
 	return models.PowData(models.PowDatumWhere.Source.EQ(source)).Count(ctx, pg.db)
 }
+
+// todo impliment sorting for PoW data as it is currently been sorted by time
+func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error) {
+	powDatum, err := models.PowData(qm.Select("source"), qm.GroupBy("source")).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []pow.PowDataSource
+	for _, item := range powDatum {
+		result = append(result, pow.PowDataSource{
+			Source:            item.Source.String,
+		})
+	}
+
+	return result, nil
+}

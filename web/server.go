@@ -37,6 +37,7 @@ type DataQuery interface {
 	CountPowData(ctx context.Context) (int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
+	FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
@@ -153,7 +154,6 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-<<<<<<< HEAD
 	r.Get("/", s.getExchangeTicks)
 	r.Get("/filteredEx", s.GetFilteredExchangeTicks)
 	r.Get("/vspticks", s.getVspTicks)
