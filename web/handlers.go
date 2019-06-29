@@ -82,6 +82,7 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
+
 	var allExhangeTicksSlice []ticks.TickDto
 	var totalCount int64
 	if selectedFilter == "All" || selectedFilter == "" {
@@ -201,13 +202,14 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	filter := req.Form["vsp"]
+	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
 
-	var selectedFilter string
-	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
-		selectedFilter = "All"
-	} else {
-		selectedFilter = filter[0]
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	}else {
+		recordsPerPage = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
@@ -221,7 +223,7 @@ func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
-	if selectedFilter == "All" {
+	if selectedFilter == "All" || selectedFilter == ""{
 		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
@@ -257,12 +259,12 @@ func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
+	defer RenderJSON(data, res)
+
 	totalTxLoaded := int(offset) + len(allVSPSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
-
-	s.render("vsp.html", data, res)
 }
 
 func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
