@@ -358,6 +358,11 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 		panic(err) // todo add appropraite error handler
 	}
 
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+
 	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
