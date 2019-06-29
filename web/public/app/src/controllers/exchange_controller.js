@@ -46,6 +46,12 @@ export default class extends Controller {
     this.fetchExchange()
   }
 
+  NumberOfRowsChanged () {
+    this.exchangeTableTarget.innerHTML = ''
+    this.nextPage = 1
+    this.fetchExchange()
+  }
+
   fetchExchange () {
     this.exchangeTableTarget.innerHTML = ''
 

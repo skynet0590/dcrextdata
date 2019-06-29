@@ -175,6 +175,17 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
+func (pg *PgDb) FetchExchangeTicksCount(ctx context.Context, name string) (int64, error) {
+	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
+	if err != nil {
+		return 0, err
+	}
+
+	idQuery := models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
+	return models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
+}
+
+// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 // todo impliment sorting for Exchange ticks as it is currently been sorted by time
 func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	var exchangeTickSlice  models.ExchangeTickSlice

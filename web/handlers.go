@@ -27,10 +27,9 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	var allExhangeTicksSlice []ticks.TickDto
 	
 	// var err error
-	allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -66,6 +65,14 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	req.ParseForm()
 	page := req.FormValue("page")
 	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	}else {
+		recordsPerPage = numRows
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -160,6 +167,11 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		}
 	}  else {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalCount, err = s.db.FetchExchangeTicksCount(ctx, selectedFilter)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
