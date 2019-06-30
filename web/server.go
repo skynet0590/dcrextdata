@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -37,7 +38,7 @@ type DataQuery interface {
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
-	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error)
+	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
 
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error)
@@ -82,6 +83,7 @@ func (s *Server) loadTemplates() {
 		"exchange.html": "web/views/exchange.html",
 		"vsp.html":      "web/views/vsp.html",
 		"pow.html":      "web/views/pow.html",
+		"mempool.html":  "web/views/mempool.html",
 	}
 
 	for i, v := range tpls {
@@ -101,22 +103,16 @@ func templateFuncMap() template.FuncMap {
 		"incByOne": func(number int) int {
 			return number + 1
 		},
+		"formatDate": func(date time.Time) string {
+			return date.Format("2006-01-02 15:04")
+		},
+		"formatDateMilli": func(date time.Time) string {
+			return date.Format("2006-01-02 15:04:05.99")
+		},
+		"normalizeBalance": func(balance float64) string {
+			return fmt.Sprintf("%010.8f DCR", balance)
+		},
 	}
-}
-
-func (s *Server) render(tplName string, data map[string]interface{}, res http.ResponseWriter) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	if tpl, ok := s.templates[tplName]; ok {
-		err := tpl.Execute(res, data)
-		if err != nil {
-			log.Fatalf("error executing template: %s", err.Error())
-		}
-		return
-	}
-
-	log.Fatalf("template %s is not registered", tplName)
 }
 
 func FileServer(r chi.Router, path string, root http.FileSystem) {
@@ -144,4 +140,5 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Post("/vspticks", s.getVspTicks)
 	r.Get("/pow", s.getPowData)
 	r.Get("/mempool", s.mempoolPage)
+	r.Get("/getmempool", s.getMempool)
 }

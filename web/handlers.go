@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	recordsPerPage   = 20
+	recordsPerPage = 20
 )
 
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -31,31 +31,35 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage  
+	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
 	var allExhangeTicksSlice []ticks.TickDto
 	// var err error
 	if selectedFilter == "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage  )
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
 		if err != nil {
-			panic(err)  // todo add appropraite error handler
+			s.renderError(err.Error(), res)
+			return
 		}
 	} else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage  )
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
-			panic(err)  // todo add appropraite error handler
+			s.renderError(err.Error(), res)
+			return
 		}
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	totalCount, err := s.db.AllExchangeTicksCount(ctx)
 	if err != nil {
-		panic(err)
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	data := map[string]interface{}{
@@ -64,7 +68,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"selectedFilter": selectedFilter,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -92,31 +96,35 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage  
+	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
 
 	var allVSPSlice []vsp.VSPTickDto
 	if selectedFilter == "All" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage  )
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
 		if err != nil {
-			panic(err)  // todo add appropraite error handler
+			s.renderError(err.Error(), res)
+			return
 		}
 	} else {
-		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage  )
+		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
-			panic(err)  // todo add appropraite error handler
+			s.renderError(err.Error(), res)
+			return
 		}
 	}
 
 	allVspData, err := s.db.FetchVSPs(ctx)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	totalCount, err := s.db.AllVSPTickCount(ctx)
 	if err != nil {
-		panic(err)  // todo add appropraite error handler
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	data := map[string]interface{}{
@@ -125,7 +133,7 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 		"selectedFilter": selectedFilter,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
@@ -145,25 +153,27 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage  
+	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
 
-	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage  )
+	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	data := map[string]interface{}{
 		"powData":      allPowDataSlice,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allPowDataSlice)
@@ -175,6 +185,28 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchMempoolData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	s.render("mempool.html", data, res)
+}
+
+func (s *Server) getMempool(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchMempoolData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 
@@ -187,21 +219,21 @@ func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	mempoolSlice, err := s.db.Mempools(ctx, offset, recordsPerPage  )
+	mempoolSlice, err := s.db.Mempools(ctx, offset, recordsPerPage)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		return nil, err
 	}
 
 	totalCount, err := s.db.MempoolCount(ctx)
 	if err != nil {
-		panic(err) // todo add appropraite error handler
+		return nil, err
 	}
 
 	data := map[string]interface{}{
-		"mempoolData":      mempoolSlice,
-		"currentPage":  int(pageToLoad),
+		"mempoolData":  mempoolSlice,
+		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage ))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
@@ -209,5 +241,5 @@ func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
 
-	s.render("mempool.html", data, res)
+	return data, nil
 }

@@ -22,7 +22,7 @@ func NewCollector(config *rpcclient.ConnConfig, activeChain *chaincfg.Params, da
 	return &Collector{
 		dcrdClientConfig: config,
 		dataStore:        dataStore,
-		activeChain: activeChain,
+		activeChain:      activeChain,
 	}
 }
 
@@ -84,10 +84,10 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 			}
 
 			block := Block{
-				BlockInternalTime:blockHeader.Timestamp,
-				BlockReceiveTime:time.Now(),
-				BlockHash:blockHeader.BlockHash().String(),
-				BlockHeight: blockHeader.Height,
+				BlockInternalTime: blockHeader.Timestamp,
+				BlockReceiveTime:  time.Now(),
+				BlockHash:         blockHeader.BlockHash().String(),
+				BlockHeight:       blockHeader.Height,
 			}
 			if err = c.dataStore.SaveBlock(ctx, block); err != nil {
 				log.Error(err)
@@ -130,7 +130,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),
 			Time:                 time.Now(),
-			FirstSeenTime:        time.Now(),//todo: use the time of the first tx in the mempool
+			FirstSeenTime:        time.Now(), //todo: use the time of the first tx in the mempool
 		}
 
 		for hashString, tx := range mempoolTransactionMap {

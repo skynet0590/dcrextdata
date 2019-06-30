@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "html-head" }}
+<body data-controller="receive">
+<div class="body">
+    {{ template "header" }}
+    <div class="content">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6" data-controller="mempool">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Date (UTC)</th>
+                            <th># of Txs</th>
+                            <th>Size (B)</th>
+                            <th>Total Fees</th>
+                        </tr>
+                        </thead>
+                        <tbody data-target="mempool.tableBody">
+                        {{range $index, $mempool := .mempoolData}}
+                            <tr>
+                                <td>{{$mempool.Time}}</td>
+                                <td>{{$mempool.NumberOfTransactions}}</td>
+                                <td>{{$mempool.Size}}</td>
+                                <td>{{normalizeBalance $mempool.TotalFee}}</td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+
+                    <template data-target="mempool.rowTemplate">
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
+
+                    <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .previousPage}}"
+                            class="btn btn-link mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
+                        &lt; Previous
+                    </button>
+
+                    <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .currentPage }}">
+                        Page <span data-target="mempool.currentPage" data-current-page="{{ .currentPage }}">{{ .currentPage }}</span> of
+                        <span data-target="mempool.totalPageCount">{{ .totalPages }}</span>
+                    </span>
+
+                    <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
+                       data-next-page="{{ .nextPage }}" class="btn btn-link ml-2 {{ if not .nextPage }}d-none{{ end }}">
+                        Next &gt;
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{{ template "footer" }}
+</body>
+</html>
