@@ -160,6 +160,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Post("/vspticks", s.getVspTicks)
 	r.Get("/filteredvspticks", s.GetFilteredVspTicks)
 	r.Get("/pow", s.getPowData)
+	r.Get("/filteredpow", s.GetFilteredPowData)
 	r.Get("/mempool", s.mempoolPage)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/getblocks", s.getBlocks)

@@ -313,6 +313,69 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 	s.render("pow.html", data, res)
 }
 
+func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	data := map[string]interface{}{}
+	defer RenderJSON(data, res)
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	}else {
+		recordsPerPage = numRows
+	}
+
+	var totalCount int64
+	var totalTxLoaded int
+	if selectedFilter == "All" || selectedFilter == "" {
+		allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		data["powData"] = allPowDataSlice
+
+		totalCount, err = s.db.CountPowData(ctx)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalTxLoaded = int(offset) + len(allPowDataSlice)
+	}else{
+		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx , selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+		
+		data["powData"] = allPowDataSlice
+
+		totalCount, err = s.db.CountPowDataBySource(ctx , selectedFilter)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalTxLoaded = int(offset) + len(allPowDataSlice)
+	}
+
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+		panic(err) // todo add appropraite error handler
+	}
+	
+	data["powSource"] = powSource
+	data["currentPage"] = int(pageToLoad)
+	data["previousPage"] = int(pageToLoad - 1)
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(recordsPerPage)))
+
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+}
+
 // /mempool
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}

@@ -14,7 +14,7 @@
                             <option value="All">All</option>
 
                             {{ range $index, $filter := .powSource}}
-                            <option value="{{$filter}}">{{$filter}}</option>
+                            <option value="{{$filter.Source}}">{{$filter.Source}}</option>
                             {{ end }}
                         </select>
                     </div>
@@ -50,7 +50,7 @@
                         <th>Time</th>
                     </tr>
                     </thead>
-                    <tbody data-target="">
+                    <tbody data-target="pow.powTable">
                         {{range $index, $powdata := .powData}}
                         <tr>
                             <td>{{$powdata.Source}}</th>
@@ -63,16 +63,17 @@
                         {{end}}
                     </tbody>
                 </table>
-                <a href="?page={{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                    &lt; Previous
-                </a>
-
-                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
-
-                <a href="?page={{ .nextPage }}"
-                data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                Next &gt;
-            </a>
+                
+                <template data-target="pow.powRowTemplate">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </template>
         </div>
     </div>
 </div>
