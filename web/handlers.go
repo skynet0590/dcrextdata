@@ -401,6 +401,15 @@ func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		recordsPerPage = numRows
 	}
 
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
 	var totalCount int64
 	var totalTxLoaded int
 	if selectedFilter == "All" || selectedFilter == "" {
