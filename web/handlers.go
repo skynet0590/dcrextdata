@@ -29,7 +29,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 	
 	// var err error
-	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -44,10 +44,10 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	totalCount, err := s.db.AllExchangeTicksCount(ctx)
-	if err != nil {
-		panic(err)
-	}
+	// totalCount, err := s.db.AllExchangeTicksCount(ctx)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
