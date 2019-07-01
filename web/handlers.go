@@ -185,11 +185,31 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
-	data, err := s.fetchMempoolData(req)
+	data := map[string]interface{}{}
+
+	mempoolData, err := s.fetchMempoolData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
+
+	data["mempool"] = mempoolData
+
+	block, err := s.fetchBlockData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["blocks"] = block
+
+	votes, err := s.fetchVoteData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["votes"] = votes
 
 	s.render("mempool.html", data, res)
 }
@@ -237,6 +257,106 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	return data, nil
+}
+
+func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchBlockData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	blockSlice, err := s.db.Blocks(ctx, offset, recordsPerPage)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := s.db.BlockCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{
+		"records":  blockSlice,
+		"currentPage":  pageToLoad,
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(blockSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	return data, nil
+}
+
+func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchVoteData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error) {
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	voteSlice, err := s.db.Votes(ctx, offset, recordsPerPage)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := s.db.BlockCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{
+		"records":  voteSlice,
+		"currentPage":  pageToLoad,
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(voteSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}

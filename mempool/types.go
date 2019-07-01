@@ -43,11 +43,25 @@ type Block struct {
 	BlockHash         string
 }
 
+type BlockDto struct {
+	BlockReceiveTime  string `json:"block_receive_time"`
+	BlockInternalTime string `json:"block_internal_time"`
+	BlockHeight       uint32 `json:"block_height"`
+	BlockHash         string `json:"block_hash"`
+}
+
 type Vote struct {
 	Hash        string
 	ReceiveTime time.Time
 	VotingOn    int64
 	ValidatorId int
+}
+
+type VoteDto struct {
+	Hash        string `json:"hash"`
+	ReceiveTime string `json:"receive_time"`
+	VotingOn    int64 `json:"voting_on"`
+	ValidatorId int `json:"validator_id"`
 }
 
 type DataStore interface {

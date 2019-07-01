@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -98,20 +99,20 @@ func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
 	return models.Blocks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error) {
+func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
 	blockSlice, err := models.Blocks(qm.OrderBy(models.BlockColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	var blocks []mempool.Block
+	var blocks []mempool.BlockDto
 
 	for _, block := range blockSlice {
-		blocks = append(blocks, mempool.Block{
-			BlockHash:         block.Hash.String,
+		blocks = append(blocks, mempool.BlockDto{
+			BlockHash:         fmt.Sprintf("...%s", block.Hash.String[len(block.Hash.String) - 23:]),
 			BlockHeight:       uint32(block.Height),
-			BlockInternalTime: int64ToTime(block.InternalTimestamp.Int64),
-			BlockReceiveTime:  int64ToTime(block.ReceiveTime.Int64),
+			BlockInternalTime: int64ToTime(block.InternalTimestamp.Int64).Format(dateMiliTemplate),
+			BlockReceiveTime:  int64ToTime(block.ReceiveTime.Int64).Format(dateMiliTemplate),
 		})
 	}
 
@@ -137,17 +138,17 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	return nil
 }
 
-func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vote, error) {
+func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error) {
 	voteSlice, err := models.Votes(qm.OrderBy(models.VoteColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	var votes []mempool.Vote
+	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
-		votes = append(votes, mempool.Vote{
-			Hash:        vote.Hash,
-			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64),
+		votes = append(votes, mempool.VoteDto{
+			Hash:        fmt.Sprintf("...%s", vote.Hash[len(vote.Hash) - 23:]),
+			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64).Format(dateMiliTemplate),
 			VotingOn:    vote.VotingOn.Int64,
 			ValidatorId: vote.ValidatorID.Int,
 		})

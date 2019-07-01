@@ -41,7 +41,10 @@ type DataQuery interface {
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
 
 	BlockCount(ctx context.Context) (int64, error)
-	Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error)
+	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
+
+	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
+	VotesCount(ctx context.Context) (int64, error)
 }
 
 type Server struct {
@@ -141,4 +144,6 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/pow", s.getPowData)
 	r.Get("/mempool", s.mempoolPage)
 	r.Get("/getmempool", s.getMempool)
+	r.Get("/getblocks", s.getBlocks)
+	r.Get("/getvotes", s.getVotes)
 }
