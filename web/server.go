@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"sync"
 	"text/template"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -80,44 +78,6 @@ func StartHttpServer(httpHost, httpPort string, db DataQuery) {
 	}
 }
 
-func (s *Server) loadTemplates() {
-	layout := "web/views/layout.html"
-	tpls := map[string]string{
-		"exchange.html": "web/views/exchange.html",
-		"vsp.html":      "web/views/vsp.html",
-		"pow.html":      "web/views/pow.html",
-		"mempool.html":  "web/views/mempool.html",
-	}
-
-	for i, v := range tpls {
-		tpl, err := template.New(i).Funcs(templateFuncMap()).ParseFiles(v, layout)
-		if err != nil {
-			log.Fatalf("error loading templates: %s", err.Error())
-		}
-
-		s.lock.Lock()
-		s.templates[i] = tpl
-		s.lock.Unlock()
-	}
-}
-
-func templateFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"incByOne": func(number int) int {
-			return number + 1
-		},
-		"formatDate": func(date time.Time) string {
-			return date.Format("2006-01-02 15:04")
-		},
-		"formatDateMilli": func(date time.Time) string {
-			return date.Format("2006-01-02 15:04:05.99")
-		},
-		"normalizeBalance": func(balance float64) string {
-			return fmt.Sprintf("%010.8f DCR", balance)
-		},
-	}
-}
-
 func FileServer(r chi.Router, path string, root http.FileSystem) {
 	if strings.ContainsAny(path, "{}*") {
 		panic("FileServer does not permit URL parameters.")
@@ -146,4 +106,5 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/getvotes", s.getVotes)
+	r.Get("/propagation", s.propagation)
 }

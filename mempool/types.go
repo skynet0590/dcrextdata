@@ -25,15 +25,15 @@ type Mempool struct {
 }
 
 type MempoolDto struct {
-	Time                 string `json:"time"`
-	FirstSeenTime        string `json:"first_seen_time"`
-	NumberOfTransactions int       `json:"number_of_transactions"`
-	Voters               int       `json:"voters"`
-	Tickets              int       `json:"tickets"`
-	Revocations          int       `json:"revocations"`
-	Size                 int32     `json:"size"`
-	TotalFee             float64   `json:"total_fee"`
-	Total                float64   `json:"total"`
+	Time                 string  `json:"time"`
+	FirstSeenTime        string  `json:"first_seen_time"`
+	NumberOfTransactions int     `json:"number_of_transactions"`
+	Voters               int     `json:"voters"`
+	Tickets              int     `json:"tickets"`
+	Revocations          int     `json:"revocations"`
+	Size                 int32   `json:"size"`
+	TotalFee             float64 `json:"total_fee"`
+	Total                float64 `json:"total"`
 }
 
 type Block struct {
@@ -60,8 +60,8 @@ type Vote struct {
 type VoteDto struct {
 	Hash        string `json:"hash"`
 	ReceiveTime string `json:"receive_time"`
-	VotingOn    int64 `json:"voting_on"`
-	ValidatorId int `json:"validator_id"`
+	VotingOn    int64  `json:"voting_on"`
+	ValidatorId int    `json:"validator_id"`
 }
 
 type DataStore interface {

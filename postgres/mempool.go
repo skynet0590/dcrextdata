@@ -109,7 +109,7 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 
 	for _, block := range blockSlice {
 		blocks = append(blocks, mempool.BlockDto{
-			BlockHash:         fmt.Sprintf("...%s", block.Hash.String[len(block.Hash.String) - 23:]),
+			BlockHash:         fmt.Sprintf("...%s", block.Hash.String[len(block.Hash.String)-23:]),
 			BlockHeight:       uint32(block.Height),
 			BlockInternalTime: int64ToTime(block.InternalTimestamp.Int64).Format(dateMiliTemplate),
 			BlockReceiveTime:  int64ToTime(block.ReceiveTime.Int64).Format(dateMiliTemplate),
@@ -147,7 +147,7 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
 		votes = append(votes, mempool.VoteDto{
-			Hash:        fmt.Sprintf("...%s", vote.Hash[len(vote.Hash) - 23:]),
+			Hash:        fmt.Sprintf("...%s", vote.Hash[len(vote.Hash)-23:]),
 			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64).Format(dateMiliTemplate),
 			VotingOn:    vote.VotingOn.Int64,
 			ValidatorId: vote.ValidatorID.Int,

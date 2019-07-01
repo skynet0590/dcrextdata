@@ -7,7 +7,7 @@
     <div class="content">
         <div class="container">
             <div class="row">
-                <div class="col-md-6" data-controller="mempool">
+                <div class="col-md-8" data-controller="mempool">
                     <h4>Mempool</h4>
                     <table class="table">
                         <thead>
@@ -55,101 +55,6 @@
                     </button>
                 </div>
 
-                <div class="col-md-6" data-controller="blocks">
-                    <h4>Blocks</h4>
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th>Receive Time</th>
-                            <th>Height</th>
-                            <th>Hash</th>
-                        </tr>
-                        </thead>
-                        <tbody data-target="blocks.tableBody">
-                        {{range $index, $block := .blocks.records}}
-                            <tr>
-                                <td>{{$block.BlockReceiveTime}}</td>
-                                <td>{{$block.BlockHeight}}</td>
-                                <td>{{$block.BlockHash}}</td>
-                            </tr>
-                        {{end}}
-                        </tbody>
-                    </table>
-
-                    <template data-target="blocks.rowTemplate">
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </template>
-
-                    <button data-target="blocks.previousPageButton" data-action="click->blocks#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
-                            class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
-                        &lt; Previous
-                    </button>
-
-                    <span data-target="blocks.pageReport" class="text-muted" data-current-page="{{ .blocks.currentPage }}">
-                        Page <span data-target="blocks.currentPage" data-current-page="{{ .blocks.currentPage }}">{{ .blocks.currentPage }}</span> of
-                        <span data-target="blocks.totalPageCount">{{ .blocks.totalPages }}</span>
-                    </span>
-
-                    <button data-target="blocks.nextPageButton" data-action="click->blocks#gotoNextPage"
-                            data-next-page="{{ .blocks.nextPage }}" class="btn btn-link ml-2 {{ if not .blocks.nextPage }}d-none{{ end }}">
-                        Next &gt;
-                    </button>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-md-6 offset-3" data-controller="votes">
-                    <h4>Votes</h4>
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Hash</th>
-                            <th>VotingOn</th>
-                            <th>Validator ID</th>
-                        </tr>
-                        </thead>
-                        <tbody data-target="votes.tableBody">
-                        {{range $index, $vote := .votes.records}}
-                            <tr>
-                                <td>{{$vote.ReceiveTime}}</td>
-                                <td>{{$vote.Hash}}</td>
-                                <td>{{$vote.VotingOn}}</td>
-                                <td>{{$vote.ValidatorId}}</td>
-                            </tr>
-                        {{end}}
-                        </tbody>
-                    </table>
-
-                    <template data-target="votes.rowTemplate">
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </template>
-
-                    <button data-target="votes.previousPageButton" data-action="click->votes#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
-                            class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
-                        &lt; Previous
-                    </button>
-
-                    <span data-target="votes.pageReport" class="text-muted" data-current-page="{{ .votes.currentPage }}">
-                        Page <span data-target="votes.currentPage" data-current-page="{{ .votes.currentPage }}">{{ .votes.currentPage }}</span> of
-                        <span data-target="votes.totalPageCount">{{ .votes.totalPages }}</span>
-                    </span>
-
-                    <button data-target="votes.nextPageButton" data-action="click->votes#gotoNextPage"
-                            data-next-page="{{ .votes.nextPage }}" class="btn btn-link ml-2 {{ if not .votes.nextPage }}d-none{{ end }}">
-                        Next &gt;
-                    </button>
-                </div>
             </div>
         </div>
     </div>

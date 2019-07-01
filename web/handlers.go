@@ -184,6 +184,7 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	s.render("pow.html", data, res)
 }
 
+// /mempool
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
 
@@ -195,25 +196,10 @@ func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 
 	data["mempool"] = mempoolData
 
-	block, err := s.fetchBlockData(req)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data["blocks"] = block
-
-	votes, err := s.fetchVoteData(req)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data["votes"] = votes
-
 	s.render("mempool.html", data, res)
 }
 
+// /getmempool
 func (s *Server) getMempool(res http.ResponseWriter, req *http.Request) {
 	data, err := s.fetchMempoolData(req)
 	defer s.renderJSON(data, res)
@@ -264,6 +250,30 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	return data, nil
 }
 
+// /propagation
+func (s *Server) propagation(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+
+	block, err := s.fetchBlockData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["blocks"] = block
+
+	votes, err := s.fetchVoteData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["votes"] = votes
+
+	s.render("propagation.html", data, res)
+}
+
+// /getblocks
 func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	data, err := s.fetchBlockData(req)
 	defer s.renderJSON(data, res)
@@ -300,7 +310,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	}
 
 	data := map[string]interface{}{
-		"records":  blockSlice,
+		"records":      blockSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -314,6 +324,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	return data, nil
 }
 
+// /getvotes
 func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 	data, err := s.fetchVoteData(req)
 	defer s.renderJSON(data, res)
@@ -350,7 +361,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	data := map[string]interface{}{
-		"records":  voteSlice,
+		"records":      voteSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
