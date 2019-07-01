@@ -132,10 +132,10 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, error) {
+func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	var idQuery qm.QueryMod
@@ -145,10 +145,14 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
-
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	tickDtos := []ticks.TickDto{}
@@ -167,35 +171,35 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		})
 	}
 
-	return tickDtos, err
-}
-
-// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-func (pg *PgDb) FetchExchangeTicksCount(ctx context.Context, name string) (int64, error) {
-	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-	if err != nil {
-		return 0, err
-	}
-
-	idQuery := models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
-	return models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
+	return tickDtos, exchangeTickSliceCount, err
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 // todo impliment sorting for Exchange ticks as it is currently been sorted by time
-func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, error) {
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	var exchangeTickSlice  models.ExchangeTickSlice
+	var exchangeTickSliceCount int64
 	var err error
 	if currencyPair != "" {
 		idQuery := models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair)
 		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
+		}
+
+		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
+		if err != nil {
+			return nil, 0, err
 		}
 	}else{
 		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
+		}
+
+		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
+		if err != nil {
+			return nil, 0, err
 		}
 	}
 
@@ -215,11 +219,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 		})
 	}
 
-	return tickDtos, err
-}
-
-func (pg *PgDb) AllExchangeTicksCount(ctx context.Context) (int64, error) {
-	return models.ExchangeTicks().Count(ctx, pg.db)
+	return tickDtos, exchangeTickSliceCount, err
 }
 
 func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error) {

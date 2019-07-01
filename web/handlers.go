@@ -29,7 +29,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 	
 	// var err error
-	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -44,10 +44,10 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 	}
 
-	totalCount, err := s.db.AllExchangeTicksCount(ctx)
-	if err != nil {
-		panic(err)
-	}
+	// totalCount, err := s.db.AllExchangeTicksCount(ctx)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
@@ -93,7 +93,7 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var allExhangeTicksSlice []ticks.TickDto
 	var totalCount int64
 	if selectedFilter == "All" && selectedCpair == "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -104,34 +104,19 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 			s.renderError(err.Error(), res)
 			return
 		}
+
 	} else if selectedFilter == "All" && selectedCpair != "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
-		}
-
-		totalCount, err = s.db.AllExchangeTicksCount(ctx)
-		if err != nil {
-			panic(err)
 		}
 	} else if  selectedFilter != "All" && selectedCpair == "All" || selectedFilter == "All" && selectedCpair != "All" {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
-
-		totalCount, err = s.db.AllExchangeTicksCount(ctx)
-		if err != nil {
-			panic(err)
-		}
 	}  else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-
-		totalCount, err = s.db.FetchExchangeTicksCount(ctx, selectedFilter)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
