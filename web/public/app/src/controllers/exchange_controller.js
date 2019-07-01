@@ -5,7 +5,7 @@ import { hide, show } from '../utils'
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'exchangeTable',
+      'selectedFilter', 'exchangeTable', 'selectedCpair',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'exRowTemplate', 'currentPage', 'selectedNum'
     ]
@@ -39,6 +39,12 @@ export default class extends Controller {
     this.fetchExchange()
   }
 
+  selectedCpairChanged () {
+    this.exchangeTableTarget.innerHTML = ''
+    this.nextPage = 1
+    this.fetchExchange()
+  }
+
   NumberOfRowsChanged () {
     this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
@@ -48,9 +54,10 @@ export default class extends Controller {
   fetchExchange () {
     const selectedFilter = this.selectedFilterTarget.value
     const numberOfRows = this.selectedNumTarget.value
+    const selectedCpair = this.selectedCpairTarget.value
 
     const _this = this
-    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
+    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`)
       .then(function (response) {
       // since results are appended to the table, discard this response
       // if the user has changed the filter before the result is gotten

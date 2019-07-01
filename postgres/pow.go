@@ -170,7 +170,6 @@ func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64,
 	return models.PowData(models.PowDatumWhere.Source.EQ(source)).Count(ctx, pg.db)
 }
 
-// todo impliment sorting for PoW data as it is currently been sorted by time
 func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error) {
 	powDatum, err := models.PowData(qm.Select("source"), qm.GroupBy("source")).All(ctx, pg.db)
 	if err != nil {

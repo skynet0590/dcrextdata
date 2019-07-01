@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	// "fmt"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -29,7 +30,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 	
 	// var err error
-	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	allExhangeTicksSlice, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
@@ -37,6 +38,11 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
 		panic(err) // todo add appropraite error handler
+	}
+
+	cpair, err := s.db.AllExchangeTicksCurrencyPair(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	totalCount, err := s.db.AllExchangeTicksCount(ctx)
@@ -47,6 +53,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
+		"cpair": cpair,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -66,6 +73,7 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	page := req.FormValue("page")
 	selectedFilter := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
+	selectedCpair := req.FormValue("selectedCpair")
 
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
@@ -85,8 +93,8 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 	var allExhangeTicksSlice []ticks.TickDto
 	var totalCount int64
-	if selectedFilter == "All" || selectedFilter == "" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	if selectedFilter == "All" && selectedCpair == "All" {
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -97,8 +105,28 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 			s.renderError(err.Error(), res)
 			return
 		}
-	} else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
+	} else if selectedFilter == "All" && selectedCpair != "All" {
+		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalCount, err = s.db.AllExchangeTicksCount(ctx)
+		if err != nil {
+			panic(err)
+		}
+	} else if  selectedFilter != "All" && selectedCpair == "All" || selectedFilter == "All" && selectedCpair != "All" {
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			panic(err) // todo add appropraite error handler
+		}
+
+		totalCount, err = s.db.AllExchangeTicksCount(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}  else {
+		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -350,7 +378,7 @@ func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
-		
+
 		data["powData"] = allPowDataSlice
 
 		totalCount, err = s.db.CountPowDataBySource(ctx , selectedFilter)

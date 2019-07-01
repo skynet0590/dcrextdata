@@ -21,11 +21,14 @@ import (
 )
 
 type DataQuery interface {
-	AllExchangeTicks(ctx context.Context, offset int, limit int) ([]ticks.TickDto, error)
+	AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, error)
 	AllExchangeTicksCount(ctx context.Context) (int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
-	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
+	// FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
+	FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, error)
 	FetchExchangeTicksCount(ctx context.Context, name string) (int64, error)
+	AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error)
+	// FetchExchangeTicksByCurrencyPair(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, error)
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
