@@ -141,7 +141,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 	var idQuery qm.QueryMod
 	if currencyPair != "" {
 		idQuery = qm.Where("(exchange_id=? and currency_pair=?)", exchange.ID, currencyPair)
-	}else{
+	} else {
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
@@ -177,7 +177,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 // todo impliment sorting for Exchange ticks as it is currently been sorted by time
 func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, int64, error) {
-	var exchangeTickSlice  models.ExchangeTickSlice
+	var exchangeTickSlice models.ExchangeTickSlice
 	var exchangeTickSliceCount int64
 	var err error
 	if currencyPair != "" {
@@ -191,7 +191,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 		if err != nil {
 			return nil, 0, err
 		}
-	}else{
+	} else {
 		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err

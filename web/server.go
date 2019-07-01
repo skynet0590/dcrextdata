@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"text/template"
-	"encoding/json"
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -28,10 +28,10 @@ type DataQuery interface {
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
-	FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error) 
+	FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTickCount(ctx context.Context) (int64, error)
-	
+
 	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowData(ctx context.Context) (int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)

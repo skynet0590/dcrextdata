@@ -27,7 +27,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	
+
 	// var err error
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
@@ -52,7 +52,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
-		"cpair": cpair,
+		"cpair":          cpair,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -77,7 +77,7 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
 		recordsPerPage = recordsPerPage
-	}else {
+	} else {
 		recordsPerPage = numRows
 	}
 
@@ -160,12 +160,12 @@ func (s *Server) GetFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
-	} else if  selectedFilter != "All" && selectedCpair == "All" || selectedFilter == "All" && selectedCpair != "All" {
+	} else if selectedFilter != "All" && selectedCpair == "All" || selectedFilter == "All" && selectedCpair != "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
-	}  else {
+	} else {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
@@ -275,7 +275,7 @@ func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
 		recordsPerPage = recordsPerPage
-	}else {
+	} else {
 		recordsPerPage = numRows
 	}
 
@@ -290,7 +290,7 @@ func (s *Server) GetFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
-	if selectedFilter == "All" || selectedFilter == ""{
+	if selectedFilter == "All" || selectedFilter == "" {
 		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
@@ -371,7 +371,7 @@ func (s *Server) GetPowData(res http.ResponseWriter, req *http.Request) {
 
 	data := map[string]interface{}{
 		"powData":      allPowDataSlice,
-		"powSource": powSource,
+		"powSource":    powSource,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -397,7 +397,7 @@ func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
 		recordsPerPage = recordsPerPage
-	}else {
+	} else {
 		recordsPerPage = numRows
 	}
 
@@ -426,15 +426,15 @@ func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		}
 
 		totalTxLoaded = int(offset) + len(allPowDataSlice)
-	}else{
-		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx , selectedFilter, offset, recordsPerPage)
+	} else {
+		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
 
 		data["powData"] = allPowDataSlice
 
-		totalCount, err = s.db.CountPowDataBySource(ctx , selectedFilter)
+		totalCount, err = s.db.CountPowDataBySource(ctx, selectedFilter)
 		if err != nil {
 			panic(err) // todo add appropraite error handler
 		}
@@ -446,7 +446,7 @@ func (s *Server) GetFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	if err != nil {
 		panic(err) // todo add appropraite error handler
 	}
-	
+
 	data["powSource"] = powSource
 	data["currentPage"] = int(pageToLoad)
 	data["previousPage"] = int(pageToLoad - 1)

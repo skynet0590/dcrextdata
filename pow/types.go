@@ -3,7 +3,7 @@ package pow
 import "time"
 
 type PowDataSource struct {
-	Source            string
+	Source string
 }
 
 type PowData struct {

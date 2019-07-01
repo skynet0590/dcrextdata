@@ -179,7 +179,7 @@ func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, er
 	var result []pow.PowDataSource
 	for _, item := range powDatum {
 		result = append(result, pow.PowDataSource{
-			Source:            item.Source,
+			Source: item.Source,
 		})
 	}
 

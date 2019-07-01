@@ -63,7 +63,7 @@ type TickDto struct {
 }
 
 type TickDtoCP struct {
-	CurrencyPair string    `json:"currency_pair"`
+	CurrencyPair string `json:"currency_pair"`
 }
 
 type poloniexAPIResponse []poloniexDataTick
