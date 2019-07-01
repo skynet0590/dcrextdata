@@ -46,22 +46,25 @@ type Block struct {
 type BlockDto struct {
 	BlockReceiveTime  string `json:"block_receive_time"`
 	BlockInternalTime string `json:"block_internal_time"`
+	Delay			  int64	 `json:"delay"`
 	BlockHeight       uint32 `json:"block_height"`
 	BlockHash         string `json:"block_hash"`
 }
 
 type Vote struct {
-	Hash        string
-	ReceiveTime time.Time
-	VotingOn    int64
-	ValidatorId int
+	Hash              string
+	ReceiveTime       time.Time
+	TargetedBlockTime time.Time
+	VotingOn          int64
+	ValidatorId       int
 }
 
 type VoteDto struct {
-	Hash        string `json:"hash"`
-	ReceiveTime string `json:"receive_time"`
-	VotingOn    int64  `json:"voting_on"`
-	ValidatorId int    `json:"validator_id"`
+	Hash                  string `json:"hash"`
+	ReceiveTime           string `json:"receive_time"`
+	TargetedBlockTimeDiff int64  `json:"block_time_diff"`
+	VotingOn              int64  `json:"voting_on"`
+	ValidatorId           int    `json:"validator_id"`
 }
 
 type DataStore interface {
@@ -74,4 +77,5 @@ type Collector struct {
 	dcrdClientConfig *rpcclient.ConnConfig
 	dataStore        DataStore
 	activeChain      *chaincfg.Params
+	syncIsDone       bool
 }

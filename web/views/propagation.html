@@ -13,6 +13,8 @@
                         <thead>
                         <tr>
                             <th>Receive Time</th>
+                            <th>Timestamp</th>
+                            <th>Delay</th>
                             <th>Height</th>
                             <th>Hash</th>
                         </tr>
@@ -21,6 +23,8 @@
                         {{range $index, $block := .blocks.records}}
                             <tr>
                                 <td>{{$block.BlockReceiveTime}}</td>
+                                <td>{{$block.BlockInternalTime}}</td>
+                                <td>{{$block.Delay}}</td>
                                 <td>{{$block.BlockHeight}}</td>
                                 <td>{{$block.BlockHash}}</td>
                             </tr>
@@ -30,6 +34,7 @@
 
                     <template data-target="blocks.rowTemplate">
                         <tr>
+                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -59,15 +64,17 @@
                         <thead>
                         <tr>
                             <th>Time</th>
+                            <th>Time Diff</th>
                             <th>Hash</th>
-                            <th>VotingOn</th>
-                            <th>Validator ID</th>
+                            <th>Voting On</th>
+                            <th>Validator</th>
                         </tr>
                         </thead>
                         <tbody data-target="votes.tableBody">
                         {{range $index, $vote := .votes.records}}
                             <tr>
                                 <td>{{$vote.ReceiveTime}}</td>
+                                <td>{{$vote.TargetedBlockTimeDiff}}</td>
                                 <td>{{$vote.Hash}}</td>
                                 <td>{{$vote.VotingOn}}</td>
                                 <td>{{$vote.ValidatorId}}</td>
@@ -78,6 +85,7 @@
 
                     <template data-target="votes.rowTemplate">
                         <tr>
+                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>

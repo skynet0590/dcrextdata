@@ -26,56 +26,85 @@ func NewCollector(config *rpcclient.ConnConfig, activeChain *chaincfg.Params, da
 	}
 }
 
-func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
+func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	ticketInds := make(exptypes.BlockValidatorIndex)
 
+	freeClient, err := rpcclient.New(c.dcrdClientConfig, nil)
+	if err != nil {
+		log.Errorf("Error in opening a dcrd connection: %s", err.Error())
+		return
+	}
+	defer freeClient.Shutdown()
+
 	ntfnHandlers := rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
-			msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
-			if err != nil {
-				log.Errorf("Failed to decode transaction hex: %v", err)
-				return
-			}
+			go func() {
+				if !c.syncIsDone {
+					return
+				}
+				receiveTime := time.Now()
 
-			if txType := txhelpers.DetermineTxTypeString(msgTx); txType != "Vote" {
-				return
-			}
+				msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
+				if err != nil {
+					log.Errorf("Failed to decode transaction hex: %v", err)
+					return
+				}
 
-			var voteInfo *exptypes.VoteInfo
-			validation, version, bits, choices, err := txhelpers.SSGenVoteChoices(msgTx, c.activeChain)
-			if err != nil {
-				log.Errorf("Error in getting vote choice: %s", err.Error())
-				return
-			}
+				if txType := txhelpers.DetermineTxTypeString(msgTx); txType != "Vote" {
+					return
+				}
 
-			voteInfo = &exptypes.VoteInfo{
-				Validation: exptypes.BlockValidation{
-					Hash:     validation.Hash.String(),
-					Height:   validation.Height,
-					Validity: validation.Validity,
-				},
-				Version:     version,
-				Bits:        bits,
-				Choices:     choices,
-				TicketSpent: msgTx.TxIn[1].PreviousOutPoint.Hash.String(),
-			}
+				var voteInfo *exptypes.VoteInfo
+				validation, version, bits, choices, err := txhelpers.SSGenVoteChoices(msgTx, c.activeChain)
+				if err != nil {
+					log.Errorf("Error in getting vote choice: %s", err.Error())
+					return
+				}
 
-			voteInfo.SetTicketIndex(ticketInds)
+				voteInfo = &exptypes.VoteInfo{
+					Validation: exptypes.BlockValidation{
+						Hash:     validation.Hash.String(),
+						Height:   validation.Height,
+						Validity: validation.Validity,
+					},
+					Version:     version,
+					Bits:        bits,
+					Choices:     choices,
+					TicketSpent: msgTx.TxIn[1].PreviousOutPoint.Hash.String(),
+				}
 
-			vote := Vote{
-				ReceiveTime: time.Now(),
-				VotingOn:    validation.Height,
-				Hash:        txDetails.Txid,
-				ValidatorId: voteInfo.MempoolTicketIndex,
-			}
+				voteInfo.SetTicketIndex(ticketInds)
 
-			if err = c.dataStore.SaveVote(ctx, vote); err != nil {
-				log.Error(err)
-			}
+				vote := Vote{
+					ReceiveTime: receiveTime,
+					VotingOn:    validation.Height,
+					Hash:        txDetails.Txid,
+					ValidatorId: voteInfo.MempoolTicketIndex,
+				}
+
+				// wait for some time for the block to get added to the blockchain
+				time.Sleep(2 * time.Second)
+
+				targetedBlock, err := freeClient.GetBlock(&validation.Hash)
+				if err != nil {
+					log.Errorf("Error in getting validation targeted block: %s", err.Error())
+					return
+				}
+
+				vote.TargetedBlockTime = targetedBlock.Header.Timestamp
+
+				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
+					log.Error(err)
+				}
+			}()
 		},
+
 		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
+			if !c.syncIsDone {
+				return
+			}
 			blockHeader := new(wire.BlockHeader)
 			err := blockHeader.FromBytes(blockHeaderSerialized)
 			if err != nil {
@@ -97,7 +126,7 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	client, err := rpcclient.New(c.dcrdClientConfig, &ntfnHandlers)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Error in opening a dcrd connection: %s", err.Error())
 		return
 	}
 
@@ -126,6 +155,9 @@ func (c Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		if len(mempoolTransactionMap) == 0 {
 			return
 		}
+
+		// there wont be transactions in the mempool while sync is going on
+		c.syncIsDone = true // todo: we need a better way to determine the sync status of dcrd
 
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),

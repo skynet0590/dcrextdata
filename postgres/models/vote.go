@@ -24,39 +24,44 @@ import (
 
 // Vote is an object representing the database table.
 type Vote struct {
-	Hash        string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	VotingOn    null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
-	ReceiveTime null.Int64 `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
-	ValidatorID null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
+	Hash              string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
+	VotingOn          null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
+	ReceiveTime       null.Int64 `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	TargetedBlockTime null.Int64 `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
+	ValidatorID       null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
 
 	R *voteR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L voteL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var VoteColumns = struct {
-	Hash        string
-	VotingOn    string
-	ReceiveTime string
-	ValidatorID string
+	Hash              string
+	VotingOn          string
+	ReceiveTime       string
+	TargetedBlockTime string
+	ValidatorID       string
 }{
-	Hash:        "hash",
-	VotingOn:    "voting_on",
-	ReceiveTime: "receive_time",
-	ValidatorID: "validator_id",
+	Hash:              "hash",
+	VotingOn:          "voting_on",
+	ReceiveTime:       "receive_time",
+	TargetedBlockTime: "targeted_block_time",
+	ValidatorID:       "validator_id",
 }
 
 // Generated where
 
 var VoteWhere = struct {
-	Hash        whereHelperstring
-	VotingOn    whereHelpernull_Int64
-	ReceiveTime whereHelpernull_Int64
-	ValidatorID whereHelpernull_Int
+	Hash              whereHelperstring
+	VotingOn          whereHelpernull_Int64
+	ReceiveTime       whereHelpernull_Int64
+	TargetedBlockTime whereHelpernull_Int64
+	ValidatorID       whereHelpernull_Int
 }{
-	Hash:        whereHelperstring{field: "\"vote\".\"hash\""},
-	VotingOn:    whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
-	ReceiveTime: whereHelpernull_Int64{field: "\"vote\".\"receive_time\""},
-	ValidatorID: whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
+	Hash:              whereHelperstring{field: "\"vote\".\"hash\""},
+	VotingOn:          whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
+	ReceiveTime:       whereHelpernull_Int64{field: "\"vote\".\"receive_time\""},
+	TargetedBlockTime: whereHelpernull_Int64{field: "\"vote\".\"targeted_block_time\""},
+	ValidatorID:       whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
 }
 
 // VoteRels is where relationship names are stored.
@@ -76,8 +81,8 @@ func (*voteR) NewStruct() *voteR {
 type voteL struct{}
 
 var (
-	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "validator_id"}
-	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "validator_id"}
+	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "targeted_block_time", "validator_id"}
+	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "targeted_block_time", "validator_id"}
 	voteColumnsWithDefault    = []string{}
 	votePrimaryKeyColumns     = []string{"hash"}
 )

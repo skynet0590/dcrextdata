@@ -60,8 +60,10 @@ export default class extends Controller {
       const fields = exRow.querySelectorAll('td')
 
       fields[0].innerText = item.block_receive_time
-      fields[1].innerText = item.block_height
-      fields[2].innerText = item.block_hash
+      fields[1].innerText = item.block_internal_time
+      fields[2].innerText = item.delay
+      fields[3].innerText = item.block_height
+      fields[4].innerText = item.block_hash
 
       _this.tableBodyTarget.appendChild(exRow)
     })

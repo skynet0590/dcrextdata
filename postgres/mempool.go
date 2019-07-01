@@ -113,6 +113,7 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 			BlockHeight:       uint32(block.Height),
 			BlockInternalTime: int64ToTime(block.InternalTimestamp.Int64).Format(dateMiliTemplate),
 			BlockReceiveTime:  int64ToTime(block.ReceiveTime.Int64).Format(dateMiliTemplate),
+			Delay: 			   block.ReceiveTime.Int64 - block.InternalTimestamp.Int64,
 		})
 	}
 
@@ -124,6 +125,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 		Hash:        vote.Hash,
 		VotingOn:    null.Int64From(int64(vote.VotingOn)),
 		ReceiveTime: null.Int64From(vote.ReceiveTime.Unix()),
+		TargetedBlockTime: null.Int64From(vote.TargetedBlockTime.Unix()),
 		ValidatorID: null.IntFrom(vote.ValidatorId),
 	}
 	err := voteModel.Insert(ctx, pg.db, boil.Infer())
@@ -147,10 +149,11 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
 		votes = append(votes, mempool.VoteDto{
-			Hash:        fmt.Sprintf("...%s", vote.Hash[len(vote.Hash)-23:]),
-			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64).Format(dateMiliTemplate),
-			VotingOn:    vote.VotingOn.Int64,
-			ValidatorId: vote.ValidatorID.Int,
+			Hash:                  fmt.Sprintf("...%s", vote.Hash[len(vote.Hash)-23:]),
+			ReceiveTime:           int64ToTime(vote.ReceiveTime.Int64).Format(dateMiliTemplate),
+			TargetedBlockTimeDiff: vote.ReceiveTime.Int64 - vote.TargetedBlockTime.Int64,
+			VotingOn:              vote.VotingOn.Int64,
+			ValidatorId:           vote.ValidatorID.Int,
 		})
 	}
 
