@@ -5,7 +5,6 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	// "fmt"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
