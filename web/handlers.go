@@ -14,6 +14,7 @@ const (
 	recordsPerPage = 20
 )
 
+// /
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
@@ -79,6 +80,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("exchange.html", data, res)
 }
 
+// /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
@@ -144,6 +146,7 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("vsp.html", data, res)
 }
 
+// /pow
 func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
