@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show } from '../utils'
+import { hide, show, date } from '../utils'
 
 export default class extends Controller {
   static get targets () {
@@ -16,7 +16,6 @@ export default class extends Controller {
     if (this.nextPage <= 1) {
       hide(this.previousPageButtonTarget)
     }
-    this.exchangeTableTarget.innerHTML = ''
     this.fetchExchange()
   }
 
@@ -29,29 +28,27 @@ export default class extends Controller {
     if (this.totalPages === this.nextPage) {
       hide(this.nextPageButtonTarget)
     }
-    this.exchangeTableTarget.innerHTML = ''
     this.fetchExchange()
   }
 
   selectedFilterChanged () {
-    this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange()
   }
 
   selectedCpairChanged () {
-    this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange()
   }
 
   NumberOfRowsChanged () {
-    this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange()
   }
 
   fetchExchange () {
+    this.exchangeTableTarget.innerHTML = ''
+
     const selectedFilter = this.selectedFilterTarget.value
     const numberOfRows = this.selectedNumTarget.value
     const selectedCpair = this.selectedCpairTarget.value
@@ -92,7 +89,7 @@ export default class extends Controller {
       fields[5].innerHTML = ex.volume
       fields[6].innerText = ex.interval
       fields[7].innerHTML = ex.currency_pair
-      fields[8].innerHTML = ex.time
+      fields[8].innerHTML = date(ex.time)
 
       _this.exchangeTableTarget.appendChild(exRow)
     })

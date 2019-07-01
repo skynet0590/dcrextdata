@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show } from '../utils'
+import { hide, show, date } from '../utils'
 
 export default class extends Controller {
   static get targets () {
@@ -84,7 +84,7 @@ export default class extends Controller {
       fields[2].innerText = pow.PoolHashrate
       fields[3].innerHTML = pow.Workers
       fields[4].innerHTML = pow.NetworkDifficulty
-      fields[5].innerHTML = pow.Time
+      fields[5].innerHTML = date(pow.Time)
 
       _this.powTableTarget.appendChild(powRow)
     })

@@ -221,7 +221,7 @@ func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.V
 		vspTicks = append(vspTicks, vsp.VSPTickDto{
 			ID:               tick.ID,
 			VSP:              tick.R.VSP.Name.String,
-			Time:             tick.Time,
+			Time:             tick.Time.UTC(),
 			Immature:         tick.Immature,
 			Live:             tick.Live,
 			Missed:           tick.Missed,

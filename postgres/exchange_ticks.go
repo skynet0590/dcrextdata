@@ -157,7 +157,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time,
+			Time:         tick.Time.UTC(),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
@@ -205,7 +205,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time,
+			Time:         tick.Time.UTC(),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
@@ -238,42 +238,6 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 
 	return TickDtoCP, err
 }
-
-// FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-// func (pg *PgDb) FetchExchangeTicksByCurrencyPair(ctx context.Context, Name, currencyPair string, offset int, limit int) ([]ticks.TickDto, error) {
-// 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	idQuery := Where(Expr(
-// 	    models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
-// 	    Or2(models.ExchangeTickWhere.CurrencyPair.Eq(currencyPair)
-// 	  )))
-// 	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	tickDtos := []ticks.TickDto{}
-// 	for _, tick := range exchangeTickSlice {
-// 		tickDtos = append(tickDtos, ticks.TickDto{
-// 			ExchangeID:   tick.ExchangeID,
-// 			Interval:     tick.Interval,
-// 			CurrencyPair: tick.CurrencyPair,
-// 			Time:         tick.Time,
-// 			Close:        tick.Close,
-// 			ExchangeName: tick.R.Exchange.Name,
-// 			High:         tick.High,
-// 			Low:          tick.Low,
-// 			Open:         tick.Open,
-// 			Volume:       tick.Volume,
-// 		})
-// 	}
-
-// 	return tickDtos, err
-// }
 
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
 	return &models.ExchangeTick{

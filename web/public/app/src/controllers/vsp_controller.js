@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show } from '../utils'
+import { hide, show, date } from '../utils'
 
 export default class extends Controller {
   static get targets () {
@@ -89,7 +89,7 @@ export default class extends Controller {
       fields[7].innerHTML = vsp.proportion_missed
       fields[8].innerHTML = vsp.user_count
       fields[9].innerHTML = vsp.users_active
-      fields[10].innerHTML = vsp.time
+      fields[10].innerHTML = date(vsp.time)
 
       _this.vspTicksTableTarget.appendChild(vspRow)
     })
