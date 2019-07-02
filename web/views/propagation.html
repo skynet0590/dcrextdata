@@ -7,14 +7,14 @@
     <div class="content">
         <div class="container">
             <div class="row">
-                <div class="col-md-6" data-controller="blocks">
+                <div class="col-md-12" data-controller="blocks">
                     <h4>Blocks</h4>
                     <table class="table">
                         <thead>
                         <tr>
                             <th>Receive Time</th>
                             <th>Timestamp</th>
-                            <th>Delay</th>
+                            <th>Delay(s)</th>
                             <th>Height</th>
                             <th>Hash</th>
                         </tr>
@@ -57,17 +57,19 @@
                         Next &gt;
                     </button>
                 </div>
+            </div>
 
-                <div class="col-md-6" data-controller="votes">
+            <div class="row mt-5">
+                <div class="col-md-12" data-controller="votes">
                     <h4>Votes</h4>
                     <table class="table">
                         <thead>
                         <tr>
-                            <th>Time</th>
-                            <th>Time Diff</th>
-                            <th>Hash</th>
+                            <th>Received Time</th>
+                            <th>Block Time Diff</th>
                             <th>Voting On</th>
-                            <th>Validator</th>
+                            <th>Validator ID</th>
+                            <th>Hash</th>
                         </tr>
                         </thead>
                         <tbody data-target="votes.tableBody">
@@ -75,9 +77,9 @@
                             <tr>
                                 <td>{{$vote.ReceiveTime}}</td>
                                 <td>{{$vote.TargetedBlockTimeDiff}}</td>
-                                <td>{{$vote.Hash}}</td>
                                 <td>{{$vote.VotingOn}}</td>
                                 <td>{{$vote.ValidatorId}}</td>
+                                <td>{{$vote.Hash}}</td>
                             </tr>
                         {{end}}
                         </tbody>

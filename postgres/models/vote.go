@@ -26,8 +26,8 @@ import (
 type Vote struct {
 	Hash              string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	VotingOn          null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
-	ReceiveTime       null.Int64 `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
-	TargetedBlockTime null.Int64 `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
+	ReceiveTime       null.Time  `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	TargetedBlockTime null.Time  `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
 	ValidatorID       null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
 
 	R *voteR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,17 +50,40 @@ var VoteColumns = struct {
 
 // Generated where
 
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var VoteWhere = struct {
 	Hash              whereHelperstring
 	VotingOn          whereHelpernull_Int64
-	ReceiveTime       whereHelpernull_Int64
-	TargetedBlockTime whereHelpernull_Int64
+	ReceiveTime       whereHelpernull_Time
+	TargetedBlockTime whereHelpernull_Time
 	ValidatorID       whereHelpernull_Int
 }{
 	Hash:              whereHelperstring{field: "\"vote\".\"hash\""},
 	VotingOn:          whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
-	ReceiveTime:       whereHelpernull_Int64{field: "\"vote\".\"receive_time\""},
-	TargetedBlockTime: whereHelpernull_Int64{field: "\"vote\".\"targeted_block_time\""},
+	ReceiveTime:       whereHelpernull_Time{field: "\"vote\".\"receive_time\""},
+	TargetedBlockTime: whereHelpernull_Time{field: "\"vote\".\"targeted_block_time\""},
 	ValidatorID:       whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
 }
 

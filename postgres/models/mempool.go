@@ -24,8 +24,8 @@ import (
 
 // Mempool is an object representing the database table.
 type Mempool struct {
-	Time                 int64        `boil:"time" json:"time" toml:"time" yaml:"time"`
-	FirstSeenTime        null.Int64   `boil:"first_seen_time" json:"first_seen_time,omitempty" toml:"first_seen_time" yaml:"first_seen_time,omitempty"`
+	Time                 time.Time    `boil:"time" json:"time" toml:"time" yaml:"time"`
+	FirstSeenTime        null.Time    `boil:"first_seen_time" json:"first_seen_time,omitempty" toml:"first_seen_time" yaml:"first_seen_time,omitempty"`
 	NumberOfTransactions null.Int     `boil:"number_of_transactions" json:"number_of_transactions,omitempty" toml:"number_of_transactions" yaml:"number_of_transactions,omitempty"`
 	Voters               null.Int     `boil:"voters" json:"voters,omitempty" toml:"voters" yaml:"voters,omitempty"`
 	Tickets              null.Int     `boil:"tickets" json:"tickets,omitempty" toml:"tickets" yaml:"tickets,omitempty"`
@@ -61,15 +61,6 @@ var MempoolColumns = struct {
 }
 
 // Generated where
-
-type whereHelperint64 struct{ field string }
-
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelpernull_Int struct{ field string }
 
@@ -118,8 +109,8 @@ func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
 }
 
 var MempoolWhere = struct {
-	Time                 whereHelperint64
-	FirstSeenTime        whereHelpernull_Int64
+	Time                 whereHelpertime_Time
+	FirstSeenTime        whereHelpernull_Time
 	NumberOfTransactions whereHelpernull_Int
 	Voters               whereHelpernull_Int
 	Tickets              whereHelpernull_Int
@@ -128,8 +119,8 @@ var MempoolWhere = struct {
 	TotalFee             whereHelpernull_Float64
 	Total                whereHelpernull_Float64
 }{
-	Time:                 whereHelperint64{field: "\"mempool\".\"time\""},
-	FirstSeenTime:        whereHelpernull_Int64{field: "\"mempool\".\"first_seen_time\""},
+	Time:                 whereHelpertime_Time{field: "\"mempool\".\"time\""},
+	FirstSeenTime:        whereHelpernull_Time{field: "\"mempool\".\"first_seen_time\""},
 	NumberOfTransactions: whereHelpernull_Int{field: "\"mempool\".\"number_of_transactions\""},
 	Voters:               whereHelpernull_Int{field: "\"mempool\".\"voters\""},
 	Tickets:              whereHelpernull_Int{field: "\"mempool\".\"tickets\""},
@@ -261,7 +252,7 @@ func Mempools(mods ...qm.QueryMod) mempoolQuery {
 
 // FindMempool retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindMempool(ctx context.Context, exec boil.ContextExecutor, time int64, selectCols ...string) (*Mempool, error) {
+func FindMempool(ctx context.Context, exec boil.ContextExecutor, time time.Time, selectCols ...string) (*Mempool, error) {
 	mempoolObj := &Mempool{}
 
 	sel := "*"
@@ -716,7 +707,7 @@ func (o *MempoolSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // MempoolExists checks if the Mempool row exists.
-func MempoolExists(ctx context.Context, exec boil.ContextExecutor, time int64) (bool, error) {
+func MempoolExists(ctx context.Context, exec boil.ContextExecutor, time time.Time) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from \"mempool\" where \"time\"=$1 limit 1)"
 

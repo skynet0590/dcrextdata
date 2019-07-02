@@ -427,7 +427,7 @@ func testVotesSelect(t *testing.T) {
 }
 
 var (
-	voteDBTypes = map[string]string{`Hash`: `character varying`, `VotingOn`: `bigint`, `ReceiveTime`: `bigint`, `TargetedBlockTime`: `bigint`, `ValidatorID`: `integer`}
+	voteDBTypes = map[string]string{`Hash`: `character varying`, `VotingOn`: `bigint`, `ReceiveTime`: `timestamp without time zone`, `TargetedBlockTime`: `timestamp without time zone`, `ValidatorID`: `integer`}
 	_           = bytes.MinRead
 )
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -29,8 +28,8 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 
 func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 	return models.Mempool{
-		Time:                 mempoolDto.Time.Unix(),
-		FirstSeenTime:        null.Int64From(mempoolDto.FirstSeenTime.Unix()),
+		Time:                 mempoolDto.Time,
+		FirstSeenTime:        null.TimeFrom(mempoolDto.FirstSeenTime),
 		Size:                 null.IntFrom(int(mempoolDto.Size)),
 		NumberOfTransactions: null.IntFrom(mempoolDto.NumberOfTransactions),
 		Revocations:          null.IntFrom(mempoolDto.Revocations),
@@ -60,12 +59,12 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	for _, m := range mempoolSlice {
 		result = append(result, mempool.MempoolDto{
 			TotalFee:             m.TotalFee.Float64,
-			FirstSeenTime:        int64ToTime(m.FirstSeenTime.Int64).Format(dateMiliTemplate),
+			FirstSeenTime:        m.FirstSeenTime.Time.Format(dateMiliTemplate),
 			Total:                m.Total.Float64,
 			Voters:               m.Voters.Int,
 			Tickets:              m.Tickets.Int,
 			Revocations:          m.Revocations.Int,
-			Time:                 time.Unix(m.Time, 0).Format(dateTemplate),
+			Time:                 m.Time.Format(dateTemplate),
 			Size:                 int32(m.Size.Int),
 			NumberOfTransactions: m.NumberOfTransactions.Int,
 		})
@@ -82,7 +81,7 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
 		}
 	}
 	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
-		block.BlockInternalTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash)-23:])
+		block.BlockReceiveTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash)-23:])
 	return nil
 }
 
@@ -90,8 +89,8 @@ func blockDtoToModel(block mempool.Block) models.Block {
 	return models.Block{
 		Height:            int(block.BlockHeight),
 		Hash:              null.StringFrom(block.BlockHash),
-		InternalTimestamp: null.Int64From(block.BlockInternalTime.Unix()),
-		ReceiveTime:       null.Int64From(block.BlockInternalTime.Unix()),
+		InternalTimestamp: null.TimeFrom(block.BlockInternalTime),
+		ReceiveTime:       null.TimeFrom(block.BlockReceiveTime),
 	}
 }
 
@@ -108,12 +107,14 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	var blocks []mempool.BlockDto
 
 	for _, block := range blockSlice {
+		timeDiff := block.ReceiveTime.Time.Sub(block.InternalTimestamp.Time).Seconds()
+
 		blocks = append(blocks, mempool.BlockDto{
-			BlockHash:         fmt.Sprintf("...%s", block.Hash.String[len(block.Hash.String)-23:]),
+			BlockHash:         block.Hash.String,
 			BlockHeight:       uint32(block.Height),
-			BlockInternalTime: int64ToTime(block.InternalTimestamp.Int64).Format(dateMiliTemplate),
-			BlockReceiveTime:  int64ToTime(block.ReceiveTime.Int64).Format(dateMiliTemplate),
-			Delay: 			   block.ReceiveTime.Int64 - block.InternalTimestamp.Int64,
+			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
+			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
+			Delay: 			   fmt.Sprintf("%04.2f", timeDiff),
 		})
 	}
 
@@ -124,8 +125,8 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	voteModel := models.Vote{
 		Hash:        vote.Hash,
 		VotingOn:    null.Int64From(int64(vote.VotingOn)),
-		ReceiveTime: null.Int64From(vote.ReceiveTime.Unix()),
-		TargetedBlockTime: null.Int64From(vote.TargetedBlockTime.Unix()),
+		ReceiveTime: null.TimeFrom(vote.ReceiveTime),
+		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
 		ValidatorID: null.IntFrom(vote.ValidatorId),
 	}
 	err := voteModel.Insert(ctx, pg.db, boil.Infer())
@@ -148,10 +149,12 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 
 	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
+		timeDiff := vote.ReceiveTime.Time.Sub(vote.TargetedBlockTime.Time).Seconds()
+
 		votes = append(votes, mempool.VoteDto{
-			Hash:                  fmt.Sprintf("...%s", vote.Hash[len(vote.Hash)-23:]),
-			ReceiveTime:           int64ToTime(vote.ReceiveTime.Int64).Format(dateMiliTemplate),
-			TargetedBlockTimeDiff: vote.ReceiveTime.Int64 - vote.TargetedBlockTime.Int64,
+			Hash:                  vote.Hash,
+			ReceiveTime:           vote.ReceiveTime.Time.Format(dateMiliTemplate),
+			TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
 			VotingOn:              vote.VotingOn.Int64,
 			ValidatorId:           vote.ValidatorID.Int,
 		})

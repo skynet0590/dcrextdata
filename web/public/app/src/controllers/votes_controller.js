@@ -61,9 +61,9 @@ export default class extends Controller {
 
       fields[0].innerText = item.receive_time
       fields[1].innerText = item.block_time_diff
-      fields[2].innerText = item.hash
-      fields[3].innerText = item.voting_on
-      fields[4].innerText = item.validator_id
+      fields[2].innerText = item.voting_on
+      fields[3].innerText = item.validator_id
+      fields[4].innerText = item.hash
 
       _this.tableBodyTarget.appendChild(exRow)
     })
