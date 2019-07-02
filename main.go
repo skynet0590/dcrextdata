@@ -66,16 +66,17 @@ func _main(ctx context.Context) error {
 		version.Version(), runtime.Version())
 
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
+
+	if err != nil {
+		return fmt.Errorf("Error in establishing database connection: %s", err.Error())
+	}
+
 	defer func(db *postgres.PgDb) {
 		err := db.Close()
 		if err != nil {
 			log.Error("Could not close database connection: %v", err)
 		}
 	}(db)
-
-	if err != nil {
-		return err
-	}
 
 	if cfg.Reset {
 		log.Info("Dropping tables")
