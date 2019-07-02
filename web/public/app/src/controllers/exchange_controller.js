@@ -46,16 +46,6 @@ export default class extends Controller {
     this.fetchExchange()
   }
 
-  selectedCpairChanged () {
-    this.nextPage = 1
-    this.fetchExchange()
-  }
-
-  NumberOfRowsChanged () {
-    this.nextPage = 1
-    this.fetchExchange()
-  }
-
   fetchExchange () {
     this.exchangeTableTarget.innerHTML = ''
 
