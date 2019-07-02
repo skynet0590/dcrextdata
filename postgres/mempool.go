@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"strings"
-	"time"
 
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -28,8 +28,8 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 
 func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 	return models.Mempool{
-		Time:                 mempoolDto.Time.Unix(),
-		FirstSeenTime:        null.Int64From(mempoolDto.FirstSeenTime.Unix()),
+		Time:                 mempoolDto.Time,
+		FirstSeenTime:        null.TimeFrom(mempoolDto.FirstSeenTime),
 		Size:                 null.IntFrom(int(mempoolDto.Size)),
 		NumberOfTransactions: null.IntFrom(mempoolDto.NumberOfTransactions),
 		Revocations:          null.IntFrom(mempoolDto.Revocations),
@@ -50,21 +50,21 @@ func (pg *PgDb) MempoolCount(ctx context.Context) (int64, error) {
 	return models.Mempools().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error) {
+func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error) {
 	mempoolSlice, err := models.Mempools(qm.OrderBy(models.MempoolColumns.Time), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
-	var result []mempool.Mempool
+	var result []mempool.MempoolDto
 	for _, m := range mempoolSlice {
-		result = append(result, mempool.Mempool{
+		result = append(result, mempool.MempoolDto{
 			TotalFee:             m.TotalFee.Float64,
-			FirstSeenTime:        int64ToTime(m.FirstSeenTime.Int64),
+			FirstSeenTime:        m.FirstSeenTime.Time.Format(dateMiliTemplate),
 			Total:                m.Total.Float64,
 			Voters:               m.Voters.Int,
 			Tickets:              m.Tickets.Int,
 			Revocations:          m.Revocations.Int,
-			Time:                 time.Unix(m.Time, 0),
+			Time:                 m.Time.Format(dateTemplate),
 			Size:                 int32(m.Size.Int),
 			NumberOfTransactions: m.NumberOfTransactions.Int,
 		})
@@ -72,7 +72,7 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	return result, nil
 }
 
-func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
+func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
 	blockModel := blockDtoToModel(block)
 	err := blockModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -81,16 +81,16 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error  {
 		}
 	}
 	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
-		block.BlockInternalTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash) - 23:])
+		block.BlockReceiveTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash)-23:])
 	return nil
 }
 
 func blockDtoToModel(block mempool.Block) models.Block {
 	return models.Block{
-		Height: int(block.BlockHeight),
-		Hash: null.StringFrom(block.BlockHash),
-		InternalTimestamp: null.Int64From(block.BlockInternalTime.Unix()),
-		ReceiveTime: null.Int64From(block.BlockInternalTime.Unix()),
+		Height:            int(block.BlockHeight),
+		Hash:              null.StringFrom(block.BlockHash),
+		InternalTimestamp: null.TimeFrom(block.BlockInternalTime),
+		ReceiveTime:       null.TimeFrom(block.BlockReceiveTime),
 	}
 }
 
@@ -98,20 +98,23 @@ func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
 	return models.Blocks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error) {
-	blockSlice, err := models.Blocks(qm.OrderBy(models.BlockColumns.ReceiveTime),qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
+	blockSlice, err := models.Blocks(qm.OrderBy(models.BlockColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	var blocks []mempool.Block
+	var blocks []mempool.BlockDto
 
 	for _, block := range blockSlice {
-		blocks = append(blocks, mempool.Block{
-			BlockHash:block.Hash.String,
-			BlockHeight:uint32(block.Height),
-			BlockInternalTime:int64ToTime(block.InternalTimestamp.Int64),
-			BlockReceiveTime:int64ToTime(block.ReceiveTime.Int64),
+		timeDiff := block.ReceiveTime.Time.Sub(block.InternalTimestamp.Time).Seconds()
+
+		blocks = append(blocks, mempool.BlockDto{
+			BlockHash:         block.Hash.String,
+			BlockHeight:       uint32(block.Height),
+			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
+			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
+			Delay: 			   fmt.Sprintf("%04.2f", timeDiff),
 		})
 	}
 
@@ -120,9 +123,10 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	voteModel := models.Vote{
-		Hash:vote.Hash,
-		VotingOn:null.Int64From(int64(vote.VotingOn)),
-		ReceiveTime:null.Int64From(vote.ReceiveTime.Unix()),
+		Hash:        vote.Hash,
+		VotingOn:    null.Int64From(int64(vote.VotingOn)),
+		ReceiveTime: null.TimeFrom(vote.ReceiveTime),
+		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
 		ValidatorID: null.IntFrom(vote.ValidatorId),
 	}
 	err := voteModel.Insert(ctx, pg.db, boil.Infer())
@@ -137,19 +141,22 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	return nil
 }
 
-func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vote, error) {
+func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error) {
 	voteSlice, err := models.Votes(qm.OrderBy(models.VoteColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	var votes []mempool.Vote
+	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
-		votes = append(votes, mempool.Vote{
-			Hash:        vote.Hash,
-			ReceiveTime: int64ToTime(vote.ReceiveTime.Int64),
-			VotingOn:    vote.VotingOn.Int64,
-			ValidatorId: vote.ValidatorID.Int,
+		timeDiff := vote.ReceiveTime.Time.Sub(vote.TargetedBlockTime.Time).Seconds()
+
+		votes = append(votes, mempool.VoteDto{
+			Hash:                  vote.Hash,
+			ReceiveTime:           vote.ReceiveTime.Time.Format(dateMiliTemplate),
+			TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
+			VotingOn:              vote.VotingOn.Int64,
+			ValidatorId:           vote.ValidatorID.Int,
 		})
 	}
 

@@ -13,15 +13,27 @@ import (
 )
 
 type Mempool struct {
-	Time                 time.Time
-	FirstSeenTime        time.Time
-	NumberOfTransactions int
-	Voters               int
-	Tickets              int
-	Revocations          int
-	Size                 int32
-	TotalFee             float64
-	Total                float64
+	Time                 time.Time `json:"time"`
+	FirstSeenTime        time.Time `json:"first_seen_time"`
+	NumberOfTransactions int       `json:"number_of_transactions"`
+	Voters               int       `json:"voters"`
+	Tickets              int       `json:"tickets"`
+	Revocations          int       `json:"revocations"`
+	Size                 int32     `json:"size"`
+	TotalFee             float64   `json:"total_fee"`
+	Total                float64   `json:"total"`
+}
+
+type MempoolDto struct {
+	Time                 string  `json:"time"`
+	FirstSeenTime        string  `json:"first_seen_time"`
+	NumberOfTransactions int     `json:"number_of_transactions"`
+	Voters               int     `json:"voters"`
+	Tickets              int     `json:"tickets"`
+	Revocations          int     `json:"revocations"`
+	Size                 int32   `json:"size"`
+	TotalFee             float64 `json:"total_fee"`
+	Total                float64 `json:"total"`
 }
 
 type Block struct {
@@ -31,11 +43,28 @@ type Block struct {
 	BlockHash         string
 }
 
+type BlockDto struct {
+	BlockReceiveTime  string  `json:"block_receive_time"`
+	BlockInternalTime string  `json:"block_internal_time"`
+	Delay             string `json:"delay"`
+	BlockHeight       uint32  `json:"block_height"`
+	BlockHash         string  `json:"block_hash"`
+}
+
 type Vote struct {
-	Hash        string
-	ReceiveTime time.Time
-	VotingOn    int64
-	ValidatorId int
+	Hash              string
+	ReceiveTime       time.Time
+	TargetedBlockTime time.Time
+	VotingOn          int64
+	ValidatorId       int
+}
+
+type VoteDto struct {
+	Hash                  string  `json:"hash"`
+	ReceiveTime           string  `json:"receive_time"`
+	TargetedBlockTimeDiff string `json:"block_time_diff"`
+	VotingOn              int64   `json:"voting_on"`
+	ValidatorId           int     `json:"validator_id"`
 }
 
 type DataStore interface {
@@ -47,5 +76,6 @@ type DataStore interface {
 type Collector struct {
 	dcrdClientConfig *rpcclient.ConnConfig
 	dataStore        DataStore
-	activeChain  *chaincfg.Params
+	activeChain      *chaincfg.Params
+	syncIsDone       bool
 }

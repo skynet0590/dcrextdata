@@ -66,8 +66,8 @@ const (
 	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
 
 	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
-		time INT8,
-		first_seen_time INT8,
+		time timestamp,
+		first_seen_time timestamp,
 		number_of_transactions INT,
 		voters INT,
 		tickets INT,
@@ -80,8 +80,8 @@ const (
 
 	createBlockTable = `CREATE TABLE IF NOT EXISTS block (
 		height INT,
-		receive_time INT8,
-		internal_timestamp INT8,
+		receive_time timestamp,
+		internal_timestamp timestamp,
 		hash VARCHAR(512),
 		PRIMARY KEY (height)
 	);`
@@ -91,7 +91,8 @@ const (
 	createVoteTable = `CREATE TABLE IF NOT EXISTS vote (
 		hash VARCHAR(128),
 		voting_on INT8,
-		receive_time INT8,
+		receive_time timestamp,
+		targeted_block_time timestamp,
 		validator_id INT,
 		PRIMARY KEY (hash)
 	);`
@@ -241,6 +242,11 @@ func (pg *PgDb) DropAllTables() error {
 
 	// mempool
 	if err := pg.dropTable("mempool"); err != nil {
+		return err
+	}
+
+	// block
+	if err := pg.dropTable("block"); err != nil {
 		return err
 	}
 

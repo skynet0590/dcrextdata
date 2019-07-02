@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -37,10 +36,13 @@ type DataQuery interface {
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
-	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Mempool, error)
+	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
 
 	BlockCount(ctx context.Context) (int64, error)
-	Blocks(ctx context.Context, offset int, limit int) ([]mempool.Block, error)
+	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
+
+	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
+	VotesCount(ctx context.Context) (int64, error)
 }
 
 type Server struct {
@@ -76,49 +78,6 @@ func StartHttpServer(httpHost, httpPort string, db DataQuery) {
 	}
 }
 
-func (s *Server) loadTemplates() {
-	layout := "web/views/layout.html"
-	tpls := map[string]string{
-		"exchange.html": "web/views/exchange.html",
-		"vsp.html":      "web/views/vsp.html",
-		"pow.html":      "web/views/pow.html",
-	}
-
-	for i, v := range tpls {
-		tpl, err := template.New(i).Funcs(templateFuncMap()).ParseFiles(v, layout)
-		if err != nil {
-			log.Fatalf("error loading templates: %s", err.Error())
-		}
-
-		s.lock.Lock()
-		s.templates[i] = tpl
-		s.lock.Unlock()
-	}
-}
-
-func templateFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"incByOne": func(number int) int {
-			return number + 1
-		},
-	}
-}
-
-func (s *Server) render(tplName string, data map[string]interface{}, res http.ResponseWriter) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	if tpl, ok := s.templates[tplName]; ok {
-		err := tpl.Execute(res, data)
-		if err != nil {
-			log.Fatalf("error executing template: %s", err.Error())
-		}
-		return
-	}
-
-	log.Fatalf("template %s is not registered", tplName)
-}
-
 func FileServer(r chi.Router, path string, root http.FileSystem) {
 	if strings.ContainsAny(path, "{}*") {
 		panic("FileServer does not permit URL parameters.")
@@ -138,9 +97,14 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-	r.Get("/", s.GetExchangeTicks)
-	r.Post("/", s.GetExchangeTicks)
-	r.Get("/vspticks", s.GetVspTicks)
-	r.Post("/vspticks", s.GetVspTicks)
-	r.Get("/pow", s.GetPowData)
+	r.Get("/", s.getExchangeTicks)
+	r.Post("/", s.getExchangeTicks)
+	r.Get("/vspticks", s.getVspTicks)
+	r.Post("/vspticks", s.getVspTicks)
+	r.Get("/pow", s.getPowData)
+	r.Get("/mempool", s.mempoolPage)
+	r.Get("/getmempool", s.getMempool)
+	r.Get("/getblocks", s.getBlocks)
+	r.Get("/getvotes", s.getVotes)
+	r.Get("/propagation", s.propagation)
 }

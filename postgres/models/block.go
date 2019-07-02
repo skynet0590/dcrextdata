@@ -25,8 +25,8 @@ import (
 // Block is an object representing the database table.
 type Block struct {
 	Height            int         `boil:"height" json:"height" toml:"height" yaml:"height"`
-	ReceiveTime       null.Int64  `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
-	InternalTimestamp null.Int64  `boil:"internal_timestamp" json:"internal_timestamp,omitempty" toml:"internal_timestamp" yaml:"internal_timestamp,omitempty"`
+	ReceiveTime       null.Time   `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	InternalTimestamp null.Time   `boil:"internal_timestamp" json:"internal_timestamp,omitempty" toml:"internal_timestamp" yaml:"internal_timestamp,omitempty"`
 	Hash              null.String `boil:"hash" json:"hash,omitempty" toml:"hash" yaml:"hash,omitempty"`
 
 	R *blockR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -56,26 +56,26 @@ func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, 
 func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
-type whereHelpernull_Int64 struct{ field string }
+type whereHelpernull_Time struct{ field string }
 
-func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, false, x)
 }
-func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, true, x)
 }
-func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
@@ -104,13 +104,13 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 
 var BlockWhere = struct {
 	Height            whereHelperint
-	ReceiveTime       whereHelpernull_Int64
-	InternalTimestamp whereHelpernull_Int64
+	ReceiveTime       whereHelpernull_Time
+	InternalTimestamp whereHelpernull_Time
 	Hash              whereHelpernull_String
 }{
 	Height:            whereHelperint{field: "\"block\".\"height\""},
-	ReceiveTime:       whereHelpernull_Int64{field: "\"block\".\"receive_time\""},
-	InternalTimestamp: whereHelpernull_Int64{field: "\"block\".\"internal_timestamp\""},
+	ReceiveTime:       whereHelpernull_Time{field: "\"block\".\"receive_time\""},
+	InternalTimestamp: whereHelpernull_Time{field: "\"block\".\"internal_timestamp\""},
 	Hash:              whereHelpernull_String{field: "\"block\".\"hash\""},
 }
 
