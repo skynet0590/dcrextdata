@@ -65,8 +65,9 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	}, nil
 }
 
+// todo impliment sorting for PoW data as it is currently been sorted by time
 func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error) {
-	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy("time")).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -167,4 +168,20 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 
 func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64, error) {
 	return models.PowData(models.PowDatumWhere.Source.EQ(source)).Count(ctx, pg.db)
+}
+
+func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error) {
+	powDatum, err := models.PowData(qm.Select("source"), qm.GroupBy("source")).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []pow.PowDataSource
+	for _, item := range powDatum {
+		result = append(result, pow.PowDataSource{
+			Source: item.Source,
+		})
+	}
+
+	return result, nil
 }

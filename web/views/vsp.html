@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "html-head" }}
-<body data-controller="receive">
-    <div class="body">
+<body>
+    <div class="body" data-controller="vsp">
         {{ template "header" }}
         <div class="content">
             <div class="container">
-                <div class="row">
-                    <form method="post" action="/vspticks">
-                        <div class="col-md-3 col-sm-12 mb-2">
-                            <select id="selectedFilter" name="vsp"
+                <div class="row align-items-center">
+                    <div class="col-md-3 col-sm-12 mb-2">
+                        <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
                             class="form-control" style="width: 150px;">
                             {{$selectedFilter := .selectedFilter}}
                             <option value="All">All</option>
@@ -19,57 +18,81 @@
                             {{ end }}
                         </select>
                     </div>
-                    <div class="col-md-3 col-sm-12 mb-2">
-                        <button type="submit">Filter</button>
+
+                    <div class="col-md-4 float-md-right offset-md-5">
+                        <div class="d-flex float-md-right">
+                            <select data-target="vsp.selectedNum" data-action="change->vsp#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
+
+                            <div class="row float-md-right">
+                                <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                                <p class="text-muted"> Page <span data-target="vsp.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                                </p>    
+                                <a href="javascript:void(0)" data-target="vsp.nextPageButton" data-action="click->vsp#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                            </div>
+                        </div> 
                     </div>
-                </form>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>VSP</th>
+                            <th>Immature</th>
+                            <th>Live</th>
+                            <th>Voted</th>
+                            <th>Missed</th>
+                            <th>PoolFees</th>
+                            <th>ProportionLive</th>
+                            <th>ProportionMissed</th>
+                            <th>UserCount</th>
+                            <th>UsersActive</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody data-target="vsp.vspTicksTable">
+                        {{range $index, $vspticks := .vspData}}
+                        <tr>
+                            <td>{{$vspticks.VSP}}</td>
+                            <td>{{$vspticks.Immature}}</td>
+                            <td>{{$vspticks.Live}}</td>
+                            <td>{{$vspticks.Voted}}</td>
+                            <td>{{$vspticks.Missed}}</td>
+                            <td>{{$vspticks.PoolFees}}</td>
+                            <td>{{$vspticks.ProportionLive}}</td>
+                            <td>{{$vspticks.ProportionMissed}}</td>
+                            <td>{{$vspticks.UserCount}}</td>
+                            <td>{{$vspticks.UsersActive}}</td>
+                            <td>{{$vspticks.Time}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <template data-target="vsp.vspRowTemplate">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </template>
             </div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>VSP</th>
-                        <th>Immature</th>
-                        <th>Live</th>
-                        <th>Voted</th>
-                        <th>Missed</th>
-                        <th>PoolFees</th>
-                        <th>ProportionLive</th>
-                        <th>ProportionMissed</th>
-                        <th>UserCount</th>
-                        <th>UsersActive</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody data-target="history.historyTable">
-                    {{range $index, $vspticks := .vspData}}
-                    <tr>
-                        <td>{{$vspticks.VSP}}</td>
-                        <td>{{$vspticks.Immature}}</td>
-                        <td>{{$vspticks.Live}}</td>
-                        <td>{{$vspticks.Voted}}</td>
-                        <td>{{$vspticks.Missed}}</td>
-                        <td>{{$vspticks.PoolFees}}</td>
-                        <td>{{$vspticks.ProportionLive}}</td>
-                        <td>{{$vspticks.ProportionMissed}}</td>
-                        <td>{{$vspticks.UserCount}}</td>
-                        <td>{{$vspticks.UsersActive}}</td>
-                        <td>{{$vspticks.Time}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-
-            <a href="?page={{ .previousPage }}&vsp={{.selectedFilter}}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                &lt; Previous</a>
-                <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
-
-                <a href="?page={{ .nextPage }}&vsp={{.selectedFilter}}"
-                data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                Next &gt;
-            </a>
         </div>
     </div>
-</div>
-{{ template "footer" }}
+    {{ template "footer" }}
 </body>
 </html>

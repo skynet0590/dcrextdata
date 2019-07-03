@@ -20,13 +20,14 @@ import (
 )
 
 type DataQuery interface {
-	AllExchangeTicks(ctx context.Context, offset int, limit int) ([]ticks.TickDto, error)
-	AllExchangeTicksCount(ctx context.Context) (int64, error)
+	AllExchangeTicks(ctx context.Context, currencyPair string, offset int, limit int) ([]ticks.TickDto, int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
-	FetchExchangeTicks(ctx context.Context, name string, offset int, limit int) ([]ticks.TickDto, error)
+	FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error)
+	AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error)
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
-	VSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
+	FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
+	FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTickCount(ctx context.Context) (int64, error)
 
@@ -34,6 +35,7 @@ type DataQuery interface {
 	CountPowData(ctx context.Context) (int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
+	FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
@@ -98,10 +100,11 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 
 func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.getExchangeTicks)
-	r.Post("/", s.getExchangeTicks)
+	r.Get("/filteredEx", s.getFilteredExchangeTicks)
 	r.Get("/vspticks", s.getVspTicks)
-	r.Post("/vspticks", s.getVspTicks)
+	r.Get("/filteredvspticks", s.getFilteredVspTicks)
 	r.Get("/pow", s.getPowData)
+	r.Get("/filteredpow", s.getFilteredPowData)
 	r.Get("/mempool", s.mempoolPage)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/getblocks", s.getBlocks)

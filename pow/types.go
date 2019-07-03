@@ -2,6 +2,10 @@ package pow
 
 import "time"
 
+type PowDataSource struct {
+	Source string
+}
+
 type PowData struct {
 	Time              int64
 	NetworkHashrate   int64

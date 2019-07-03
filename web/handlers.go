@@ -10,21 +10,73 @@ import (
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
-const (
+var (
 	recordsPerPage = 20
 )
 
-// /
+// /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	filter := req.Form["exchange"]
 
-	var selectedFilter string
-	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
-		selectedFilter = "All"
-	} else {
-		selectedFilter = filter[0]
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	// var err error
+	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+	allExhangeSlice, err := s.db.AllExchange(ctx)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+	cpair, err := s.db.AllExchangeTicksCurrencyPair(ctx)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+	data := map[string]interface{}{
+		"exData":         allExhangeTicksSlice,
+		"allExData":      allExhangeSlice,
+		"cpair":          cpair,
+		"currentPage":    pageToLoad,
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"selectedFilter": "All",
+	}
+
+	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	s.render("exchange.html", data, res)
+}
+
+func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+	selectedCpair := req.FormValue("selectedCpair")
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	}else {
+		recordsPerPage = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
@@ -35,16 +87,29 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
+
 	var allExhangeTicksSlice []ticks.TickDto
-	// var err error
-	if selectedFilter == "All" {
-		allExhangeTicksSlice, err = s.db.AllExchangeTicks(ctx, offset, recordsPerPage)
+	var totalCount int64
+	if selectedFilter == "All" && selectedCpair == "All" {
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	} else if selectedFilter == "All" && selectedCpair != "All" {
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	} else if selectedFilter != "All" && selectedCpair == "All" {
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
 	} else {
-		allExhangeTicksSlice, err = s.db.FetchExchangeTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -52,12 +117,6 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	totalCount, err := s.db.AllExchangeTicksCount(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
@@ -72,12 +131,12 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
+	defer s.renderJSON(data, res)
+
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
-
-	s.render("exchange.html", data, res)
 }
 
 // /vsps
@@ -110,7 +169,7 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else {
-		allVSPSlice, err = s.db.VSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -146,7 +205,80 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	s.render("vsp.html", data, res)
 }
 
-// /pow
+func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	} else {
+		recordsPerPage = numRows
+	}
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	var allVSPSlice []vsp.VSPTickDto
+	var totalCount int64
+	if selectedFilter == "All" || selectedFilter == "" {
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		totalCount, err = s.db.AllVSPTickCount(ctx)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	} else {
+		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		totalCount, err = s.db.FiltredVSPTicksCount(ctx, selectedFilter)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	}
+
+	allVspData, err := s.db.FetchVSPs(ctx)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+	data := map[string]interface{}{
+		"vspData":        allVSPSlice,
+		"allVspData":     allVspData,
+		"selectedFilter": selectedFilter,
+		"currentPage":    pageToLoad,
+		"previousPage":   int(pageToLoad - 1),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	defer s.renderJSON(data, res)
+
+	totalTxLoaded := int(offset) + len(allVSPSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+}
+
+// /PoW
 func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
@@ -166,6 +298,12 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
 	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
@@ -174,6 +312,7 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 
 	data := map[string]interface{}{
 		"powData":      allPowDataSlice,
+		"powSource":    powSource,
 		"currentPage":  int(pageToLoad),
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -185,6 +324,83 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	}
 
 	s.render("pow.html", data, res)
+}
+
+func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedFilter := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	data := map[string]interface{}{}
+	defer s.renderJSON(data, res)
+
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		recordsPerPage = recordsPerPage
+	} else {
+		recordsPerPage = numRows
+	}
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	var totalCount int64
+	var totalTxLoaded int
+	if selectedFilter == "All" || selectedFilter == "" {
+		allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		data["powData"] = allPowDataSlice
+
+		totalCount, err = s.db.CountPowData(ctx)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		totalTxLoaded = int(offset) + len(allPowDataSlice)
+	} else {
+		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx, selectedFilter, offset, recordsPerPage)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		data["powData"] = allPowDataSlice
+
+		totalCount, err = s.db.CountPowDataBySource(ctx, selectedFilter)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+		totalTxLoaded = int(offset) + len(allPowDataSlice)
+	}
+
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+
+	data["powSource"] = powSource
+	data["currentPage"] = int(pageToLoad)
+	data["previousPage"] = int(pageToLoad - 1)
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(recordsPerPage)))
+
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
 }
 
 // /mempool

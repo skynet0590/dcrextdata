@@ -1,73 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 {{ template "html-head" }}
-<body data-controller="receive">
-    <div class="body">
+<body>
+    <div class="body" data-controller="exchange">
+
         {{ template "header" }}
         <div class="content">
             <div class="container">
-                <div class="row">
-                    <form method="post" action="/">
-                        <div class="col-md-3 col-sm-12 mb-2">
-                            <select id="selectedFilter" name="exchange"
+                <div class="row align-items-center">
+                    <div class="col-md-3 col-sm-3 mb-2">
+                        <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                             class="form-control" style="width: 150px;">
-                            {{$selectedFilter := .selectedFilter}}
                             <option value="All">All</option>
-
                             {{ range $index, $filter := .allExData}}
-                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                            <option value="{{$filter.Name}}">{{$filter.Name}}</option>
                             {{ end }}
                         </select>
                     </div>
-                    <div class="col-md-3 col-sm-12 mb-2">
-                        <button type="submit">Filter</button>
+                    <div class="col-md-3 col-sm-3 mb-2">
+                        <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
+                            class="form-control" style="width: 120px;">
+                            <option value="All">All</option>
+                            {{ range $index, $cpair := .cpair}}
+                            <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
+                            {{ end }}
+                        </select>
                     </div>
-                </form>
+                    <div class="col-md-3 col-sm-3 mb-2">
+                        <div class="row float-md-right">
+                            <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-3 mb-2">
+                        <div class="row float-md-right">
+                            <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                            <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                        </div>
+                    </div> 
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Exchange</th>
+                            <th>High</th>
+                            <th>Low</th>
+                            <th>Open</th>
+                            <th>Close</th>
+                            <th>Volume</th>
+                            <th>Interval</th>
+                            <th>CurrencyPair</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody data-target="exchange.exchangeTable">
+                        {{range $index, $exchange := .exData}}
+                        <tr>
+                            <td>{{$exchange.ExchangeName}}</td>
+                            <td>{{$exchange.High}}</td>
+                            <td>{{$exchange.Low}}</td>
+                            <td>{{$exchange.Open}}</td>
+                            <td>{{$exchange.Close}}</td>
+                            <td>{{$exchange.Volume}}</td>
+                            <td>{{$exchange.Interval}}</td>
+                            <td>{{$exchange.CurrencyPair}}</td>
+                            <td>{{$exchange.Time}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+
+                <template data-target="exchange.exRowTemplate">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </template>
             </div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Exchange</th>
-                        <th>High</th>
-                        <th>Low</th>
-                        <th>Open</th>
-                        <th>Close</th>
-                        <th>Volume</th>
-                        <th>Interval</th>
-                        <th>CurrencyPair</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody data-target="">
-                    {{range $index, $exchange := .exData}}
-                    <tr>
-                        <td>{{$exchange.ExchangeName}}</td>
-                        <td>{{$exchange.High}}</td>
-                        <td>{{$exchange.Low}}</td>
-                        <td>{{$exchange.Open}}</td>
-                        <td>{{$exchange.Close}}</td>
-                        <td>{{$exchange.Volume}}</td>
-                        <td>{{$exchange.Interval}}</td>
-                        <td>{{$exchange.CurrencyPair}}</td>
-                        <td>{{$exchange.Time}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-
-            <a href="?page={{ .previousPage }}&exchange={{.selectedFilter}}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">
-                &lt; Previous
-            </a>
-
-            <span data-target="history.pageReport" class="text-muted">Page {{ .currentPage }} of {{ .totalPages }}</span>
-
-            <a href="?page={{ .nextPage }}&exchange={{.selectedFilter}}"
-            data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-            Next &gt;
-        </a>
+        </div>
     </div>
-</div>
-</div>
-{{ template "footer" }}
+    {{ template "footer" }}
 </body>
 </html>
