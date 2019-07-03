@@ -577,3 +577,9 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 
 	return data, nil
 }
+
+func (s *Server) charts(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+
+	s.render("charts.html", data, res)
+}

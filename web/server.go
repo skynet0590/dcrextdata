@@ -110,4 +110,5 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/propagation", s.propagation)
+	r.Get("/charts", s.charts)
 }
