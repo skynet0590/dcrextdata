@@ -1,6 +1,9 @@
 import { Controller } from 'stimulus'
 import dompurify from 'dompurify'
+import axios from 'axios'
+
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
+// const atomsToDCR = 1e-8
 
 function intComma (amount) {
   return amount.toLocaleString(undefined, { maximumFractionDigits: 0 })
@@ -53,6 +56,23 @@ function legendFormatter (data) {
   return html
 }
 
+// function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoefficient, windowS) {
+//   windowS = windowS || 1
+//   yCoefficient = yCoefficient || 1
+//   zCoefficient = zCoefficient || 1
+//   return map(gData.x, (n, i) => {
+//     var xAxisVal
+//     if (isHeightAxis && isDayBinned) {
+//       xAxisVal = n
+//     } else if (isHeightAxis) {
+//       xAxisVal = i * windowS
+//     } else {
+//       xAxisVal = new Date(n * 1000)
+//     }
+//     return [xAxisVal, gData.y[i] * yCoefficient, gData.z[i] * zCoefficient]
+//   })
+// }
+
 function formatHashRate (value, displayType) {
   value = parseInt(value)
   if (value <= 0) return value
@@ -79,7 +99,9 @@ export default class extends Controller {
   }
 
   connect () {
-    this.drawInitialGraph()
+    // this.drawInitialGraph()
+    // var windowSize = parseInt(this.data.get('windowSize'))
+    this.plotGraph()
   }
 
   drawInitialGraph () {
@@ -105,8 +127,38 @@ export default class extends Controller {
 
     this.chartsView = new Dygraph(
       this.chartsViewTarget,
-      [[1, 1, 5], [2, 5, 11]],
+      [[1, 1, 10], [2, 5, 110]],
       options
     )
   }
+
+  plotGraph () {
+    axios.get('/pow').then(function (response) {
+      let result = response.data
+      console.log('got api data', result)
+    }).catch(function (e) {
+      console.log(e) // todo: handle error
+    })
+  }
+  //   var d = []
+  //   var gOptions = {
+  //     axes: {},
+  //     visibility: null,
+  //     y2label: null,
+  //     stepPlot: false
+  //   }
+  //   var xlabel = 'Date'
+  //   var data = {
+  //     source :
+  //   }
+  //   d = zipXYZData(chartResponse.data, isHeightAxis, false, atomsToDCR, 1)
+  //   gOptions.stepPlot = true
+  //   assign(gOptions, mapDygraphOptions(d, [xlabel, 'Source', 'Pool hashrate'], true,
+  //     'Source', xlabel, undefined, false, false))
+  //   gOptions.y2label = 'Pool hash'
+  //   this.chartsView.plotter_.clear()
+  //   this.chartsView.updateOptions(gOptions, false)
+  //   if (yValueRanges[chartName]) this.supportedYRange = this.chartsView.yAxisRanges()
+  //   this.validateZoom()
+  // }
 }
