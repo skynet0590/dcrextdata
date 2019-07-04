@@ -29,6 +29,7 @@ func NewCollector(config *rpcclient.ConnConfig, activeChain *chaincfg.Params, da
 func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
+	var ticketIndsMutex sync.Mutex
 	ticketInds := make(exptypes.BlockValidatorIndex)
 
 	freeClient, err := rpcclient.New(c.dcrdClientConfig, nil)
@@ -75,7 +76,9 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 					TicketSpent: msgTx.TxIn[1].PreviousOutPoint.Hash.String(),
 				}
 
+				ticketIndsMutex.Lock()
 				voteInfo.SetTicketIndex(ticketInds)
+				ticketIndsMutex.Unlock()
 
 				vote := Vote{
 					ReceiveTime: receiveTime,
