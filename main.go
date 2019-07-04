@@ -257,7 +257,7 @@ func _main(ctx context.Context) error {
 				Certificates: certs,
 			}
 
-			collector := mempool.NewCollector(connCfg, netParams(cfg.DcrdNetworkType), db)
+			collector := mempool.NewCollector(cfg.MempoolInterval, connCfg, netParams(cfg.DcrdNetworkType), db)
 			wg.Add(1)
 			go collector.StartMonitoring(ctx, wg)
 		}

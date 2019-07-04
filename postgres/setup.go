@@ -78,6 +78,9 @@ const (
 		PRIMARY KEY (time)
 	);`
 
+	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
+	lastMempoolEntryTime   = `SELECT time FROM mempool ORDER BY time DESC LIMIT 1`
+
 	createBlockTable = `CREATE TABLE IF NOT EXISTS block (
 		height INT,
 		receive_time timestamp,
@@ -85,8 +88,6 @@ const (
 		hash VARCHAR(512),
 		PRIMARY KEY (height)
 	);`
-
-	lastMempoolBlockHeight = `SELECT last_block_height FROM mempool ORDER BY last_block_height DESC LIMIT 1`
 
 	createVoteTable = `CREATE TABLE IF NOT EXISTS vote (
 		hash VARCHAR(128),

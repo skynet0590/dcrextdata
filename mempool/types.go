@@ -69,13 +69,15 @@ type VoteDto struct {
 
 type DataStore interface {
 	StoreMempool(context.Context, Mempool) error
+	LastMempoolTime() (entryTime time.Time, err error)
 	SaveBlock(context.Context, Block) error
 	SaveVote(ctx context.Context, vote Vote) error
 }
 
 type Collector struct {
-	dcrdClientConfig *rpcclient.ConnConfig
-	dataStore        DataStore
-	activeChain      *chaincfg.Params
-	syncIsDone       bool
+	collectionInterval float64
+	dcrdClientConfig   *rpcclient.ConnConfig
+	dataStore          DataStore
+	activeChain        *chaincfg.Params
+	syncIsDone         bool
 }
