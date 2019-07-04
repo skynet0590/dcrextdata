@@ -60,51 +60,50 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 	}, nil
 }
 
-func (pc *Collector) Collect(ctx context.Context, wg *sync.WaitGroup) {
+func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if ctx.Err() != nil {
 		return
 	}
 
-	runPowCollectors := func() {
-		log.Info("Triggering PoW collectors")
-		for _, powInfo := range pc.pows {
-			select {
-			default:
-				/*lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
-				lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
-				if lastEntryTime == 0 {
-					lastStr = "never"
-				}
-				log.Infof("Starting PoW collector for %s, last collect time: %s", powInfo.Name(), lastStr)*/
-
-				data, err := powInfo.Collect(ctx)
-				if err != nil {
-					log.Error(err)
-				}
-				err = pc.store.AddPowData(ctx, data)
-				if err != nil {
-					log.Error(err)
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
-
-	runPowCollectors()
-
-	/*ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
+	ticker := time.NewTicker(time.Duration(pc.period) * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			runPowCollectors()
+			log.Info("Starting a new PoW collection cycle")
+			pc.Collect(ctx)
 		case <-ctx.Done():
-			log.Infof("Stopping collectors")
+			log.Infof("Stopping PoW collectors")
 			return
 		}
 
-	}*/
+	}
+}
+
+func (pc *Collector) Collect(ctx context.Context) {
+
+	for _, powInfo := range pc.pows {
+		select {
+		default:
+			/*lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
+			lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
+			if lastEntryTime == 0 {
+				lastStr = "never"
+			}
+			log.Infof("Starting PoW collector for %s, last collect time: %s", powInfo.Name(), lastStr)*/
+
+			data, err := powInfo.Collect(ctx)
+			if err != nil {
+				log.Error(err)
+			}
+			err = pc.store.AddPowData(ctx, data)
+			if err != nil {
+				log.Error(err)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }

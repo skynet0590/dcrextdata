@@ -252,3 +252,10 @@ func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Ti
 		Interval:     interval,
 	}
 }
+
+// LastExchangeTickEntryTime
+func (pg *PgDb) LastExchangeTickEntryTime() (time time.Time) {
+	rows := pg.db.QueryRow(lastExchangeTickEntryTime)
+	_ = rows.Scan(&time)
+	return
+}
