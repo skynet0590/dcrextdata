@@ -24,6 +24,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/exchanges"
+	"github.com/raedahgroup/dcrextdata/helpers"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
@@ -215,8 +216,23 @@ func _main(ctx context.Context) error {
 
 			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 			if err == nil {
+				log.Info("Triggering PoW collectors")
+
+				lastCollectionDateUnix := db.LastPowEntryTime("")
+				lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
+				secondsPassed := time.Since(lastCollectionDate)
+				period := time.Duration(cfg.PowInterval) * time.Second
+
+				if lastCollectionDateUnix > 0 && secondsPassed < period {
+					timeLeft := period - secondsPassed
+					log.Infof("PoW data collected %s ago, %s to the next collection cycle", helpers.DurationToString(secondsPassed),
+						helpers.DurationToString(timeLeft))
+
+					time.Sleep(timeLeft)
+				}
+				powCollector.Collect(ctx)
 				wg.Add(1)
-				powCollector.Collect(ctx, wg)
+				go powCollector.CollectAsync(ctx, wg)
 			} else {
 				log.Error(err)
 			}
@@ -262,30 +278,12 @@ func _main(ctx context.Context) error {
 			go collector.StartMonitoring(ctx, wg)
 		}
 
+		wg.Wait()
 		return nil
 	}
 
 	if err = collectData(); err != nil {
 		return err
-	}
-
-	ticker := time.NewTicker(3000 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			log.Info("Starting a new periodic collection cycle")
-			if err := collectData(); err != nil {
-				log.Error(err)
-				log.Info("Goodbye")
-				os.Exit(1)
-			}
-		case <-ctx.Done():
-			log.Infof("Shutting down collector")
-			log.Info("Goodbye")
-			return nil
-		}
 	}
 
 	return nil

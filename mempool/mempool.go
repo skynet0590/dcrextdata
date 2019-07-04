@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"context"
+	"database/sql"
 	"math"
 	"sync"
 	"time"
@@ -225,7 +226,9 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 
 	lastMempoolTime, err := c.dataStore.LastMempoolTime()
 	if err != nil {
-		log.Errorf("Unable to get last mempool entry time: %s", err.Error())
+		if err != sql.ErrNoRows {
+			log.Errorf("Unable to get last mempool entry time: %s", err.Error())
+		}
 	} else {
 		lastMempoolTime = lastMempoolTime.Add(-1 * time.Hour) // todo: this need justification
 		sencodsPassed := math.Abs(time.Since(lastMempoolTime).Seconds())

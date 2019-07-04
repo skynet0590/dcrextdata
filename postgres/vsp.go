@@ -251,3 +251,9 @@ func (pg *PgDb) FiltredVSPTicksCount(ctx context.Context, vspName string) (int64
 	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vspInfo.ID)
 	return models.VSPTicks(qm.Load("VSP"), vspIdQuery).Count(ctx, pg.db)
 }
+
+func (pg *PgDb) LastVspTickEntryTime() (time time.Time) {
+	rows := pg.db.QueryRow(lastVspTickEntryTime)
+	_ = rows.Scan(&time)
+	return
+}

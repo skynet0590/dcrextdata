@@ -23,6 +23,8 @@ const (
 
 	createExchangeTickIndex = `CREATE UNIQUE INDEX IF NOT EXISTS exchange_tick_idx ON exchange_tick (exchange_id, interval, currency_pair, time);`
 
+	lastExchangeTickEntryTime = `SELECT time FROM exchange_tick ORDER BY time DESC LIMIT 1`
+
 	createVSPInfoTable = `CREATE TABLE IF NOT EXISTS vsp (
 		id SERIAL PRIMARY KEY,
 		name TEXT,
@@ -50,6 +52,8 @@ const (
 
 	createVSPTickIndex = `CREATE UNIQUE INDEX IF NOT EXISTS vsp_tick_idx ON vsp_tick (vsp_id,immature,live,voted,missed,pool_fees,proportion_live,proportion_missed,user_count,users_active, time);`
 
+	lastVspTickEntryTime = `SELECT time FROM vsp_tick ORDER BY time DESC LIMIT 1`
+
 	// PoW table
 	createPowDataTable = `CREATE TABLE IF NOT EXISTS pow_data (
 		time INT,
@@ -63,7 +67,8 @@ const (
 		PRIMARY KEY (time, source)
 	);`
 
-	lastPowEntryTime = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+	lastPowEntryTimeBySource = `SELECT time FROM pow_data WHERE source=$1 ORDER BY time DESC LIMIT 1`
+	lastPowEntryTime         = `SELECT time FROM pow_data ORDER BY time DESC LIMIT 1`
 
 	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
 		time timestamp,

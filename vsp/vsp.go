@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/helpers"
 )
 
 const (
@@ -56,19 +58,34 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
+	lastCollectionDate := vsp.dataStore.LastVspTickEntryTime()
+	secondsPassed := time.Since(lastCollectionDate)
+	period := vsp.period * time.Second
+
 	log.Info("Starting VSP collection cycle")
+
+	if secondsPassed < period {
+		timeLeft := period - secondsPassed
+		log.Infof("VSP collected %s ago, %s to the next collection cycle", helpers.DurationToString(secondsPassed),
+			helpers.DurationToString(timeLeft))
+
+		time.Sleep(timeLeft)
+	}
+
 	log.Info("Fetching VSP from source")
+
 	if err := vsp.collectAndStore(ctx); err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
 
-	/*ticker := time.NewTicker(vsp.period * time.Second)
+	ticker := time.NewTicker(vsp.period * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
+			log.Info("Starting a VSP collection cycle")
 			if err := vsp.collectAndStore(ctx); err != nil {
 				return
 			}
@@ -76,7 +93,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 			log.Infof("Shutting down collector")
 			return
 		}
-	}*/
+	}
 }
 
 func (vsp *Collector) collectAndStore(ctx context.Context) error {

@@ -95,3 +95,7 @@ func AddParams(base string, params map[string]interface{}) (string, error) {
 func UnixTimeToString(t int64) string {
 	return time.Unix(t, 0).UTC().String()
 }
+
+func DurationToString(duration time.Duration) string {
+	return duration.String() // TODO truncate as necessary
+}

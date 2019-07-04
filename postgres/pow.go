@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,8 +16,18 @@ import (
 )
 
 func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
-	rows := pg.db.QueryRow(lastPowEntryTime, source)
-	_ = rows.Scan(&time)
+	var rows *sql.Row
+
+	if source == "" {
+		rows = pg.db.QueryRow(lastPowEntryTime)
+	} else {
+		rows = pg.db.QueryRow(lastPowEntryTimeBySource, source)
+	}
+
+	err := rows.Scan(&time)
+	if err != nil {
+		log.Errorf("Error in getting last PoW entry time: %s", err.Error())
+	}
 	return
 }
 
