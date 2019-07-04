@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/decred/dcrdata)](https://goreportcard.com/report/github.com/raedahgroup/dcrextdata)
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
 
-    dcrextdata is a standalone program for collecting additional info about the decred cryptocurrency like ticker and orderbook data various exchanges. 
+    dcrextdata is a standalone program for collecting additional info about the decred cryptocurrency like ticker and orderbook data from various exchanges. 
 
 ## Requirements
 To run **dcrextdata** on your machine you will need the following to be setup.
