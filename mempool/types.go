@@ -44,11 +44,11 @@ type Block struct {
 }
 
 type BlockDto struct {
-	BlockReceiveTime  string  `json:"block_receive_time"`
-	BlockInternalTime string  `json:"block_internal_time"`
+	BlockReceiveTime  string `json:"block_receive_time"`
+	BlockInternalTime string `json:"block_internal_time"`
 	Delay             string `json:"delay"`
-	BlockHeight       uint32  `json:"block_height"`
-	BlockHash         string  `json:"block_hash"`
+	BlockHeight       uint32 `json:"block_height"`
+	BlockHash         string `json:"block_hash"`
 }
 
 type Vote struct {
@@ -60,22 +60,24 @@ type Vote struct {
 }
 
 type VoteDto struct {
-	Hash                  string  `json:"hash"`
-	ReceiveTime           string  `json:"receive_time"`
+	Hash                  string `json:"hash"`
+	ReceiveTime           string `json:"receive_time"`
 	TargetedBlockTimeDiff string `json:"block_time_diff"`
-	VotingOn              int64   `json:"voting_on"`
-	ValidatorId           int     `json:"validator_id"`
+	VotingOn              int64  `json:"voting_on"`
+	ValidatorId           int    `json:"validator_id"`
 }
 
 type DataStore interface {
 	StoreMempool(context.Context, Mempool) error
+	LastMempoolTime() (entryTime time.Time, err error)
 	SaveBlock(context.Context, Block) error
 	SaveVote(ctx context.Context, vote Vote) error
 }
 
 type Collector struct {
-	dcrdClientConfig *rpcclient.ConnConfig
-	dataStore        DataStore
-	activeChain      *chaincfg.Params
-	syncIsDone       bool
+	collectionInterval float64
+	dcrdClientConfig   *rpcclient.ConnConfig
+	dataStore          DataStore
+	activeChain        *chaincfg.Params
+	syncIsDone         bool
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -43,6 +44,12 @@ func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
 func (pg *PgDb) LastMempoolBlockHeight() (height int64, err error) {
 	rows := pg.db.QueryRow(lastMempoolBlockHeight)
 	err = rows.Scan(&height)
+	return
+}
+
+func (pg *PgDb) LastMempoolTime() (entryTime time.Time, err error) {
+	rows := pg.db.QueryRow(lastMempoolEntryTime)
+	err = rows.Scan(&entryTime)
 	return
 }
 
@@ -114,7 +121,7 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 			BlockHeight:       uint32(block.Height),
 			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
 			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
-			Delay: 			   fmt.Sprintf("%04.2f", timeDiff),
+			Delay:             fmt.Sprintf("%04.2f", timeDiff),
 		})
 	}
 
@@ -123,11 +130,11 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	voteModel := models.Vote{
-		Hash:        vote.Hash,
-		VotingOn:    null.Int64From(int64(vote.VotingOn)),
-		ReceiveTime: null.TimeFrom(vote.ReceiveTime),
+		Hash:              vote.Hash,
+		VotingOn:          null.Int64From(int64(vote.VotingOn)),
+		ReceiveTime:       null.TimeFrom(vote.ReceiveTime),
 		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
-		ValidatorID: null.IntFrom(vote.ValidatorId),
+		ValidatorID:       null.IntFrom(vote.ValidatorId),
 	}
 	err := voteModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {

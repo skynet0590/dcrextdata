@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
@@ -18,11 +19,12 @@ import (
 	"github.com/decred/dcrdata/txhelpers/v2"
 )
 
-func NewCollector(config *rpcclient.ConnConfig, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
+func NewCollector(interval float64, config *rpcclient.ConnConfig, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
 	return &Collector{
-		dcrdClientConfig: config,
-		dataStore:        dataStore,
-		activeChain:      activeChain,
+		collectionInterval: interval,
+		dcrdClientConfig:   config,
+		dataStore:          dataStore,
+		activeChain:        activeChain,
 	}
 }
 
@@ -137,7 +139,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 	}
 
 	if err := client.NotifyBlocks(); err != nil {
-		log.Error(err)
+		log.Errorf("Unable to register block notification for client: %s", err.Error())
 	}
 
 	var mu sync.Mutex
@@ -218,8 +220,20 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		}
 	}
 
+	lastMempoolTime, err := c.dataStore.LastMempoolTime()
+	if err != nil {
+		log.Errorf("Unable to get last mempool entry time: %s", err.Error())
+	} else {
+		lastMempoolTime = lastMempoolTime.Add(-1 * time.Hour) // todo: this need justification
+		sencodsPassed := math.Abs(time.Since(lastMempoolTime).Seconds())
+		if sencodsPassed < c.collectionInterval {
+			timeLeft := c.collectionInterval - sencodsPassed
+			log.Infof("Mempool collected %0.2f seconds ago, %0.2f seconds to next collection cycle", sencodsPassed, timeLeft)
+			time.Sleep(time.Duration(timeLeft) * time.Second)
+		}
+	}
 	collectMempool()
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(time.Duration(c.collectionInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
