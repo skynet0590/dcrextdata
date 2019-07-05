@@ -295,14 +295,13 @@ func netParams(netType string) *chaincfg.Params {
 // help flag errors (-h, --help) are also handled here, since they do not require access to wallet
 func attemptExecuteSimpleOp() (err error) {
 	configWithCommands := &config.Config{}
-	parser := flags.NewParser(configWithCommands, flags.HelpFlag)
+	parser := flags.NewParser(configWithCommands, flags.HelpFlag|flags.PassDoubleDash)
 
 	// re-parse command-line args to catch help flag or execute any commands passed
 	_, err = parser.Parse()
 	fmt.Println(err)
 	if err != nil {
 		e, ok := err.(*flags.Error)
-		fmt.Println(e.Type)
 		if ok && e.Type == flags.ErrHelp {
             help.PrintGeneralHelp(os.Stdout, help.HelpParser())
             return nil
