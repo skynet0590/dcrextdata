@@ -299,7 +299,6 @@ func attemptExecuteSimpleOp() (err error) {
 
 	// re-parse command-line args to catch help flag or execute any commands passed
 	_, err = parser.Parse()
-	fmt.Println(err)
 	if err != nil {
 		e, ok := err.(*flags.Error)
 		if ok && e.Type == flags.ErrHelp {
