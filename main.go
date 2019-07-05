@@ -120,7 +120,7 @@ func _main(ctx context.Context) error {
 			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 			if err == nil {
 				wg.Add(1)
-				go vspCollector.Run(ctx, wg)
+				vspCollector.Run(ctx, wg)
 			} else {
 				log.Error(err)
 			}
