@@ -79,21 +79,23 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	ticker := time.NewTicker(vsp.period * time.Second)
-	defer ticker.Stop()
+	go func() {
+		ticker := time.NewTicker(vsp.period * time.Second)
+		defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			log.Info("Starting a VSP collection cycle")
-			if err := vsp.collectAndStore(ctx); err != nil {
+		for {
+			select {
+			case <-ticker.C:
+				log.Info("Starting a VSP collection cycle")
+				if err := vsp.collectAndStore(ctx); err != nil {
+					return
+				}
+			case <-ctx.Done():
+				log.Infof("Shutting down collector")
 				return
 			}
-		case <-ctx.Done():
-			log.Infof("Shutting down collector")
-			return
 		}
-	}
+	}()
 }
 
 func (vsp *Collector) collectAndStore(ctx context.Context) error {
