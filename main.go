@@ -57,7 +57,6 @@ func _main(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(args)
 
 	// Initialize log rotation.  After log rotation has been initialized, the
 	// logger variables may be used.
@@ -93,12 +92,11 @@ func _main(ctx context.Context) error {
 	// check if we can execute the needed op without connecting to a wallet
 	// if len(args) == 0, then there's nothing to execute as all command-line args were parsed as app options
 	if len(args) > 0 {
-		if ok, err := attemptExecuteSimpleOp(); ok {
-			if err != nil {
-				return err
-			}
-			return nil
+		err := attemptExecuteSimpleOp()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, config.Hint)
 		}
+		return nil
 	}
 
 
@@ -295,27 +293,22 @@ func netParams(netType string) *chaincfg.Params {
 // attemptExecuteSimpleOp checks if the operation requested by the user does not require a connection to a decred wallet
 // such operations may include cli commands like `help`, ergo a flags parser object is created with cli commands and flags
 // help flag errors (-h, --help) are also handled here, since they do not require access to wallet
-func attemptExecuteSimpleOp() (isSimpleOp bool, err error) {
+func attemptExecuteSimpleOp() (err error) {
 	configWithCommands := &config.Config{}
-	parser := flags.NewParser(configWithCommands, flags.HelpFlag|flags.PassDoubleDash)
+	parser := flags.NewParser(configWithCommands, flags.HelpFlag)
 
 	// re-parse command-line args to catch help flag or execute any commands passed
 	_, err = parser.Parse()
+	fmt.Println(err)
 	if err != nil {
-		flagErr, ok := err.(*flags.Error)
-		if ok && flagErr.Type == flags.ErrHelp {
-			os.Exit(0)
+		e, ok := err.(*flags.Error)
+		fmt.Println(e.Type)
+		if ok && e.Type == flags.ErrHelp {
+            help.PrintGeneralHelp(os.Stdout, help.HelpParser())
+            return nil
 		}
+		return err
 	}
 
-	err = nil
-	isSimpleOp = true
-
-	// if parser.Active != nil {
-		help.PrintCommandHelp(os.Stdout, parser.Name, parser.Active)
-	// } else {
-	// 	help.PrintGeneralHelp(os.Stdout, commands.HelpParser(), commands.Categories())
-	// }
-	
-	return
+	return fmt.Errorf(config.Hint)
 }

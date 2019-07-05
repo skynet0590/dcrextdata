@@ -4,11 +4,17 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"sort"
 	"strings"
+	"text/tabwriter"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/raedahgroup/dcrextdata/app"
 )
+
+//TabWriter creates a tabwriter object that writes tab-aligned text.
+func TabWriter(w io.Writer) *tabwriter.Writer {
+	return tabwriter.NewWriter(w, 0, 0, 1, ' ', tabwriter.TabIndent)
+}
 
 // printOptionGroups checks if the root parser option group has nested option groups and prints all
 func printOptionGroups(output io.Writer, groups []*flags.Group) {
@@ -26,9 +32,12 @@ func printOptionGroups(output io.Writer, groups []*flags.Group) {
 func printOptions(tabWriter io.Writer, optionDescription string, options []*flags.Option) {
 	if options != nil && len(options) > 0 {
 		fmt.Fprintln(tabWriter, optionDescription)
-
 		// check if there's any option in this group with short and long name
 		// this will help to decide whether or not to pad options without short name to maintain readability
+		if optionDescription == "Command-Line options:" {
+			fmt.Fprintf(tabWriter, fmt.Sprintf("   %s [command] \n\n", app.AppName))
+		}	
+
 		var hasOptionsWithShortName bool
 		for _, option := range options {
 			if option.ShortName != 0 && option.LongName != "" {
@@ -36,9 +45,14 @@ func printOptions(tabWriter io.Writer, optionDescription string, options []*flag
 				break
 			}
 		}
-
+			var optionUsage string
 		for _, option := range options {
-			optionUsage := parseOptionUsageText(option, hasOptionsWithShortName)
+			if optionDescription == "Command-Line options:" {
+						optionUsage = parseOptionUsageTextDash(option, hasOptionsWithShortName)
+
+		}else{
+			optionUsage = parseOptionUsageText(option, hasOptionsWithShortName)
+		}
 			description := parseOptionDescription(option)
 			fmt.Fprintln(tabWriter, fmt.Sprintf("  %s \t %s", optionUsage, description))
 		}
@@ -48,6 +62,29 @@ func printOptions(tabWriter io.Writer, optionDescription string, options []*flag
 }
 
 func parseOptionUsageText(option *flags.Option, hasOptionsWithShortName bool) (optionUsage string) {
+	if option.ShortName != 0 && option.LongName != "" {
+		optionUsage = fmt.Sprintf("/%c, /%s", option.ShortName, option.LongName)
+	} else if option.ShortName != 0 {
+		optionUsage = fmt.Sprintf("/%c", option.ShortName)
+	} else if hasOptionsWithShortName {
+		// pad long name with 4 spaces to align with options having short and long names
+		optionUsage = fmt.Sprintf("    /%s", option.LongName)
+	} else {
+		optionUsage = fmt.Sprintf("/%s", option.LongName)
+	}
+
+	if option.Field().Type.Kind() != reflect.Bool {
+		optionUsage += ":"
+	}
+
+	if len(option.Choices) > 0 {
+		optionUsage += fmt.Sprintf("[%s]", strings.Join(option.Choices, ","))
+	}
+
+	return
+}
+
+func parseOptionUsageTextDash(option *flags.Option, hasOptionsWithShortName bool) (optionUsage string) {
 	if option.ShortName != 0 && option.LongName != "" {
 		optionUsage = fmt.Sprintf("-%c, --%s", option.ShortName, option.LongName)
 	} else if option.ShortName != 0 {
@@ -60,7 +97,7 @@ func parseOptionUsageText(option *flags.Option, hasOptionsWithShortName bool) (o
 	}
 
 	if option.Field().Type.Kind() != reflect.Bool {
-		optionUsage += "="
+		optionUsage += ":"
 	}
 
 	if len(option.Choices) > 0 {
@@ -77,24 +114,4 @@ func parseOptionDescription(option *flags.Option) (description string) {
 		description += fmt.Sprintf(" (default: %s)", optionDefaultValue.String())
 	}
 	return
-}
-
-func printCommands(tabWriter io.Writer, commandGroups map[string][]*flags.Command) {
-	// sort first to ensure consistent display order
-	categories := make([]string, 0, len(commandGroups))
-	for category := range commandGroups {
-		categories = append(categories, category)
-	}
-	sort.Strings(categories)
-
-	for _, category := range categories {
-		fmt.Fprintf(tabWriter, "%s:\n", category)
-
-		commands := commandGroups[category]
-		for _, command := range commands {
-			fmt.Fprintln(tabWriter, fmt.Sprintf("  %s \t %s", command.Name, command.ShortDescription))
-		}
-
-		fmt.Fprintln(tabWriter)
-	}
 }

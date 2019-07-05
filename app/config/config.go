@@ -15,7 +15,7 @@ const (
 	DefaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
 	defaultLogLevel       = "info"
-	hint                  = `Run dcrextdata --mode=http to start http server or just dcrextdata`
+	Hint                  = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
 )
 
 type Config struct {
@@ -25,7 +25,6 @@ type Config struct {
 
 type ConfigFileOptions struct {
 	// General application behaviour
-	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	LogFile    string `short:"L" long:"logfile" description:"File name of the log file"`
 	ConfigFile string `short:"C" long:"Configfile" description:"Path to Configuration file"`
 	DebugLevel string `short:"d" long:"debuglevel" description:"Logging level {trace, debug, info, warn, error, critical}"`
@@ -56,14 +55,15 @@ type ConfigFileOptions struct {
 
 	// Mempool
 	DisableMempool  bool   `long:"disablemempool" description:"Disable mempool data collection"`
-	DcrdRpcServer   string `long:"dcrdrpcserver"`
-	DcrdNetworkType string `long:"dcrdnetworktype"`
-	DcrdRpcUser     string `long:"dcrdrpcuser"`
-	DcrdRpcPassword string `long:"dcrdrpcpaswword"`
+	DcrdRpcServer   string `long:"dcrdrpcserver" description:"Dcrd rpc server host"`
+	DcrdNetworkType string `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
+	DcrdRpcUser     string `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
+	DcrdRpcPassword string `long:"dcrdrpcpaswword" description:"Your Dcrd rpc password"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
+	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	HttpMode bool `long:"http" description:"Launch http server"`
 }
 
@@ -83,77 +83,6 @@ func defaultConfig() Config {
 		ConfigFileOptions: defaultFileOptions(),
 	}
 }
-
-// // validLogLevel returns whether or not logLevel is a valid debug log level.
-// func validLogLevel(logLevel string) bool {
-// 	_, ok := slog.LevelFromString(logLevel)
-// 	return ok
-// }
-
-// // supportedSubsystems returns a sorted slice of the supported subsystems for
-// // logging purposes.
-// func supportedSubsystems() []string {
-// 	// Convert the subsystemLoggers map keys to a slice.
-// 	subsystems := make([]string, 0, len(subsystemLoggers))
-// 	for subsysID := range subsystemLoggers {
-// 		subsystems = append(subsystems, subsysID)
-// 	}
-
-// 	// Sort the subsytems for stable display.
-// 	sort.Strings(subsystems)
-// 	return subsystems
-// }
-
-// // parseAndSetDebugLevels attempts to parse the specified debug level and set
-// // the levels accordingly.  An appropriate error is returned if anything is
-// // invalid.
-// func parseAndSetDebugLevels(debugLevel string) error {
-// 	// When the specified string doesn't have any delimters, treat it as
-// 	// the log level for all subsystems.
-// 	if !strings.Contains(debugLevel, ",") && !strings.Contains(debugLevel, "=") {
-// 		// Validate debug log level.
-// 		if !validLogLevel(debugLevel) {
-// 			str := "The specified debug level [%v] is invalid"
-// 			return fmt.Errorf(str, debugLevel)
-// 		}
-
-// 		// Change the logging level for all subsystems.
-// 		setLogLevels(debugLevel)
-
-// 		return nil
-// 	}
-
-// 	// Split the specified string into subsystem/level pairs while detecting
-// 	// issues and update the log levels accordingly.
-// 	for _, logLevelPair := range strings.Split(debugLevel, ",") {
-// 		if !strings.Contains(logLevelPair, "=") {
-// 			str := "The specified debug level contains an invalid " +
-// 				"subsystem/level pair [%v]"
-// 			return fmt.Errorf(str, logLevelPair)
-// 		}
-
-// 		// Extract the specified subsystem and log level.
-// 		fields := strings.Split(logLevelPair, "=")
-// 		subsysID, logLevel := fields[0], fields[1]
-
-// 		// Validate subsystem.
-// 		if _, exists := subsystemLoggers[subsysID]; !exists {
-// 			str := "The specified subsystem [%v] is invalid -- " +
-// 				"supported subsytems %v"
-// 			return fmt.Errorf(str, subsysID, supportedSubsystems())
-// 		}
-
-// 		// Validate log level.
-// 		if !validLogLevel(logLevel) {
-// 			str := "The specified debug level [%v] is invalid"
-// 			return fmt.Errorf(str, logLevel)
-// 		}
-
-// 		setLogLevel(subsysID, logLevel)
-// 	}
-
-// 	return nil
-// }
 
 func LoadConfig() (*Config, []string, error) {
 	cfg := defaultConfig()
@@ -175,27 +104,6 @@ func LoadConfig() (*Config, []string, error) {
 		}
 		return nil, nil, err
 	}
-
-	// initLogRotator(cfg.ConfigFileOptions.LogFile)
-
-	// // Special show command to list supported subsystems and exit.
-	// if cfg.ConfigFileOptions.DebugLevel == "show" {
-	// 	fmt.Println("Supported subsystems", supportedSubsystems())
-	// 	os.Exit(0)
-	// }
-
-	// // Parse, validate, and set debug log level(s).
-	// if cfg.Quiet {
-	// 	cfg.ConfigFileOptions.DebugLevel = "error"
-	// }
-
-	// // Parse, validate, and set debug log level(s).
-	// if err := parseAndSetDebugLevels(cfg.ConfigFileOptions.DebugLevel); err != nil {
-	// 	err = fmt.Errorf("%s: %v", "loadConfig", err.Error())
-	// 	fmt.Fprintln(os.Stderr, err)
-	// 	parser.WriteHelp(os.Stderr)
-	// 	return nil, nil, err
-	// }
 
 	return &cfg, unknownArg, nil
 }
