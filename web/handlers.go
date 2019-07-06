@@ -96,6 +96,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 			s.renderError(err.Error(), res)
 			return
 		}
+
 	} else if selectedFilter == "All" && selectedCpair != "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
 		if err != nil {

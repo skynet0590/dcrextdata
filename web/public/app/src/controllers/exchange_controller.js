@@ -48,11 +48,9 @@ export default class extends Controller {
 
   fetchExchange () {
     this.exchangeTableTarget.innerHTML = ''
-    console.log(this.nextPage)
     const selectedFilter = this.selectedFilterTarget.value
     const numberOfRows = this.selectedNumTarget.value
     const selectedCpair = this.selectedCpairTarget.value
-    console.log('vghvghvhb')
 
     const _this = this
     axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`)
