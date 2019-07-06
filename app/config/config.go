@@ -7,7 +7,7 @@ package config
 import (
 	"fmt"
 	"os"
-	
+
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -63,7 +63,7 @@ type ConfigFileOptions struct {
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
-	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
+	Reset    bool `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	HttpMode bool `long:"http" description:"Launch http server"`
 }
 

@@ -36,7 +36,7 @@ func printOptions(tabWriter io.Writer, optionDescription string, options []*flag
 		// this will help to decide whether or not to pad options without short name to maintain readability
 		if optionDescription == "Command-Line options:" {
 			fmt.Fprintf(tabWriter, fmt.Sprintf("   %s [command] \n\n", app.AppName))
-		}	
+		}
 
 		var hasOptionsWithShortName bool
 		for _, option := range options {
@@ -45,14 +45,14 @@ func printOptions(tabWriter io.Writer, optionDescription string, options []*flag
 				break
 			}
 		}
-			var optionUsage string
+		var optionUsage string
 		for _, option := range options {
 			if optionDescription == "Command-Line options:" {
-						optionUsage = parseOptionUsageTextDash(option, hasOptionsWithShortName)
+				optionUsage = parseOptionUsageTextDash(option, hasOptionsWithShortName)
 
-		}else{
-			optionUsage = parseOptionUsageText(option, hasOptionsWithShortName)
-		}
+			} else {
+				optionUsage = parseOptionUsageText(option, hasOptionsWithShortName)
+			}
 			description := parseOptionDescription(option)
 			fmt.Fprintln(tabWriter, fmt.Sprintf("  %s \t %s", optionUsage, description))
 		}

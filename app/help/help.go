@@ -11,7 +11,7 @@ import (
 
 type GeneralHelpData struct {
 	config.CommandLineOptions `group:"Command-Line options:"`
-	config.ConfigFileOptions `group:"Configuration file options:"`
+	config.ConfigFileOptions  `group:"Configuration file options:"`
 }
 
 func PrintGeneralHelp(output io.Writer, parser *flags.Parser) {

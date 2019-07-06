@@ -15,19 +15,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jessevdk/go-flags"
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
+	"github.com/jessevdk/go-flags"
+	"github.com/raedahgroup/dcrextdata/app"
+	"github.com/raedahgroup/dcrextdata/app/config"
+	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
-	"github.com/raedahgroup/dcrextdata/app"
-	"github.com/raedahgroup/dcrextdata/app/config"
-	"github.com/raedahgroup/dcrextdata/app/help"
 )
 
 // const dcrlaunchtime int64 = 1454889600
@@ -92,13 +92,12 @@ func _main(ctx context.Context) error {
 	// check if we can execute the needed op without connecting to a wallet
 	// if len(args) == 0, then there's nothing to execute as all command-line args were parsed as app options
 	if len(args) > 0 {
-		err := attemptExecuteSimpleOp()
+		err := executeHelpCommand()
 		if err != nil {
 			return fmt.Errorf("%s: %s", err, config.Hint)
 		}
 		return nil
 	}
-
 
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName,
@@ -290,10 +289,8 @@ func netParams(netType string) *chaincfg.Params {
 	}
 }
 
-// attemptExecuteSimpleOp checks if the operation requested by the user does not require a connection to a decred wallet
-// such operations may include cli commands like `help`, ergo a flags parser object is created with cli commands and flags
-// help flag errors (-h, --help) are also handled here, since they do not require access to wallet
-func attemptExecuteSimpleOp() (err error) {
+// executeHelpCommand checks if the operation requested by the user is -h, --help flags. If it not a help flag is throw an error.
+func executeHelpCommand() (err error) {
 	configWithCommands := &config.Config{}
 	parser := flags.NewParser(configWithCommands, flags.HelpFlag|flags.PassDoubleDash)
 
@@ -302,8 +299,8 @@ func attemptExecuteSimpleOp() (err error) {
 	if err != nil {
 		e, ok := err.(*flags.Error)
 		if ok && e.Type == flags.ErrHelp {
-            help.PrintGeneralHelp(os.Stdout, help.HelpParser())
-            return nil
+			help.PrintGeneralHelp(os.Stdout, help.HelpParser())
+			return nil
 		}
 		return err
 	}
