@@ -31,21 +31,21 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	// var err error
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	cpair, err := s.db.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
@@ -75,7 +75,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
 		recordsPerPage = recordsPerPage
-	}else {
+	} else {
 		recordsPerPage = numRows
 	}
 
@@ -258,9 +258,9 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 
 	allVspData, err := s.db.FetchVSPs(ctx)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
@@ -301,9 +301,9 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	totalCount, err := s.db.CountPowData(ctx)
 	if err != nil {
@@ -390,9 +390,9 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
 	if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+		s.renderError(err.Error(), res)
+		return
+	}
 
 	data["powSource"] = powSource
 	data["currentPage"] = int(pageToLoad)

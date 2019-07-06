@@ -24,7 +24,7 @@ import (
 
 // PowDatum is an object representing the database table.
 type PowDatum struct {
-	Time              int          `boil:"time" json:"time" toml:"time" yaml:"time"`
+	Time              time.Time    `boil:"time" json:"time" toml:"time" yaml:"time"`
 	NetworkHashrate   null.String  `boil:"network_hashrate" json:"network_hashrate,omitempty" toml:"network_hashrate" yaml:"network_hashrate,omitempty"`
 	PoolHashrate      null.String  `boil:"pool_hashrate" json:"pool_hashrate,omitempty" toml:"pool_hashrate" yaml:"pool_hashrate,omitempty"`
 	Workers           null.Int     `boil:"workers" json:"workers,omitempty" toml:"workers" yaml:"workers,omitempty"`
@@ -60,7 +60,7 @@ var PowDatumColumns = struct {
 // Generated where
 
 var PowDatumWhere = struct {
-	Time              whereHelperint
+	Time              whereHelpertime_Time
 	NetworkHashrate   whereHelpernull_String
 	PoolHashrate      whereHelpernull_String
 	Workers           whereHelpernull_Int
@@ -69,7 +69,7 @@ var PowDatumWhere = struct {
 	BTCPrice          whereHelpernull_String
 	Source            whereHelperstring
 }{
-	Time:              whereHelperint{field: "\"pow_data\".\"time\""},
+	Time:              whereHelpertime_Time{field: "\"pow_data\".\"time\""},
 	NetworkHashrate:   whereHelpernull_String{field: "\"pow_data\".\"network_hashrate\""},
 	PoolHashrate:      whereHelpernull_String{field: "\"pow_data\".\"pool_hashrate\""},
 	Workers:           whereHelpernull_Int{field: "\"pow_data\".\"workers\""},
@@ -201,7 +201,7 @@ func PowData(mods ...qm.QueryMod) powDatumQuery {
 
 // FindPowDatum retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindPowDatum(ctx context.Context, exec boil.ContextExecutor, time int, source string, selectCols ...string) (*PowDatum, error) {
+func FindPowDatum(ctx context.Context, exec boil.ContextExecutor, time time.Time, source string, selectCols ...string) (*PowDatum, error) {
 	powDatumObj := &PowDatum{}
 
 	sel := "*"
