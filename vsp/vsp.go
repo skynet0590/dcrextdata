@@ -62,11 +62,12 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 	secondsPassed := time.Since(lastCollectionDate)
 	period := vsp.period * time.Second
 
-	log.Info("Starting VSP collection cycle")
+	log.Info("Starting VSP collection cycle.")
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		log.Infof("VSP collected %s ago, %s till the next connection cycle.", helpers.DurationToString(secondsPassed),
+		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
+		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", period/60, helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)

@@ -216,7 +216,7 @@ func _main(ctx context.Context) error {
 
 			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 			if err == nil {
-				log.Info("Triggering PoW collectors")
+				log.Info("Triggering PoW collectors.")
 
 				lastCollectionDateUnix := db.LastPowEntryTime("")
 				lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
@@ -225,7 +225,7 @@ func _main(ctx context.Context) error {
 
 				if lastCollectionDateUnix > 0 && secondsPassed < period {
 					timeLeft := period - secondsPassed
-					log.Infof("PoW data collected %s ago, %s till the next connection cycle.", helpers.DurationToString(secondsPassed),
+					log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", cfg.PowInterval/60, helpers.DurationToString(secondsPassed),
 						helpers.DurationToString(timeLeft))
 
 					time.Sleep(timeLeft)
