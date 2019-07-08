@@ -97,5 +97,6 @@ func UnixTimeToString(t int64) string {
 }
 
 func DurationToString(duration time.Duration) string {
+	duration = duration.Round(10 * time.Millisecond)
 	return duration.String() // TODO truncate as necessary
 }
