@@ -174,7 +174,7 @@ func _main(ctx context.Context) error {
 
 				if lastCollectionDateUnix > 0 && secondsPassed < period {
 					timeLeft := period - secondsPassed
-					log.Infof("PoW data collected %s ago, %s to the next collection cycle", helpers.DurationToString(secondsPassed),
+					log.Infof("PoW data collected %s ago, %s till the next connection cycle.", helpers.DurationToString(secondsPassed),
 						helpers.DurationToString(timeLeft))
 
 					time.Sleep(timeLeft)

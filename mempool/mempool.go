@@ -159,7 +159,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		}
 
-		// there wont be transactions in the mempool while sync is going on
+		// they wont be transactions in the mempool while sync is going on
 		c.syncIsDone = true // todo: we need a better way to determine the sync status of dcrd
 
 		mempoolDto := Mempool{
@@ -231,7 +231,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		sencodsPassed := math.Abs(time.Since(lastMempoolTime).Seconds())
 		if sencodsPassed < c.collectionInterval {
 			timeLeft := c.collectionInterval - sencodsPassed
-			log.Infof("Mempool collected %0.2f seconds ago, %0.2f seconds to next collection cycle", sencodsPassed, timeLeft)
+			log.Infof("Mempool collected %0.2f seconds ago, %0.2f seconds till the next connection cycle.", sencodsPassed, timeLeft)
 			time.Sleep(time.Duration(timeLeft) * time.Second)
 		}
 	}

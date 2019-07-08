@@ -66,7 +66,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		log.Infof("VSP collected %s ago, %s to the next collection cycle", helpers.DurationToString(secondsPassed),
+		log.Infof("VSP collected %s ago, %s till the next connection cycle.", helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)
