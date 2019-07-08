@@ -63,6 +63,22 @@ type btcData struct {
 type btcExchangeRateData struct {
 	CoinPrice float64 `json:"DCR2USD"`
 }
+
 type btcAPIResponse struct {
 	BtcData btcData `json:"data"`
+}
+
+type uupoolData struct {
+	PoolHashrate  float64 `json:"hr1"`
+	OnlineWorkers int64   `json:"onlineWorkers"`
+}
+
+type uunetworkData struct {
+	NetworkHashrate   int64   `json:"networkhashps"`
+	NetworkDifficulty float64 `json:"difficulty"`
+}
+
+type uupoolAPIResponse struct {
+	Pool    uupoolData    `json: "pool"`
+	Network uunetworkData `json: "network"`
 }
