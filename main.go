@@ -18,11 +18,14 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
+	"github.com/jessevdk/go-flags"
+	"github.com/raedahgroup/dcrextdata/app"
+	"github.com/raedahgroup/dcrextdata/app/config"
+	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
-	"github.com/raedahgroup/dcrextdata/version"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -50,20 +53,55 @@ func main() {
 }
 
 func _main(ctx context.Context) error {
-	cfg, _, err := loadConfig()
+	cfg, args, err := config.LoadConfig()
 	if err != nil {
 		return err
 	}
 
+	// Initialize log rotation.  After log rotation has been initialized, the
+	// logger variables may be used.
+	initLogRotator(cfg.ConfigFileOptions.LogFile)
 	defer func() {
 		if logRotator != nil {
 			logRotator.Close()
 		}
 	}()
 
+	// Special show command to list supported subsystems and exit.
+	if cfg.DebugLevel == "show" {
+		fmt.Println("Supported subsystems", supportedSubsystems())
+		os.Exit(0)
+	}
+
+	// Parse, validate, and set debug log level(s).
+	if cfg.Quiet {
+		cfg.ConfigFileOptions.DebugLevel = "error"
+	}
+
+	// Parse, validate, and set debug log level(s).
+	if err := parseAndSetDebugLevels(cfg.DebugLevel); err != nil {
+		err := fmt.Errorf("loadConfig: %s", err.Error())
+		return err
+	}
+
+	if cfg.ConfigFileOptions.VSPInterval < 300 {
+		log.Warn("VSP collection interval cannot be less that 300, setting to 300")
+		cfg.ConfigFileOptions.VSPInterval = 300
+	}
+
+	// check if we can execute the needed op without connecting to a wallet
+	// if len(args) == 0, then there's nothing to execute as all command-line args were parsed as app options
+	if len(args) > 0 {
+		err := executeHelpCommand()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, config.Hint)
+		}
+		return nil
+	}
+
 	// Display app version.
-	log.Infof("%s version %v (Go version %s)", version.AppName,
-		version.Version(), runtime.Version())
+	log.Infof("%s version %v (Go version %s)", app.AppName,
+		app.Version(), runtime.Version())
 
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 
@@ -249,4 +287,23 @@ func netParams(netType string) *chaincfg.Params {
 	default:
 		return nil
 	}
+}
+
+// executeHelpCommand checks if the operation requested by the user is -h, --help flags. If it not a help flag is throw an error.
+func executeHelpCommand() (err error) {
+	configWithCommands := &config.Config{}
+	parser := flags.NewParser(configWithCommands, flags.HelpFlag|flags.PassDoubleDash)
+
+	// re-parse command-line args to catch help flag or execute any commands passed
+	_, err = parser.Parse()
+	if err != nil {
+		e, ok := err.(*flags.Error)
+		if ok && e.Type == flags.ErrHelp {
+			help.PrintGeneralHelp(os.Stdout, help.HelpParser())
+			return nil
+		}
+		return err
+	}
+
+	return fmt.Errorf(config.Hint)
 }

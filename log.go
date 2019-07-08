@@ -7,6 +7,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
@@ -105,4 +107,84 @@ func setLogLevels(logLevel string) {
 	for subsystemID := range subsystemLoggers {
 		setLogLevel(subsystemID, logLevel)
 	}
+}
+
+// validLogLevel returns whether or not logLevel is a valid debug log level.
+func validLogLevel(logLevel string) bool {
+	_, ok := slog.LevelFromString(logLevel)
+	return ok
+}
+
+// supportedSubsystems returns a sorted slice of the supported subsystems for
+// logging purposes.
+func supportedSubsystems() []string {
+	// Convert the subsystemLoggers map keys to a slice.
+	subsystems := make([]string, 0, len(subsystemLoggers))
+	for subsysID := range subsystemLoggers {
+		subsystems = append(subsystems, subsysID)
+	}
+
+	// Sort the subsytems for stable display.
+	sort.Strings(subsystems)
+	return subsystems
+}
+
+// parseAndSetDebugLevels attempts to parse the specified debug level and set
+// the levels accordingly.  An appropriate error is returned if anything is
+// invalid.
+func parseAndSetDebugLevels(debugLevel string) error {
+	// When the specified string doesn't have any delimters, treat it as
+	// the log level for all subsystems.
+	if !strings.Contains(debugLevel, ",") && !strings.Contains(debugLevel, "=") {
+		// Validate debug log level.
+		if !validLogLevel(debugLevel) {
+			str := "The specified debug level [%v] is invalid"
+			return fmt.Errorf(str, debugLevel)
+		}
+
+		// Change the logging level for all subsystems.
+		setLogLevels(debugLevel)
+
+		return nil
+	}
+
+	// Split the specified string into subsystem/level pairs while detecting
+	// issues and update the log levels accordingly.
+	for _, logLevelPair := range strings.Split(debugLevel, ",") {
+		if !strings.Contains(logLevelPair, "=") {
+			str := "The specified debug level contains an invalid " +
+				"subsystem/level pair [%v]"
+			return fmt.Errorf(str, logLevelPair)
+		}
+
+		// Extract the specified subsystem and log level.
+		fields := strings.Split(logLevelPair, "=")
+		subsysID, logLevel := fields[0], fields[1]
+
+		// Validate subsystem.
+		if _, exists := subsystemLoggers[subsysID]; !exists {
+			str := "The specified subsystem [%v] is invalid -- " +
+				"supported subsytems %v"
+			return fmt.Errorf(str, subsysID, supportedSubsystems())
+		}
+
+		// Validate log level.
+		if !validLogLevel(logLevel) {
+			str := "The specified debug level [%v] is invalid"
+			return fmt.Errorf(str, logLevel)
+		}
+
+		setLogLevel(subsysID, logLevel)
+	}
+
+	return nil
+}
+
+// fatalf logs a message, flushes the logger, and finally exit the process with
+// a non-zero return code.
+func fatalf(format string, args ...interface{}) {
+	log.Errorf(format, args...)
+	os.Stdout.Sync()
+	logRotator.Close()
+	os.Exit(1)
 }
