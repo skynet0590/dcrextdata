@@ -117,7 +117,7 @@ func _main(ctx context.Context) error {
 		}
 	}(db)
 
-	if cfg.Reset {		
+	if cfg.Reset {
 		fmt.Println()
 		resetTables, err := helpers.RequestYesNoConfirmation("You are about to reset/drop all database table(s). Proceed?", "N")
 		if err != nil {
