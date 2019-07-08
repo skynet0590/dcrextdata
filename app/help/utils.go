@@ -3,6 +3,7 @@ package help
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"text/tabwriter"
@@ -15,6 +16,9 @@ import (
 func TabWriter(w io.Writer) *tabwriter.Writer {
 	return tabwriter.NewWriter(w, 0, 0, 1, ' ', tabwriter.TabIndent)
 }
+
+// StdoutWriter writes tab-aligned text to os.Stdout
+var StdoutWriter = TabWriter(os.Stdout)
 
 // printOptionGroups checks if the root parser option group has nested option groups and prints all
 func printOptionGroups(output io.Writer, groups []*flags.Group) {

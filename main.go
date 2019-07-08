@@ -22,6 +22,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/help"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
@@ -117,14 +118,26 @@ func _main(ctx context.Context) error {
 	}(db)
 
 	if cfg.Reset {
-		log.Info("Dropping tables")
-		err = db.DropAllTables()
+		fmt.Println()
+		resetTables, err := helpers.RequestYesNoConfirmation("You are about to reset/drop all database table(s). Proceed?", "N")
 		if err != nil {
-			db.Close()
-			log.Error("Could not drop tables: ", err)
-			return err
+			return fmt.Errorf("error reading your response: %s", err.Error())
 		}
-		log.Info("Tables dropped")
+
+		if resetTables {
+			log.Info("Dropping tables")
+			err = db.DropAllTables()
+			if err != nil {
+				db.Close()
+				log.Error("Could not drop tables: ", err)
+				return err
+			}
+
+			log.Info("Tables dropped")
+			return nil
+		}
+
+		return nil
 	}
 
 	if cfg.HttpMode {
