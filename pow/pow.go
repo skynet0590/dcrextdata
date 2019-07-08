@@ -6,7 +6,6 @@ package pow
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
