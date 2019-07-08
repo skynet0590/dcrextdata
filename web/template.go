@@ -10,7 +10,7 @@ import (
 func (s *Server) loadTemplates() {
 	layout := "web/views/layout.html"
 	tpls := map[string]string{
-		"error.html": "web/views/error.html",
+		"error.html":       "web/views/error.html",
 		"exchange.html":    "web/views/exchange.html",
 		"vsp.html":         "web/views/vsp.html",
 		"pow.html":         "web/views/pow.html",

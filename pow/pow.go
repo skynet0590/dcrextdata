@@ -6,6 +6,7 @@ package pow
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,6 +26,9 @@ const (
 
 	Btc    = "btc"
 	BtcUrl = "https://pool.api.btc.com/v1/pool/status"
+
+	Uupool    = "uupool"
+	UupoolUrl = "http://uupool.cn/api/getPoolInfo.php?coin=dcr"
 )
 
 var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
@@ -32,6 +36,7 @@ var PowConstructors = map[string]func(*http.Client, int64) (Pow, error){
 	F2pool:   NewF2pool,
 	Coinmine: NewCoinmine,
 	Btc:      NewBtc,
+	Uupool:   NewUupool,
 }
 
 type Pow interface {
@@ -284,3 +289,56 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 }
 
 func (*BtcPow) Name() string { return Btc }
+
+type UupoolPow struct {
+	CommonInfo
+}
+
+func NewUupool(client *http.Client, lastUpdate int64) (Pow, error) {
+	if client == nil {
+		return nil, nilClientError
+	}
+	return &UupoolPow{
+		CommonInfo: CommonInfo{
+			client:     client,
+			lastUpdate: lastUpdate,
+			baseUrl:    UupoolUrl,
+		},
+	}, nil
+}
+
+func (in *UupoolPow) Collect(ctx context.Context) ([]PowData, error) {
+	res := new(uupoolAPIResponse)
+	err := helpers.GetResponse(ctx, in.client, in.baseUrl, res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := in.fetch(res, in.lastUpdate)
+	if len(result) > 0 {
+		in.lastUpdate = result[len(result)-1].Time
+	}
+
+	return result, nil
+}
+
+func (UupoolPow) fetch(res *uupoolAPIResponse, start int64) []PowData {
+	data := make([]PowData, 0, 1)
+	t := time.Now().Unix()
+
+	data = append(data, PowData{
+		Time:              t,
+		NetworkHashrate:   res.Network.NetworkHashrate,
+		PoolHashrate:      res.Pool.PoolHashrate,
+		Workers:           res.Pool.OnlineWorkers,
+		NetworkDifficulty: res.Network.NetworkDifficulty,
+		CoinPrice:         0,
+		BtcPrice:          0,
+		Source:            "uupool",
+	})
+
+	return data
+}
+
+func (*UupoolPow) Name() string { return Btc }

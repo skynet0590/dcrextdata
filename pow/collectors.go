@@ -17,6 +17,7 @@ var (
 		Luxor,
 		F2pool,
 		Btc,
+		Uupool,
 	}
 )
 
