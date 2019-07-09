@@ -54,11 +54,12 @@ type ConfigFileOptions struct {
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
 
 	// Mempool
-	DisableMempool  bool   `long:"disablemempool" description:"Disable mempool data collection"`
-	DcrdRpcServer   string `long:"dcrdrpcserver" description:"Dcrd rpc server host"`
-	DcrdNetworkType string `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
-	DcrdRpcUser     string `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
-	DcrdRpcPassword string `long:"dcrdrpcpaswword" description:"Your Dcrd rpc password"`
+	DisableMempool  bool    `long:"disablemempool" description:"Disable mempool data collection"`
+	MempoolInterval float64 `long:"mempoolinterval" description:"The duration of time between mempool collection"`
+	DcrdRpcServer   string  `long:"dcrdrpcserver" description:"Dcrd rpc server host"`
+	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
+	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
+	DcrdRpcPassword string  `long:"dcrdrpcpaswword" description:"Your Dcrd rpc password"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
@@ -74,7 +75,11 @@ func defaultFileOptions() ConfigFileOptions {
 		DebugLevel:      defaultLogLevel,
 		VSPInterval:     300,
 		PowInterval:     300,
+		MempoolInterval: 60,
 		DcrdNetworkType: "mainnet",
+		DcrdRpcServer:   "127.0.0.1:9109",
+		HTTPHost:        "127.0.0.1",
+		HTTPPort:        "7770",
 	}
 }
 

@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 const (
@@ -56,27 +58,45 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 		return
 	}
 
-	log.Info("Starting VSP collection cycle")
+	lastCollectionDate := vsp.dataStore.LastVspTickEntryTime()
+	secondsPassed := time.Since(lastCollectionDate)
+	period := vsp.period * time.Second
+
+	log.Info("Starting VSP collection cycle.")
+
+	if secondsPassed < period {
+		timeLeft := period - secondsPassed
+		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
+		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", period/60, helpers.DurationToString(secondsPassed),
+			helpers.DurationToString(timeLeft))
+
+		time.Sleep(timeLeft)
+	}
+
 	log.Info("Fetching VSP from source")
+
 	if err := vsp.collectAndStore(ctx); err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
 
-	/*ticker := time.NewTicker(vsp.period * time.Second)
-	defer ticker.Stop()
+	go func() {
+		ticker := time.NewTicker(vsp.period * time.Second)
+		defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			if err := vsp.collectAndStore(ctx); err != nil {
+		for {
+			select {
+			case <-ticker.C:
+				log.Info("Starting a VSP collection cycle")
+				if err := vsp.collectAndStore(ctx); err != nil {
+					return
+				}
+			case <-ctx.Done():
+				log.Infof("Shutting down collector")
 				return
 			}
-		case <-ctx.Done():
-			log.Infof("Shutting down collector")
-			return
 		}
-	}*/
+	}()
 }
 
 func (vsp *Collector) collectAndStore(ctx context.Context) error {

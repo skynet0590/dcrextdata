@@ -57,6 +57,7 @@ type ResposeData struct {
 
 type DataStore interface {
 	StoreVSPs(context.Context, Response) []error
+	LastVspTickEntryTime() (time time.Time)
 }
 
 type Collector struct {

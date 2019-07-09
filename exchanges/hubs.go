@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 )
 
@@ -21,6 +22,7 @@ const (
 type TickHub struct {
 	collectors []ticks.Collector
 	client     *http.Client
+	store      ticks.Store
 }
 
 var (
@@ -61,6 +63,7 @@ func NewTickHub(ctx context.Context, disabledexchanges []string, store ticks.Sto
 	return &TickHub{
 		collectors: collectors,
 		client:     &http.Client{Timeout: clientTimeout},
+		store:      store,
 	}, nil
 }
 
@@ -161,29 +164,46 @@ func (hub *TickHub) CollectAll(ctx context.Context) {
 func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	/*shortTicker := time.NewTicker(5 * time.Minute)
+	shortTicker := time.NewTicker(5 * time.Minute)
 	longTicker := time.NewTicker(time.Hour)
 	dayTicker := time.NewTicker(24 * time.Hour)
 	defer shortTicker.Stop()
 	defer longTicker.Stop()
-	defer dayTicker.Stop()*/
+	defer dayTicker.Stop()
 
 	if ctx.Err() != nil {
 		log.Error(ctx.Err())
 		return
 	}
+
+	lastCollectionDate := hub.store.LastExchangeTickEntryTime()
+	secondsPassed := time.Since(lastCollectionDate)
+	period := 5 * time.Minute
+
+	log.Info("Starting exchange tick collection cycle")
+
+	if secondsPassed < period {
+		timeLeft := period - secondsPassed
+		log.Infof("Fetching exchange ticks every %dm, collected %s ago, will fetch in %s.", period/time.Minute, helpers.DurationToString(secondsPassed),
+			helpers.DurationToString(timeLeft))
+
+		time.Sleep(timeLeft)
+	}
+
 	hub.CollectAll(ctx)
 
-	/*for {
-		select {
-		case <-shortTicker.C:
-			hub.CollectShort(ctx)
-		case <-longTicker.C:
-			hub.CollectLong(ctx)
-		case <-dayTicker.C:
-			hub.CollectHistoric(ctx)
-		case <-ctx.Done():
-			return
+	go func() {
+		for {
+			select {
+			case <-shortTicker.C:
+				hub.CollectShort(ctx)
+			case <-longTicker.C:
+				hub.CollectLong(ctx)
+			case <-dayTicker.C:
+				hub.CollectHistoric(ctx)
+			case <-ctx.Done():
+				return
+			}
 		}
-	}*/
+	}()
 }
