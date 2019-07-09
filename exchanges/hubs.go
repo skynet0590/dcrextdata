@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 )
 
 const (

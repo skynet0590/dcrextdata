@@ -162,7 +162,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 			return
 		}
 
-		// they wont be transactions in the mempool while sync is going on
+		// there wont be transactions in the mempool while sync is going on
 		c.syncIsDone = true // todo: we need a better way to determine the sync status of dcrd
 
 		mempoolDto := Mempool{
