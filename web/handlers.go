@@ -143,14 +143,6 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	filter := req.Form["vsp"]
-
-	var selectedFilter string
-	if len(filter) == 0 || filter[0] == "All" || filter[0] == "" {
-		selectedFilter = "All"
-	} else {
-		selectedFilter = filter[0]
-	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -161,19 +153,10 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	var allVSPSlice []vsp.VSPTickDto
-	if selectedFilter == "All" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-	} else {
-		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
+	allVSPSlice, err := s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
 	}
 
 	allVspData, err := s.db.FetchVSPs(ctx)
@@ -191,7 +174,7 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
 		"allVspData":     allVspData,
-		"selectedFilter": selectedFilter,
+		"selectedFilter": "All",
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),

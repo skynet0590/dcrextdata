@@ -84,11 +84,6 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 			return nil, err
 		}
 
-		networkHashrate, err := strconv.ParseFloat(item.NetworkHashrate.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
 		coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 10)
 		if err != nil {
 			return nil, err
@@ -105,7 +100,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),
 			Source:            item.Source,
-			NetworkDifficulty: networkHashrate,
+			NetworkDifficulty: item.NetworkDifficulty.Float64,
 			CoinPrice:         coinPrice,
 			BtcPrice:          bTCPrice,
 		})
@@ -136,11 +131,6 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 			return nil, err
 		}
 
-		networkHashrate, err := strconv.ParseFloat(item.NetworkHashrate.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
 		coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 10)
 		if err != nil {
 			return nil, err
@@ -157,7 +147,7 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),
 			Source:            item.Source,
-			NetworkDifficulty: networkHashrate,
+			NetworkDifficulty: item.NetworkDifficulty.Float64,
 			CoinPrice:         coinPrice,
 			BtcPrice:          bTCPrice,
 		})
