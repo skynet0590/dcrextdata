@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
-	"github.com/raedahgroup/dcrextdata/helpers"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 const (

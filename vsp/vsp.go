@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/helpers"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 const (
