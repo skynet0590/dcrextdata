@@ -79,7 +79,6 @@ func RequestYesNoConfirmation(message, defaultOption string) (bool, error) {
 		if isYesOption(userResponse) || isNoOption(userResponse) {
 			return nil
 		}
-		fmt.Println()
 		return fmt.Errorf("Invalid option, try again")
 	}
 
