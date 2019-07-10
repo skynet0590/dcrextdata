@@ -183,7 +183,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 
 	if currencyPair != "" {
 		idQuery := models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair)
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -193,7 +193,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			return nil, 0, err
 		}
 	} else {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset)).All(ctx, pg.db)
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}

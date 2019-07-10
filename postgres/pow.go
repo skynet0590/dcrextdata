@@ -60,8 +60,8 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate)),
 		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate)),
 		Source:            data.Source,
-		Time:              time.Unix(data.Time, 0),
-		Workers:           null.IntFrom(int(data.Workers)),
+ 		Time:              int(data.Time),
+ 		Workers:           null.IntFrom(int(data.Workers)),
 	}, nil
 }
 
@@ -100,8 +100,8 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time:              item.Time.UTC(),
-			NetworkHashrate:   networkHashRate,
+ 			Time:              time.Unix(int64(item.Time), 0).UTC(),
+ 			NetworkHashrate:   networkHashRate,
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),
 			Source:            item.Source,
@@ -152,8 +152,8 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 		}
 
 		result = append(result, pow.PowDataDto{
-			Time:              item.Time.UTC(),
-			NetworkHashrate:   networkHashRate,
+ 			Time:              time.Unix(int64(item.Time), 0).UTC(),
+ 			NetworkHashrate:   networkHashRate,
 			PoolHashrate:      poolHashRate,
 			Workers:           int64(item.Workers.Int),
 			Source:            item.Source,

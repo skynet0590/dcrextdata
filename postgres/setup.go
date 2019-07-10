@@ -52,8 +52,8 @@ const (
 
 	// PoW table
 	createPowDataTable = `CREATE TABLE IF NOT EXISTS pow_data (
-		time timestamp,
-		network_hashrate VARCHAR(25),
+ 		time INT,
+ 		network_hashrate VARCHAR(25),
 		pool_hashrate VARCHAR(25),
 		workers INT,
 		network_difficulty FLOAT8,

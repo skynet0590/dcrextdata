@@ -51,7 +51,7 @@ func (pg *PgDb) MempoolCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error) {
-	mempoolSlice, err := models.Mempools(qm.OrderBy(models.MempoolColumns.Time), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	mempoolSlice, err := models.Mempools(qm.OrderBy("time DESC"), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
-	blockSlice, err := models.Blocks(qm.OrderBy(models.BlockColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	blockSlice, err := models.Blocks(qm.OrderBy("received_time DESC"), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 }
 
 func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error) {
-	voteSlice, err := models.Votes(qm.OrderBy(models.VoteColumns.ReceiveTime), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	voteSlice, err := models.Votes(qm.OrderBy("received_time DESC"), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
