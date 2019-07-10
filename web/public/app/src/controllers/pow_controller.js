@@ -2,13 +2,30 @@ import { Controller } from 'stimulus'
 import axios from 'axios'
 import { hide, show, date } from '../utils'
 
+const Dygraph = require('../../../dist/js/dygraphs.min.js')
+
 export default class extends Controller {
   static get targets () {
     return [
       'selectedFilter', 'powTable',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'powRowTemplate', 'currentPage', 'selectedNum'
+      'powRowTemplate', 'currentPage', 'selectedNum',
+      'chartWrapper', 'labels', 'chartsView'
     ]
+  }
+
+  setTable () {
+    this.powTableTarget.innerHTML = ''
+    this.selectedFilter = 'All'
+    this.selectedNum = 20
+    this.nextPage = 1
+    this.fetchExchange()
+  }
+
+  setchart () {
+    this.tableOptionTargets.li.classList.add('active')
+    this.nextPage = 1
+    this.plotGraph()
   }
 
   loadPreviousPage () {
@@ -88,5 +105,51 @@ export default class extends Controller {
 
       _this.powTableTarget.appendChild(powRow)
     })
+  }
+
+  // pow chart
+  plotGraph () {
+    var options = {
+      axes: { y: { axisLabelWidth: 70 }, y2: { axisLabelWidth: 70 } },
+      labels: ['Date', 'Network Difficulty', 'pool hash'],
+      digitsAfterDecimal: 2,
+      showRangeSelector: true,
+      rangeSelectorPlotFillColor: '#8997A5',
+      rangeSelectorAlpha: 0.4,
+      rangeSelectorHeight: 40,
+      drawPoints: true,
+      pointSize: 0.25,
+      legend: 'always',
+      labelsSeparateLines: true,
+      highlightCircleSize: 4,
+      ylabel: 'hash',
+      y2label: 'diff',
+      labelsUTC: true
+    }
+
+    const _this = this
+    axios.get(`/getChartPowData?page=${this.nextPage}`)
+      .then(function (response) {
+        console.log(response.data)
+        let result = response.data
+
+        var data = []
+        var dataSet = []
+        result.powData.forEach(pow => {
+          data.push(new Date(pow.Time))
+          data.push(pow.PoolHashrate)
+          data.push(pow.NetworkDifficulty)
+
+          dataSet.push(data)
+          data = []
+        })
+        console.log('...java Script Array... \n' + JSON.stringify(dataSet))
+        _this.chartsView = new Dygraph(
+          _this.chartsViewTarget,
+          dataSet, options
+        )
+      }).catch(function (e) {
+        console.log(e)
+      })
   }
 }
