@@ -10,11 +10,13 @@ export default class extends Controller {
       'selectedFilter', 'powTable',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum',
-      'chartWrapper', 'labels', 'chartsView'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
 
   setTable () {
+    var opt = 'table'
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.powTableTarget.innerHTML = ''
     this.selectedFilter = 'All'
     this.selectedNum = 20
@@ -22,8 +24,9 @@ export default class extends Controller {
     this.fetchExchange()
   }
 
-  setchart () {
-    this.tableOptionTargets.li.classList.add('active')
+  setChart () {
+    var opt = 'chart'
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.nextPage = 1
     this.plotGraph()
   }
@@ -151,5 +154,15 @@ export default class extends Controller {
       }).catch(function (e) {
         console.log(e)
       })
+  }
+
+  setActiveOptionBtn (opt, optTargets) {
+    optTargets.forEach(li => {
+      if (li.dataset.option === opt) {
+        li.classList.add('active')
+      } else {
+        li.classList.remove('active')
+      }
+    })
   }
 }

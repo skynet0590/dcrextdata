@@ -29,7 +29,7 @@
                                 <a
                                 class="nav-link active"
                                 href="javascript:void(0);"
-                                data-target="pow.tableOption"
+                                data-target="pow.viewOption"
                                 data-action="click->pow#setTable"
                                 data-option="table"
                                 >Table</a>
@@ -38,8 +38,8 @@
                                 <a
                                 class="nav-link"
                                 href="javascript:void(0);"
-                                data-target="pow.chartOption"
-                                data-action="click->charts#setChart"
+                                data-target="pow.viewOption"
+                                data-action="click->pow#setChart"
                                 data-option="chart"
                                 >Chart</a>
                             </li>
@@ -103,7 +103,7 @@
                 </tr>
             </template>
 
-            <div data-target="charts.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5">
+            <div data-target="charts.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-none">
                 <div id="chart"
                     data-target="pow.chartsView"
                     style="width:100%; height:73vh; margin:0 auto;">
