@@ -145,7 +145,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -180,24 +180,25 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 	var exchangeTickSlice models.ExchangeTickSlice
 	var exchangeTickSliceCount int64
 	var err error
+
 	if currencyPair != "" {
 		idQuery := models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair)
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
+		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}
 	} else {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time")).All(ctx, pg.db)
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
+		exchangeTickSliceCount, err = models.ExchangeTicks(qm.Load("Exchange")).Count(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}

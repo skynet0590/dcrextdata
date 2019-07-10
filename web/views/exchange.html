@@ -21,7 +21,7 @@
                         <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
                             class="form-control" style="width: 120px;">
                             <option value="All">All</option>
-                            {{ range $index, $cpair := .cpair}}
+                            {{ range $index, $cpair := .currencyPairs}}
                             <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
                             {{ end }}
                         </select>

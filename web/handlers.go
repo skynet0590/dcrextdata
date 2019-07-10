@@ -41,7 +41,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	cpair, err := s.db.AllExchangeTicksCurrencyPair(ctx)
+	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
@@ -50,7 +50,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
-		"cpair":          cpair,
+		"currencyPairs":          currencyPairs,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -96,6 +96,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 			s.renderError(err.Error(), res)
 			return
 		}
+
 	} else if selectedFilter == "All" && selectedCpair != "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
 		if err != nil {

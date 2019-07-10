@@ -21,7 +21,7 @@ export default class extends Controller {
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
+    this.totalPages = this.nextPageButtonTarget.getAttribute('data-total-page')
     if (this.nextPage > 1) {
       show(this.previousPageButtonTarget)
     }
@@ -48,7 +48,6 @@ export default class extends Controller {
 
   fetchExchange () {
     this.exchangeTableTarget.innerHTML = ''
-
     const selectedFilter = this.selectedFilterTarget.value
     const numberOfRows = this.selectedNumTarget.value
     const selectedCpair = this.selectedCpairTarget.value
