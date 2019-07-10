@@ -100,10 +100,6 @@ func _main(ctx context.Context) error {
 		return nil
 	}
 
-	// Display app version.
-	log.Infof("%s version %v (Go version %s)", app.AppName,
-		app.Version(), runtime.Version())
-
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 
 	if err != nil {
@@ -118,14 +114,12 @@ func _main(ctx context.Context) error {
 	}(db)
 
 	if cfg.Reset {
-		fmt.Println()
-		resetTables, err := helpers.RequestYesNoConfirmation("You are about to reset/drop all database table(s). Proceed?", "N")
+		resetTables, err := helpers.RequestYesNoConfirmation("Are you sure you want to reset the dcrextdata db?", "")
 		if err != nil {
 			return fmt.Errorf("error reading your response: %s", err.Error())
 		}
 
 		if resetTables {
-			log.Info("Dropping tables")
 			err = db.DropAllTables()
 			if err != nil {
 				db.Close()
@@ -133,12 +127,15 @@ func _main(ctx context.Context) error {
 				return err
 			}
 
-			log.Info("Tables dropped")
+			fmt.Println("Done. You can restart the server now.")
 			return nil
 		}
 
 		return nil
 	}
+
+	// Display app version.
+	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
 	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
