@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app"
 )
 
 var (
@@ -61,6 +63,10 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 	}, nil
 }
 
+func (pc *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
+
+}
+
 func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if ctx.Err() != nil {
@@ -72,21 +78,30 @@ func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
 
 	for {
 		select {
-		case <-ticker.C:
-			log.Info("Starting a new PoW collection cycle")
-			pc.Collect(ctx)
 		case <-ctx.Done():
 			log.Infof("Stopping PoW collectors")
 			return
+		case <-ticker.C:
+			// continually check the state of the app until its free to run this module
+			for {
+				if app.MarkBusyIfFree() {
+					break
+				}
+			}
+			log.Info("Starting a new PoW collection cycle")
+			pc.Collect(ctx)
+			app.ReleaseForNewModule()
 		}
 
 	}
 }
 
 func (pc *Collector) Collect(ctx context.Context) {
-
+	log.Info("Fetching PoW data.")
 	for _, powInfo := range pc.pows {
 		select {
+		case <-ctx.Done():
+			return
 		default:
 			/*lastEntryTime := pc.store.LastPowEntryTime(powInfo.Name())
 			lastStr := helpers.UnixTimeToString(in.LastUpdateTime())
@@ -103,8 +118,6 @@ func (pc *Collector) Collect(ctx context.Context) {
 			if err != nil {
 				log.Error(err)
 			}
-		case <-ctx.Done():
-			return
 		}
 	}
 }
