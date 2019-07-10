@@ -96,6 +96,9 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 
 		for {
 			select {
+			case <-ctx.Done():
+				log.Infof("Shutting VSP down collector")
+				return
 			case <-ticker.C:
 				// continually check the state of the app until its free to run this module
 				for {
@@ -109,9 +112,6 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 				if err != nil {
 					return
 				}
-			case <-ctx.Done():
-				log.Infof("Shutting down collector")
-				return
 			}
 		}
 	}()
