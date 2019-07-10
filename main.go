@@ -282,12 +282,9 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		wg.Wait()
-		select {
-			case <-ctx.Done():
-				break
-		}
-		return nil
+		<-ctx.Done()
+
+		return ctx.Err()
 	}
 
 	if err = collectData(); err != nil {
