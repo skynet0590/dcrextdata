@@ -144,98 +144,6 @@ func _main(ctx context.Context) error {
 	wg := new(sync.WaitGroup)
 
 	collectData := func() error {
-		if !cfg.DisableVSP {
-			if exists := db.VSPInfoTableExits(); !exists {
-				if err := db.CreateVSPInfoTables(); err != nil {
-					log.Error("Error creating vsp info table: ", err)
-					return err
-				}
-			}
-
-			if exists := db.VSPTickTableExits(); !exists {
-				if err := db.CreateVSPTickTables(); err != nil {
-					log.Error("Error creating vsp data table: ", err)
-					return err
-				}
-
-				if err := db.CreateVSPTickIndex(); err != nil {
-					log.Error("Error creating vsp data index: ", err)
-					return err
-				}
-			}
-
-			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-			if err == nil {
-				wg.Add(1)
-				vspCollector.Run(ctx, wg)
-			} else {
-				log.Error(err)
-			}
-		}
-
-		if !cfg.DisableExchangeTicks {
-			if exists := db.ExchangeTableExits(); !exists {
-				if err := db.CreateExchangeTable(); err != nil {
-					log.Error("Error creating exchange table: ", err)
-					return err
-				}
-			}
-
-			if exists := db.ExchangeTickTableExits(); !exists {
-				if err := db.CreateExchangeTickTable(); err != nil {
-					log.Error("Error creating exchange tick table: ", err)
-					return err
-				}
-
-				if err := db.CreateExchangeTickIndex(); err != nil {
-					log.Error("Error creating exchange tick index: ", err)
-					return err
-				}
-			}
-
-			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
-			if err == nil {
-				wg.Add(1)
-				ticksHub.Run(ctx, wg)
-			} else {
-				log.Error(err)
-			}
-		}
-
-		if !cfg.DisablePow {
-			if exists := db.PowDataTableExits(); !exists {
-				if err := db.CreatePowDataTable(); err != nil {
-					log.Error("Error creating PoW data table: ", err)
-					return err
-				}
-			}
-
-			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
-			if err == nil {
-				log.Info("Triggering PoW collectors.")
-
-				lastCollectionDateUnix := db.LastPowEntryTime("")
-				lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
-				secondsPassed := time.Since(lastCollectionDate)
-				period := time.Duration(cfg.PowInterval) * time.Second
-
-				if lastCollectionDateUnix > 0 && secondsPassed < period {
-					timeLeft := period - secondsPassed
-					log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", cfg.PowInterval/60, helpers.DurationToString(secondsPassed),
-						helpers.DurationToString(timeLeft))
-
-					time.Sleep(timeLeft)
-				}
-				powCollector.Collect(ctx)
-				wg.Add(1)
-				go powCollector.CollectAsync(ctx, wg)
-			} else {
-				log.Error(err)
-			}
-
-			log.Info("All PoW pool data collected")
-		}
-
 		if !cfg.DisableMempool {
 			if !db.MempoolDataTableExits() {
 				if err := db.CreateMempoolDataTable(); err != nil {
@@ -274,7 +182,111 @@ func _main(ctx context.Context) error {
 			go collector.StartMonitoring(ctx, wg)
 		}
 
+		if !cfg.DisableVSP {
+			if exists := db.VSPInfoTableExits(); !exists {
+				if err := db.CreateVSPInfoTables(); err != nil {
+					log.Error("Error creating vsp info table: ", err)
+					return err
+				}
+			}
+
+			if exists := db.VSPTickTableExits(); !exists {
+				if err := db.CreateVSPTickTables(); err != nil {
+					log.Error("Error creating vsp data table: ", err)
+					return err
+				}
+
+				if err := db.CreateVSPTickIndex(); err != nil {
+					log.Error("Error creating vsp data index: ", err)
+					return err
+				}
+			}
+
+			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+			if err == nil {
+				wg.Add(1)
+				go vspCollector.Run(ctx, wg)
+			} else {
+				log.Error(err)
+			}
+		}
+
+		if !cfg.DisableExchangeTicks {
+			if exists := db.ExchangeTableExits(); !exists {
+				if err := db.CreateExchangeTable(); err != nil {
+					log.Error("Error creating exchange table: ", err)
+					return err
+				}
+			}
+
+			if exists := db.ExchangeTickTableExits(); !exists {
+				if err := db.CreateExchangeTickTable(); err != nil {
+					log.Error("Error creating exchange tick table: ", err)
+					return err
+				}
+
+				if err := db.CreateExchangeTickIndex(); err != nil {
+					log.Error("Error creating exchange tick index: ", err)
+					return err
+				}
+			}
+
+			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
+			if err == nil {
+				wg.Add(1)
+				go ticksHub.Run(ctx, wg)
+			} else {
+				log.Error(err)
+			}
+		}
+
+		if !cfg.DisablePow {
+			if exists := db.PowDataTableExits(); !exists {
+				if err := db.CreatePowDataTable(); err != nil {
+					log.Error("Error creating PoW data table: ", err)
+					return err
+				}
+			}
+
+			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
+			if err == nil {
+				go func() {
+					log.Info("Triggering PoW collectors.")
+
+					lastCollectionDateUnix := db.LastPowEntryTime("")
+					lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
+					secondsPassed := time.Since(lastCollectionDate)
+					period := time.Duration(cfg.PowInterval) * time.Second
+
+					if lastCollectionDateUnix > 0 && secondsPassed < period {
+						timeLeft := period - secondsPassed
+						log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", cfg.PowInterval/60, helpers.DurationToString(secondsPassed),
+							helpers.DurationToString(timeLeft))
+
+						time.Sleep(timeLeft)
+					}
+					// continually check the state of the app until its free to run this module
+					for {
+						if app.MarkBusyIfFree() {
+							break
+						}
+					}
+					powCollector.Collect(ctx)
+					app.ReleaseForNewModule()
+					wg.Add(1)
+					go powCollector.CollectAsync(ctx, wg)
+				}()
+
+			} else {
+				log.Error(err)
+			}
+		}
+
 		wg.Wait()
+		select {
+			case <-ctx.Done():
+				break
+		}
 		return nil
 	}
 

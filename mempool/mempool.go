@@ -234,7 +234,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
 		sencodsPassed := math.Abs(time.Since(lastMempoolTime).Seconds())
 		if sencodsPassed < c.collectionInterval {
 			timeLeft := c.collectionInterval - sencodsPassed
-			log.Infof("Fetching VSPs every %dm, collected %0.2f ago, will fetch in %0.2f.", 1, sencodsPassed,
+			log.Infof("Fetching mempool every %dm, collected %0.2f ago, will fetch in %0.2f.", 1, sencodsPassed,
 				timeLeft)
 			time.Sleep(time.Duration(timeLeft) * time.Second)
 		}

@@ -46,6 +46,12 @@ var (
 	busy = false
 
 	busyLocker sync.Mutex
+
+	// ShutdownOps holds function that must be ran before shutdown
+	ShutdownOps []func()
+
+	// BeginShutdown signals shutdown request
+	BeginShutdown chan bool
 )
 
 // Version returns the application version as a properly formed string per the

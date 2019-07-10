@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 )
@@ -180,8 +181,6 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 	secondsPassed := time.Since(lastCollectionDate)
 	period := 5 * time.Minute
 
-	log.Info("Starting exchange tick collection cycle")
-
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
 		log.Infof("Fetching exchange ticks every %dm, collected %s ago, will fetch in %s.", period/time.Minute, helpers.DurationToString(secondsPassed),
@@ -190,17 +189,36 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 		time.Sleep(timeLeft)
 	}
 
+	regiserStarter := func() {
+		// continually check the state of the app until its free to run this module
+		for {
+			if app.MarkBusyIfFree() {
+				break
+			}
+		}
+
+		log.Info("Starting exchange tick collection cycle")
+	}
+
+	regiserStarter()
 	hub.CollectAll(ctx)
+	app.ReleaseForNewModule()
 
 	go func() {
 		for {
 			select {
 			case <-shortTicker.C:
+				regiserStarter()
 				hub.CollectShort(ctx)
+				app.ReleaseForNewModule()
 			case <-longTicker.C:
+				regiserStarter()
 				hub.CollectLong(ctx)
+				app.ReleaseForNewModule()
 			case <-dayTicker.C:
+				regiserStarter()
 				hub.CollectHistoric(ctx)
+				app.ReleaseForNewModule()
 			case <-ctx.Done():
 				return
 			}
