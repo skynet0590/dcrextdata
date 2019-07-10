@@ -207,6 +207,8 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-shortTicker.C:
 				regiserStarter()
 				hub.CollectShort(ctx)
@@ -219,8 +221,6 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 				regiserStarter()
 				hub.CollectHistoric(ctx)
 				app.ReleaseForNewModule()
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
