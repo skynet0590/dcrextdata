@@ -26,7 +26,9 @@ func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
 
 	err := rows.Scan(&time)
 	if err != nil {
-		log.Errorf("Error in getting last PoW entry time: %s", err.Error())
+		if err != sql.ErrNoRows {
+			log.Errorf("Error in getting last PoW entry time: %s", err.Error())
+		}
 	}
 	return
 }

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -50,6 +51,9 @@ func (pg *PgDb) LastMempoolBlockHeight() (height int64, err error) {
 func (pg *PgDb) LastMempoolTime() (entryTime time.Time, err error) {
 	rows := pg.db.QueryRow(lastMempoolEntryTime)
 	err = rows.Scan(&entryTime)
+	if err == sql.ErrNoRows {
+		err = nil
+	}
 	return
 }
 
