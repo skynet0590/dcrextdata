@@ -9,7 +9,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	
+
 	"github.com/raedahgroup/dcrextdata/app"
 )
 
