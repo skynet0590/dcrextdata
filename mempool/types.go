@@ -49,6 +49,7 @@ type BlockDto struct {
 	Delay             string `json:"delay"`
 	BlockHeight       uint32 `json:"block_height"`
 	BlockHash         string `json:"block_hash"`
+	Votes 			  []VoteDto `json:"votes"`
 }
 
 type Vote struct {
