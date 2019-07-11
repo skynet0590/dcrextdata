@@ -104,6 +104,25 @@
                             <td></td>
                             <td></td>
                         </tr>
+                        </tbody>
+                    </template>
+                    <template data-target="blocks.votesTbodyTemplate">
+                        <tbody data-target="blocks.votesTbody" class="d-none">
+                        <tr>
+                            <td>Australia</td>
+                            <td>$7,685.00</td>
+                            <td>$3,544.00</td>
+                            <td>$5,834.00</td>
+                            <td>$10,583.00</td>
+                        </tr>
+                        <tr>
+                            <td>Central America</td>
+                            <td>$7,685.00</td>
+                            <td>$3,544.00</td>
+                            <td>$5,834.00</td>
+                            <td>$10,583.00</td>
+                        </tr>
+                        </tbody>
                     </template>
 
                     {{/*votes only*/}}
@@ -140,5 +159,13 @@
     </div>
 </div>
 {{ template "footer" }}
+
+<script>
+  $(document).ready(function() {
+    $('[data-toggle="toggle"]').change(function(){
+      $(this).parents().next('.d-none').toggle();
+    });
+  });
+</script>
 </body>
 </html>
