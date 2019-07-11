@@ -177,8 +177,7 @@ func _main(ctx context.Context) error {
 			}
 
 			collector := mempool.NewCollector(cfg.MempoolInterval, connCfg, netParams(cfg.DcrdNetworkType), db)
-			wg.Add(1)
-			go collector.StartMonitoring(ctx, wg)
+			go collector.StartMonitoring(ctx)
 		}
 
 		if !cfg.DisableVSP {
@@ -203,8 +202,7 @@ func _main(ctx context.Context) error {
 
 			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 			if err == nil {
-				wg.Add(1)
-				go vspCollector.Run(ctx, wg)
+				go vspCollector.Run(ctx)
 			} else {
 				log.Error(err)
 			}
@@ -232,8 +230,7 @@ func _main(ctx context.Context) error {
 
 			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 			if err == nil {
-				wg.Add(1)
-				go ticksHub.Run(ctx, wg)
+				go ticksHub.Run(ctx)
 			} else {
 				log.Error(err)
 			}
@@ -272,8 +269,7 @@ func _main(ctx context.Context) error {
 					}
 					powCollector.Collect(ctx)
 					app.ReleaseForNewModule()
-					wg.Add(1)
-					go powCollector.CollectAsync(ctx, wg)
+					go powCollector.CollectAsync(ctx)
 				}()
 
 			} else {

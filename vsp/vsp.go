@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
@@ -53,8 +52,7 @@ func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
 	return nil
 }
 
-func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (vsp *Collector) Run(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}

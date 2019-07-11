@@ -29,8 +29,7 @@ func NewCollector(interval float64, config *rpcclient.ConnConfig, activeChain *c
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (c *Collector) StartMonitoring(ctx context.Context) {
 
 	var ticketIndsMutex sync.Mutex
 	ticketInds := make(exptypes.BlockValidatorIndex)

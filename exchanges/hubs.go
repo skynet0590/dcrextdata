@@ -162,9 +162,7 @@ func (hub *TickHub) CollectAll(ctx context.Context) {
 	hub.CollectHistoric(ctx)*/
 }
 
-func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (hub *TickHub) Run(ctx context.Context) {
 	shortTicker := time.NewTicker(5 * time.Minute)
 	longTicker := time.NewTicker(time.Hour)
 	dayTicker := time.NewTicker(24 * time.Hour)
