@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
@@ -141,7 +140,7 @@ func _main(ctx context.Context) error {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 
-	wg := new(sync.WaitGroup)
+	// wg := new(sync.WaitGroup)
 
 	collectData := func() error {
 		if !cfg.DisableMempool {

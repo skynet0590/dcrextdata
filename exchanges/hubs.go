@@ -189,7 +189,7 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 		time.Sleep(timeLeft)
 	}
 
-	regiserStarter := func() {
+	registerStarter := func() {
 		// continually check the state of the app until its free to run this module
 		for {
 			if app.MarkBusyIfFree() {
@@ -200,7 +200,7 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 		log.Info("Starting exchange tick collection cycle")
 	}
 
-	regiserStarter()
+	registerStarter()
 	hub.CollectAll(ctx)
 	app.ReleaseForNewModule()
 
@@ -210,15 +210,15 @@ func (hub *TickHub) Run(ctx context.Context, wg *sync.WaitGroup) {
 			case <-ctx.Done():
 				return
 			case <-shortTicker.C:
-				regiserStarter()
+				registerStarter()
 				hub.CollectShort(ctx)
 				app.ReleaseForNewModule()
 			case <-longTicker.C:
-				regiserStarter()
+				registerStarter()
 				hub.CollectLong(ctx)
 				app.ReleaseForNewModule()
 			case <-dayTicker.C:
-				regiserStarter()
+				registerStarter()
 				hub.CollectHistoric(ctx)
 				app.ReleaseForNewModule()
 			}

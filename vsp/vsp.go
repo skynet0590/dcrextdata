@@ -85,7 +85,7 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 
 	err := vsp.collectAndStore(ctx)
 	app.ReleaseForNewModule()
-	if  err != nil {
+	if err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
