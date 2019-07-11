@@ -18,6 +18,7 @@ import (
 	"github.com/decred/dcrd/wire"
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
+	"github.com/raedahgroup/dcrextdata/app"
 )
 
 func NewCollector(interval float64, config *rpcclient.ConnConfig, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
@@ -30,7 +31,6 @@ func NewCollector(interval float64, config *rpcclient.ConnConfig, activeChain *c
 }
 
 func (c *Collector) StartMonitoring(ctx context.Context) {
-
 	var ticketIndsMutex sync.Mutex
 	ticketInds := make(exptypes.BlockValidatorIndex)
 
@@ -135,7 +135,11 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 		return
 	}
 
-	defer client.Shutdown()
+	// register the close function to be run before shutdown
+	app.ShutdownOps = append(app.ShutdownOps, func() {
+		log.Info("Shutting down dcrd client")
+		client.Shutdown()
+	})
 
 	if err := client.NotifyNewTransactions(true); err != nil {
 		log.Error(err)

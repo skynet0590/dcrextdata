@@ -277,16 +277,17 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		<-ctx.Done()
-
-		return ctx.Err()
+		return nil
 	}
 
 	if err = collectData(); err != nil {
 		return err
 	}
 
-	return nil
+	// wait for shutdown signal
+	<-ctx.Done()
+
+	return ctx.Err()
 }
 
 func netParams(netType string) *chaincfg.Params {

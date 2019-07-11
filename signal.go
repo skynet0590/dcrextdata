@@ -9,6 +9,8 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	
+	"github.com/raedahgroup/dcrextdata/app"
 )
 
 // shutdownRequested checks if the Done channel of the given context has been
@@ -72,6 +74,11 @@ func shutdownListener() {
 
 	// Cancel all contexts created from withShutdownCancel.
 	close(shutdownSignal)
+
+	// run all cleanup code
+	for _, shutdownOp := range app.ShutdownOps {
+		shutdownOp()
+	}
 
 	// Listen for any more shutdown signals and log that shutdown has already
 	// been signaled.
