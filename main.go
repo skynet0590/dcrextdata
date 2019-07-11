@@ -135,10 +135,6 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
-	if cfg.HttpMode {
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
-	}
-
 	if !cfg.DisableMempool {
 		dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
 		certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
@@ -271,6 +267,10 @@ func _main(ctx context.Context) error {
 		}
 	}
 
+	if cfg.HttpMode {
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
+	}
+	
 	// wait for shutdown signal
 	<-ctx.Done()
 
