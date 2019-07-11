@@ -6,7 +6,7 @@ export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton',
-      'table', 'votesTbody', 'blockTbody', 'blockTbodyTemplate', 'votesTbodyTemplate',
+      'table', 'votesTbody', 'blockTbody', 'blockTbodyTemplate', 'votesTbodyTemplate', 'voteRowTemplate',
       'totalPageCount', 'currentPage'
     ]
   }
@@ -53,30 +53,44 @@ export default class extends Controller {
   }
 
   displayBlock (data) {
-    const _this = this
-    const tableHead = this.tableTarget.querySelector('thead')
-    this.tableTarget.innerHTML = ''
-    this.tableTarget.appendChild(tableHead)
+    const tableHeadHtml = this.tableTarget.querySelector('thead').innerHTML
 
-    data.forEach(item => {
-      const blockTbodyTemplate = document.importNode(_this.blockTbodyTemplateTarget.content, true)
-      const fields = blockTbodyTemplate.querySelectorAll('td')
+    let blocksHtml = ''
+    data.forEach(block => {
+      let votesHtml = ''
+      block.votes.forEach(vote => {
+        votesHtml += `<tr>
+                            <td>${vote.receive_time}</td>
+                            <td>${vote.block_time_diff}</td>
+                            <td>${vote.voting_on}</td>
+                            <td>${vote.validator_id}</td>
+                            <td>${vote.hash}</td>
+                        </tr>`
+      })
 
-      fields[0].innerText = item.block_receive_time
-      fields[1].innerText = item.block_internal_time
-      fields[2].innerText = item.delay
-      fields[3].innerText = item.block_height
-      fields[4].innerText = item.block_hash
-
-      // TODO: set the data-hash and populate the vote
-      blockTbodyTemplate.firstElementChild.setAttribute('data-block-hash', item.block_hash)
-      _this.tableTarget.appendChild(blockTbodyTemplate)
-
-      const votesTbody = document.importNode(_this.votesTbodyTemplateTarget.content, true)
-      votesTbody.firstElementChild.setAttribute('data-block-hash', item.block_hash)
-      // add actual data
-      _this.tableTarget.appendChild(votesTbody)
+      blocksHtml += `<tbody data-target="blocks.blockTbody" data-action="click->blocks#showVotes" 
+                            data-block-hash="${block.block_hash}" class="clickable">
+                        <tr>
+                            <td>${block.block_receive_time}</td>
+                            <td>${block.block_internal_time}</td>
+                            <td>${block.delay}</td>
+                            <td>${block.block_height}</td>
+                            <td><a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a></td>
+                        </tr>
+                        </tbody>
+                        <tbody data-target="blocks.votesTbody" data-block-hash="${block.block_hash}" class="d-none">
+                        <tr>
+                            <th>Received Time</th>
+                            <th>Block Time Diff</th>
+                            <th>Voting On</th>
+                            <th>Validator ID</th>
+                            <th>Hash</th>
+                        </tr>
+                        ${votesHtml}
+                        </tbody>`
     })
+
+    this.tableTarget.innerHTML = `${tableHeadHtml} ${blocksHtml}`
   }
 
   showVotes (event) {

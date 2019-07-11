@@ -33,54 +33,26 @@
                             </tbody>
                             <tbody data-target="blocks.votesTbody" data-block-hash="{{$block.BlockHash}}" class="d-none">
                             <tr>
-                                <td>Australia</td>
-                                <td>$7,685.00</td>
-                                <td>$3,544.00</td>
-                                <td>$5,834.00</td>
-                                <td>$10,583.00</td>
+                                <th>Received Time</th>
+                                <th>Block Time Diff</th>
+                                <th>Voting On</th>
+                                <th>Validator ID</th>
+                                <th>Hash</th>
                             </tr>
-                            <tr>
-                                <td>Central America</td>
-                                <td>$7,685.00</td>
-                                <td>$3,544.00</td>
-                                <td>$5,834.00</td>
-                                <td>$10,583.00</td>
-                            </tr>
+                            {{range $index, $vote := $block.Votes}}
+                                <tr>
+                                    <td>{{$vote.ReceiveTime}}</td>
+                                    <td>{{$vote.TargetedBlockTimeDiff}}</td>
+                                    <td>{{$vote.VotingOn}}</td>
+                                    <td>{{$vote.ValidatorId}}</td>
+                                    <td>{{$vote.Hash}}</td>
+                                </tr>
+                            {{end}}
                             </tbody>
                         {{end}}
                     </table>
 
                     <br/><br/>
-
-                    <template data-target="blocks.blockTbodyTemplate">
-                        <tbody data-target="blocks.blockTbody" data-action="click->blocks#showVotes" class="clickable">
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                        </tbody>
-                    </template>
-                    <template data-target="blocks.votesTbodyTemplate">
-                        <tbody data-target="blocks.votesTbody" class="d-none">
-                        <tr>
-                            <td>Australia</td>
-                            <td>$7,685.00</td>
-                            <td>$3,544.00</td>
-                            <td>$5,834.00</td>
-                            <td>$10,583.00</td>
-                        </tr>
-                        <tr>
-                            <td>Central America</td>
-                            <td>$7,685.00</td>
-                            <td>$3,544.00</td>
-                            <td>$5,834.00</td>
-                            <td>$10,583.00</td>
-                        </tr>
-                        </tbody>
-                    </template>
 
                     <button data-target="blocks.previousPageButton" data-action="click->blocks#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
                             class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
