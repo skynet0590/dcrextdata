@@ -63,10 +63,6 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 	}, nil
 }
 
-func (pc *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
-
-}
-
 func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if ctx.Err() != nil {
@@ -88,11 +84,11 @@ func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
 					break
 				}
 			}
+
 			log.Info("Starting a new PoW collection cycle")
 			pc.Collect(ctx)
 			app.ReleaseForNewModule()
 		}
-
 	}
 }
 
