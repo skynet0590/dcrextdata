@@ -7,7 +7,6 @@ package pow
 import (
 	"context"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
@@ -63,8 +62,7 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 	}, nil
 }
 
-func (pc *Collector) CollectAsync(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (pc *Collector) CollectAsync(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
