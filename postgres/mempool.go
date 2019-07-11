@@ -180,6 +180,7 @@ func (pg *PgDb) BlocksWithoutVotes(ctx context.Context, offset int, limit int) (
 			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
 			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
 			Delay:             fmt.Sprintf("%04.2f", timeDiff),
+			Votes: 			   votes,
 		})
 	}
 
