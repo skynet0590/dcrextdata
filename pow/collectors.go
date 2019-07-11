@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 var (
@@ -60,6 +61,32 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 		period: period,
 		store:  store,
 	}, nil
+}
+
+func (pc *Collector) Run(ctx context.Context) {
+	log.Info("Triggering PoW collectors.")
+
+	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
+	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
+	secondsPassed := time.Since(lastCollectionDate)
+	period := time.Duration(pc.period) * time.Second
+
+	if lastCollectionDateUnix > 0 && secondsPassed < period {
+		timeLeft := period - secondsPassed
+		log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", pc.period/60,
+			helpers.DurationToString(secondsPassed), helpers.DurationToString(timeLeft))
+
+		time.Sleep(timeLeft)
+	}
+	// continually check the state of the app until its free to run this module
+	for {
+		if app.MarkBusyIfFree() {
+			break
+		}
+	}
+	pc.Collect(ctx)
+	app.ReleaseForNewModule()
+	go pc.CollectAsync(ctx)
 }
 
 func (pc *Collector) CollectAsync(ctx context.Context) {

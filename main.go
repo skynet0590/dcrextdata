@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
@@ -246,31 +245,7 @@ func _main(ctx context.Context) error {
 
 			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 			if err == nil {
-				go func() {
-					log.Info("Triggering PoW collectors.")
-
-					lastCollectionDateUnix := db.LastPowEntryTime("")
-					lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
-					secondsPassed := time.Since(lastCollectionDate)
-					period := time.Duration(cfg.PowInterval) * time.Second
-
-					if lastCollectionDateUnix > 0 && secondsPassed < period {
-						timeLeft := period - secondsPassed
-						log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", cfg.PowInterval/60, helpers.DurationToString(secondsPassed),
-							helpers.DurationToString(timeLeft))
-
-						time.Sleep(timeLeft)
-					}
-					// continually check the state of the app until its free to run this module
-					for {
-						if app.MarkBusyIfFree() {
-							break
-						}
-					}
-					powCollector.Collect(ctx)
-					app.ReleaseForNewModule()
-					go powCollector.CollectAsync(ctx)
-				}()
+				go powCollector.Run(ctx)
 
 			} else {
 				log.Error(err)
