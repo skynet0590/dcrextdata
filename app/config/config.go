@@ -14,9 +14,45 @@ import (
 const (
 	DefaultConfigFilename = "dcrextdata.conf"
 	defaultLogFilename    = "dcrextdata.log"
-	defaultLogLevel       = "info"
 	Hint                  = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
+	defaultDbHost = "localhost"
+	defaultDbPort = "5432"
+	defaultDbUser = "postgres"
+	defaultDbPass = "dbpass"
+	defaultDbName = "dcrextdata"
+	defaultLogLevel       = "debug"
+	defaultHttpHost = "127.0.0.1"
+	defaultHttpPort = "7770"
+	defaultDcrdServer = "127.0.0.1:9109"
+	defaultDcrdUser = "rpcuser"
+	defaultDcrdPassword = "rpcpass"
+	defaultDcrdNetworkType = "mainnet"
+	defaultMempoolInterval = 60
+	defaultVSPInterval = 300
+	defaultPowInterval = 300
 )
+
+func defaultFileOptions() ConfigFileOptions {
+	return ConfigFileOptions{
+		LogFile:         defaultLogFilename,
+		ConfigFile:      DefaultConfigFilename,
+		DBHost: defaultDbHost,
+		DBPort:defaultDbPort,
+		DBUser:defaultDbUser,
+		DBPass: defaultDbPass,
+		DBName: defaultDbName,
+		DebugLevel:      defaultLogLevel,
+		VSPInterval:     defaultVSPInterval,
+		PowInterval:     defaultPowInterval,
+		MempoolInterval: defaultMempoolInterval,
+		DcrdNetworkType: defaultDcrdNetworkType,
+		DcrdRpcServer:   defaultDcrdServer,
+		DcrdRpcUser: defaultDcrdUser,
+		DcrdRpcPassword:defaultDcrdPassword,
+		HTTPHost:        defaultHttpHost,
+		HTTPPort:        defaultHttpPort,
+	}
+}
 
 type Config struct {
 	ConfigFileOptions
@@ -68,20 +104,6 @@ type CommandLineOptions struct {
 	HttpMode bool `long:"http" description:"Launch http server"`
 }
 
-func defaultFileOptions() ConfigFileOptions {
-	return ConfigFileOptions{
-		LogFile:         defaultLogFilename,
-		ConfigFile:      DefaultConfigFilename,
-		DebugLevel:      defaultLogLevel,
-		VSPInterval:     300,
-		PowInterval:     300,
-		MempoolInterval: 60,
-		DcrdNetworkType: "mainnet",
-		DcrdRpcServer:   "127.0.0.1:9109",
-		HTTPHost:        "127.0.0.1",
-		HTTPPort:        "7770",
-	}
-}
 
 func defaultConfig() Config {
 	return Config{
