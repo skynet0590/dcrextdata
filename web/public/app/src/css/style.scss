@@ -30,9 +30,34 @@ body {
   padding: 25px 0;
 }
 
+.no-btm-pad {
+  padding-bottom: 0 !important;
+}
+
 .table td,
 .table th {
   padding: 0.3rem;
+}
+
+/* table */
+table.collapsible {
+  border-collapse: collapse;
+
+  th {
+    background: #3498db;
+    color: white;
+    font-weight: bold;
+  }
+
+  td,
+  th {
+    text-align: left;
+    font-size: 13px;
+  }
+
+  [data-toggle="toggle"] {
+    display: none;
+  }
 }
 
 .table.inverse tbody td {
@@ -40,8 +65,10 @@ body {
   border-color: #fff !important;
 }
 
-.no-btm-pad {
-  padding-bottom: 0 !important;
+table.collapsible .labels tr td {
+  background-color: #2cc16a;
+  font-weight: bold;
+  color: #fff;
 }
 
 .dygraph-legend {
@@ -668,3 +695,18 @@ body.darkBG {
 .tp-outputs-align {
   width: inherit;
 }
+
+table.collapsible .label tr td label {
+  display: block;
+}
+
+table.collapsible tbody.clickable {
+  cursor: pointer;
+}
+
+table.collapsible tbody.clickable:hover {
+  background: gray;
+  color: #fff !important;
+}
+
+/* end table */
