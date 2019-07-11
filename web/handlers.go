@@ -517,14 +517,6 @@ func (s *Server) propagation(res http.ResponseWriter, req *http.Request) {
 
 	data["blocks"] = block
 
-	votes, err := s.fetchVoteData(req)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data["votes"] = votes
-
 	s.render("propagation.html", data, res)
 }
 
