@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 const (
@@ -40,6 +41,14 @@ var (
 	// build process. It MUST only contain characters from semanticBuildAlphabet
 	// per the semantic versioning spec.
 	appBuild = "dev"
+
+	// busy is a flag that indicates that a process is currently running
+	busy = false
+
+	busyLocker sync.Mutex
+
+	// ShutdownOps holds function that must be ran before shutdown
+	ShutdownOps []func()
 )
 
 // Version returns the application version as a properly formed string per the
@@ -95,4 +104,26 @@ func normalizePreRelString(str string) string {
 // semanticBuildAlphabet.
 func normalizeBuildString(str string) string {
 	return normalizeSemString(str, semanticBuildAlphabet)
+}
+
+// MarkBusyIfFree checks if the busy flag is false and set it to true
+func MarkBusyIfFree() bool {
+	busyLocker.Lock()
+	defer busyLocker.Unlock()
+
+	if busy {
+		return false
+	}
+
+	busy = true
+
+	return true
+}
+
+// ReleaseForNewModule sets the busy flag to false to alow other modules to start running
+func ReleaseForNewModule() {
+	busyLocker.Lock()
+	defer busyLocker.Unlock()
+
+	busy = false
 }

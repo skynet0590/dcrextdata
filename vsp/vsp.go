@@ -9,9 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
@@ -52,8 +52,7 @@ func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
 	return nil
 }
 
-func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (vsp *Collector) Run(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
@@ -67,15 +66,24 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
 		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
-		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", period/60, helpers.DurationToString(secondsPassed),
+		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", vsp.period/60, helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)
 	}
 
+	// continually check the state of the app until its free to run this module
+	for {
+		if app.MarkBusyIfFree() {
+			break
+		}
+	}
+
 	log.Info("Fetching VSP from source")
 
-	if err := vsp.collectAndStore(ctx); err != nil {
+	err := vsp.collectAndStore(ctx)
+	app.ReleaseForNewModule()
+	if err != nil {
 		log.Errorf("Could not start collection: %v", err)
 		return
 	}
@@ -86,14 +94,22 @@ func (vsp *Collector) Run(ctx context.Context, wg *sync.WaitGroup) {
 
 		for {
 			select {
+			case <-ctx.Done():
+				log.Infof("Shutting VSP down collector")
+				return
 			case <-ticker.C:
+				// continually check the state of the app until its free to run this module
+				for {
+					if app.MarkBusyIfFree() {
+						break
+					}
+				}
 				log.Info("Starting a VSP collection cycle")
-				if err := vsp.collectAndStore(ctx); err != nil {
+				err := vsp.collectAndStore(ctx)
+				app.ReleaseForNewModule()
+				if err != nil {
 					return
 				}
-			case <-ctx.Done():
-				log.Infof("Shutting down collector")
-				return
 			}
 		}
 	}()

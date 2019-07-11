@@ -76,7 +76,7 @@ type DataStore interface {
 
 type Collector struct {
 	collectionInterval float64
-	dcrdClientConfig   *rpcclient.ConnConfig
+	dcrClient          *rpcclient.Client
 	dataStore          DataStore
 	activeChain        *chaincfg.Params
 	syncIsDone         bool
