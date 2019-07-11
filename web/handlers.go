@@ -387,23 +387,6 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	}
 }
 
-func (s *Server) getChartPowData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-
-	data := map[string]interface{}{}
-	defer s.renderJSON(data, res)
-
-	ctx := context.Background()
-
-	allPowDataSlice, err := s.db.FetchChartPowData(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data["powData"] = allPowDataSlice
-}
-
 // /mempool
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
@@ -593,10 +576,4 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	return data, nil
-}
-
-func (s *Server) charts(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
-
-	s.render("charts.html", data, res)
 }

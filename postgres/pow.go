@@ -188,32 +188,3 @@ func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, er
 
 	return result, nil
 }
-
-func (pg *PgDb) FetchChartPowData(ctx context.Context) ([]pow.PowDataDto, error) {
-	powDatum, err := models.PowData(qm.Select("source", "network_hashrate", "pool_hashrate", "time", "network_difficulty"), qm.OrderBy("time")).All(ctx, pg.db)
-	if err != nil {
-		return nil, err
-	}
-
-	var result []pow.PowDataDto
-	for _, item := range powDatum {
-		networkHashRate, err := strconv.ParseInt(item.NetworkHashrate.String, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, pow.PowDataDto{
-			Time:              time.Unix(int64(item.Time), 0).UTC(),
-			NetworkHashrate:   networkHashRate,
-			PoolHashrate:      poolHashRate,
-			NetworkDifficulty: item.NetworkDifficulty.Float64,
-		})
-	}
-
-	return result, nil
-}

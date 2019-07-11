@@ -20,7 +20,7 @@
                         </select>
                     </div>
 
-                    <div class="chart-control-wrapper mr-2 mb-1" data-target="pow.chartSelector">
+                    <div class="chart-control-wrapper col-md-3 mb-2" data-target="pow.chartSelector">
                         <div class="chart-control">
                             <ul
                             class="nav nav-pills"
@@ -47,7 +47,7 @@
                     </div>
                 </div>
 
-                <div class="float-md-right offset-md-5">
+                <div data-target="pow.numPageWrapper" class="col-md-6 float-md-right">
                     <div class="d-flex float-md-right">
                         <select data-target="pow.selectedNum" data-action="change->pow#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
                             <option value="20">20</option>
@@ -67,6 +67,7 @@
                     </div> 
                 </div>
             </div>
+            <div class="" data-target="pow.powTableWrapper">
             <table class="table">
                 <thead>
                     <tr>
@@ -102,8 +103,8 @@
                     <td></td>
                 </tr>
             </template>
-
-            <div data-target="charts.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-none">
+            </div>
+            <div data-target="pow.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
                 <div id="chart"
                     data-target="pow.chartsView"
                     style="width:100%; height:73vh; margin:0 auto;">

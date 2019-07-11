@@ -36,7 +36,6 @@ type DataQuery interface {
 	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowDataBySource(ctx context.Context, source string) (int64, error)
 	FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error)
-	FetchChartPowData(ctx context.Context) ([]pow.PowDataDto, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
@@ -106,11 +105,9 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/filteredvspticks", s.getFilteredVspTicks)
 	r.Get("/pow", s.getPowData)
 	r.Get("/filteredpow", s.getFilteredPowData)
-	r.Get("/getChartPowData", s.getChartPowData)
 	r.Get("/mempool", s.mempoolPage)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/propagation", s.propagation)
-	r.Get("/charts", s.charts)
 }

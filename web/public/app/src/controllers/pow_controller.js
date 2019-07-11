@@ -3,32 +3,37 @@ import axios from 'axios'
 import { hide, show, date } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
+var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'powTable',
+      'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'powRowTemplate', 'currentPage', 'selectedNum',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption'
+      'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'chartWrapper'
     ]
   }
 
   setTable () {
-    var opt = 'table'
+    opt = 'table'
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.add('d-hide')
+    this.powTableWrapperTarget.classList.remove('d-hide')
+    this.numPageWrapperTarget.classList.remove('d-hide')
     this.powTableTarget.innerHTML = ''
-    this.selectedFilter = 'All'
-    this.selectedNum = 20
     this.nextPage = 1
-    this.fetchExchange()
+    this.fetchExchange('table')
   }
 
   setChart () {
-    var opt = 'chart'
+    opt = 'chart'
+    this.numPageWrapperTarget.classList.add('d-hide')
+    this.powTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.remove('d-hide')
     this.nextPage = 1
-    this.plotGraph()
+    this.fetchExchange('chart')
   }
 
   loadPreviousPage () {
@@ -37,7 +42,7 @@ export default class extends Controller {
       hide(this.previousPageButtonTarget)
     }
     this.powTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange('table')
   }
 
   loadNextPage () {
@@ -50,24 +55,31 @@ export default class extends Controller {
       hide(this.nextPageButtonTarget)
     }
     this.powTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange('table')
   }
 
   selectedFilterChanged () {
     this.powTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    console.log(opt)
+    console.log(this.opt)
+    this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
     this.powTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    this.fetchExchange('table')
   }
 
-  fetchExchange () {
+  fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    const numberOfRows = this.selectedNumTarget.value
+    var numberOfRows
+    if (display === 'chart') {
+      numberOfRows = 3000
+    } else {
+      numberOfRows = this.selectedNumTarget.value
+    }
 
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
@@ -86,7 +98,12 @@ export default class extends Controller {
         _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
         _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
         _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
-        _this.displayPoW(result.powData)
+
+        if (display === 'table') {
+          _this.displayPoW(result.powData)
+        } else {
+          _this.plotGraph(result.powData)
+        }
       }).catch(function (e) {
         console.log(e)
       })
@@ -111,7 +128,7 @@ export default class extends Controller {
   }
 
   // pow chart
-  plotGraph () {
+  plotGraph (pows) {
     var options = {
       axes: { y: { axisLabelWidth: 70 }, y2: { axisLabelWidth: 70 } },
       labels: ['Date', 'Network Difficulty', 'pool hash'],
@@ -131,29 +148,22 @@ export default class extends Controller {
     }
 
     const _this = this
-    axios.get(`/getChartPowData?page=${this.nextPage}`)
-      .then(function (response) {
-        console.log(response.data)
-        let result = response.data
 
-        var data = []
-        var dataSet = []
-        result.powData.forEach(pow => {
-          data.push(new Date(pow.Time))
-          data.push(pow.PoolHashrate)
-          data.push(pow.NetworkDifficulty)
+    var data = []
+    var dataSet = []
+    pows.forEach(pow => {
+      data.push(new Date(pow.Time))
+      data.push(pow.PoolHashrate)
+      data.push(pow.NetworkDifficulty)
 
-          dataSet.push(data)
-          data = []
-        })
-        console.log('...java Script Array... \n' + JSON.stringify(dataSet))
-        _this.chartsView = new Dygraph(
-          _this.chartsViewTarget,
-          dataSet, options
-        )
-      }).catch(function (e) {
-        console.log(e)
-      })
+      dataSet.push(data)
+      data = []
+    })
+    console.log('...java Script Array... \n' + JSON.stringify(dataSet))
+    _this.chartsView = new Dygraph(
+      _this.chartsViewTarget,
+      dataSet, options
+    )
   }
 
   setActiveOptionBtn (opt, optTargets) {
