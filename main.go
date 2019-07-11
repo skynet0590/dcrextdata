@@ -160,7 +160,6 @@ func _main(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("Error in opening a dcrd connection: %s", err.Error())
 		}
-		collector.SetClient(client)
 		// wg := new(sync.WaitGroup)
 		// register the close function to be run before shutdown
 		app.ShutdownOps = append(app.ShutdownOps, func() {
@@ -175,6 +174,8 @@ func _main(ctx context.Context) error {
 		if err := client.NotifyBlocks(); err != nil {
 			log.Errorf("Unable to register block notification for client: %s", err.Error())
 		}
+
+		collector.SetClient(client)
 
 		if !db.MempoolDataTableExits() {
 			if err := db.CreateMempoolDataTable(); err != nil {
