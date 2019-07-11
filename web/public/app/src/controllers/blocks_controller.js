@@ -1,11 +1,12 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show } from '../utils'
+import { hide, isHidden, show } from '../utils'
 
 export default class extends Controller {
   static get targets () {
     return [
-      'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate',
+      'nextPageButton', 'previousPageButton',
+      'table', 'votesTbody', 'blockTbody', 'blockTbodyTemplate', 'votesTbodyTemplate',
       'totalPageCount', 'currentPage'
     ]
   }
@@ -53,11 +54,13 @@ export default class extends Controller {
 
   displayBlock (data) {
     const _this = this
-    this.tableBodyTarget.innerHTML = ''
+    const tableHead = this.tableTarget.querySelector('thead')
+    this.tableTarget.innerHTML = ''
+    this.tableTarget.appendChild(tableHead)
 
     data.forEach(item => {
-      const exRow = document.importNode(_this.rowTemplateTarget.content, true)
-      const fields = exRow.querySelectorAll('td')
+      const blockTbodyTemplate = document.importNode(_this.blockTbodyTemplateTarget.content, true)
+      const fields = blockTbodyTemplate.querySelectorAll('td')
 
       fields[0].innerText = item.block_receive_time
       fields[1].innerText = item.block_internal_time
@@ -65,7 +68,33 @@ export default class extends Controller {
       fields[3].innerText = item.block_height
       fields[4].innerText = item.block_hash
 
-      _this.tableBodyTarget.appendChild(exRow)
+      // TODO: set the data-hash and populate the vote
+      blockTbodyTemplate.firstElementChild.setAttribute('data-block-hash', item.block_hash)
+      _this.tableTarget.appendChild(blockTbodyTemplate)
+
+      const votesTbody = document.importNode(_this.votesTbodyTemplateTarget.content, true)
+      votesTbody.firstElementChild.setAttribute('data-block-hash', item.block_hash)
+      // add actual data
+      _this.tableTarget.appendChild(votesTbody)
+    })
+  }
+
+  showVotes (event) {
+    const blockHash = event.currentTarget.getAttribute('data-block-hash')
+    this.blockTbodyTargets.forEach(el => {
+      el.classList.remove('labels')
+    })
+    this.votesTbodyTargets.forEach(el => {
+      if (el.getAttribute('data-block-hash') === blockHash) {
+        if (isHidden(el)) {
+          show(el)
+          event.currentTarget.classList.add('labels')
+        } else {
+          hide(el)
+        }
+        return
+      }
+      hide(el)
     })
   }
 }
