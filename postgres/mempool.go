@@ -120,12 +120,18 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	for _, block := range blockSlice {
 		timeDiff := block.ReceiveTime.Time.Sub(block.InternalTimestamp.Time).Seconds()
 
+		votes, err := pg.votesByBlock(ctx, int64(block.Height))
+		if err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
+
 		blocks = append(blocks, mempool.BlockDto{
 			BlockHash:         block.Hash.String,
 			BlockHeight:       uint32(block.Height),
 			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
 			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
 			Delay:             fmt.Sprintf("%04.2f", timeDiff),
+			Votes: 			   votes,
 		})
 	}
 
@@ -154,6 +160,29 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 
 func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error) {
 	voteSlice, err := models.Votes(qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var votes []mempool.VoteDto
+	for _, vote := range voteSlice {
+		timeDiff := vote.ReceiveTime.Time.Sub(vote.TargetedBlockTime.Time).Seconds()
+
+		votes = append(votes, mempool.VoteDto{
+			Hash:                  vote.Hash,
+			ReceiveTime:           vote.ReceiveTime.Time.Format(dateMiliTemplate),
+			TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
+			VotingOn:              vote.VotingOn.Int64,
+			ValidatorId:           vote.ValidatorID.Int,
+		})
+	}
+
+	return votes, nil
+}
+
+func (pg *PgDb) votesByBlock(ctx context.Context, blockHeight int64) ([]mempool.VoteDto, error) {
+	voteSlice, err := models.Votes(models.VoteWhere.VotingOn.EQ(null.Int64From(blockHeight)),
+		qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime))).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
