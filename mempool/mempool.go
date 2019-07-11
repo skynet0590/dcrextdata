@@ -18,32 +18,30 @@ import (
 	"github.com/decred/dcrd/wire"
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
-	"github.com/raedahgroup/dcrextdata/app"
 )
 
-func NewCollector(interval float64, config *rpcclient.ConnConfig, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
+func NewCollector(interval float64, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
 	return &Collector{
 		collectionInterval: interval,
-		dcrdClientConfig:   config,
 		dataStore:          dataStore,
 		activeChain:        activeChain,
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context) {
+func (c *Collector) SetClient(client *rpcclient.Client) {
+	c.dcrClient = client
+}
+
+func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHandlers {
 	var ticketIndsMutex sync.Mutex
 	ticketInds := make(exptypes.BlockValidatorIndex)
 
-	freeClient, err := rpcclient.New(c.dcrdClientConfig, nil)
-	if err != nil {
-		log.Errorf("Error in opening a dcrd connection: %s", err.Error())
-		return
-	}
-	defer freeClient.Shutdown()
-
-	ntfnHandlers := rpcclient.NotificationHandlers{
+	return &rpcclient.NotificationHandlers{
 		OnTxAcceptedVerbose: func(txDetails *dcrjson.TxRawResult) {
 			go func() {
+				if ctx.Err() != nil {
+					return
+				}
 				if !c.syncIsDone {
 					return
 				}
@@ -92,7 +90,7 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 				// wait for some time for the block to get added to the blockchain
 				time.Sleep(2 * time.Second)
 
-				targetedBlock, err := freeClient.GetBlock(&validation.Hash)
+				targetedBlock, err := c.dcrClient.GetBlock(&validation.Hash)
 				if err != nil {
 					log.Errorf("Error in getting validation targeted block: %s", err.Error())
 					return
@@ -110,6 +108,11 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 			if !c.syncIsDone {
 				return
 			}
+
+			if ctx.Err() != nil {
+				return
+			}
+
 			blockHeader := new(wire.BlockHeader)
 			err := blockHeader.FromBytes(blockHeaderSerialized)
 			if err != nil {
@@ -128,34 +131,16 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 			}
 		},
 	}
+}
 
-	client, err := rpcclient.New(c.dcrdClientConfig, &ntfnHandlers)
-	if err != nil {
-		log.Errorf("Error in opening a dcrd connection: %s", err.Error())
-		return
-	}
-
-	// register the close function to be run before shutdown
-	app.ShutdownOps = append(app.ShutdownOps, func() {
-		log.Info("Shutting down dcrd client")
-		client.Shutdown()
-	})
-
-	if err := client.NotifyNewTransactions(true); err != nil {
-		log.Error(err)
-	}
-
-	if err := client.NotifyBlocks(); err != nil {
-		log.Errorf("Unable to register block notification for client: %s", err.Error())
-	}
-
+func (c *Collector) StartMonitoring(ctx context.Context) {
 	var mu sync.Mutex
 
 	collectMempool := func() {
 		mu.Lock()
 		defer mu.Unlock()
 
-		mempoolTransactionMap, err := client.GetRawMempoolVerbose(dcrjson.GRMAll)
+		mempoolTransactionMap, err := c.dcrClient.GetRawMempoolVerbose(dcrjson.GRMAll)
 		if err != nil {
 			log.Error(err)
 			return
@@ -180,7 +165,7 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 				log.Error(err)
 				continue
 			}
-			rawTx, err := client.GetRawTransactionVerbose(hash)
+			rawTx, err := c.dcrClient.GetRawTransactionVerbose(hash)
 			if err != nil {
 				log.Error(err)
 				continue
@@ -200,21 +185,21 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 
 		}
 
-		votes, err := client.GetRawMempool(dcrjson.GRMVotes)
+		votes, err := c.dcrClient.GetRawMempool(dcrjson.GRMVotes)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		mempoolDto.Voters = len(votes)
 
-		tickets, err := client.GetRawMempool(dcrjson.GRMTickets)
+		tickets, err := c.dcrClient.GetRawMempool(dcrjson.GRMTickets)
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		mempoolDto.Tickets = len(tickets)
 
-		revocations, err := client.GetRawMempool(dcrjson.GRMRevocations)
+		revocations, err := c.dcrClient.GetRawMempool(dcrjson.GRMRevocations)
 		if err != nil {
 			log.Error(err)
 			return

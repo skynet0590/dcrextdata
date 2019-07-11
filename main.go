@@ -139,124 +139,135 @@ func _main(ctx context.Context) error {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 
-	// wg := new(sync.WaitGroup)
-
-	collectData := func() error {
-		if !cfg.DisableMempool {
-			if !db.MempoolDataTableExits() {
-				if err := db.CreateMempoolDataTable(); err != nil {
-					log.Error("Error creating mempool table: ", err)
-				}
-			}
-
-			if !db.BlockTableExits() {
-				if err := db.CreateBlockTable(); err != nil {
-					log.Error("Error creating block table: ", err)
-				}
-			}
-
-			if !db.VoteTableExits() {
-				if err := db.CreateVoteTable(); err != nil {
-					log.Error("Error creating vote table: ", err)
-				}
-			}
-
-			dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
-			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
-			if err != nil {
-				log.Error("Error in reading dcrd cert: ", err)
-			}
-
-			connCfg := &rpcclient.ConnConfig{
-				Host:         cfg.DcrdRpcServer,
-				Endpoint:     "ws",
-				User:         cfg.DcrdRpcUser,
-				Pass:         cfg.DcrdRpcPassword,
-				Certificates: certs,
-			}
-
-			collector := mempool.NewCollector(cfg.MempoolInterval, connCfg, netParams(cfg.DcrdNetworkType), db)
-			go collector.StartMonitoring(ctx)
+	if !cfg.DisableMempool {
+		dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
+		certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
+		if err != nil {
+			log.Error("Error in reading dcrd cert: ", err)
 		}
 
-		if !cfg.DisableVSP {
-			if exists := db.VSPInfoTableExits(); !exists {
-				if err := db.CreateVSPInfoTables(); err != nil {
-					log.Error("Error creating vsp info table: ", err)
-					return err
-				}
-			}
+		connCfg := &rpcclient.ConnConfig{
+			Host:         cfg.DcrdRpcServer,
+			Endpoint:     "ws",
+			User:         cfg.DcrdRpcUser,
+			Pass:         cfg.DcrdRpcPassword,
+			Certificates: certs,
+		}
 
-			if exists := db.VSPTickTableExits(); !exists {
-				if err := db.CreateVSPTickTables(); err != nil {
-					log.Error("Error creating vsp data table: ", err)
-					return err
-				}
+		collector := mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
 
-				if err := db.CreateVSPTickIndex(); err != nil {
-					log.Error("Error creating vsp data index: ", err)
-					return err
-				}
-			}
+		client, err := rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
+		if err != nil {
+			return fmt.Errorf("Error in opening a dcrd connection: %s", err.Error())
+		}
+		collector.SetClient(client)
+		// wg := new(sync.WaitGroup)
+		// register the close function to be run before shutdown
+		app.ShutdownOps = append(app.ShutdownOps, func() {
+			log.Info("Shutting down dcrd client")
+			client.Shutdown()
+		})
 
-			vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
-			if err == nil {
-				go vspCollector.Run(ctx)
-			} else {
-				log.Error(err)
+		if err := client.NotifyNewTransactions(true); err != nil {
+			log.Error(err)
+		}
+
+		if err := client.NotifyBlocks(); err != nil {
+			log.Errorf("Unable to register block notification for client: %s", err.Error())
+		}
+
+		if !db.MempoolDataTableExits() {
+			if err := db.CreateMempoolDataTable(); err != nil {
+				log.Error("Error creating mempool table: ", err)
 			}
 		}
 
-		if !cfg.DisableExchangeTicks {
-			if exists := db.ExchangeTableExits(); !exists {
-				if err := db.CreateExchangeTable(); err != nil {
-					log.Error("Error creating exchange table: ", err)
-					return err
-				}
-			}
-
-			if exists := db.ExchangeTickTableExits(); !exists {
-				if err := db.CreateExchangeTickTable(); err != nil {
-					log.Error("Error creating exchange tick table: ", err)
-					return err
-				}
-
-				if err := db.CreateExchangeTickIndex(); err != nil {
-					log.Error("Error creating exchange tick index: ", err)
-					return err
-				}
-			}
-
-			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
-			if err == nil {
-				go ticksHub.Run(ctx)
-			} else {
-				log.Error(err)
+		if !db.BlockTableExits() {
+			if err := db.CreateBlockTable(); err != nil {
+				log.Error("Error creating block table: ", err)
 			}
 		}
 
-		if !cfg.DisablePow {
-			if exists := db.PowDataTableExits(); !exists {
-				if err := db.CreatePowDataTable(); err != nil {
-					log.Error("Error creating PoW data table: ", err)
-					return err
-				}
-			}
-
-			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
-			if err == nil {
-				go powCollector.Run(ctx)
-
-			} else {
-				log.Error(err)
+		if !db.VoteTableExits() {
+			if err := db.CreateVoteTable(); err != nil {
+				log.Error("Error creating vote table: ", err)
 			}
 		}
 
-		return nil
+		go collector.StartMonitoring(ctx)
 	}
 
-	if err = collectData(); err != nil {
-		return err
+	if !cfg.DisableVSP {
+		if exists := db.VSPInfoTableExits(); !exists {
+			if err := db.CreateVSPInfoTables(); err != nil {
+				log.Error("Error creating vsp info table: ", err)
+				return err
+			}
+		}
+
+		if exists := db.VSPTickTableExits(); !exists {
+			if err := db.CreateVSPTickTables(); err != nil {
+				log.Error("Error creating vsp data table: ", err)
+				return err
+			}
+
+			if err := db.CreateVSPTickIndex(); err != nil {
+				log.Error("Error creating vsp data index: ", err)
+				return err
+			}
+		}
+
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+		if err == nil {
+			go vspCollector.Run(ctx)
+		} else {
+			log.Error(err)
+		}
+	}
+
+	if !cfg.DisableExchangeTicks {
+		if exists := db.ExchangeTableExits(); !exists {
+			if err := db.CreateExchangeTable(); err != nil {
+				log.Error("Error creating exchange table: ", err)
+				return err
+			}
+		}
+
+		if exists := db.ExchangeTickTableExits(); !exists {
+			if err := db.CreateExchangeTickTable(); err != nil {
+				log.Error("Error creating exchange tick table: ", err)
+				return err
+			}
+
+			if err := db.CreateExchangeTickIndex(); err != nil {
+				log.Error("Error creating exchange tick index: ", err)
+				return err
+			}
+		}
+
+		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
+		if err == nil {
+			go ticksHub.Run(ctx)
+		} else {
+			log.Error(err)
+		}
+	}
+
+	if !cfg.DisablePow {
+		if exists := db.PowDataTableExits(); !exists {
+			if err := db.CreatePowDataTable(); err != nil {
+				log.Error("Error creating PoW data table: ", err)
+				return err
+			}
+		}
+
+		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
+		if err == nil {
+			go powCollector.Run(ctx)
+
+		} else {
+			log.Error(err)
+		}
 	}
 
 	// wait for shutdown signal
