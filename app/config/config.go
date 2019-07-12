@@ -30,6 +30,7 @@ const (
 	defaultMempoolInterval = 60
 	defaultVSPInterval     = 300
 	defaultPowInterval     = 300
+	defaultRedditInterval = 300
 	defaultSyncInterval    = 60
 )
 
@@ -44,6 +45,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DBName:          defaultDbName,
 		DebugLevel:      defaultLogLevel,
 		VSPInterval:     defaultVSPInterval,
+		RedditInterval: defaultRedditInterval,
 		PowInterval:     defaultPowInterval,
 		MempoolInterval: defaultMempoolInterval,
 		DcrdNetworkType: defaultDcrdNetworkType,
@@ -90,6 +92,10 @@ type ConfigFileOptions struct {
 	// VSP
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
+
+	// Reddit
+	DisableReddit  bool  `long:"disablereddit" description:"Disables periodic reddit data collection"`
+	RedditInterval int64 `long:"redditinterval" description:"Collection interval for reddit data collection"`
 
 	// Mempool
 	DisableMempool  bool    `long:"disablemempool" description:"Disable mempool data collection"`

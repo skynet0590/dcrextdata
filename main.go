@@ -26,6 +26,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
+	"github.com/raedahgroup/dcrextdata/reddit"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -259,6 +260,26 @@ func _main(ctx context.Context) error {
 		}
 	}
 
+	if !cfg.DisableReddit {
+		if exists := db.RedditTableExits(); !exists {
+			if err := db.CreateRedditTable(); err != nil {
+				log.Error("Error creating reddit data table: ", err)
+				return err
+			}
+		}
+
+		redditCollector, err := reddit.NewRedditCollector(cfg.RedditInterval, db)
+		if err == nil {
+			go redditCollector.Run(ctx)
+		} else {
+			log.Error(err)
+		}
+	}
+
+	if cfg.HttpMode {
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
+	}
+	
 	go syncCoordinator.StartSyncing(ctx)
 
 	// wait for shutdown signal

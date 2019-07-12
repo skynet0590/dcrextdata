@@ -79,7 +79,7 @@ func (c *Collector) Run(ctx context.Context) {
 		}
 	}
 
-	log.Info("Fetching Reddit data...")
+	log.Info("Fetching RedditInfo data...")
 
 	err := c.collectAndStore(ctx)
 	app.ReleaseForNewModule()
@@ -103,7 +103,7 @@ func (c *Collector) Run(ctx context.Context) {
 					break
 				}
 			}
-			log.Info("Fetching Reddit data...")
+			log.Info("Fetching RedditInfo data...")
 			err := c.collectAndStore(ctx)
 			app.ReleaseForNewModule()
 			if err != nil {
@@ -128,7 +128,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		err = c.fetch(ctx, resp)
 	}
 
-	redditData := Reddit{
+	redditData := RedditInfo{
 		Date: time.Now(),
 		Subscribers: resp.Data.Subscribers,
 		AccountsActive: resp.Data.AccountsActive,

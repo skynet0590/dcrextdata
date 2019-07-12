@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type Reddit struct {
+type RedditInfo struct {
 	Date           time.Time `json:"date"`
 	Subscribers    int `json:"subscribers"`
 	AccountsActive int `json:"accounts_active"`
@@ -25,7 +25,7 @@ type Response struct {
 }
 
 type DataStore interface {
-	StoreRedditData(context.Context, Reddit) error
+	StoreRedditData(context.Context, RedditInfo) error
 	LastRedditEntryTime() (time time.Time)
 }
 
