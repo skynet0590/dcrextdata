@@ -19,13 +19,39 @@
                     </div>
                     <div class="col-md-3 col-sm-3 mb-2">
                         <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
-                            class="form-control" style="width: 120px;">
+                            class="form-control" style="width: 110px;">
                             <option value="All">All</option>
                             {{ range $index, $cpair := .currencyPairs}}
                             <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
                             {{ end }}
                         </select>
                     </div>
+
+                    <div class="chart-control-wrapper col-md-3 mb-2" data-target="exchange.chartSelector">
+                        <div class="chart-control">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a
+                                    class="nav-link active"
+                                    href="javascript:void(0);"
+                                    data-target="exchange.viewOption"
+                                    data-action="click->exchange#setTable"
+                                    data-option="table"
+                                    >Table</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                    class="nav-link"
+                                    href="javascript:void(0);"
+                                    data-target="exchange.viewOption"
+                                    data-action="click->exchange#setChart"
+                                    data-option="chart"
+                                    >Chart</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
                     <div class="col-md-3 col-sm-3 mb-2">
                         <div class="row float-md-right">
                             <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
@@ -37,17 +63,21 @@
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-3 col-sm-3 mb-2">
-                        <div class="row float-md-right">
-                            <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                            </p>    
-                            <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                        </div>
-                    </div> 
+                    <div data-target="exchange.numPageWrapper" class="col-md-6 float-md-right">
+                        <div class="col-md-3 col-sm-3 mb-2">
+                            <div class="row float-md-right">
+                                <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                                <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                                </p>    
+                                <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                            </div>
+                        </div> 
+                    </div>
                 </div>
 
+            <div class="" data-target="exchange.exchangeTableWrapper">
                 <table class="table">
                     <thead>
                         <tr>
@@ -92,6 +122,13 @@
                         <td></td>
                     </tr>
                 </template>
+            </div>
+            <div data-target="exchange.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
+                <div id="chart" data-target="exchange.chartsView" style="width:100%; height:73vh; margin:0 auto;">
+                </div>
+                <div class="d-flex justify-content-center legend-wrapper">
+                    <div class="legend d-flex" data-target="exchange.labels"></div>
+                </div>
             </div>
         </div>
     </div>

@@ -11,7 +11,7 @@ export default class extends Controller {
       'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'chartWrapper'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
 

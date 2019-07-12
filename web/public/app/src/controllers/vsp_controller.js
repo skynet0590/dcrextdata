@@ -11,7 +11,7 @@ export default class extends Controller {
       'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'chartWrapper'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
 
