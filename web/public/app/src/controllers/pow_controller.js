@@ -150,6 +150,7 @@ export default class extends Controller {
       labelsDiv: this.labelsTarget,
       ylabel: 'Pool Hashrate',
       y2label: 'Network Difficulty',
+      sigFigs: 1,
       legendFormatter: legendFormatter
     }
 

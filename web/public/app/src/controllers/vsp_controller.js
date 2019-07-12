@@ -136,6 +136,7 @@ export default class extends Controller {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
       ylabel: 'Pool Fees',
+      sigFigs: 1,
       labels: ['Date', 'Pool Fees', 'immature', 'voted', 'missed', 'proportion live', 'proportion missed'],
       colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090', '#8ff090', '#ffee90', '#fb3390']
     }

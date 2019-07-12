@@ -136,8 +136,8 @@ export default class extends Controller {
       labelsDiv: this.labelsTarget,
       ylabel: 'Interval',
       y2label: 'Volume',
-      labels: ['Date', 'interval', 'high', 'low', 'open', 'close', 'volume'],
-      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090', '#ffee90', '#dab390']
+      labels: ['Date', 'interval', 'volume', 'high', 'low', 'open', 'close'],
+      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090', '#d40078', '#dab390']
     }
 
     const _this = this
@@ -146,12 +146,12 @@ export default class extends Controller {
     var dataSet = []
     exs.forEach(ex => {
       data.push(new Date(ex.time))
+      data.push(ex.volume)
       data.push(ex.interval)
       data.push(ex.high)
       data.push(ex.low)
       data.push(ex.open)
       data.push(ex.close)
-      data.push(ex.volume)
 
       dataSet.push(data)
       data = []

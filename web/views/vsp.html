@@ -7,8 +7,9 @@
         <div class="content">
             <div class="container">
 
-                <div class="row align-items-center">
+                <div class="row ">
                     <div class="col-md-3 col-sm-12 mb-2">
+                        <div class="control-label">SOURCE</div>
                         <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
                             class="form-control" style="width: 150px;">
                             {{$selectedFilter := .selectedFilter}}
@@ -20,7 +21,8 @@
                         </select>
                     </div>
 
-                    <div class="chart-control-wrapper col-md-3 mb-2" data-target="vsp.chartSelector">
+                    <div class="chart-control-wrapper col-md-5 mb-2" data-target="vsp.chartSelector">
+                        <div class="control-label">VIEW</div>
                         <div class="chart-control">
                             <ul
                             class="nav nav-pills"
@@ -47,8 +49,9 @@
                     </div>
                 </div>
 
-                <div data-target="vsp.numPageWrapper" class="col-md-6 float-md-right">
-                    <div class="d-flex float-md-right">
+               <div data-target="vsp.numPageWrapper" class="col d-flex  align-items-center justify-content-between float-md-right">
+                    <div class=" mb-2 float-md-right">
+                        <div class="control-label">ROWS</div>
                         <select data-target="vsp.selectedNum" data-action="change->vsp#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
                             <option value="20">20</option>
                             <option value="30">30</option>
@@ -56,6 +59,7 @@
                             <option value="100">100</option>
                             <option value="150">150</option>
                         </select>
+                    </div>
 
                         <div class="row float-md-right">
                             <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
@@ -64,10 +68,8 @@
                             </p>    
                             <a href="javascript:void(0)" data-target="vsp.nextPageButton" data-action="click->vsp#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
-                    </div> 
                 </div>
             </div>
-
             <div class="" data-target="vsp.vspTableWrapper">
                 <table class="table">
                     <thead>
