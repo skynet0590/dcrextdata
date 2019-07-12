@@ -12,15 +12,15 @@ import (
 
 type Reddit struct {
 	Date           time.Time `json:"date"`
-	Subscribers    int64 `json:"subscribers"`
-	AccountsActive int64 `json:"accounts_active"`
+	Subscribers    int `json:"subscribers"`
+	AccountsActive int `json:"accounts_active"`
 }
 
 type Response struct {
 	Kind string `json:"kind"`
 	Data struct{
-		Subscribers    int64 `json:"subscribers"`
-		AccountsActive int64 `json:"accounts_active"`
+		Subscribers    int `json:"subscribers"`
+		AccountsActive int `json:"accounts_active"`
 	} `json:"data"`
 }
 
