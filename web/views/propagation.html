@@ -14,8 +14,9 @@
                         {{range $index, $block := .blocks.records}}
                             <tbody data-target="blocks.blockTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
-                                <td colspan="6">Receive Time: {{$block.BlockReceiveTime}}
+                                <td colspan="6">
                                     Timestamp: {{$block.BlockInternalTime}}
+                                    Receive Time: {{$block.BlockReceiveTime}}
                                     Delay: {{$block.Delay}}
                                     Height: {{$block.BlockHeight}}
                                     Hash: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a>
