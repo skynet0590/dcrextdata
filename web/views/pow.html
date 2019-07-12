@@ -68,47 +68,47 @@
                 </div>
             </div>
             <div class="" data-target="pow.powTableWrapper">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Source</th>
-                        <th>Network Hashrate</th>
-                        <th>Pool Hashrate</th>
-                        <th>Workers</th>
-                        <th>Network Difficulty</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody data-target="pow.powTable">
-                    {{range $index, $powdata := .powData}}
-                    <tr>
-                        <td>{{$powdata.Source}}</td>
-                        <td>{{$powdata.NetworkHashrate}}</td>
-                        <td>{{$powdata.PoolHashrate}}</td>
-                        <td>{{$powdata.Workers}}</td>
-                        <td>{{$powdata.NetworkDifficulty}}</td>
-                        <td>{{$powdata.Time}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Network Hashrate</th>
+                            <th>Pool Hashrate</th>
+                            <th>Workers</th>
+                            <th>Network Difficulty</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody data-target="pow.powTable">
+                        {{range $index, $powdata := .powData}}
+                        <tr>
+                            <td>{{$powdata.Source}}</td>
+                            <td>{{$powdata.NetworkHashrate}}</td>
+                            <td>{{$powdata.PoolHashrate}}</td>
+                            <td>{{$powdata.Workers}}</td>
+                            <td>{{$powdata.NetworkDifficulty}}</td>
+                            <td>{{$powdata.Time}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
 
-            <template data-target="pow.powRowTemplate">
-                <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </template>
+                <template data-target="pow.powRowTemplate">
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </template>
             </div>
             <div data-target="pow.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
                 <div id="chart"
-                    data-target="pow.chartsView"
-                    style="width:100%; height:73vh; margin:0 auto;">
-                </div>
+                data-target="pow.chartsView"
+                style="width:100%; height:73vh; margin:0 auto;">
+            </div>
             <div class="d-flex justify-content-center legend-wrapper">
                 <div class="legend d-flex" data-target="pow.labels"></div>
             </div>
