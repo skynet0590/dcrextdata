@@ -146,13 +146,12 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
 			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
 			Delay:             fmt.Sprintf("%04.2f", timeDiff),
-			Votes: 			   votes,
+			Votes:             votes,
 		})
 	}
 
 	return blocks, nil
 }
-
 
 func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error) {
 	block, err := models.Blocks(models.BlockWhere.Height.EQ(height)).One(ctx, pg.db)
@@ -171,6 +170,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 		ReceiveTime:       null.TimeFrom(vote.ReceiveTime),
 		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
 		ValidatorID:       null.IntFrom(vote.ValidatorId),
+		Validity:          null.StringFrom(vote.Validity),
 	}
 	// get the target block
 	block, err := pg.getBlock(ctx, int(vote.VotingOn))
@@ -227,9 +227,10 @@ func (pg *PgDb) voteModelToDto(vote *models.Vote) mempool.VoteDto {
 		Hash:                  vote.Hash,
 		ReceiveTime:           vote.ReceiveTime.Time.Format(dateMiliTemplate),
 		TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
-		BlockReceiveTimeDiff: fmt.Sprintf("%04.2f", blockReceiveTimeDiff),
+		BlockReceiveTimeDiff:  fmt.Sprintf("%04.2f", blockReceiveTimeDiff),
 		VotingOn:              vote.VotingOn.Int64,
 		ValidatorId:           vote.ValidatorID.Int,
+		Validity:              vote.Validity.String,
 	}
 }
 
