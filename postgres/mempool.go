@@ -153,6 +153,29 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	return blocks, nil
 }
 
+func (pg *PgDb) BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
+	blockSlice, err := models.Blocks(qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var blocks []mempool.BlockDto
+
+	for _, block := range blockSlice {
+		timeDiff := block.ReceiveTime.Time.Sub(block.InternalTimestamp.Time).Seconds()
+
+		blocks = append(blocks, mempool.BlockDto{
+			BlockHash:         block.Hash.String,
+			BlockHeight:       uint32(block.Height),
+			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
+			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
+			Delay:             fmt.Sprintf("%04.2f", timeDiff),
+		})
+	}
+
+	return blocks, nil
+}
+
 func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error) {
 	block, err := models.Blocks(models.BlockWhere.Height.EQ(height)).One(ctx, pg.db)
 	if err != nil {

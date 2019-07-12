@@ -7,12 +7,12 @@
     <div class="content">
         <div class="container">
             <div class="row">
-                <div class="col-md-12" data-controller="blocks">
-                    <h4>Blocks</h4>
+                <div class="col-md-12" data-controller="propagation">
+                    <h4>Propagation</h4>
 
                     <div class="row align-items-center">
                         <div class="col-md-3 col-sm-12 mb-2">
-                            <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
+                            <select data-target="propagation.selectedRecordSet" data-action="change->propagation#selectedRecordSetChanged"
                                     class="form-control" style="width: 150px;">
                                 <option value="both">Both</option>
                                 <option value="blocks">Blocks</option>
@@ -22,27 +22,30 @@
 
                         <div class="col-md-4 float-md-right offset-md-5">
                             <div class="d-flex float-md-right">
-                                <button data-target="blocks.previousPageButton" data-action="click->blocks#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
-                                        class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
+                                <button data-target="propagation.previousPageButton" data-action="click->propagation#gotoPreviousPage" data-previous-page="{{ .propagation.previousPage}}"
+                                        class="btn btn-link mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">
                                     &lt; Previous
                                 </button>
 
-                                <span data-target="blocks.pageReport" class="text-muted" data-current-page="{{ .blocks.currentPage }}">
-                                    Page <span data-target="blocks.currentPage" data-current-page="{{ .blocks.currentPage }}">{{ .blocks.currentPage }}</span> of
-                                    <span data-target="blocks.totalPageCount">{{ .blocks.totalPages }}</span>
+                                <span data-target="propagation.pageReport" class="text-muted"
+                                      data-current-page="{{ .propagation.currentPage }}" style="padding-top: 10px;">
+                                    Page <span data-target="propagation.currentPage"
+                                               data-current-page="{{ .propagation.currentPage }}">{{ .propagation.currentPage }}</span> of
+                                    <span data-target="propagation.totalPageCount">{{ .propagation.totalPages }}</span>
                                 </span>
 
-                                <button data-target="blocks.nextPageButton" data-action="click->blocks#gotoNextPage"
-                                        data-next-page="{{ .blocks.nextPage }}" class="btn btn-link ml-2 {{ if not .blocks.nextPage }}d-none{{ end }}">
+                                <button data-target="propagation.nextPageButton" data-action="click->propagation#gotoNextPage"
+                                        data-next-page="{{ .propagation.nextPage }}" class="btn btn-link ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}">
                                     Next &gt;
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <table class="table collapsible" data-target="blocks.table">
-                        {{range $index, $block := .blocks.records}}
-                            <tbody data-target="blocks.blockTbody" data-block-hash="{{$block.BlockHash}}">
+                    {{/*combine view*/}}
+                    <table class="table collapsible" data-target="propagation.table">
+                        {{range $index, $block := .propagation.records}}
+                            <tbody data-target="propagation.blocksTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
                                 <td colspan="7" {{ if gt $index 0 }} style="padding-top:50px" {{ end }}>
                                     <b>Height</b>: {{$block.BlockHeight}}  &nbsp;&nbsp;&nbsp;&nbsp;
@@ -53,7 +56,7 @@
                                 </td>
                             </tr>
                             </tbody>
-                            <tbody data-target="blocks.votesTbody" data-block-hash="{{$block.BlockHash}}" style="margin-bottom: 20px;">
+                            <tbody data-target="propagation.votesTbody" data-block-hash="{{$block.BlockHash}}" style="margin-bottom: 20px;">
                             <tr>
                                 <td>Voting On</td>
                                 <td>Validator ID</td>
@@ -78,6 +81,59 @@
                         {{end}}
                     </table>
 
+                    {{/*blocks only*/}}
+                    <table class="table d-none" data-target="propagation.blocksTable">
+                        <thead>
+                        <tr>
+                            <th>Height</th>
+                            <th>Timestamp</th>
+                            <th>Received</th>
+                            <th>Delay</th>
+                            <th>Hash</th>
+                        </tr>
+                        </thead>
+                        <tbody data-target="propagation.blocksTableBody">
+                        </tbody>
+                    </table>
+
+                    <template data-target="propagation.blocksRowTemplate">
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
+
+                    {{/*votes only*/}}
+                    <table data-target="propagation.votesTable" class="table d-none">
+                        <thead>
+                        <tr>
+                            <th>Voting On</th>
+                            <th>Validator ID</th>
+                            <th>Validity</th>
+                            <th>Received</th>
+                            <th>Block Time Diff</th>
+                            <th>Block Receive Time Diff</th>
+                            <th>Hash</th>
+                        </tr>
+                        </thead>
+                        <tbody data-target="propagation.votesTableBody">
+                        </tbody>
+                    </table>
+
+                    <template data-target="propagation.votesRowTemplate">
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
                 </div>
             </div>
         </div>
