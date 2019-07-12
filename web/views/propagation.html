@@ -10,16 +10,46 @@
                 <div class="col-md-12" data-controller="blocks">
                     <h4>Blocks</h4>
 
+                    <div class="row align-items-center">
+                        <div class="col-md-3 col-sm-12 mb-2">
+                            <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
+                                    class="form-control" style="width: 150px;">
+                                <option value="both">Both</option>
+                                <option value="blocks">Blocks</option>
+                                <option value="votes">Votes</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 float-md-right offset-md-5">
+                            <div class="d-flex float-md-right">
+                                <button data-target="blocks.previousPageButton" data-action="click->blocks#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
+                                        class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
+                                    &lt; Previous
+                                </button>
+
+                                <span data-target="blocks.pageReport" class="text-muted" data-current-page="{{ .blocks.currentPage }}">
+                                    Page <span data-target="blocks.currentPage" data-current-page="{{ .blocks.currentPage }}">{{ .blocks.currentPage }}</span> of
+                                    <span data-target="blocks.totalPageCount">{{ .blocks.totalPages }}</span>
+                                </span>
+
+                                <button data-target="blocks.nextPageButton" data-action="click->blocks#gotoNextPage"
+                                        data-next-page="{{ .blocks.nextPage }}" class="btn btn-link ml-2 {{ if not .blocks.nextPage }}d-none{{ end }}">
+                                    Next &gt;
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <table class="table collapsible" data-target="blocks.table">
                         {{range $index, $block := .blocks.records}}
                             <tbody data-target="blocks.blockTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
-                                <td colspan="6" {{ if gt $index 0 }} style="padding-top:50px" {{ end }}>
-                                    Height: {{$block.BlockHeight}}
-                                    Timestamp: {{$block.BlockInternalTime}}
-                                    Received: {{$block.BlockReceiveTime}}
-                                    Delay: {{$block.Delay}}
-                                    Hash: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a>
+                                <td colspan="7" {{ if gt $index 0 }} style="padding-top:50px" {{ end }}>
+                                    <b>Height</b>: {{$block.BlockHeight}}  &nbsp;&nbsp;&nbsp;&nbsp;
+                                    <b>Timestamp</b>: {{$block.BlockInternalTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
+                                    <b>Received</b>: {{$block.BlockReceiveTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
+                                    <b>Delay</b>: {{$block.Delay}} <br/>
+                                    <b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a>
                                 </td>
                             </tr>
                             </tbody>
@@ -48,22 +78,6 @@
                         {{end}}
                     </table>
 
-                    <br/><br/>
-
-                    <button data-target="blocks.previousPageButton" data-action="click->blocks#gotoPreviousPage" data-previous-page="{{ .blocks.previousPage}}"
-                            class="btn btn-link mr-2 {{ if lt .blocks.previousPage 1 }}d-none{{ end }}">
-                        &lt; Previous
-                    </button>
-
-                    <span data-target="blocks.pageReport" class="text-muted" data-current-page="{{ .blocks.currentPage }}">
-                        Page <span data-target="blocks.currentPage" data-current-page="{{ .blocks.currentPage }}">{{ .blocks.currentPage }}</span> of
-                        <span data-target="blocks.totalPageCount">{{ .blocks.totalPages }}</span>
-                    </span>
-
-                    <button data-target="blocks.nextPageButton" data-action="click->blocks#gotoNextPage"
-                            data-next-page="{{ .blocks.nextPage }}" class="btn btn-link ml-2 {{ if not .blocks.nextPage }}d-none{{ end }}">
-                        Next &gt;
-                    </button>
                 </div>
             </div>
         </div>
