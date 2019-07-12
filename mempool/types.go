@@ -56,6 +56,7 @@ type Vote struct {
 	Hash              string
 	ReceiveTime       time.Time
 	TargetedBlockTime time.Time
+	BlockReceiveTime  time.Time
 	VotingOn          int64
 	ValidatorId       int
 }
@@ -64,6 +65,7 @@ type VoteDto struct {
 	Hash                  string `json:"hash"`
 	ReceiveTime           string `json:"receive_time"`
 	TargetedBlockTimeDiff string `json:"block_time_diff"`
+	BlockReceiveTimeDiff  string `json:"block_receive_time_diff"`
 	VotingOn              int64  `json:"voting_on"`
 	ValidatorId           int    `json:"validator_id"`
 }

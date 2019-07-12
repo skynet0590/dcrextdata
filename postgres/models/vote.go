@@ -27,6 +27,7 @@ type Vote struct {
 	Hash              string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
 	VotingOn          null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
 	ReceiveTime       null.Time  `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	BlockReceiveTime  null.Time  `boil:"block_receive_time" json:"block_receive_time,omitempty" toml:"block_receive_time" yaml:"block_receive_time,omitempty"`
 	TargetedBlockTime null.Time  `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
 	ValidatorID       null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
 
@@ -38,12 +39,14 @@ var VoteColumns = struct {
 	Hash              string
 	VotingOn          string
 	ReceiveTime       string
+	BlockReceiveTime  string
 	TargetedBlockTime string
 	ValidatorID       string
 }{
 	Hash:              "hash",
 	VotingOn:          "voting_on",
 	ReceiveTime:       "receive_time",
+	BlockReceiveTime:  "block_receive_time",
 	TargetedBlockTime: "targeted_block_time",
 	ValidatorID:       "validator_id",
 }
@@ -77,12 +80,14 @@ var VoteWhere = struct {
 	Hash              whereHelperstring
 	VotingOn          whereHelpernull_Int64
 	ReceiveTime       whereHelpernull_Time
+	BlockReceiveTime  whereHelpernull_Time
 	TargetedBlockTime whereHelpernull_Time
 	ValidatorID       whereHelpernull_Int
 }{
 	Hash:              whereHelperstring{field: "\"vote\".\"hash\""},
 	VotingOn:          whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
 	ReceiveTime:       whereHelpernull_Time{field: "\"vote\".\"receive_time\""},
+	BlockReceiveTime:  whereHelpernull_Time{field: "\"vote\".\"block_receive_time\""},
 	TargetedBlockTime: whereHelpernull_Time{field: "\"vote\".\"targeted_block_time\""},
 	ValidatorID:       whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
 }
@@ -104,8 +109,8 @@ func (*voteR) NewStruct() *voteR {
 type voteL struct{}
 
 var (
-	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "targeted_block_time", "validator_id"}
-	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "targeted_block_time", "validator_id"}
+	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id"}
+	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id"}
 	voteColumnsWithDefault    = []string{}
 	votePrimaryKeyColumns     = []string{"hash"}
 )
