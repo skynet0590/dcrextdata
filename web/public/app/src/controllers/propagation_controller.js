@@ -6,7 +6,9 @@ export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton',
-      'table', 'votesTbody', 'blockTbody', 'blockTbodyTemplate', 'votesTbodyTemplate', 'voteRowTemplate',
+      'selectedRecordSet',
+      'table', 'blocksTbody', 'votesTbody',
+      'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage'
     ]
   }
@@ -16,6 +18,13 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+    this.selectedRecordSet = 'both'
+  }
+
+  selectedRecordSetChanged () {
+    this.currentPage = 1
+    this.selectedRecordSet = this.selectedRecordSetTarget.value
+    this.fetchData(1)
   }
 
   gotoPreviousPage () {
@@ -28,7 +37,19 @@ export default class extends Controller {
 
   fetchData (page) {
     const _this = this
-    axios.get(`/getblocks?page=${page}`).then(function (response) {
+    let uri = '/getpropagationdata'
+    switch (this.selectedRecordSet) {
+      case 'blocks':
+        uri = 'getblocks'
+        break
+      case 'votes':
+        uri = 'getvotes'
+        break
+      default:
+        uri = 'getpropagationdata'
+        break
+    }
+    axios.get(`/${uri}?page=${page}`).then(function (response) {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
@@ -46,15 +67,72 @@ export default class extends Controller {
         show(_this.nextPageButtonTarget)
       }
 
-      _this.displayBlock(result.records)
+      _this.displayData(result.records)
     }).catch(function (e) {
       console.log(e) // todo: handle error
     })
   }
 
-  displayBlock (data) {
-    const tableHeadHtml = this.tableTarget.querySelector('thead').innerHTML
+  displayData (data) {
+    switch (this.selectedRecordSet) {
+      case 'blocks':
+        this.displayBlocks(data)
+        break
+      case 'votes':
+        this.displayVotes(data)
+        break
+      default:
+        this.displayPropagationData(data)
+        break
+    }
+  }
 
+  displayBlocks (data) {
+    const _this = this
+    this.blocksTableBodyTarget.innerHTML = ''
+    data.forEach(block => {
+      const exRow = document.importNode(_this.blocksRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerText = block.block_height
+      fields[1].innerText = block.block_internal_time
+      fields[2].innerText = block.block_receive_time
+      fields[3].innerText = block.delay
+      fields[4].innerText = block.block_hash
+
+      _this.blocksTableBodyTarget.appendChild(exRow)
+    })
+
+    hide(this.tableTarget)
+    hide(this.votesTableTarget)
+    show(this.blocksTableTarget)
+  }
+
+  displayVotes (data) {
+    const _this = this
+    this.votesTableBodyTarget.innerHTML = ''
+
+    data.forEach(item => {
+      const exRow = document.importNode(_this.votesRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerText = item.voting_on
+      fields[1].innerText = item.validator_id
+      fields[2].innerText = item.validity
+      fields[3].innerText = item.receive_time
+      fields[4].innerText = item.block_time_diff
+      fields[5].innerText = item.block_receive_time_diff
+      fields[6].innerText = item.hash
+
+      _this.votesTableBodyTarget.appendChild(exRow)
+    })
+
+    hide(this.tableTarget)
+    hide(this.blocksTableTarget)
+    show(this.votesTableTarget)
+  }
+
+  displayPropagationData (data) {
     let blocksHtml = ''
     data.forEach(block => {
       let votesHtml = ''
@@ -74,7 +152,7 @@ export default class extends Controller {
       let padding = i > 0 ? 'style="padding-top:50px"' : ''
       i++
       blocksHtml += `<tbody data-target="blocks.blockTbody"
-                            data-block-hash="${block.block_hash}" class="clickable">
+                            data-block-hash="${block.block_hash}">
                         <tr>
                             <td colspan="7" ${padding}>
                               <b>Height</b>: ${block.block_height} &nbsp;&nbsp;&nbsp;&nbsp;
@@ -87,19 +165,23 @@ export default class extends Controller {
                         </tbody>
                         <tbody data-target="blocks.votesTbody" data-block-hash="${block.block_hash}" style="margin-bottom: 20px;">
                         <tr>
-                            <th>Voting On</th>
-                            <th>Validator ID</th>
-                            <th>Validity</th>
-                            <th>Received</th>
-                            <th>Block Time Diff</th>
-                            <th>Block Receive Time Diff</th>
-                            <th>Hash</th>
+                            <td>Voting On</td>
+                            <td>Validator ID</td>
+                            <td>Validity</td>
+                            <td>Received</td>
+                            <td>Block Time Diff</td>
+                            <td>Block Receive Time Diff</td>
+                            <td>Hash</td>
                         </tr>
                         ${votesHtml}
                         </tbody>`
     })
 
-    this.tableTarget.innerHTML = `${tableHeadHtml} ${blocksHtml}`
+    this.tableTarget.innerHTML = blocksHtml
+
+    show(this.tableTarget)
+    hide(this.blocksTableTarget)
+    hide(this.votesTableTarget)
   }
 
   showVotes (event) {
