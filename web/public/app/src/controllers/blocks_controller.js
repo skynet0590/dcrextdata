@@ -63,6 +63,7 @@ export default class extends Controller {
         votesHtml += `<tr>
                             <td>${vote.voting_on}</td>
                             <td>${vote.validator_id}</td>
+                            <td>${vote.validity}</td>
                             <td>${vote.receive_time}</td>
                             <td>${vote.block_time_diff}</td>
                             <td>${vote.block_receive_time_diff}</td>
@@ -88,6 +89,7 @@ export default class extends Controller {
                         <tr>
                             <th>Voting On</th>
                             <th>Validator ID</th>
+                            <th>Validity</th>
                             <th>Received</th>
                             <th>Block Time Diff</th>
                             <th>Block Receive Time Diff</th>

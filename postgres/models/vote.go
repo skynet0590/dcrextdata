@@ -24,12 +24,13 @@ import (
 
 // Vote is an object representing the database table.
 type Vote struct {
-	Hash              string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	VotingOn          null.Int64 `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
-	ReceiveTime       null.Time  `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
-	BlockReceiveTime  null.Time  `boil:"block_receive_time" json:"block_receive_time,omitempty" toml:"block_receive_time" yaml:"block_receive_time,omitempty"`
-	TargetedBlockTime null.Time  `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
-	ValidatorID       null.Int   `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
+	Hash              string      `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
+	VotingOn          null.Int64  `boil:"voting_on" json:"voting_on,omitempty" toml:"voting_on" yaml:"voting_on,omitempty"`
+	ReceiveTime       null.Time   `boil:"receive_time" json:"receive_time,omitempty" toml:"receive_time" yaml:"receive_time,omitempty"`
+	BlockReceiveTime  null.Time   `boil:"block_receive_time" json:"block_receive_time,omitempty" toml:"block_receive_time" yaml:"block_receive_time,omitempty"`
+	TargetedBlockTime null.Time   `boil:"targeted_block_time" json:"targeted_block_time,omitempty" toml:"targeted_block_time" yaml:"targeted_block_time,omitempty"`
+	ValidatorID       null.Int    `boil:"validator_id" json:"validator_id,omitempty" toml:"validator_id" yaml:"validator_id,omitempty"`
+	Validity          null.String `boil:"validity" json:"validity,omitempty" toml:"validity" yaml:"validity,omitempty"`
 
 	R *voteR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L voteL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -42,6 +43,7 @@ var VoteColumns = struct {
 	BlockReceiveTime  string
 	TargetedBlockTime string
 	ValidatorID       string
+	Validity          string
 }{
 	Hash:              "hash",
 	VotingOn:          "voting_on",
@@ -49,6 +51,7 @@ var VoteColumns = struct {
 	BlockReceiveTime:  "block_receive_time",
 	TargetedBlockTime: "targeted_block_time",
 	ValidatorID:       "validator_id",
+	Validity:          "validity",
 }
 
 // Generated where
@@ -83,6 +86,7 @@ var VoteWhere = struct {
 	BlockReceiveTime  whereHelpernull_Time
 	TargetedBlockTime whereHelpernull_Time
 	ValidatorID       whereHelpernull_Int
+	Validity          whereHelpernull_String
 }{
 	Hash:              whereHelperstring{field: "\"vote\".\"hash\""},
 	VotingOn:          whereHelpernull_Int64{field: "\"vote\".\"voting_on\""},
@@ -90,6 +94,7 @@ var VoteWhere = struct {
 	BlockReceiveTime:  whereHelpernull_Time{field: "\"vote\".\"block_receive_time\""},
 	TargetedBlockTime: whereHelpernull_Time{field: "\"vote\".\"targeted_block_time\""},
 	ValidatorID:       whereHelpernull_Int{field: "\"vote\".\"validator_id\""},
+	Validity:          whereHelpernull_String{field: "\"vote\".\"validity\""},
 }
 
 // VoteRels is where relationship names are stored.
@@ -109,8 +114,8 @@ func (*voteR) NewStruct() *voteR {
 type voteL struct{}
 
 var (
-	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id"}
-	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id"}
+	voteAllColumns            = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id", "validity"}
+	voteColumnsWithoutDefault = []string{"hash", "voting_on", "receive_time", "block_receive_time", "targeted_block_time", "validator_id", "validity"}
 	voteColumnsWithDefault    = []string{}
 	votePrimaryKeyColumns     = []string{"hash"}
 )

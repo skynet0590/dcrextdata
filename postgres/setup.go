@@ -100,6 +100,7 @@ const (
 		block_receive_time timestamp,
 		targeted_block_time timestamp,
 		validator_id INT,
+		validity VARCHAR(128),
 		PRIMARY KEY (hash)
 	);`
 )
