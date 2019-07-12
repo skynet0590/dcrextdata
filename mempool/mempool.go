@@ -87,6 +87,12 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 					ValidatorId: voteInfo.MempoolTicketIndex,
 				}
 
+				if voteInfo.Validation.Validity {
+					vote.Validity = "Valid"
+				} else {
+					vote.Validity = "Invalid"
+				}
+
 				// wait for some time for the block to get added to the blockchain
 				time.Sleep(2 * time.Second)
 

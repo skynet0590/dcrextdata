@@ -270,7 +270,7 @@ func _main(ctx context.Context) error {
 	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
-	
+
 	// wait for shutdown signal
 	<-ctx.Done()
 
