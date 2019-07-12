@@ -72,8 +72,9 @@ export default class extends Controller {
       blocksHtml += `<tbody data-target="blocks.blockTbody"
                             data-block-hash="${block.block_hash}" class="clickable">
                         <tr>
-                            <td colspan="6">Receive Time: ${block.block_receive_time}
+                            <td colspan="6">
                               Timestamp: ${block.block_internal_time}
+                              Receive Time: ${block.block_receive_time}
                               Delay: ${block.delay}
                               Height: ${block.block_height}
                               Hash: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>
