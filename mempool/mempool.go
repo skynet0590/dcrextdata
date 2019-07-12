@@ -97,6 +97,8 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				}
 
 				vote.TargetedBlockTime = targetedBlock.Header.Timestamp
+				// todo: check the db for this block and get the receive time if the block is the last to be received,
+				// then update the votes
 
 				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
 					log.Error(err)

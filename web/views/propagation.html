@@ -11,41 +11,34 @@
                     <h4>Blocks</h4>
 
                     <table class="table collapsible" data-target="blocks.table">
-                        <thead>
-                        <tr>
-                            <th>Receive Time</th>
-                            <th>Timestamp</th>
-                            <th>Delay(s)</th>
-                            <th>Height</th>
-                            <th>Hash</th>
-                        </tr>
-                        </thead>
                         {{range $index, $block := .blocks.records}}
-                            <tbody data-target="blocks.blockTbody" data-action="click->blocks#showVotes"
-                                   data-block-hash="{{$block.BlockHash}}" class="clickable">
+                            <tbody data-target="blocks.blockTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
-                                <td>{{$block.BlockReceiveTime}}</td>
-                                <td>{{$block.BlockInternalTime}}</td>
-                                <td>{{$block.Delay}}</td>
-                                <td>{{$block.BlockHeight}}</td>
-                                <td><a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a> </td>
+                                <td colspan="6">Receive Time: {{$block.BlockReceiveTime}}
+                                    Timestamp: {{$block.BlockInternalTime}}
+                                    Delay: {{$block.Delay}}
+                                    Height: {{$block.BlockHeight}}
+                                    Hash: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a>
+                                </td>
                             </tr>
                             </tbody>
-                            <tbody data-target="blocks.votesTbody" data-block-hash="{{$block.BlockHash}}" class="d-none">
+                            <tbody data-target="blocks.votesTbody" data-block-hash="{{$block.BlockHash}}" style="margin-bottom: 20px;">
                             <tr>
-                                <th>Received Time</th>
-                                <th>Block Time Diff</th>
-                                <th>Voting On</th>
-                                <th>Validator ID</th>
-                                <th>Hash</th>
+                                <td>Receive Time</td>
+                                <td>Block Time Diff</td>
+                                <td>Block Receive Time Diff</td>
+                                <td>Voting On</td>
+                                <td>Validator ID</td>
+                                <td>Hash</td>
                             </tr>
                             {{range $index, $vote := $block.Votes}}
                                 <tr>
                                     <td>{{$vote.ReceiveTime}}</td>
                                     <td>{{$vote.TargetedBlockTimeDiff}}</td>
+                                    <td>{{$vote.BlockReceiveTimeDiff}}</td>
                                     <td>{{$vote.VotingOn}}</td>
                                     <td>{{$vote.ValidatorId}}</td>
-                                    <td>{{$vote.Hash}}</td>
+                                    <td><a target="_blank" href="https://explorer.dcrdata.org/tx/{{$vote.Hash}}">{{$vote.Hash}}</a></td>
                                 </tr>
                             {{end}}
                             </tbody>
