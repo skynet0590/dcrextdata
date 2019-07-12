@@ -94,11 +94,11 @@ export default class extends Controller {
       const exRow = document.importNode(_this.blocksRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerHTML = `<a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_height}</a>`
+      fields[0].innerText = block.block_height
       fields[1].innerText = block.block_internal_time
       fields[2].innerText = block.block_receive_time
       fields[3].innerText = block.delay
-      fields[4].innerHTML = `<a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>`
+      fields[4].innerText = block.block_hash
 
       _this.blocksTableBodyTarget.appendChild(exRow)
     })
@@ -116,13 +116,13 @@ export default class extends Controller {
       const exRow = document.importNode(_this.votesRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerHTML = `<a target="_blank" href="https://explorer.dcrdata.org/block/${item.voting_on}">${item.voting_on}</a>`
+      fields[0].innerText = item.voting_on
       fields[1].innerText = item.validator_id
       fields[2].innerText = item.validity
       fields[3].innerText = item.receive_time
       fields[4].innerText = item.block_time_diff
       fields[5].innerText = item.block_receive_time_diff
-      fields[6].innerHTML = `<a target="_blank" href="https://explorer.dcrdata.org/tx/${item.hash}">${item.hash}</a>`
+      fields[6].innerText = item.hash
 
       _this.votesTableBodyTarget.appendChild(exRow)
     })
