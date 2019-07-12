@@ -72,7 +72,12 @@ export default class extends Controller {
 
   fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    const numberOfRows = this.selectedNumTarget.value
+    var numberOfRows
+    if (display === 'chart') {
+      numberOfRows = 3000
+    } else {
+      numberOfRows = this.selectedNumTarget.value
+    }
 
     const _this = this
     axios.get(`/filteredvspticks?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
