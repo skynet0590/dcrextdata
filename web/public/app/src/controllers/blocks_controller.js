@@ -62,26 +62,29 @@ export default class extends Controller {
         votesHtml += `<tr>
                             <td>${vote.receive_time}</td>
                             <td>${vote.block_time_diff}</td>
+                            <td>${vote.block_receive_time_diff}</td>
                             <td>${vote.voting_on}</td>
                             <td>${vote.validator_id}</td>
-                            <td>${vote.hash}</td>
+                            <td><a target="_blank" href="https://explorer.dcrdata.org/tx/${vote.hash}">${vote.hash}</a></td>
                         </tr>`
       })
 
-      blocksHtml += `<tbody data-target="blocks.blockTbody" data-action="click->blocks#showVotes" 
+      blocksHtml += `<tbody data-target="blocks.blockTbody"
                             data-block-hash="${block.block_hash}" class="clickable">
                         <tr>
-                            <td>${block.block_receive_time}</td>
-                            <td>${block.block_internal_time}</td>
-                            <td>${block.delay}</td>
-                            <td>${block.block_height}</td>
-                            <td><a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a></td>
+                            <td colspan="6">Receive Time: ${block.block_receive_time}
+                              Timestamp: ${block.block_internal_time}
+                              Delay: ${block.delay}
+                              Height: ${block.block_height}
+                              Hash: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>
+                            </td>
                         </tr>
                         </tbody>
-                        <tbody data-target="blocks.votesTbody" data-block-hash="${block.block_hash}" class="d-none">
+                        <tbody data-target="blocks.votesTbody" data-block-hash="${block.block_hash}" style="margin-bottom: 20px;">
                         <tr>
-                            <th>Received Time</th>
+                            <th>Receive Time</th>
                             <th>Block Time Diff</th>
+                            <th>Block Receive Time Diff</th>
                             <th>Voting On</th>
                             <th>Validator ID</th>
                             <th>Hash</th>
