@@ -20,7 +20,7 @@ type Response struct {
 	Kind string `json:"kind"`
 	Data struct{
 		Subscribers    int `json:"subscribers"`
-		AccountsActive int `json:"accounts_active"`
+		AccountsActive int `json:"active_user_count"`
 	} `json:"data"`
 }
 

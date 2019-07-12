@@ -21,10 +21,24 @@ const (
 )
 
 func NewRedditCollector(period int64, store DataStore) (*Collector, error) {
+	if period < 300 {
+		log.Info("The minimum value for reddit interval is 300s(5m), setting reddit interval to 300")
+		period = 300
+	}
+
+	if period > 1800{
+		log.Info("The minimum value for reddit interval is 1800s(30m), setting reddit interval to 1800")
+		period = 1800
+	}
+
 	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		return nil, err
 	}
+
+	// reddit returns too many request http status if user agent is not set
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
 
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
@@ -34,7 +48,7 @@ func NewRedditCollector(period int64, store DataStore) (*Collector, error) {
 	}, nil
 }
 
-func (c *Collector) fetch(ctx context.Context, response interface{}) error {
+func (c *Collector) fetch(ctx context.Context, response *Response) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -44,9 +58,13 @@ func (c *Collector) fetch(ctx context.Context, response interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
-	err = json.NewDecoder(resp.Body).Decode(response)
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(response)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+		}
+	} else {
+		log.Infof("Unable to fetch data from reddit: %s", resp.Status)
 	}
 
 	return nil
@@ -58,15 +76,16 @@ func (c *Collector) Run(ctx context.Context) {
 	}
 
 	lastCollectionDate := c.dataStore.LastRedditEntryTime()
+	lastCollectionDate = lastCollectionDate.Add(-1 * time.Hour) // todo: this need justification
 	secondsPassed := time.Since(lastCollectionDate)
 	period := c.period * time.Second
 
-	log.Info("Starting VSP collection cycle.")
+	log.Info("Starting Reddit data collection cycle.")
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
-		log.Infof("Fetching reddit data every %dm, collected %s ago, will fetch in %s.", c.period/60, helpers.DurationToString(secondsPassed),
+		log.Infof("Fetching reddit data every %dm, collected %s ago, will fetch in %s.", c.period/60,
+			helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)
@@ -133,7 +152,5 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		Subscribers: resp.Data.Subscribers,
 		AccountsActive: resp.Data.AccountsActive,
 	}
-	// log.Infof("Collected data for %d vsps", len(*resp))
-
 	return c.dataStore.StoreRedditData(ctx, redditData)
 }
