@@ -25,7 +25,7 @@ func (pg *PgDb) StoreRedditData(ctx context.Context, redditInfo reddit.RedditInf
 		}
 		return err
 	}
-	log.Infof("Added a new reddit info received at %s, Subscribers %d, Active Users %d",
+	log.Infof("Added a new reddit entry received at %s, Subscribers %d, Active Users %d",
 		redditInfo.Date.Format(dateMiliTemplate), redditInfo.Subscribers, redditInfo.AccountsActive)
 	return nil
 }
