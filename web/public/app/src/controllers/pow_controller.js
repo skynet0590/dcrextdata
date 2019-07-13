@@ -1,14 +1,39 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date } from '../utils'
+import { hide, show, date, legendFormatter, options } from '../utils'
+
+const Dygraph = require('../../../dist/js/dygraphs.min.js')
+var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'powTable',
+      'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'powRowTemplate', 'currentPage', 'selectedNum'
+      'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
+      'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
+  }
+
+  setTable () {
+    opt = 'table'
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.add('d-hide')
+    this.powTableWrapperTarget.classList.remove('d-hide')
+    this.numPageWrapperTarget.classList.remove('d-hide')
+    this.powTableTarget.innerHTML = ''
+    this.nextPage = 1
+    this.fetchExchange('table')
+  }
+
+  setChart () {
+    opt = 'chart'
+    this.numPageWrapperTarget.classList.add('d-hide')
+    this.powTableWrapperTarget.classList.add('d-hide')
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.remove('d-hide')
+    this.nextPage = 1
+    this.fetchExchange('chart')
   }
 
   loadPreviousPage () {
@@ -17,7 +42,7 @@ export default class extends Controller {
       hide(this.previousPageButtonTarget)
     }
     this.powTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
   loadNextPage () {
@@ -30,24 +55,31 @@ export default class extends Controller {
       hide(this.nextPageButtonTarget)
     }
     this.powTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
   selectedFilterChanged () {
     this.powTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    console.log(opt)
+    console.log(this.opt)
+    this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
     this.powTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
-  fetchExchange () {
+  fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    const numberOfRows = this.selectedNumTarget.value
+    var numberOfRows
+    if (display === 'chart') {
+      numberOfRows = 3000
+    } else {
+      numberOfRows = this.selectedNumTarget.value
+    }
 
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
@@ -66,7 +98,12 @@ export default class extends Controller {
         _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
         _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
         _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
-        _this.displayPoW(result.powData)
+
+        if (display === 'table') {
+          _this.displayPoW(result.powData)
+        } else {
+          _this.plotGraph(result.powData)
+        }
       }).catch(function (e) {
         console.log(e)
       })
@@ -87,6 +124,49 @@ export default class extends Controller {
       fields[5].innerHTML = date(pow.Time)
 
       _this.powTableTarget.appendChild(powRow)
+    })
+  }
+
+  // pow chart
+  plotGraph (pows) {
+    const _this = this
+
+    var data = []
+    var dataSet = []
+    pows.forEach(pow => {
+      data.push(new Date(pow.Time))
+      data.push(pow.PoolHashrate)
+      data.push(pow.NetworkDifficulty)
+      data.push(pow.Workers)
+      data.push(pow.NetworkHashrate)
+
+      dataSet.push(data)
+      data = []
+    })
+
+    var extra = {
+      labels: ['Date', 'Pool Hashrate', 'Network Difficulty', 'Workers', 'Network Hashrate'],
+      colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090'],
+      labelsDiv: this.labelsTarget,
+      ylabel: 'Pool Hashrate',
+      y2label: 'Network Difficulty',
+      sigFigs: 1,
+      legendFormatter: legendFormatter
+    }
+
+    _this.chartsView = new Dygraph(
+      _this.chartsViewTarget,
+      dataSet, { ...options, ...extra }
+    )
+  }
+
+  setActiveOptionBtn (opt, optTargets) {
+    optTargets.forEach(li => {
+      if (li.dataset.option === opt) {
+        li.classList.add('active')
+      } else {
+        li.classList.remove('active')
+      }
     })
   }
 }

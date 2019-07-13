@@ -145,7 +145,13 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
+	var exchangeTickSlice models.ExchangeTickSlice
+	if limit == 3000 {
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+	}else{
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
+	}
+
 	if err != nil {
 		return nil, 0, err
 	}
@@ -183,7 +189,11 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 
 	if currencyPair != "" {
 		idQuery := models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair)
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
+		if limit == 3000 {
+			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+			}else{
+			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
+		}
 		if err != nil {
 			return nil, 0, err
 		}
@@ -193,7 +203,12 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			return nil, 0, err
 		}
 	} else {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy("time DESC")).All(ctx, pg.db)
+		if limit == 3000 {
+			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+		}else{
+			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
+		}
+
 		if err != nil {
 			return nil, 0, err
 		}

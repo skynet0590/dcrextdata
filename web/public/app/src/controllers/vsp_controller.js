@@ -1,14 +1,39 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date } from '../utils'
+import { hide, show, date, legendFormatter, options } from '../utils'
+
+const Dygraph = require('../../../dist/js/dygraphs.min.js')
+var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'vspTicksTable',
+      'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'vspRowTemplate', 'currentPage', 'selectedNum'
+      'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
+      'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
+  }
+
+  setTable () {
+    opt = 'table'
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.add('d-hide')
+    this.vspTableWrapperTarget.classList.remove('d-hide')
+    this.numPageWrapperTarget.classList.remove('d-hide')
+    this.vspTicksTableTarget.innerHTML = ''
+    this.nextPage = 1
+    this.fetchExchange('table')
+  }
+
+  setChart () {
+    opt = 'chart'
+    this.numPageWrapperTarget.classList.add('d-hide')
+    this.vspTableWrapperTarget.classList.add('d-hide')
+    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.remove('d-hide')
+    this.nextPage = 1
+    this.fetchExchange('chart')
   }
 
   loadPreviousPage () {
@@ -17,7 +42,7 @@ export default class extends Controller {
       hide(this.previousPageButtonTarget)
     }
     this.vspTicksTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
   loadNextPage () {
@@ -30,24 +55,29 @@ export default class extends Controller {
       hide(this.nextPageButtonTarget)
     }
     this.vspTicksTableTarget.innerHTML = ''
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
   selectedFilterChanged () {
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange()
+    this.fetchExchange(opt)
   }
 
-  fetchExchange () {
+  fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    const numberOfRows = this.selectedNumTarget.value
+    var numberOfRows
+    if (display === 'chart') {
+      numberOfRows = 3000
+    } else {
+      numberOfRows = this.selectedNumTarget.value
+    }
 
     const _this = this
     axios.get(`/filteredvspticks?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
@@ -66,7 +96,12 @@ export default class extends Controller {
         _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
         _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
         _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
-        _this.displayVSPs(result.vspData)
+
+        if (display === 'table') {
+          _this.displayVSPs(result.vspData)
+        } else {
+          _this.plotGraph(result.vspData)
+        }
       }).catch(function (e) {
         console.log(e)
       })
@@ -92,6 +127,50 @@ export default class extends Controller {
       fields[10].innerHTML = date(vsp.time)
 
       _this.vspTicksTableTarget.appendChild(vspRow)
+    })
+  }
+
+  // vsp chart
+  plotGraph (vsps) {
+    var extra = {
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: 'Pool Fees',
+      sigFigs: 1,
+      labels: ['Date', 'Pool Fees', 'immature', 'voted', 'missed', 'proportion live', 'proportion missed'],
+      colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090', '#8ff090', '#ffee90', '#fb3390']
+    }
+
+    const _this = this
+
+    var data = []
+    var dataSet = []
+    vsps.forEach(vsp => {
+      data.push(new Date(vsp.time))
+      data.push(vsp.pool_fees)
+      data.push(vsp.immature)
+      data.push(vsp.voted)
+      data.push(vsp.missed)
+      data.push(vsp.proportion_live)
+      data.push(vsp.proportion_missed)
+
+      dataSet.push(data)
+      data = []
+    })
+
+    _this.chartsView = new Dygraph(
+      _this.chartsViewTarget,
+      dataSet, { ...options, ...extra }
+    )
+  }
+
+  setActiveOptionBtn (opt, optTargets) {
+    optTargets.forEach(li => {
+      if (li.dataset.option === opt) {
+        li.classList.add('active')
+      } else {
+        li.classList.remove('active')
+      }
     })
   }
 }

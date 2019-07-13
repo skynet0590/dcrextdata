@@ -80,7 +80,15 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 
 // todo impliment sorting for PoW data as it is currently been sorted by time
 func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error) {
-	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
+	var powDatum models.PowDatumSlice
+	var err error
+	if limit == 3000 {
+		powDatum, err = models.PowData(qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
+	}else{
+		powDatum, err = models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
+	}
+
+
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +135,14 @@ func (pg *PgDb) CountPowData(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error) {
-	powDatum, err := models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
+	var powDatum models.PowDatumSlice
+	var err error
+	if limit == 3000 {
+		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
+	}else{
+		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
+	}
+
 	if err != nil {
 		return nil, err
 	}
