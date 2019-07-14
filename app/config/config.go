@@ -95,7 +95,7 @@ type ConfigFileOptions struct {
 	DcrdRpcServer   string  `long:"dcrdrpcserver" description:"Dcrd rpc server host"`
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
-	DcrdRpcPassword string  `long:"dcrdrpcpaswword" description:"Your Dcrd rpc password"`
+	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
