@@ -255,6 +255,32 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 	return TickDtoCP, err
 }
 
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]models.ExchangeTickSlice, error) {
+	var chartSlice []models.ExchangeTickSlice
+	exchangeTickTime, err := models.ExchangeTicks(qm.Select(models.ExchangeTickColumns.Time), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+	chartSlice = append(chartSlice, exchangeTickTime)
+
+	exchangeSlice, err := models.Exchanges(qm.OrderBy("id")).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, source := range exchangeSlice {
+		idQuery := qm.Where("exchange_id=? ", source.ID)
+		exchangeFilterResult, err := models.ExchangeTicks(idQuery, qm.Select(models.ExchangeTickColumns.Close)).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+
+		chartSlice = append(chartSlice, exchangeFilterResult)
+	}
+
+	return chartSlice, err
+}
+
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {
 	return &models.ExchangeTick{
 		ExchangeID:   exchangeID,

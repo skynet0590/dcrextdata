@@ -32,7 +32,7 @@ export default class extends Controller {
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
-    this.nextPage = 1
+    this.filter = 'Close'
     this.fetchExchange('chart')
   }
 
@@ -73,17 +73,19 @@ export default class extends Controller {
 
   fetchExchange (display) {
     this.exchangeTableTarget.innerHTML = ''
-    var numberOfRows
-    if (display === 'chart') {
-      numberOfRows = 3000
-    } else {
-      numberOfRows = this.selectedNumTarget.value
-    }
+
+    const numberOfRows = this.selectedNumTarget.value
     const selectedFilter = this.selectedFilterTarget.value
     const selectedCpair = this.selectedCpairTarget.value
 
     const _this = this
-    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`)
+    var url
+    if (display === 'table') {
+      url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`
+    } else {
+      url = `/chartExchange?filter=${this.filter}`
+    }
+    axios.get(url)
       .then(function (response) {
       // since results are appended to the table, discard this response
       // if the user has changed the filter before the result is gotten
@@ -92,16 +94,18 @@ export default class extends Controller {
         }
 
         let result = response.data
-        _this.totalPageCountTarget.textContent = result.totalPages
-        _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
-
         if (display === 'table') {
+          console.log(result.exData)
+          _this.totalPageCountTarget.textContent = result.totalPages
+          _this.currentPageTarget.textContent = result.currentPage
+          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
+
           _this.displayExchange(result.exData)
         } else {
-          _this.plotGraph(result.exData)
+          console.log(result)
+          // _this.plotGraph(result)
         }
       }).catch(function (e) {
         console.log(e)
@@ -139,6 +143,7 @@ export default class extends Controller {
       labels: ['Date', 'interval', 'volume', 'high', 'low', 'open', 'close'],
       colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090', '#d40078', '#dab390']
     }
+    console.log(exs.chartData)
 
     const _this = this
 

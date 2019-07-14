@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -140,6 +141,26 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	}
 }
 
+func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	source := req.FormValue("source")
+
+	ctx := context.Background()
+
+	chartData, err := s.db.ChartExchangeTicks(ctx, source)
+	if err != nil {
+		fmt.Println(err)
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data := map[string]interface{}{
+		"chartData":   chartData,
+	}
+
+	defer s.renderJSON(data, res)
+}
+	
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
