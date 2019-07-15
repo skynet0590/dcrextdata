@@ -154,6 +154,10 @@ func _main(ctx context.Context) error {
 
 		client, err := rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
+			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
+			if strings.Contains(err.Error(), dcrNotRunningErr) {
+				return fmt.Errorf("Error in opening a dcrd connection. Please confirm that a dcrd instance is running at %s and try again", cfg.DcrdRpcServer)
+			}
 			return fmt.Errorf("Error in opening a dcrd connection: %s", err.Error())
 		}
 		// wg := new(sync.WaitGroup)
