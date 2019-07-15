@@ -69,7 +69,6 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
 		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
 		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
-		NetworkDifficulty: null.Float64From(data.NetworkDifficulty),
 		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate)),
 		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate)),
 		Source:            data.Source,
@@ -160,7 +159,6 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 		PoolHashrateTh:    poolHashRate / pow.Thash,
 		Workers:           int64(item.Workers.Int),
 		Source:            item.Source,
-		NetworkDifficulty: item.NetworkDifficulty.Float64,
 		CoinPrice:         coinPrice,
 		BtcPrice:          bTCPrice,
 	}, nil

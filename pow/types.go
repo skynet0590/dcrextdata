@@ -9,7 +9,6 @@ type PowData struct {
 	NetworkHashrate   float64
 	PoolHashrate      float64
 	Workers           int64
-	NetworkDifficulty float64
 	CoinPrice         float64
 	BtcPrice          float64
 	Source            string
@@ -20,7 +19,6 @@ type PowDataDto struct {
 	NetworkHashrateTh float64 `json:"network_hashrate_th"`
 	PoolHashrateTh    float64 `json:"pool_hashrate_th"`
 	Workers           int64   `json:"workers"`
-	NetworkDifficulty float64 `json:"network_difficulty"`
 	CoinPrice         float64 `json:"coin_price"`
 	BtcPrice          float64 `json:"btc_price"`
 	Source            string  `json:"source"`
@@ -31,7 +29,6 @@ type luxorPowData struct {
 	NetworkHashrate   float64 `json:"network_hashrate"`
 	PoolHashrate      float64 `json:"pool_hashrate"`
 	Workers           int64   `json:"workers"`
-	NetworkDifficulty float64 `json:"network_difficulty"`
 	CoinPrice         string  `json:"coin_price"`
 	BtcPrice          string  `json:"btc_price"`
 }
@@ -75,7 +72,6 @@ type uupoolData struct {
 
 type uunetworkData struct {
 	NetworkHashrate   float64 `json:"networkhashps"`
-	NetworkDifficulty float64 `json:"difficulty"`
 }
 
 type uupoolAPIResponse struct {
