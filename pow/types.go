@@ -8,7 +8,7 @@ type PowDataSource struct {
 
 type PowData struct {
 	Time              int64
-	NetworkHashrate   int64
+	NetworkHashrate   float64
 	PoolHashrate      float64
 	Workers           int64
 	NetworkDifficulty float64
@@ -19,7 +19,7 @@ type PowData struct {
 
 type PowDataDto struct {
 	Time              time.Time
-	NetworkHashrate   int64
+	NetworkHashrate   float64
 	PoolHashrate      float64
 	Workers           int64
 	NetworkDifficulty float64
@@ -30,7 +30,7 @@ type PowDataDto struct {
 
 type luxorPowData struct {
 	Time              string  `json:"time"`
-	NetworkHashrate   int64   `json:"network_hashrate"`
+	NetworkHashrate   float64   `json:"network_hashrate"`
 	PoolHashrate      float64 `json:"pool_hashrate"`
 	Workers           int64   `json:"workers"`
 	NetworkDifficulty float64 `json:"network_difficulty"`
@@ -49,15 +49,17 @@ type f2poolAPIResponse struct {
 }
 
 type coinmineAPIResponse struct {
-	NetworkHashrate int64   `json:"network_hashrate"`
+	NetworkHashrate float64   `json:"network_hashrate"`
 	PoolHashrate    float64 `json:"hashrate"`
 	Workers         int64   `json:"workers"`
 }
 
 type btcData struct {
-	NetworkHashrate string              `json:"network_hashrate"`
-	PoolHashrate    string              `json:"pool_hashrate"`
-	Rates           btcExchangeRateData `json:"exchange_rate"`
+	NetworkHashrate     string              `json:"network_hashrate"`
+	NetworkHashrateUnit string              `json:"network_hashrate_unit"`
+	PoolHashrate        string              `json:"pool_hashrate"`
+	PoolHashrateUnit    string              `json:"pool_hashrate_unit"`
+	Rates               btcExchangeRateData `json:"exchange_rate"`
 }
 
 type btcExchangeRateData struct {
@@ -74,7 +76,7 @@ type uupoolData struct {
 }
 
 type uunetworkData struct {
-	NetworkHashrate   int64   `json:"networkhashps"`
+	NetworkHashrate   float64   `json:"networkhashps"`
 	NetworkDifficulty float64 `json:"difficulty"`
 }
 
