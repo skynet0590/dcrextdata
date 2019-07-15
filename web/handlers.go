@@ -143,17 +143,18 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	source := req.FormValue("source")
-
+	ex_filter := req.FormValue("filter")
+	selectedCpair := req.FormValue("selectedCpair")
+	fmt.Println(selectedCpair)
 	ctx := context.Background()
 
-	chartData, err := s.db.ChartExchangeTicks(ctx, source)
+	chartData, err := s.db.ChartExchangeTicks(ctx, ex_filter, selectedCpair)
 	if err != nil {
 		fmt.Println(err)
 		s.renderError(err.Error(), res)
 		return
 	}
-
+	fmt.Println(chartData)
 	data := map[string]interface{}{
 		"chartData":   chartData,
 	}

@@ -8,7 +8,7 @@
         <div class="content">
             <div class="container">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div data-target=exchange.sourceWrapper class="col-md-3">
                         <div class="control-label">SOURCE</div>
                         <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                             class="form-control" style="width: 150px;">
@@ -22,7 +22,7 @@
                         <div class="control-label">CURRENCY PAIR</div>
                         <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
                             class="form-control" style="width: 110px;">
-                            <option value="All">All</option>
+                            <option data-target="exchange.hideOption value="All">All</option>
                             {{ range $index, $cpair := .currencyPairs}}
                             <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
                             {{ end }}

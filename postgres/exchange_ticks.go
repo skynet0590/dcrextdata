@@ -281,8 +281,9 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 // 	return chartSlice, err
 // }
 
-func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]ticks.TickChart, error) {
-    exchangeFilterResult, err := models.ExchangeTicks(qm.Select("close, time, exchange_id"),qm.Where("(exchange_id =?) or (exchange_id =?) or (exchange_id =?)", 2,3,4), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string, currencyPair string) ([]ticks.TickChart, error) {
+    // idQuery := qm.Where("currency_pair=?", "BTC/DCR")
+    exchangeFilterResult, err := models.ExchangeTicks(qm.Select("close, time, exchange_id"),qm.Where("currency_pair=?", currencyPair), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}

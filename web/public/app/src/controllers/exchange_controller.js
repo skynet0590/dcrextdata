@@ -11,32 +11,41 @@ export default class extends Controller {
       'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
     ]
   }
 
   setTable () {
     opt = 'table'
+
+    this.sourceWrapperTarget.classList.remove('d-hide')
+    this.hideOptionTarget.classList.remove('d-hide')
+    this.selectedCpair = this.selectedCpairTarget.value
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
     this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange('table')
+    this.fetchExchange(opt)
   }
 
   setChart () {
     opt = 'chart'
+
+    this.sourceWrapperTarget.classList.add('d-hide')
+    this.hideOptionTarget.classList.add('d-hide')
     this.numPageWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
     this.filter = 'close'
-    this.fetchExchange('chart')
+    this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
+    this.fetchExchange(opt)
   }
 
   loadPreviousPage () {
+    this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
     if (this.nextPage <= 1) {
       hide(this.previousPageButtonTarget)
@@ -45,6 +54,7 @@ export default class extends Controller {
   }
 
   loadNextPage () {
+    this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.totalPages = this.nextPageButtonTarget.getAttribute('data-total-page')
     if (this.nextPage > 1) {
@@ -58,43 +68,46 @@ export default class extends Controller {
 
   selectedFilterChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   selectedCpairChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   fetchExchange (display) {
     this.exchangeTableTarget.innerHTML = ''
 
-    const numberOfRows = this.selectedNumTarget.value
-    const selectedFilter = this.selectedFilterTarget.value
-    const selectedCpair = this.selectedCpairTarget.value
-
     const _this = this
     var url
+    var selectedFilter
     if (display === 'table') {
-      url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`
+      const numberOfRows = this.selectedNumTarget.value
+      selectedFilter = this.selectedFilterTarget.value
+
+      url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
     } else {
-      url = `/chartExchange?filter=${this.filter}`
+      url = `/chartExchange?filter=${this.filter}&selectedCpair=${this.selectedCpair}`
     }
+
     axios.get(url)
       .then(function (response) {
       // since results are appended to the table, discard this response
       // if the user has changed the filter before the result is gotten
-        if (_this.selectedFilterTarget.value !== selectedFilter) {
-          return
-        }
-
         let result = response.data
         if (display === 'table') {
+          if (_this.selectedFilterTarget.value !== selectedFilter) {
+            return
+          }
           console.log(result.exData)
           _this.totalPageCountTarget.textContent = result.totalPages
           _this.currentPageTarget.textContent = result.currentPage
@@ -141,7 +154,7 @@ export default class extends Controller {
       ylabel: 'Interval',
       y2label: 'Volume',
       labels: ['Date', 'bittrex', 'binance', 'bleutrade', 'poloniex'],
-      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090']
+      colors: ['#2971FF', '#00FF30', '#8F00FF', '#ff1212', '#8ff090']
     }
 
     var data = [0, 0, 0, 0, 0]
