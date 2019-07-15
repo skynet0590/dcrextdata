@@ -255,61 +255,33 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 	return TickDtoCP, err
 }
 
-// func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]models.ExchangeTickSlice, error) {
-// 	var chartSlice []models.ExchangeTickSlice
-// 	// exchangeTickTime, err := models.ExchangeTicks(qm.Select(models.ExchangeTickColumns.Time), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-// 	// if err != nil {
-// 	// 	return nil, err
-// 	// }
-// 	// chartSlice = append(chartSlice, exchangeTickTime)
-
-// 	exchangeSlice, err := models.Exchanges(qm.OrderBy("id")).All(ctx, pg.db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	for _, source := range exchangeSlice {
-// 		idQuery := qm.Where("exchange_id=? ", source.ID)
-// 		exchangeFilterResult, err := models.ExchangeTicks(idQuery, qm.Select(models.ExchangeTickColumns.Close)).All(ctx, pg.db)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		chartSlice = append(chartSlice, exchangeFilterResult)
-// 	}
-
-// 	return chartSlice, err
-// }
-
-func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string, currencyPair string) ([]ticks.TickChart, error) {
-    // idQuery := qm.Where("currency_pair=?", "BTC/DCR")
-    exchangeFilterResult, err := models.ExchangeTicks(qm.Select("close, time, exchange_id"),qm.Where("currency_pair=?", currencyPair), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, currencyPair string) ([]ticks.TickChart, error) {
+    exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=?", currencyPair), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
 	tickChart := []ticks.TickChart{}
-    // var Filter float64
+    var Filter float64
 	for _, tick := range exchangeFilterResult {
-
-        // if filter == "high"{
-        //      Filter =        tick.High
-        // } else if filter == "low" {
-        // Filter  =       tick.Low
-        // }else if filter == "open"{
-        // Filter   =    tick.Open
-        // }else if filter == "Volume"{
-        // Filter =        tick.Volume
-        // }else if filter == "close"{
-        // Filter =  tick.Close
-        // }else{
-        //     Filter =  tick.Close
-        // }
+        if selectedDtick == "high" {
+             Filter =        tick.High
+        } else if selectedDtick == "low" {
+        Filter  =       tick.Low
+        }else if selectedDtick == "open"{
+        Filter   =    tick.Open
+        }else if selectedDtick == "Volume"{
+        Filter =        tick.Volume
+        }else if selectedDtick == "close"{
+        Filter =  tick.Close
+        }else{
+            Filter =  tick.Close
+        }
 
 		tickChart = append(tickChart, ticks.TickChart{
 			ExchangeID:   tick.ExchangeID,
 			Time:         tick.Time.UTC(),
-            Filter: tick.Close,
+            Filter: Filter,
 		})
 	}
 

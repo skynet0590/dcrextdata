@@ -9,8 +9,8 @@ export default class extends Controller {
   static get targets () {
     return [
       'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks',
+      'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
     ]
   }
@@ -18,6 +18,8 @@ export default class extends Controller {
   setTable () {
     opt = 'table'
 
+    this.selectedDticksTarget.value = 'close'
+    this.tickWapperTarget.classList.add('d-hide')
     this.sourceWrapperTarget.classList.remove('d-hide')
     this.hideOptionTarget.classList.remove('d-hide')
     this.selectedCpair = this.selectedCpairTarget.value
@@ -33,14 +35,20 @@ export default class extends Controller {
   setChart () {
     opt = 'chart'
 
+    this.tickWapperTarget.classList.remove('d-hide')
     this.sourceWrapperTarget.classList.add('d-hide')
     this.hideOptionTarget.classList.add('d-hide')
     this.numPageWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
-    this.filter = 'close'
+    this.selectedDtick = this.selectedDticksTarget.value = 'close'
     this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
+    this.fetchExchange(opt)
+  }
+
+  selectedDticksChanged () {
+    this.selectedDtick = this.selectedDticksTarget.value
     this.fetchExchange(opt)
   }
 
@@ -96,7 +104,7 @@ export default class extends Controller {
 
       url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
     } else {
-      url = `/chartExchange?filter=${this.filter}&selectedCpair=${this.selectedCpair}`
+      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}`
     }
 
     axios.get(url)
