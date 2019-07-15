@@ -63,6 +63,13 @@ type TickDto struct {
 	CurrencyPair string    `json:"currency_pair"`
 }
 
+// TickDto represents an exchange data, formatted for presentation
+type TickChart struct {
+	ExchangeID   int       `json:"exchange_id"`
+	Filter       float64   `json:"filter"`
+	Time         time.Time `json:"time"`
+}
+
 type TickDtoCP struct {
 	CurrencyPair string `json:"currency_pair"`
 }

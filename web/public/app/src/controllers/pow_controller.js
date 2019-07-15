@@ -142,7 +142,7 @@ export default class extends Controller {
       dataSet.push(data)
       data = []
     })
-
+    console.log(dataSet)
     var extra = {
       labels: ['Date', 'Pool Hashrate', 'Network Difficulty', 'Workers', 'Network Hashrate'],
       colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090'],

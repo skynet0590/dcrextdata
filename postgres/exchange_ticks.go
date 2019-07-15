@@ -255,30 +255,64 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 	return TickDtoCP, err
 }
 
-func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]models.ExchangeTickSlice, error) {
-	var chartSlice []models.ExchangeTickSlice
-	exchangeTickTime, err := models.ExchangeTicks(qm.Select(models.ExchangeTickColumns.Time), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+// func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]models.ExchangeTickSlice, error) {
+// 	var chartSlice []models.ExchangeTickSlice
+// 	// exchangeTickTime, err := models.ExchangeTicks(qm.Select(models.ExchangeTickColumns.Time), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
+// 	// chartSlice = append(chartSlice, exchangeTickTime)
+
+// 	exchangeSlice, err := models.Exchanges(qm.OrderBy("id")).All(ctx, pg.db)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	for _, source := range exchangeSlice {
+// 		idQuery := qm.Where("exchange_id=? ", source.ID)
+// 		exchangeFilterResult, err := models.ExchangeTicks(idQuery, qm.Select(models.ExchangeTickColumns.Close)).All(ctx, pg.db)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		chartSlice = append(chartSlice, exchangeFilterResult)
+// 	}
+
+// 	return chartSlice, err
+// }
+
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, filter string) ([]ticks.TickChart, error) {
+    exchangeFilterResult, err := models.ExchangeTicks(qm.Select("close, time, exchange_id"),qm.Where("(exchange_id =?) or (exchange_id =?) or (exchange_id =?)", 2,3,4), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
-	chartSlice = append(chartSlice, exchangeTickTime)
 
-	exchangeSlice, err := models.Exchanges(qm.OrderBy("id")).All(ctx, pg.db)
-	if err != nil {
-		return nil, err
+	tickChart := []ticks.TickChart{}
+    // var Filter float64
+	for _, tick := range exchangeFilterResult {
+
+        // if filter == "high"{
+        //      Filter =        tick.High
+        // } else if filter == "low" {
+        // Filter  =       tick.Low
+        // }else if filter == "open"{
+        // Filter   =    tick.Open
+        // }else if filter == "Volume"{
+        // Filter =        tick.Volume
+        // }else if filter == "close"{
+        // Filter =  tick.Close
+        // }else{
+        //     Filter =  tick.Close
+        // }
+
+		tickChart = append(tickChart, ticks.TickChart{
+			ExchangeID:   tick.ExchangeID,
+			Time:         tick.Time.UTC(),
+            Filter: tick.Close,
+		})
 	}
 
-	for _, source := range exchangeSlice {
-		idQuery := qm.Where("exchange_id=? ", source.ID)
-		exchangeFilterResult, err := models.ExchangeTicks(idQuery, qm.Select(models.ExchangeTickColumns.Close)).All(ctx, pg.db)
-		if err != nil {
-			return nil, err
-		}
-
-		chartSlice = append(chartSlice, exchangeFilterResult)
-	}
-
-	return chartSlice, err
+	return tickChart, err
 }
 
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {

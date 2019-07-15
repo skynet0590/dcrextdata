@@ -32,7 +32,7 @@ export default class extends Controller {
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
-    this.filter = 'Close'
+    this.filter = 'close'
     this.fetchExchange('chart')
   }
 
@@ -105,7 +105,7 @@ export default class extends Controller {
           _this.displayExchange(result.exData)
         } else {
           console.log(result)
-          // _this.plotGraph(result)
+          _this.plotGraph(result.chartData)
         }
       }).catch(function (e) {
         console.log(e)
@@ -140,31 +140,44 @@ export default class extends Controller {
       labelsDiv: this.labelsTarget,
       ylabel: 'Interval',
       y2label: 'Volume',
-      labels: ['Date', 'interval', 'volume', 'high', 'low', 'open', 'close'],
-      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090', '#d40078', '#dab390']
+      labels: ['Date', 'bittrex', 'binance', 'bleutrade', 'poloniex'],
+      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090']
     }
-    console.log(exs.chartData)
+
+    var data = [0, 0, 0, 0, 0]
+    var dataSet = []
 
     const _this = this
-
-    var data = []
-    var dataSet = []
     exs.forEach(ex => {
-      data.push(new Date(ex.time))
-      data.push(ex.volume)
-      data.push(ex.interval)
-      data.push(ex.high)
-      data.push(ex.low)
-      data.push(ex.open)
-      data.push(ex.close)
+      data[0] = new Date(ex.time)
+      data.splice(ex.exchange_id, 1, ex.filter)
 
       dataSet.push(data)
-      data = []
+      data = [0, 0, 0, 0, 0]
     })
 
+    var hash = {}
+    var i, j,
+      result,
+      item,
+      key
+
+    for (i = 0; i < dataSet.length; i++) {
+      item = dataSet[i]
+      key = item[0].toString()
+      if (!hash[key]) {
+        hash[key] = item.slice()
+        continue
+      }
+      for (j = 1; j < item.length; j++) hash[key][j] += item[j]
+    }
+
+    result = Object.values(hash)
+
+    console.log(result)
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      result, { ...options, ...extra }
     )
   }
 
