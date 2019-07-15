@@ -76,19 +76,19 @@
                     <thead>
                         <tr>
                             <th>Source</th>
-                            <th>Network Hashrate</th>
-                            <th>Pool Hashrate</th>
+                            <th>Network Hashrate(Thash/s)</th>
+                            <th>Pool Hashrate(Thash/s)</th>
                             <th>Workers</th>
                             <th>Network Difficulty</th>
-                            <th>Time</th>
+                            <th>Time(UTC)</th>
                         </tr>
                     </thead>
                     <tbody data-target="pow.powTable">
                         {{range $index, $powdata := .powData}}
                         <tr>
                             <td>{{$powdata.Source}}</td>
-                            <td>{{$powdata.NetworkHashrate}}</td>
-                            <td>{{$powdata.PoolHashrate}}</td>
+                            <td>{{$powdata.NetworkHashrateTh}}</td>
+                            <td>{{$powdata.PoolHashrateTh}}</td>
                             <td>{{$powdata.Workers}}</td>
                             <td>{{$powdata.NetworkDifficulty}}</td>
                             <td>{{$powdata.Time}}</td>

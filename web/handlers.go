@@ -50,7 +50,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
-		"currencyPairs":          currencyPairs,
+		"currencyPairs":  currencyPairs,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),

@@ -92,11 +92,15 @@ func AddParams(base string, params map[string]interface{}) (string, error) {
 	return str[:len(str)-1], nil
 }
 
+func NowUtc() time.Time {
+	return time.Now().UTC()
+}
+
 func UnixTimeToString(t int64) string {
 	return time.Unix(t, 0).UTC().String()
 }
 
 func DurationToString(duration time.Duration) string {
 	duration = duration.Round(10 * time.Millisecond)
-	return duration.String() // TODO truncate as necessary
+	return duration.String()
 }

@@ -88,7 +88,7 @@ var (
 				"command":      "returnChartData",
 				"currencyPair": cpair,
 				"start":        last.Unix(),
-				"end":          time.Now().Unix(),
+				"end":          helpers.NowUtc().Unix(),
 				"period":       int(interval.Seconds()),
 			})
 		},
@@ -185,7 +185,7 @@ func (xc *commonExchange) Get(ctx context.Context, last *time.Time, interval tim
 	}
 	xc.respLock.Lock()
 	defer xc.respLock.Unlock()
-	for time.Now().Add(-interval).Unix() > last.Unix() {
+	for helpers.NowUtc().Add(-interval).Unix() > last.Unix() {
 		requestURL, err := xc.requester(*last, interval, xc.availableCPairs[xc.currencyPair])
 		if err != nil {
 			return err
@@ -218,7 +218,7 @@ func newCollector(ctx context.Context, store Store, exchange ExchangeData, curre
 		return nil, err
 	}
 
-	now := time.Now()
+	now := helpers.NowUtc()
 	if lastShort == zeroTime {
 		lastShort = now.Add((-14) * oneDay)
 	}

@@ -12,43 +12,43 @@ import (
 )
 
 const (
-	DefaultConfigFilename = "dcrextdata.conf"
-	defaultLogFilename    = "dcrextdata.log"
-	Hint                  = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
-	defaultDbHost = "localhost"
-	defaultDbPort = "5432"
-	defaultDbUser = "postgres"
-	defaultDbPass = "dbpass"
-	defaultDbName = "dcrextdata"
-	defaultLogLevel       = "debug"
-	defaultHttpHost = "127.0.0.1"
-	defaultHttpPort = "7770"
-	defaultDcrdServer = "127.0.0.1:9109"
-	defaultDcrdUser = "rpcuser"
-	defaultDcrdPassword = "rpcpass"
+	DefaultConfigFilename  = "dcrextdata.conf"
+	defaultLogFilename     = "dcrextdata.log"
+	Hint                   = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
+	defaultDbHost          = "localhost"
+	defaultDbPort          = "5432"
+	defaultDbUser          = "postgres"
+	defaultDbPass          = "dbpass"
+	defaultDbName          = "dcrextdata"
+	defaultLogLevel        = "debug"
+	defaultHttpHost        = "127.0.0.1"
+	defaultHttpPort        = "7770"
+	defaultDcrdServer      = "127.0.0.1:9109"
+	defaultDcrdUser        = "rpcuser"
+	defaultDcrdPassword    = "rpcpass"
 	defaultDcrdNetworkType = "mainnet"
 	defaultMempoolInterval = 60
-	defaultVSPInterval = 300
-	defaultPowInterval = 300
+	defaultVSPInterval     = 300
+	defaultPowInterval     = 300
 )
 
 func defaultFileOptions() ConfigFileOptions {
 	return ConfigFileOptions{
 		LogFile:         defaultLogFilename,
 		ConfigFile:      DefaultConfigFilename,
-		DBHost: defaultDbHost,
-		DBPort:defaultDbPort,
-		DBUser:defaultDbUser,
-		DBPass: defaultDbPass,
-		DBName: defaultDbName,
+		DBHost:          defaultDbHost,
+		DBPort:          defaultDbPort,
+		DBUser:          defaultDbUser,
+		DBPass:          defaultDbPass,
+		DBName:          defaultDbName,
 		DebugLevel:      defaultLogLevel,
 		VSPInterval:     defaultVSPInterval,
 		PowInterval:     defaultPowInterval,
 		MempoolInterval: defaultMempoolInterval,
 		DcrdNetworkType: defaultDcrdNetworkType,
 		DcrdRpcServer:   defaultDcrdServer,
-		DcrdRpcUser: defaultDcrdUser,
-		DcrdRpcPassword:defaultDcrdPassword,
+		DcrdRpcUser:     defaultDcrdUser,
+		DcrdRpcPassword: defaultDcrdPassword,
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
 	}
@@ -103,7 +103,6 @@ type CommandLineOptions struct {
 	Reset    bool `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	HttpMode bool `long:"http" description:"Launch http server"`
 }
-
 
 func defaultConfig() Config {
 	return Config{

@@ -18,6 +18,7 @@ import (
 	"github.com/decred/dcrd/wire"
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 func NewCollector(interval float64, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
@@ -45,7 +46,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				if !c.syncIsDone {
 					return
 				}
-				receiveTime := time.Now()
+				receiveTime := helpers.NowUtc()
 
 				msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
 				if err != nil {
@@ -96,7 +97,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 					return
 				}
 
-				vote.TargetedBlockTime = targetedBlock.Header.Timestamp
+				vote.TargetedBlockTime = targetedBlock.Header.Timestamp.UTC()
 
 				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
 					log.Error(err)
@@ -121,8 +122,8 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 			}
 
 			block := Block{
-				BlockInternalTime: blockHeader.Timestamp,
-				BlockReceiveTime:  time.Now(),
+				BlockInternalTime: blockHeader.Timestamp.UTC(),
+				BlockReceiveTime:  helpers.NowUtc(),
 				BlockHash:         blockHeader.BlockHash().String(),
 				BlockHeight:       blockHeader.Height,
 			}
@@ -155,8 +156,8 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),
-			Time:                 time.Now(),
-			FirstSeenTime:        time.Now(), //todo: use the time of the first tx in the mempool
+			Time:                 helpers.NowUtc(),
+			FirstSeenTime:        helpers.NowUtc(), //todo: use the time of the first tx in the mempool
 		}
 
 		for hashString, tx := range mempoolTransactionMap {
@@ -218,7 +219,6 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 			log.Errorf("Unable to get last mempool entry time: %s", err.Error())
 		}
 	} else {
-		lastMempoolTime = lastMempoolTime.Add(-1 * time.Hour) // todo: this need justification
 		sencodsPassed := math.Abs(time.Since(lastMempoolTime).Seconds())
 		if sencodsPassed < c.collectionInterval {
 			timeLeft := c.collectionInterval - sencodsPassed

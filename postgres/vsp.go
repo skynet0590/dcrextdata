@@ -67,20 +67,9 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	}
 
 	vspTick := responseToVSPTick(pool.ID, resp)
-	tickTime := time.Unix(int64(resp.LastUpdated), 0)
+	tickTime := time.Unix(int64(resp.LastUpdated), 0).UTC()
 
 	err = vspTick.Insert(ctx, pg.db, boil.Infer())
-	// if err != nil && strings.Contains(err.Error(), "unique constraint") {
-	// 	log.Tracef("Tick exits for %s", name)
-	// 	err = txr.Rollback()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return vspTickExistsErr
-	// } else if err != nil {
-	// 	txr.Rollback()
-	// 	return err
-	// }
 	if err != nil {
 		errR := txr.Rollback()
 		if errR != nil {
@@ -92,34 +81,12 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 		return err
 	}
 
-	// vspTickTimeExits, err := models.VSPTickTimes(
-	// 	models.VSPTickTimeWhere.UpdateTime.EQ(tickTime),
-	// 	models.VSPTickTimeWhere.VSPTickID.EQ(vspTick.ID)).Exists(ctx, pg.db)
-
-	// if err != nil {
-	// 	txr.Rollback()
-	// 	return err
-	// }
-
-	// if !vspTickTimeExits {
-	// 	vtickTime := &models.VSPTickTime{
-	// 		VSPTickID:  vspTick.ID,
-	// 		UpdateTime: tickTime,
-	// 	}
-
-	// 	err = pg.tryInsert(ctx, txr, vtickTime)
-	// 	if err != nil {
-	// 		log.Debugf("Tick time %v for %d", vtickTime.UpdateTime, vtickTime.VSPTickID)
-	// 		return err
-	// 	}
-	// }
-
 	err = txr.Commit()
 	if err != nil {
 		return txr.Rollback()
 	}
 
-	log.Infof("Stored data for VSP %10s %v", name, tickTime.UTC().Format(dateTemplate))
+	log.Infof("Stored data for VSP %10s %v", name, tickTime.Format(dateTemplate))
 	return nil
 }
 
@@ -146,7 +113,7 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 		ProportionMissed: resp.ProportionMissed,
 		UserCount:        resp.UserCount,
 		UsersActive:      resp.UserCountActive,
-		Time:             time.Unix(resp.LastUpdated, 0),
+		Time:             time.Unix(resp.LastUpdated, 0).UTC(),
 	}
 }
 
@@ -184,7 +151,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int,
 	var vspTickSlice models.VSPTickSlice
 	if limit == 3000 {
 		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Offset(offset), qm.OrderBy(models.VSPTickColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
 	}
 
@@ -194,20 +161,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int,
 
 	vspTicks := []vsp.VSPTickDto{}
 	for _, tick := range vspTickSlice {
-		vspTicks = append(vspTicks, vsp.VSPTickDto{
-			ID:               tick.ID,
-			VSP:              tick.R.VSP.Name.String,
-			Time:             tick.Time,
-			Immature:         tick.Immature,
-			Live:             tick.Live,
-			Missed:           tick.Missed,
-			PoolFees:         tick.PoolFees,
-			ProportionLive:   tick.ProportionLive,
-			ProportionMissed: tick.ProportionMissed,
-			UserCount:        tick.UserCount,
-			UsersActive:      tick.UsersActive,
-			Voted:            tick.Voted,
-		})
+		vspTicks = append(vspTicks, pg.vspTickModelToDto(tick))
 	}
 
 	return vspTicks, nil
@@ -220,7 +174,7 @@ func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.V
 	var err error
 	if limit == 3000 {
 		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), qm.Offset(offset), qm.OrderBy(models.VSPTickColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
 	}
 
@@ -230,23 +184,27 @@ func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.V
 
 	vspTicks := []vsp.VSPTickDto{}
 	for _, tick := range vspTickSlice {
-		vspTicks = append(vspTicks, vsp.VSPTickDto{
-			ID:               tick.ID,
-			VSP:              tick.R.VSP.Name.String,
-			Time:             tick.Time.UTC(),
-			Immature:         tick.Immature,
-			Live:             tick.Live,
-			Missed:           tick.Missed,
-			PoolFees:         tick.PoolFees,
-			ProportionLive:   tick.ProportionLive,
-			ProportionMissed: tick.ProportionMissed,
-			UserCount:        tick.UserCount,
-			UsersActive:      tick.UsersActive,
-			Voted:            tick.Voted,
-		})
+		vspTicks = append(vspTicks, pg.vspTickModelToDto(tick))
 	}
 
 	return vspTicks, nil
+}
+
+func (pg *PgDb) vspTickModelToDto(tick *models.VSPTick) vsp.VSPTickDto {
+	return vsp.VSPTickDto{
+		ID:               tick.ID,
+		VSP:              tick.R.VSP.Name.String,
+		Time:             tick.Time.Format(dateTemplate),
+		Immature:         tick.Immature,
+		Live:             tick.Live,
+		Missed:           tick.Missed,
+		PoolFees:         tick.PoolFees,
+		ProportionLive:   tick.ProportionLive,
+		ProportionMissed: tick.ProportionMissed,
+		UserCount:        tick.UserCount,
+		UsersActive:      tick.UsersActive,
+		Voted:            tick.Voted,
+	}
 }
 
 func (pg *PgDb) AllVSPTickCount(ctx context.Context) (int64, error) {

@@ -73,8 +73,8 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate)),
 		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate)),
 		Source:            data.Source,
- 		Time:              int(data.Time),
- 		Workers:           null.IntFrom(int(data.Workers)),
+		Time:              int(data.Time),
+		Workers:           null.IntFrom(int(data.Workers)),
 	}, nil
 }
 
@@ -84,7 +84,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 	var err error
 	if limit == 3000 {
 		powDatum, err = models.PowData(qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		powDatum, err = models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	}
 
@@ -113,7 +113,7 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 	var err error
 	if limit == 3000 {
 		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	}
 
@@ -155,9 +155,9 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 	}
 
 	return pow.PowDataDto{
-		Time:              time.Unix(int64(item.Time), 0).UTC(),
-		NetworkHashrate:   networkHashRate/pow.Thash,
-		PoolHashrate:      poolHashRate/pow.Thash,
+		Time:              time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
+		NetworkHashrateTh: networkHashRate / pow.Thash,
+		PoolHashrateTh:    poolHashRate / pow.Thash,
 		Workers:           int64(item.Workers.Int),
 		Source:            item.Source,
 		NetworkDifficulty: item.NetworkDifficulty.Float64,

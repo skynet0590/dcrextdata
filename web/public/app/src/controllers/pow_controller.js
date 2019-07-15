@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -116,12 +116,12 @@ export default class extends Controller {
       const powRow = document.importNode(_this.powRowTemplateTarget.content, true)
       const fields = powRow.querySelectorAll('td')
 
-      fields[0].innerText = pow.Source
-      fields[1].innerText = pow.NetworkHashrate
-      fields[2].innerText = pow.PoolHashrate
-      fields[3].innerHTML = pow.Workers
-      fields[4].innerHTML = pow.NetworkDifficulty
-      fields[5].innerHTML = date(pow.Time)
+      fields[0].innerText = pow.source
+      fields[1].innerText = pow.network_hashrate_th
+      fields[2].innerText = pow.pool_hashrate_th
+      fields[3].innerHTML = pow.workers
+      fields[4].innerHTML = pow.network_difficulty
+      fields[5].innerHTML = pow.time
 
       _this.powTableTarget.appendChild(powRow)
     })

@@ -30,12 +30,12 @@ const (
 	Uupool    = "uupool"
 	UupoolUrl = "http://uupool.cn/api/getPoolInfo.php?coin=dcr"
 
-	Hash = 1
-	Khash = 1000 * Hash
-	Mhash = 1000 * Khash
-	Ghash = 1000 * Mhash
-	Thash = 1000 * Ghash
-	Phash = 1000 * Thash
+	Hash    = 1
+	Khash   = 1000 * Hash
+	Mhash   = 1000 * Khash
+	Ghash   = 1000 * Mhash
+	Thash   = 1000 * Ghash
+	Phash   = 1000 * Thash
 	Exahash = 1000 * Phash
 )
 
@@ -228,7 +228,7 @@ func (in *CoinminePow) Collect(ctx context.Context) ([]PowData, error) {
 
 func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
-	t := time.Now().Unix()
+	t := helpers.NowUtc().Unix()
 
 	data = append(data, PowData{
 		Time:              t,
@@ -280,7 +280,7 @@ func (in *BtcPow) Collect(ctx context.Context) ([]PowData, error) {
 
 func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
-	t := time.Now().Unix()
+	t := helpers.NowUtc().Unix()
 
 	n, err := strconv.ParseFloat(res.BtcData.NetworkHashrate, 64)
 	if err != nil {
@@ -297,7 +297,6 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 		log.Error("Unable to convert the network hashrage return from api: %s", err.Error())
 		return nil
 	}
-
 
 	poolHashrate, err := convertHashRate(p, res.BtcData.PoolHashrateUnit)
 	if err != nil {
@@ -366,7 +365,7 @@ func (in *UupoolPow) Collect(ctx context.Context) ([]PowData, error) {
 
 func (UupoolPow) fetch(res *uupoolAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
-	t := time.Now().Unix()
+	t := helpers.NowUtc().Unix()
 
 	data = append(data, PowData{
 		Time:              t,
