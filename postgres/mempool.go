@@ -196,7 +196,6 @@ func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error)
 }
 
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
-
 	voteModel := models.Vote{
 		Hash:              vote.Hash,
 		VotingOn:          null.Int64From(int64(vote.VotingOn)),
@@ -205,6 +204,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 		ValidatorID:       null.IntFrom(vote.ValidatorId),
 		Validity:          null.StringFrom(vote.Validity),
 	}
+
 	// get the target block
 	block, err := pg.getBlock(ctx, int(vote.VotingOn))
 	if err == nil {
@@ -218,6 +218,7 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 		}
 		return err
 	}
+
 	log.Infof("New vote received at %s for %d, Validator Id %d, Hash ...%s",
 		vote.ReceiveTime.Format(dateMiliTemplate), vote.VotingOn, vote.ValidatorId, vote.Hash[len(vote.Hash)-23:])
 	return nil
