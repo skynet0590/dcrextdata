@@ -2,63 +2,109 @@
 <html lang="en">
 {{ template "html-head" }}
 <body data-controller="receive">
-<div class="body">
-    {{ template "header" }}
-    <div class="content">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-8" data-controller="mempool">
+    <div class="body" data-controller="mempool">
+        {{ template "header" }}
+        <div class="content">
+            <div class="container">
+                <div class="d-block">
                     <h4>Mempool</h4>
-                    <table class="table">
-                        <thead>
-                        <tr>
-                            <th>Date (UTC)</th>
-                            <th># of Txs</th>
-                            <th>Size (B)</th>
-                            <th>Total Fees</th>
-                        </tr>
-                        </thead>
-                        <tbody data-target="mempool.tableBody">
-                        {{range $index, $mempool := .mempool.mempoolData}}
-                            <tr>
-                                <td>{{$mempool.Time}}</td>
-                                <td>{{$mempool.NumberOfTransactions}}</td>
-                                <td>{{$mempool.Size}}</td>
-                                <td>{{normalizeBalance $mempool.TotalFee}}</td>
-                            </tr>
-                        {{end}}
-                        </tbody>
-                    </table>
+                </div>
+                <div class="row">
+                    <div class="chart-control-wrapper pr-3 col-md-4 mb-2 " data-target="mempool.chartSelector">
+                        <div class="control-label d-inline-block pr-2">View</div>
+                        <div class="chart-control d-inline-block">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a
+                                    class="nav-link active"
+                                    href="javascript:void(0);"
+                                    data-target="mempool.viewOption"
+                                    data-action="click->mempool#setTable"
+                                    data-option="table"
+                                    >Table</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                    class="nav-link"
+                                    href="javascript:void(0);"
+                                    data-target="mempool.viewOption"
+                                    data-action="click->mempool#setChart"
+                                    data-option="chart"
+                                    >Chart</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div data-target="mempool.chartOptions" class="col-md-8 float-md-right d-hide">
+                        <div class="control-label d-inline-block">Mempool Charts</div>
 
-                    <template data-target="mempool.rowTemplate">
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    </template>
+                        <select data-target="mempool.selectedMempoolOpt" data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 d-inline-block" style="width: 200px;">
+                            <option value="size">Size Chart</option>
+                            <option value="total_fee">Total fees Chart</option>
+                            <option value="number_of_transaction">Number of Transactions</option>
+                        </select>
+                    </div>
 
-                    <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
+                    <div  data-target="mempool.btnWrapper" class="row col-md-4 align-items-center justify-content-end">
+                        <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
                             class="btn btn-link mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
-                        &lt; Previous
-                    </button>
+                            &lt; Previous
+                        </button>
 
-                    <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
-                        Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
-                        <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
-                    </span>
+                        <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
+                            Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
+                            <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
+                        </span>
 
-                    <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
+                        <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
                             data-next-page="{{ .mempool.nextPage }}" class="btn btn-link ml-2 {{ if not .mempool.nextPage }}d-none{{ end }}">
-                        Next &gt;
-                    </button>
+                            Next &gt;
+                        </button>
+                    </div>
                 </div>
 
+                <div >
+                    <div data-target="mempool.tableWrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date (UTC)</th>
+                                    <th># of Txs</th>
+                                    <th>Size (B)</th>
+                                    <th>Total Fees</th>
+                                </tr>
+                            </thead>
+                            <tbody data-target="mempool.tableBody">
+                                {{range $index, $mempool := .mempool.mempoolData}}
+                                <tr>
+                                    <td>{{$mempool.Time}}</td>
+                                    <td>{{$mempool.NumberOfTransactions}}</td>
+                                    <td>{{$mempool.Size}}</td>
+                                    <td>{{normalizeBalance $mempool.TotalFee}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+
+                        <template data-target="mempool.rowTemplate">
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </template>
+                        </div>
+                        <div data-target="mempool.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
+                            <div id="chart" data-target="mempool.chartsView" style="width:100%; height:73vh; margin:0 auto;"></div>
+                            <div class="d-flex justify-content-center legend-wrapper">
+                                <div class="legend d-flex" data-target="mempool.labels"></div>
+                            </div>
+                        </div>
+                </div>
             </div>
         </div>
     </div>
-</div>
-{{ template "footer" }}
+    {{ template "footer" }}
 </body>
 </html>

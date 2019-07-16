@@ -6,7 +6,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-
+	"fmt"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
@@ -486,6 +486,25 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	}
 
 	return data, nil
+}
+
+func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	chartFilter := req.FormValue("chartFilter")
+	fmt.Println(chartFilter)
+	ctx := context.Background()
+
+	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data := map[string]interface{}{
+		"mempoolchartData":  mempoolDataSlice,
+	}
+
+	defer s.renderJSON(data, res)
 }
 
 // /propagation
