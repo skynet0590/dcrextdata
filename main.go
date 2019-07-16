@@ -156,9 +156,11 @@ func _main(ctx context.Context) error {
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
 			if strings.Contains(err.Error(), dcrNotRunningErr) {
-				return fmt.Errorf("Error in opening a dcrd connection. Please confirm that a dcrd instance is running at %s and try again", cfg.DcrdRpcServer)
-			}
-			return fmt.Errorf("Error in opening a dcrd connection: %s", err.Error())
+				fmt.Println(fmt.Sprintf("Error in opening a dcrd connection. Please confirm that a dcrd instance is running at %s and try again", cfg.DcrdRpcServer))
+				return nil
+			}//running on port
+			fmt.Println(fmt.Sprintf("Error in opening a dcrd connection: %s", err.Error()))
+			return nil
 		}
 		// wg := new(sync.WaitGroup)
 		// register the close function to be run before shutdown
