@@ -132,9 +132,11 @@ func _main(ctx context.Context) error {
 		return nil
 	}
 
-	// Display app version.
-	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
+	var dcrClient *rpcclient.Client
+	var collector *mempool.Collector
+
+	// if mempool is not disable, check that a dcrclient can be created before showing app version
 	if !cfg.DisableMempool {
 		dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
 		certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
@@ -150,34 +152,38 @@ func _main(ctx context.Context) error {
 			Certificates: certs,
 		}
 
-		collector := mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
+		collector = mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
 
-		client, err := rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
+		dcrClient, err = rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
 			if strings.Contains(err.Error(), dcrNotRunningErr) {
-				fmt.Println(fmt.Sprintf("Error in opening a dcrd connection. Please confirm that a dcrd instance is running at %s and try again", cfg.DcrdRpcServer))
+				fmt.Println(fmt.Sprintf("Unable to connect to dcrd at %s. Is it running?", cfg.DcrdRpcServer))
 				return nil
-			}//running on port
+			} //running on port
 			fmt.Println(fmt.Sprintf("Error in opening a dcrd connection: %s", err.Error()))
 			return nil
 		}
-		// wg := new(sync.WaitGroup)
+	}
+	// Display app version.
+	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
+
+	if !cfg.DisableMempool {
 		// register the close function to be run before shutdown
 		app.ShutdownOps = append(app.ShutdownOps, func() {
-			log.Info("Shutting down dcrd client")
-			client.Shutdown()
+			log.Info("Shutting down dcrd dcrClient")
+			dcrClient.Shutdown()
 		})
 
-		if err := client.NotifyNewTransactions(true); err != nil {
+		if err := dcrClient.NotifyNewTransactions(true); err != nil {
 			log.Error(err)
 		}
 
-		if err := client.NotifyBlocks(); err != nil {
-			log.Errorf("Unable to register block notification for client: %s", err.Error())
+		if err := dcrClient.NotifyBlocks(); err != nil {
+			log.Errorf("Unable to register block notification for dcrClient: %s", err.Error())
 		}
 
-		collector.SetClient(client)
+		collector.SetClient(dcrClient)
 
 		if !db.MempoolDataTableExits() {
 			if err := db.CreateMempoolDataTable(); err != nil {
