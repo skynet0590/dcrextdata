@@ -58,7 +58,7 @@ type TickDto struct {
 	Open         float64   `json:"open"`
 	Close        float64   `json:"close"`
 	Volume       float64   `json:"volume"`
-	Time         time.Time `json:"time"`
+	Time         string `json:"time"`
 	Interval     int       `json:"interval"`
 	CurrencyPair string    `json:"currency_pair"`
 }

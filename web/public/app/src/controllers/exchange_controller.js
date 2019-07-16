@@ -166,8 +166,7 @@ export default class extends Controller {
     var extra = {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
-      ylabel: 'Interval',
-      y2label: 'Volume',
+      ylabel: 'Price',
       labels: ['Date', 'bittrex', 'binance', 'bleutrade', 'poloniex'],
       colors: ['#2971FF', '#00FF30', '#8F00FF', '#ff1212', '#8ff090']
     }

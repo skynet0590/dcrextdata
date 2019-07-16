@@ -134,7 +134,7 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-	if err != nil {
+    if err != nil {
 		return nil, 0, err
 	}
 
@@ -145,19 +145,14 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
-	var exchangeTickSlice models.ExchangeTickSlice
-	if limit == 3000 {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-	} else {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
-	}
-
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
-	if err != nil {
+	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
+    
+    if err != nil {
 		return nil, 0, err
 	}
 
@@ -167,7 +162,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time.UTC(),
+			Time:         tick.Time.Format(dateTemplate),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
@@ -225,7 +220,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time.UTC(),
+			Time:         tick.Time.Format(dateTemplate),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
