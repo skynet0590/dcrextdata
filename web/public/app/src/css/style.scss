@@ -16,7 +16,7 @@ body {
 }
 
 .nav-link {
-  padding: 10px 22px !important;
+  padding: 10px 22px;
 }
 
 .nav-link span,
@@ -27,7 +27,7 @@ body {
 }
 
 .content {
-  padding: 25px 0;
+  padding: 15px 0;
 }
 
 .table td,
@@ -359,9 +359,15 @@ body {
 }
 
 .chart-control {
-  padding: 2px;
   background: #fff;
   width: max-content;
+  border-radius: 3px;
+}
+
+.chart-control .nav-item {
+  background: #fff;
+  width: max-content;
+  border-radius: 3px;
 }
 
 .chart-form-control {

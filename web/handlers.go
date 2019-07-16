@@ -2,10 +2,10 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
-	"fmt"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -57,8 +57,8 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
-		"currencyPairs":          currencyPairs,
-		"intervals": intervals,
+		"currencyPairs":  currencyPairs,
+		"intervals":      intervals,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -169,12 +169,12 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"chartData":   chartData,
+		"chartData": chartData,
 	}
 
 	defer s.renderJSON(data, res)
 }
-	
+
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
