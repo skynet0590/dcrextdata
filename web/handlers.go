@@ -502,6 +502,7 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 
 	data := map[string]interface{}{
 		"mempoolchartData":  mempoolDataSlice,
+		"chartFilter": chartFilter,
 	}
 
 	defer s.renderJSON(data, res)
