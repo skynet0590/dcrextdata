@@ -196,7 +196,6 @@ func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error)
 }
 
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
-
 	voteModel := models.Vote{
 		Hash:              vote.Hash,
 		VotingOn:          null.Int64From(int64(vote.VotingOn)),
