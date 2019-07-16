@@ -24,59 +24,54 @@ import (
 
 // PowDatum is an object representing the database table.
 type PowDatum struct {
-	Time              int          `boil:"time" json:"time" toml:"time" yaml:"time"`
-	NetworkHashrate   null.String  `boil:"network_hashrate" json:"network_hashrate,omitempty" toml:"network_hashrate" yaml:"network_hashrate,omitempty"`
-	PoolHashrate      null.String  `boil:"pool_hashrate" json:"pool_hashrate,omitempty" toml:"pool_hashrate" yaml:"pool_hashrate,omitempty"`
-	Workers           null.Int     `boil:"workers" json:"workers,omitempty" toml:"workers" yaml:"workers,omitempty"`
-	NetworkDifficulty null.Float64 `boil:"network_difficulty" json:"network_difficulty,omitempty" toml:"network_difficulty" yaml:"network_difficulty,omitempty"`
-	CoinPrice         null.String  `boil:"coin_price" json:"coin_price,omitempty" toml:"coin_price" yaml:"coin_price,omitempty"`
-	BTCPrice          null.String  `boil:"btc_price" json:"btc_price,omitempty" toml:"btc_price" yaml:"btc_price,omitempty"`
-	Source            string       `boil:"source" json:"source" toml:"source" yaml:"source"`
+	Time            int         `boil:"time" json:"time" toml:"time" yaml:"time"`
+	NetworkHashrate null.String `boil:"network_hashrate" json:"network_hashrate,omitempty" toml:"network_hashrate" yaml:"network_hashrate,omitempty"`
+	PoolHashrate    null.String `boil:"pool_hashrate" json:"pool_hashrate,omitempty" toml:"pool_hashrate" yaml:"pool_hashrate,omitempty"`
+	Workers         null.Int    `boil:"workers" json:"workers,omitempty" toml:"workers" yaml:"workers,omitempty"`
+	CoinPrice       null.String `boil:"coin_price" json:"coin_price,omitempty" toml:"coin_price" yaml:"coin_price,omitempty"`
+	BTCPrice        null.String `boil:"btc_price" json:"btc_price,omitempty" toml:"btc_price" yaml:"btc_price,omitempty"`
+	Source          string      `boil:"source" json:"source" toml:"source" yaml:"source"`
 
 	R *powDatumR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L powDatumL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var PowDatumColumns = struct {
-	Time              string
-	NetworkHashrate   string
-	PoolHashrate      string
-	Workers           string
-	NetworkDifficulty string
-	CoinPrice         string
-	BTCPrice          string
-	Source            string
+	Time            string
+	NetworkHashrate string
+	PoolHashrate    string
+	Workers         string
+	CoinPrice       string
+	BTCPrice        string
+	Source          string
 }{
-	Time:              "time",
-	NetworkHashrate:   "network_hashrate",
-	PoolHashrate:      "pool_hashrate",
-	Workers:           "workers",
-	NetworkDifficulty: "network_difficulty",
-	CoinPrice:         "coin_price",
-	BTCPrice:          "btc_price",
-	Source:            "source",
+	Time:            "time",
+	NetworkHashrate: "network_hashrate",
+	PoolHashrate:    "pool_hashrate",
+	Workers:         "workers",
+	CoinPrice:       "coin_price",
+	BTCPrice:        "btc_price",
+	Source:          "source",
 }
 
 // Generated where
 
 var PowDatumWhere = struct {
-	Time              whereHelperint
-	NetworkHashrate   whereHelpernull_String
-	PoolHashrate      whereHelpernull_String
-	Workers           whereHelpernull_Int
-	NetworkDifficulty whereHelpernull_Float64
-	CoinPrice         whereHelpernull_String
-	BTCPrice          whereHelpernull_String
-	Source            whereHelperstring
+	Time            whereHelperint
+	NetworkHashrate whereHelpernull_String
+	PoolHashrate    whereHelpernull_String
+	Workers         whereHelpernull_Int
+	CoinPrice       whereHelpernull_String
+	BTCPrice        whereHelpernull_String
+	Source          whereHelperstring
 }{
-	Time:              whereHelperint{field: "\"pow_data\".\"time\""},
-	NetworkHashrate:   whereHelpernull_String{field: "\"pow_data\".\"network_hashrate\""},
-	PoolHashrate:      whereHelpernull_String{field: "\"pow_data\".\"pool_hashrate\""},
-	Workers:           whereHelpernull_Int{field: "\"pow_data\".\"workers\""},
-	NetworkDifficulty: whereHelpernull_Float64{field: "\"pow_data\".\"network_difficulty\""},
-	CoinPrice:         whereHelpernull_String{field: "\"pow_data\".\"coin_price\""},
-	BTCPrice:          whereHelpernull_String{field: "\"pow_data\".\"btc_price\""},
-	Source:            whereHelperstring{field: "\"pow_data\".\"source\""},
+	Time:            whereHelperint{field: "\"pow_data\".\"time\""},
+	NetworkHashrate: whereHelpernull_String{field: "\"pow_data\".\"network_hashrate\""},
+	PoolHashrate:    whereHelpernull_String{field: "\"pow_data\".\"pool_hashrate\""},
+	Workers:         whereHelpernull_Int{field: "\"pow_data\".\"workers\""},
+	CoinPrice:       whereHelpernull_String{field: "\"pow_data\".\"coin_price\""},
+	BTCPrice:        whereHelpernull_String{field: "\"pow_data\".\"btc_price\""},
+	Source:          whereHelperstring{field: "\"pow_data\".\"source\""},
 }
 
 // PowDatumRels is where relationship names are stored.
@@ -96,8 +91,8 @@ func (*powDatumR) NewStruct() *powDatumR {
 type powDatumL struct{}
 
 var (
-	powDatumAllColumns            = []string{"time", "network_hashrate", "pool_hashrate", "workers", "network_difficulty", "coin_price", "btc_price", "source"}
-	powDatumColumnsWithoutDefault = []string{"time", "network_hashrate", "pool_hashrate", "workers", "network_difficulty", "coin_price", "btc_price", "source"}
+	powDatumAllColumns            = []string{"time", "network_hashrate", "pool_hashrate", "workers", "coin_price", "btc_price", "source"}
+	powDatumColumnsWithoutDefault = []string{"time", "network_hashrate", "pool_hashrate", "workers", "coin_price", "btc_price", "source"}
 	powDatumColumnsWithDefault    = []string{}
 	powDatumPrimaryKeyColumns     = []string{"time", "source"}
 )
