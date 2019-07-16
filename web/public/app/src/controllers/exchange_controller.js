@@ -8,8 +8,8 @@ var opt = 'table'
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks',
+      'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper', 'intervalWapper',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
     ]
@@ -18,6 +18,7 @@ export default class extends Controller {
   setTable () {
     opt = 'table'
 
+    this.intervalWapperTarget.classList.add('d-hide')
     this.selectedDticksTarget.value = 'close'
     this.tickWapperTarget.classList.add('d-hide')
     this.sourceWrapperTarget.classList.remove('d-hide')
@@ -35,6 +36,7 @@ export default class extends Controller {
   setChart () {
     opt = 'chart'
 
+    this.intervalWapperTarget.classList.remove('d-hide')
     this.tickWapperTarget.classList.remove('d-hide')
     this.sourceWrapperTarget.classList.add('d-hide')
     this.hideOptionTarget.classList.add('d-hide')
@@ -42,8 +44,15 @@ export default class extends Controller {
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
+    var y = this.selectedIntervalTarget.options
+    this.selectedInterval = this.selectedIntervalTarget.value = y[0].text
     this.selectedDtick = this.selectedDticksTarget.value = 'close'
     this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
+    this.fetchExchange(opt)
+  }
+
+  selectedIntervalChanged () {
+    this.selectedInterval = this.selectedIntervalTarget.value
     this.fetchExchange(opt)
   }
 
@@ -104,13 +113,11 @@ export default class extends Controller {
 
       url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
     } else {
-      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}`
+      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}&selectedInterval=${this.selectedInterval}`
     }
 
     axios.get(url)
       .then(function (response) {
-      // since results are appended to the table, discard this response
-      // if the user has changed the filter before the result is gotten
         let result = response.data
         if (display === 'table') {
           if (_this.selectedFilterTarget.value !== selectedFilter) {

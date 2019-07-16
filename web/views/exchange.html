@@ -29,6 +29,16 @@
                         </select>
                     </div>
 
+                    <div data-target="exchange.intervalWapper" class="col-md-3 mb-2 d-hide">
+                        <div class="control-label">INTERVAL</div>
+                        <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
+                            class="form-control" style="width: 110px;">
+                            {{ range $index, $interval := .intervals}}
+                            <option value="{{$interval.Interval}}">{{$interval.Interval}}</option>
+                            {{ end }}
+                        </select>
+                    </div>
+
                     <div data-target="exchange.tickWapper" class="col-md-3 mb-2 d-hide">
                         <div class="control-label">DATA TICKS</div>
                         <select data-target="exchange.selectedDticks" data-action="change->exchange#selectedDticksChanged"

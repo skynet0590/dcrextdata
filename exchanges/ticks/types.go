@@ -74,6 +74,10 @@ type TickDtoCP struct {
 	CurrencyPair string `json:"currency_pair"`
 }
 
+type TickDtoInterval struct {
+	Interval int `json:"interval"`
+}
+
 type poloniexAPIResponse []poloniexDataTick
 
 type poloniexDataTick struct {

@@ -239,7 +239,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 }
 
 func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error) {
-	exchangeTickCPSlice, err := models.ExchangeTicks(qm.Select("currency_pair"), qm.GroupBy("currency_pair")).All(ctx, pg.db)
+	exchangeTickCPSlice, err := models.ExchangeTicks(qm.Select("currency_pair"), qm.GroupBy("currency_pair"), qm.OrderBy("currency_pair")).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
@@ -255,8 +255,25 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 	return TickDtoCP, err
 }
 
-func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, currencyPair string) ([]ticks.TickChart, error) {
-    exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=?", currencyPair), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+func (pg *PgDb) AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error) {
+    exchangeTickIntervalSlice, err := models.ExchangeTicks(qm.Select("interval"), qm.GroupBy("interval"), qm.OrderBy("interval")).All(ctx, pg.db)
+
+    if err != nil {
+        return nil, err
+    }
+
+    TickDtoInterval := []ticks.TickDtoInterval{}
+    for _, item := range exchangeTickIntervalSlice {
+        TickDtoInterval = append(TickDtoInterval, ticks.TickDtoInterval{
+            Interval: item.Interval,
+        })
+    }
+
+    return TickDtoInterval, err
+}
+
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, currencyPair string, selectedInterval int) ([]ticks.TickChart, error) {
+    exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=? and interval=?", currencyPair, selectedInterval), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}

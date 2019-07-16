@@ -48,10 +48,17 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	intervals, err := s.db.AllExchangeTicksInterval(ctx)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
-		"currencyPairs":  currencyPairs,
+		"currencyPairs":          currencyPairs,
+		"intervals": intervals,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
@@ -145,10 +152,16 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	selectedDtick := req.FormValue("selectedDtick")
 	selectedCpair := req.FormValue("selectedCpair")
+	selectedInterval := req.FormValue("selectedInterval")
 
 	ctx := context.Background()
+	interval, err := strconv.Atoi(selectedInterval)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
 
-	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair)
+	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval)
 	if err != nil {
 		fmt.Println(err)
 		s.renderError(err.Error(), res)
