@@ -56,7 +56,7 @@ export function legendFormatter (data) {
 
 export var options = {
   axes: { y: { axisLabelWidth: 70 } },
-  axisLabelFontSize: 10,
+  axisLabelFontSize: 12,
   digitsAfterDecimal: 8,
   retainDateWindow: false,
   showRangeSelector: true,

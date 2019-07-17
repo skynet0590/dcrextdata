@@ -84,7 +84,7 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 }
 
 func (pg *PgDb) MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error) {
-	mempoolChartSlice, err := models.Mempools(qm.Select(fmt.Sprintf("%s, time", chartFilter)), qm.OrderBy("time DESC")).All(ctx, pg.db)
+	mempoolChartSlice, err := models.Mempools(qm.Select(fmt.Sprintf("%s, time", chartFilter)), qm.OrderBy("time")).All(ctx, pg.db)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
