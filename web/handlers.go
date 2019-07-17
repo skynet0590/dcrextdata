@@ -2,9 +2,12 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -293,6 +296,64 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
+}
+
+// vspchartdata
+func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	sources := req.FormValue("sources")
+	selectedAttribute := req.FormValue("selectedAttribute")
+
+	vsps := strings.Split(sources, "|")
+
+	ctx := context.Background()
+	dates, err := s.db.GetVspTickDistinctDates(ctx, vsps)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from VSP table, %s", err.Error()), res)
+		return
+	}
+
+	var resultMap = map[time.Time][]interface{}{}
+	for _, date := range dates {
+		resultMap[date] = []interface{}{date}
+	}
+
+	for _, source := range vsps {
+		points, err := s.db.FetchChartData(ctx, selectedAttribute, source)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("Error in fetching %s records for %s: %s", selectedAttribute, source, err.Error()), res)
+			return
+		}
+
+		var vspPointMap = map[time.Time]interface{}{}
+		for _, point := range points {
+			vspPointMap[point.Date] = point.Record
+		}
+
+		//var previousDate time.Time
+		for date, _ := range resultMap {
+			if record, found := vspPointMap[date]; found {
+				resultMap[date] = append(resultMap[date], record)
+				//previousDate = date
+			} else {
+				resultMap[date] = append(resultMap[date], 0)
+				/*if record, found := vspPointMap[previousDate]; found {
+					resultMap[date] = append(resultMap[date], record)
+				} else {
+					fmt.Println(fmt.Sprintf("not found and %s not seen before", previousDate.String()))
+					resultMap[date] = append(resultMap[date], 0)
+				}*/
+			}
+		}
+	}
+
+/*
+	var chartData [][]interface{}
+	for _, points := range resultMap {
+		chartData = append(chartData, points)
+	}*/
+
+	s.renderJSON(resultMap, res)
 }
 
 // /PoW

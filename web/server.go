@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -32,6 +33,8 @@ type DataQuery interface {
 	FiltredVSPTicksCount(ctx context.Context, vspName string) (int64, error)
 	AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error)
 	AllVSPTickCount(ctx context.Context) (int64, error)
+	FetchChartData(ctx context.Context, attribute string, vspName string) (records []vsp.ChartData, err error)
+	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
 	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
 	CountPowData(ctx context.Context) (int64, error)
@@ -106,6 +109,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/filteredEx", s.getFilteredExchangeTicks)
 	r.Get("/chartExchange", s.getChartData)
 	r.Get("/vspticks", s.getVspTicks)
+	r.Get("/vspchartdata", s.vspChartData)
 	r.Get("/filteredvspticks", s.getFilteredVspTicks)
 	r.Get("/pow", s.getPowData)
 	r.Get("/filteredpow", s.getFilteredPowData)

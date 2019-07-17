@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date, legendFormatter, options } from '../utils'
+import { hide, show, date, legendFormatter, options, getRandomColor } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -8,9 +8,10 @@ var opt = 'table'
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'vspTicksTable', 'numPageWrapper',
+      'selectedFilterWrapper', 'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
+      'graphTypeWrapper', 'graphType', 'chartSourceWrapper', 'chartSource',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
@@ -18,9 +19,12 @@ export default class extends Controller {
   setTable () {
     opt = 'table'
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.vspTableWrapperTarget.classList.remove('d-hide')
-    this.numPageWrapperTarget.classList.remove('d-hide')
+    hide(this.chartWrapperTarget)
+    hide(this.graphTypeWrapperTarget)
+    hide(this.chartSourceWrapperTarget)
+    show(this.selectedFilterWrapperTarget)
+    show(this.vspTableWrapperTarget)
+    show(this.numPageWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange('table')
@@ -28,10 +32,13 @@ export default class extends Controller {
 
   setChart () {
     opt = 'chart'
-    this.numPageWrapperTarget.classList.add('d-hide')
-    this.vspTableWrapperTarget.classList.add('d-hide')
+    hide(this.numPageWrapperTarget)
+    hide(this.vspTableWrapperTarget)
+    hide(this.selectedFilterWrapperTarget)
+    show(this.graphTypeWrapperTarget)
+    show(this.chartWrapperTarget)
+    show(this.chartSourceWrapperTarget)
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
     this.nextPage = 1
     this.fetchExchange('chart')
   }
@@ -64,7 +71,7 @@ export default class extends Controller {
     this.fetchExchange(opt)
   }
 
-  NumberOfRowsChanged () {
+  numberOfRowsChanged () {
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange(opt)
@@ -74,7 +81,8 @@ export default class extends Controller {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows
     if (display === 'chart') {
-      numberOfRows = 3000
+      this.fetchDataAndGraph()
+      return
     } else {
       numberOfRows = this.selectedNumTarget.value
     }
@@ -87,8 +95,6 @@ export default class extends Controller {
         if (_this.selectedFilterTarget.value !== selectedFilter) {
           return
         }
-
-        console.log(response.data)
 
         let result = response.data
         _this.totalPageCountTarget.textContent = result.totalPages
@@ -130,33 +136,83 @@ export default class extends Controller {
     })
   }
 
+  fetchDataAndGraph () {
+    let vspSources = []
+    this.chartSourceTargets.forEach(el => {
+      if (el.checked) {
+        vspSources.push(el.value)
+      }
+    })
+
+    if (vspSources.length === 0) {
+      return
+    }
+
+    let _this = this
+    const selectedAttribute = this.graphTypeTarget.value
+    let url = `/vspchartdata?selectedAttribute=${selectedAttribute}&sources=${vspSources.join('|')}`
+    axios.get(url).then(function (response) {
+      _this.plotGraph(response.data)
+    })
+  }
+
+  graphTypeChanged () {
+    this.fetchDataAndGraph()
+  }
+
+  chartSourceCheckChanged () {
+    this.fetchDataAndGraph()
+  }
   // vsp chart
-  plotGraph (vsps) {
+  plotGraph (dataSet) {
+    dataSet = Object.values(dataSet)
+    for (let i = 0; i < dataSet.length; i++) {
+      if (!Array.isArray(dataSet[i])) continue
+      for (let j = 0; j < dataSet[i].length; j++) {
+        if (j === 0) {
+          dataSet[i][j] = new Date(dataSet[i][j])
+        } else if (!isNaN(dataSet[i][j])) {
+          dataSet[i][j] = parseFloat(dataSet[i][j])
+        }
+      }
+    }
+
+    let labels = ['Date']
+    let colors = []
+    this.chartSourceTargets.forEach(el => {
+      if (!el.checked) {
+        return
+      }
+      labels.push(el.value)
+      colors.push(getRandomColor())
+    })
+
+    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
     var extra = {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
-      ylabel: 'Pool Fees',
+      ylabel: yLabel,
       sigFigs: 1,
-      labels: ['Date', 'Pool Fees', 'immature', 'voted', 'missed', 'proportion live', 'proportion missed'],
-      colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090', '#8ff090', '#ffee90', '#fb3390']
+      labels: labels,
+      colors: colors
     }
 
     const _this = this
 
-    var data = []
+    /* var data = []
     var dataSet = []
     vsps.forEach(vsp => {
       data.push(new Date(vsp.time))
-      data.push(vsp.pool_fees)
-      data.push(vsp.immature)
-      data.push(vsp.voted)
-      data.push(vsp.missed)
+      // data.push(vsp.pool_fees)
+      // data.push(vsp.immature)
+      // data.push(vsp.voted)
+      // data.push(vsp.missed)
       data.push(vsp.proportion_live)
       data.push(vsp.proportion_missed)
 
       dataSet.push(data)
       data = []
-    })
+    }) */
 
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
