@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -163,7 +162,6 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval)
 	if err != nil {
-		fmt.Println(err)
 		s.renderError(err.Error(), res)
 		return
 	}
@@ -486,6 +484,25 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	}
 
 	return data, nil
+}
+
+func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	chartFilter := req.FormValue("chartFilter")
+	ctx := context.Background()
+
+	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data := map[string]interface{}{
+		"mempoolchartData": mempoolDataSlice,
+		"chartFilter":      chartFilter,
+	}
+
+	defer s.renderJSON(data, res)
 }
 
 // /propagation
