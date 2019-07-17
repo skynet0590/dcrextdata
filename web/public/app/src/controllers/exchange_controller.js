@@ -8,35 +8,61 @@ var opt = 'table'
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption'
+      'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper', 'intervalWapper',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks', 'selectedInterval',
+      'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
     ]
   }
 
   setTable () {
     opt = 'table'
+
+    this.intervalWapperTarget.classList.add('d-hide')
+    this.selectedDticksTarget.value = 'close'
+    this.tickWapperTarget.classList.add('d-hide')
+    this.sourceWrapperTarget.classList.remove('d-hide')
+    this.hideOptionTarget.classList.remove('d-hide')
+    this.selectedCpair = this.selectedCpairTarget.value
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
     this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange('table')
+    this.fetchExchange(opt)
   }
 
   setChart () {
     opt = 'chart'
+
+    this.intervalWapperTarget.classList.remove('d-hide')
+    this.tickWapperTarget.classList.remove('d-hide')
+    this.sourceWrapperTarget.classList.add('d-hide')
+    this.hideOptionTarget.classList.add('d-hide')
     this.numPageWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
-    this.nextPage = 1
-    this.fetchExchange('chart')
+    var y = this.selectedIntervalTarget.options
+    this.selectedInterval = this.selectedIntervalTarget.value = y[0].text
+    this.selectedDtick = this.selectedDticksTarget.value = 'close'
+    this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
+    this.fetchExchange(opt)
+  }
+
+  selectedIntervalChanged () {
+    this.selectedInterval = this.selectedIntervalTarget.value
+    this.fetchExchange(opt)
+  }
+
+  selectedDticksChanged () {
+    this.selectedDtick = this.selectedDticksTarget.value
+    this.fetchExchange(opt)
   }
 
   loadPreviousPage () {
+    this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
     if (this.nextPage <= 1) {
       hide(this.previousPageButtonTarget)
@@ -45,6 +71,7 @@ export default class extends Controller {
   }
 
   loadNextPage () {
+    this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.totalPages = this.nextPageButtonTarget.getAttribute('data-total-page')
     if (this.nextPage > 1) {
@@ -58,50 +85,55 @@ export default class extends Controller {
 
   selectedFilterChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   selectedCpairChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
     this.nextPage = 1
+    this.selectedCpair = this.selectedCpairTarget.value
     this.fetchExchange(opt)
   }
 
   fetchExchange (display) {
     this.exchangeTableTarget.innerHTML = ''
-    var numberOfRows
-    if (display === 'chart') {
-      numberOfRows = 3000
-    } else {
-      numberOfRows = this.selectedNumTarget.value
-    }
-    const selectedFilter = this.selectedFilterTarget.value
-    const selectedCpair = this.selectedCpairTarget.value
 
     const _this = this
-    axios.get(`/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${selectedCpair}`)
+    var url
+    var selectedFilter
+    if (display === 'table') {
+      const numberOfRows = this.selectedNumTarget.value
+      selectedFilter = this.selectedFilterTarget.value
+
+      url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
+    } else {
+      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}&selectedInterval=${this.selectedInterval}`
+    }
+
+    axios.get(url)
       .then(function (response) {
-      // since results are appended to the table, discard this response
-      // if the user has changed the filter before the result is gotten
-        if (_this.selectedFilterTarget.value !== selectedFilter) {
-          return
-        }
-
         let result = response.data
-        _this.totalPageCountTarget.textContent = result.totalPages
-        _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
-
         if (display === 'table') {
+          if (_this.selectedFilterTarget.value !== selectedFilter) {
+            return
+          }
+          console.log(result.exData)
+          _this.totalPageCountTarget.textContent = result.totalPages
+          _this.currentPageTarget.textContent = result.currentPage
+          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
+
           _this.displayExchange(result.exData)
         } else {
-          _this.plotGraph(result.exData)
+          console.log(result)
+          _this.plotGraph(result.chartData)
         }
       }).catch(function (e) {
         console.log(e)
@@ -134,32 +166,45 @@ export default class extends Controller {
     var extra = {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
-      ylabel: 'Interval',
-      y2label: 'Volume',
-      labels: ['Date', 'interval', 'volume', 'high', 'low', 'open', 'close'],
-      colors: ['#2971FF', '#FF8C00', '#006ed0', '#ff0090', '#8ff090', '#d40078', '#dab390']
+      ylabel: 'Price',
+      labels: ['Date', 'bittrex', 'binance', 'bleutrade', 'poloniex'],
+      colors: ['#2971FF', '#00FF30', '#8F00FF', '#ff1212', '#8ff090']
     }
 
-    const _this = this
-
-    var data = []
+    var data = [0, 0, 0, 0, 0]
     var dataSet = []
+
+    const _this = this
     exs.forEach(ex => {
-      data.push(new Date(ex.time))
-      data.push(ex.volume)
-      data.push(ex.interval)
-      data.push(ex.high)
-      data.push(ex.low)
-      data.push(ex.open)
-      data.push(ex.close)
+      data[0] = new Date(ex.time)
+      data.splice(ex.exchange_id, 1, ex.filter)
 
       dataSet.push(data)
-      data = []
+      data = [0, 0, 0, 0, 0]
     })
 
+    var hash = {}
+    var i, j,
+      result,
+      item,
+      key
+
+    for (i = 0; i < dataSet.length; i++) {
+      item = dataSet[i]
+      key = item[0].toString()
+      if (!hash[key]) {
+        hash[key] = item.slice()
+        continue
+      }
+      for (j = 1; j < item.length; j++) hash[key][j] += item[j]
+    }
+
+    result = Object.values(hash)
+
+    console.log(result)
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      result, { ...options, ...extra }
     )
   }
 

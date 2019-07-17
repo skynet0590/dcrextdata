@@ -24,6 +24,8 @@ type DataQuery interface {
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error)
 	AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error)
+	ChartExchangeTicks(ctx context.Context, filter string, currencyPair string, selectedInterval int) ([]ticks.TickChart, error)
+	AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error)
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset int, limit int) ([]vsp.VSPTickDto, error)
@@ -101,6 +103,7 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/", s.getExchangeTicks)
 	r.Get("/filteredEx", s.getFilteredExchangeTicks)
+	r.Get("/chartExchange", s.getChartData)
 	r.Get("/vspticks", s.getVspTicks)
 	r.Get("/filteredvspticks", s.getFilteredVspTicks)
 	r.Get("/pow", s.getPowData)

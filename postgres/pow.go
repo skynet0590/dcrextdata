@@ -97,6 +97,7 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 		if err != nil {
 			return nil, err
 		}
+
 		result = append(result, dto)
 	}
 

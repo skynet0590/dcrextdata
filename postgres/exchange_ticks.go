@@ -134,7 +134,7 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-	if err != nil {
+    if err != nil {
 		return nil, 0, err
 	}
 
@@ -145,19 +145,14 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
 	}
 
-	var exchangeTickSlice models.ExchangeTickSlice
-	if limit == 3000 {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-	} else {
-		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
-	}
-
+	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset)).Count(ctx, pg.db)
-	if err != nil {
+	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
+    
+    if err != nil {
 		return nil, 0, err
 	}
 
@@ -167,7 +162,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time.UTC(),
+			Time:         tick.Time.Format(dateTemplate),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
@@ -225,7 +220,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time.UTC(),
+			Time:         tick.Time.Format(dateTemplate),
 			Close:        tick.Close,
 			ExchangeName: tick.R.Exchange.Name,
 			High:         tick.High,
@@ -239,7 +234,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 }
 
 func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error) {
-	exchangeTickCPSlice, err := models.ExchangeTicks(qm.Select("currency_pair"), qm.GroupBy("currency_pair")).All(ctx, pg.db)
+	exchangeTickCPSlice, err := models.ExchangeTicks(qm.Select("currency_pair"), qm.GroupBy("currency_pair"), qm.OrderBy("currency_pair")).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
@@ -253,6 +248,56 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 	}
 
 	return TickDtoCP, err
+}
+
+func (pg *PgDb) AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error) {
+	exchangeTickIntervalSlice, err := models.ExchangeTicks(qm.Select("interval"), qm.GroupBy("interval"), qm.OrderBy("interval")).All(ctx, pg.db)
+
+	if err != nil {
+		return nil, err
+	}
+
+	TickDtoInterval := []ticks.TickDtoInterval{}
+	for _, item := range exchangeTickIntervalSlice {
+		TickDtoInterval = append(TickDtoInterval, ticks.TickDtoInterval{
+			Interval: item.Interval,
+		})
+	}
+
+	return TickDtoInterval, err
+}
+
+func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, currencyPair string, selectedInterval int) ([]ticks.TickChart, error) {
+	exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=? and interval=?", currencyPair, selectedInterval), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	tickChart := []ticks.TickChart{}
+	var Filter float64
+	for _, tick := range exchangeFilterResult {
+		if selectedDtick == "high" {
+			Filter = tick.High
+		} else if selectedDtick == "low" {
+			Filter = tick.Low
+		} else if selectedDtick == "open" {
+			Filter = tick.Open
+		} else if selectedDtick == "Volume" {
+			Filter = tick.Volume
+		} else if selectedDtick == "close" {
+			Filter = tick.Close
+		} else {
+			Filter = tick.Close
+		}
+
+		tickChart = append(tickChart, ticks.TickChart{
+			ExchangeID: tick.ExchangeID,
+			Time:       tick.Time.UTC(),
+			Filter:     Filter,
+		})
+	}
+
+	return tickChart, err
 }
 
 func tickToExchangeTick(exchangeID int, pair string, interval int, tick ticks.Tick) *models.ExchangeTick {

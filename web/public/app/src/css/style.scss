@@ -16,7 +16,7 @@ body {
 }
 
 .nav-link {
-  padding: 10px 22px !important;
+  padding: 10px 22px;
 }
 
 .nav-link span,
@@ -27,7 +27,7 @@ body {
 }
 
 .content {
-  padding: 25px 0;
+  padding: 15px 0;
 }
 
 .table td,
@@ -350,18 +350,22 @@ body {
   display: block;
 }
 
-.chart-control-label {
-  font-size: 14px;
+.control-label {
+  font-size: 13px;
   font-weight: 600;
-  color: #8997a5;
-  text-align: center;
-  border-bottom: 1px solid #e6eaed;
+  color: #696969;
 }
 
 .chart-control {
-  padding: 2px;
   background: #fff;
   width: max-content;
+  border-radius: 3px;
+}
+
+.chart-control .nav-item {
+  background: #fff;
+  width: max-content;
+  border-radius: 3px;
 }
 
 .chart-form-control {

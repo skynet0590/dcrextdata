@@ -58,13 +58,24 @@ type TickDto struct {
 	Open         float64   `json:"open"`
 	Close        float64   `json:"close"`
 	Volume       float64   `json:"volume"`
-	Time         time.Time `json:"time"`
+	Time         string `json:"time"`
 	Interval     int       `json:"interval"`
 	CurrencyPair string    `json:"currency_pair"`
 }
 
+// TickDto represents an exchange data, formatted for presentation
+type TickChart struct {
+	ExchangeID int       `json:"exchange_id"`
+	Filter     float64   `json:"filter"`
+	Time       time.Time `json:"time"`
+}
+
 type TickDtoCP struct {
 	CurrencyPair string `json:"currency_pair"`
+}
+
+type TickDtoInterval struct {
+	Interval int `json:"interval"`
 }
 
 type poloniexAPIResponse []poloniexDataTick
