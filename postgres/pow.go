@@ -69,12 +69,11 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
 		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
 		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
-		NetworkDifficulty: null.Float64From(data.NetworkDifficulty),
-		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate)),
-		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate)),
+		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate / pow.Thash)),
+		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate / pow.Thash)),
 		Source:            data.Source,
- 		Time:              int(data.Time),
- 		Workers:           null.IntFrom(int(data.Workers)),
+		Time:              int(data.Time),
+		Workers:           null.IntFrom(int(data.Workers)),
 	}, nil
 }
 
@@ -84,10 +83,9 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 	var err error
 	if limit == 3000 {
 		powDatum, err = models.PowData(qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		powDatum, err = models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	}
-
 
 	if err != nil {
 		return nil, err
@@ -95,36 +93,11 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.
 
 	var result []pow.PowDataDto
 	for _, item := range powDatum {
-		networkHashRate, err := strconv.ParseInt(item.NetworkHashrate.String, 10, 64)
+		dto, err := pg.powDataModelToDto(item)
 		if err != nil {
 			return nil, err
 		}
-
-		poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		bTCPrice, err := strconv.ParseFloat(item.BTCPrice.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, pow.PowDataDto{
- 			Time:              time.Unix(int64(item.Time), 0).UTC(),
- 			NetworkHashrate:   networkHashRate,
-			PoolHashrate:      poolHashRate,
-			Workers:           int64(item.Workers.Int),
-			Source:            item.Source,
-			NetworkDifficulty: item.NetworkDifficulty.Float64,
-			CoinPrice:         coinPrice,
-			BtcPrice:          bTCPrice,
-		})
+		result = append(result, dto)
 	}
 
 	return result, nil
@@ -139,7 +112,7 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 	var err error
 	if limit == 3000 {
 		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	}else{
+	} else {
 		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	}
 
@@ -149,39 +122,46 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 
 	var result []pow.PowDataDto
 	for _, item := range powDatum {
-		networkHashRate, err := strconv.ParseInt(item.NetworkHashrate.String, 10, 64)
+		dto, err := pg.powDataModelToDto(item)
 		if err != nil {
 			return nil, err
 		}
-
-		poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		bTCPrice, err := strconv.ParseFloat(item.BTCPrice.String, 10)
-		if err != nil {
-			return nil, err
-		}
-
-		result = append(result, pow.PowDataDto{
- 			Time:              time.Unix(int64(item.Time), 0).UTC(),
- 			NetworkHashrate:   networkHashRate,
-			PoolHashrate:      poolHashRate,
-			Workers:           int64(item.Workers.Int),
-			Source:            item.Source,
-			NetworkDifficulty: item.NetworkDifficulty.Float64,
-			CoinPrice:         coinPrice,
-			BtcPrice:          bTCPrice,
-		})
+		result = append(result, dto)
 	}
 
 	return result, nil
+}
+
+func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, err error) {
+	networkHashRate, err := strconv.ParseFloat(item.NetworkHashrate.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	bTCPrice, err := strconv.ParseFloat(item.BTCPrice.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	return pow.PowDataDto{
+		Time:              time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
+		NetworkHashrateTh: networkHashRate,
+		PoolHashrateTh:    poolHashRate,
+		Workers:           int64(item.Workers.Int),
+		Source:            item.Source,
+		CoinPrice:         coinPrice,
+		BtcPrice:          bTCPrice,
+	}, nil
 }
 
 func (pg *PgDb) CountPowDataBySource(ctx context.Context, source string) (int64, error) {

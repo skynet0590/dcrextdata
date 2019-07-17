@@ -60,7 +60,6 @@ const (
  		network_hashrate VARCHAR(25),
 		pool_hashrate VARCHAR(25),
 		workers INT,
-		network_difficulty FLOAT8,
 		coin_price VARCHAR(25),
 		btc_price VARCHAR(25),
 		source VARCHAR(25),

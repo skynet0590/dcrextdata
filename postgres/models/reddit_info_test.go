@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testPowData(t *testing.T) {
+func testRedditInfos(t *testing.T) {
 	t.Parallel()
 
-	query := PowData()
+	query := RedditInfos()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testPowDataDelete(t *testing.T) {
+func testRedditInfosDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testPowDataDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testPowDataDelete(t *testing.T) {
 	}
 }
 
-func testPowDataQueryDeleteAll(t *testing.T) {
+func testRedditInfosQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testPowDataQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := PowData().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := RedditInfos().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testPowDataQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testPowDataSliceDeleteAll(t *testing.T) {
+func testRedditInfosSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testPowDataSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := PowDatumSlice{o}
+	slice := RedditInfoSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testPowDataSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testPowDataSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testPowDataExists(t *testing.T) {
+func testRedditInfosExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testPowDataExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := PowDatumExists(ctx, tx, o.Time, o.Source)
+	e, err := RedditInfoExists(ctx, tx, o.Date)
 	if err != nil {
-		t.Errorf("Unable to check if PowDatum exists: %s", err)
+		t.Errorf("Unable to check if RedditInfo exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected PowDatumExists to return true, but got false.")
+		t.Errorf("Expected RedditInfoExists to return true, but got false.")
 	}
 }
 
-func testPowDataFind(t *testing.T) {
+func testRedditInfosFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testPowDataFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	powDatumFound, err := FindPowDatum(ctx, tx, o.Time, o.Source)
+	redditInfoFound, err := FindRedditInfo(ctx, tx, o.Date)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if powDatumFound == nil {
+	if redditInfoFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testPowDataBind(t *testing.T) {
+func testRedditInfosBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testPowDataBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = PowData().Bind(ctx, tx, o); err != nil {
+	if err = RedditInfos().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testPowDataOne(t *testing.T) {
+func testRedditInfosOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testPowDataOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := PowData().One(ctx, tx); err != nil {
+	if x, err := RedditInfos().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testPowDataAll(t *testing.T) {
+func testRedditInfosAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	powDatumOne := &PowDatum{}
-	powDatumTwo := &PowDatum{}
-	if err = randomize.Struct(seed, powDatumOne, powDatumDBTypes, false, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	redditInfoOne := &RedditInfo{}
+	redditInfoTwo := &RedditInfo{}
+	if err = randomize.Struct(seed, redditInfoOne, redditInfoDBTypes, false, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
-	if err = randomize.Struct(seed, powDatumTwo, powDatumDBTypes, false, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	if err = randomize.Struct(seed, redditInfoTwo, redditInfoDBTypes, false, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = powDatumOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditInfoOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = powDatumTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditInfoTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := PowData().All(ctx, tx)
+	slice, err := RedditInfos().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testPowDataAll(t *testing.T) {
 	}
 }
 
-func testPowDataCount(t *testing.T) {
+func testRedditInfosCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	powDatumOne := &PowDatum{}
-	powDatumTwo := &PowDatum{}
-	if err = randomize.Struct(seed, powDatumOne, powDatumDBTypes, false, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	redditInfoOne := &RedditInfo{}
+	redditInfoTwo := &RedditInfo{}
+	if err = randomize.Struct(seed, redditInfoOne, redditInfoDBTypes, false, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
-	if err = randomize.Struct(seed, powDatumTwo, powDatumDBTypes, false, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	if err = randomize.Struct(seed, redditInfoTwo, redditInfoDBTypes, false, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = powDatumOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditInfoOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = powDatumTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditInfoTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,14 +299,14 @@ func testPowDataCount(t *testing.T) {
 	}
 }
 
-func testPowDataInsert(t *testing.T) {
+func testRedditInfosInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -316,7 +316,7 @@ func testPowDataInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,24 +326,24 @@ func testPowDataInsert(t *testing.T) {
 	}
 }
 
-func testPowDataInsertWhitelist(t *testing.T) {
+func testRedditInfosInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(powDatumColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(redditInfoColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,14 +353,14 @@ func testPowDataInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testPowDataReload(t *testing.T) {
+func testRedditInfosReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -375,14 +375,14 @@ func testPowDataReload(t *testing.T) {
 	}
 }
 
-func testPowDataReloadAll(t *testing.T) {
+func testRedditInfosReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -392,21 +392,21 @@ func testPowDataReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := PowDatumSlice{o}
+	slice := RedditInfoSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testPowDataSelect(t *testing.T) {
+func testRedditInfosSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -416,7 +416,7 @@ func testPowDataSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := PowData().All(ctx, tx)
+	slice, err := RedditInfos().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,25 +427,25 @@ func testPowDataSelect(t *testing.T) {
 }
 
 var (
-	powDatumDBTypes = map[string]string{`Time`: `integer`, `NetworkHashrate`: `character varying`, `PoolHashrate`: `character varying`, `Workers`: `integer`, `CoinPrice`: `character varying`, `BTCPrice`: `character varying`, `Source`: `character varying`}
-	_               = bytes.MinRead
+	redditInfoDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Subscribers`: `integer`, `AccountsActive`: `integer`}
+	_                 = bytes.MinRead
 )
 
-func testPowDataUpdate(t *testing.T) {
+func testRedditInfosUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(powDatumPrimaryKeyColumns) {
+	if 0 == len(redditInfoPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(powDatumAllColumns) == len(powDatumPrimaryKeyColumns) {
+	if len(redditInfoAllColumns) == len(redditInfoPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -455,7 +455,7 @@ func testPowDataUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -464,8 +464,8 @@ func testPowDataUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -475,18 +475,18 @@ func testPowDataUpdate(t *testing.T) {
 	}
 }
 
-func testPowDataSliceUpdateAll(t *testing.T) {
+func testRedditInfosSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(powDatumAllColumns) == len(powDatumPrimaryKeyColumns) {
+	if len(redditInfoAllColumns) == len(redditInfoPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &PowDatum{}
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := &RedditInfo{}
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -496,7 +496,7 @@ func testPowDataSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -505,18 +505,18 @@ func testPowDataSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, powDatumDBTypes, true, powDatumPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	if err = randomize.Struct(seed, o, redditInfoDBTypes, true, redditInfoPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(powDatumAllColumns, powDatumPrimaryKeyColumns) {
-		fields = powDatumAllColumns
+	if strmangle.StringSliceMatch(redditInfoAllColumns, redditInfoPrimaryKeyColumns) {
+		fields = redditInfoAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			powDatumAllColumns,
-			powDatumPrimaryKeyColumns,
+			redditInfoAllColumns,
+			redditInfoPrimaryKeyColumns,
 		)
 	}
 
@@ -534,7 +534,7 @@ func testPowDataSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := PowDatumSlice{o}
+	slice := RedditInfoSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -542,29 +542,29 @@ func testPowDataSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testPowDataUpsert(t *testing.T) {
+func testRedditInfosUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(powDatumAllColumns) == len(powDatumPrimaryKeyColumns) {
+	if len(redditInfoAllColumns) == len(redditInfoPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := PowDatum{}
-	if err = randomize.Struct(seed, &o, powDatumDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	o := RedditInfo{}
+	if err = randomize.Struct(seed, &o, redditInfoDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert PowDatum: %s", err)
+		t.Errorf("Unable to upsert RedditInfo: %s", err)
 	}
 
-	count, err := PowData().Count(ctx, tx)
+	count, err := RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -573,15 +573,15 @@ func testPowDataUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, powDatumDBTypes, false, powDatumPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize PowDatum struct: %s", err)
+	if err = randomize.Struct(seed, &o, redditInfoDBTypes, false, redditInfoPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize RedditInfo struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert PowDatum: %s", err)
+		t.Errorf("Unable to upsert RedditInfo: %s", err)
 	}
 
-	count, err = PowData().Count(ctx, tx)
+	count, err = RedditInfos().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
