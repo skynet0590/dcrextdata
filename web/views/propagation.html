@@ -47,7 +47,7 @@
                         {{range $index, $block := .propagation.records}}
                             <tbody data-target="propagation.blocksTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
-                                <td colspan="7" {{ if gt $index 0 }} style="padding-top:50px" {{ end }}>
+                                <td colspan="7">
                                     <b>Height</b>: {{$block.BlockHeight}}  &nbsp;&nbsp;&nbsp;&nbsp;
                                     <b>Timestamp</b>: {{$block.BlockInternalTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
                                     <b>Received</b>: {{$block.BlockReceiveTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
@@ -56,7 +56,7 @@
                                 </td>
                             </tr>
                             </tbody>
-                            <tbody data-target="propagation.votesTbody" data-block-hash="{{$block.BlockHash}}" style="margin-bottom: 20px;">
+                            <tbody data-target="propagation.votesTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
                                 <td>Voting On</td>
                                 <td>Validator ID</td>
@@ -78,6 +78,9 @@
                                 </tr>
                             {{end}}
                             </tbody>
+                            <tr>
+                                <td colspan="7" height="50" style="border: none !important;"></td>
+                            </tr>
                         {{end}}
                     </table>
 
