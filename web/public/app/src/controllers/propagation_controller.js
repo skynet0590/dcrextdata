@@ -151,7 +151,7 @@ export default class extends Controller {
 
       let padding = i > 0 ? 'style="padding-top:50px"' : ''
       i++
-      blocksHtml += `<tbody data-target="blocks.blockTbody"
+      blocksHtml += `<tbody data-target="propagation.blockTbody"
                             data-block-hash="${block.block_hash}">
                         <tr>
                             <td colspan="7" ${padding}>
@@ -163,7 +163,7 @@ export default class extends Controller {
                             </td>
                         </tr>
                         </tbody>
-                        <tbody data-target="blocks.votesTbody" data-block-hash="${block.block_hash}" style="margin-bottom: 20px;">
+                        <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">
                         <tr>
                             <td>Voting On</td>
                             <td>Validator ID</td>
@@ -174,7 +174,10 @@ export default class extends Controller {
                             <td>Hash</td>
                         </tr>
                         ${votesHtml}
-                        </tbody>`
+                        </tbody>
+                          <tr>
+                              <td colspan="7" height="50" style="border: none !important;"></td>
+                          </tr>`
     })
 
     this.tableTarget.innerHTML = blocksHtml
