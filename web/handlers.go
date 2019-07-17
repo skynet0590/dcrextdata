@@ -2,11 +2,10 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"net/http"
 	"strconv"
-	"fmt"
+
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
@@ -163,7 +162,6 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval)
 	if err != nil {
-		fmt.Println(err)
 		s.renderError(err.Error(), res)
 		return
 	}
@@ -491,7 +489,6 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	chartFilter := req.FormValue("chartFilter")
-	fmt.Println(chartFilter)
 	ctx := context.Background()
 
 	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
@@ -501,8 +498,8 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 	}
 
 	data := map[string]interface{}{
-		"mempoolchartData":  mempoolDataSlice,
-		"chartFilter": chartFilter,
+		"mempoolchartData": mempoolDataSlice,
+		"chartFilter":      chartFilter,
 	}
 
 	defer s.renderJSON(data, res)

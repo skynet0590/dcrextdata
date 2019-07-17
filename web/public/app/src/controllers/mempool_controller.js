@@ -120,33 +120,36 @@ export default class extends Controller {
   plotGraph (exs) {
     var chartData = exs.mempoolchartData
     var mempool = exs.chartFilter
-    console.log(mempool)
-    var extra = {
-      legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
-      ylabel: mempool,
-      labels: ['Date', mempool],
-      colors: ['#2971FF', '#FF8C00']
-    }
-
     const _this = this
+    var ylabelTitle
 
     var data = []
     var dataSet = []
     chartData.forEach(mp => {
       data.push(new Date(mp.time))
       if (mempool === 'size') {
+        ylabelTitle = 'Size'
         data.push(mp.size)
       } else if (mempool === 'total_fee') {
+        ylabelTitle = 'Total Fee'
         data.push(mp.total_fee)
       } else {
+        ylabelTitle = 'Number of Transactions'
         data.push(mp.number_of_transactions)
       }
 
       dataSet.push(data)
       data = []
     })
-    console.log(dataSet)
+
+    var extra = {
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: ylabelTitle,
+      labels: ['Date', ylabelTitle],
+      colors: ['#2971FF', '#FF8C00']
+    }
+
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
       dataSet, { ...options, ...extra }

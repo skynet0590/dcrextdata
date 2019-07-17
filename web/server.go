@@ -42,7 +42,7 @@ type DataQuery interface {
 	MempoolCount(ctx context.Context) (int64, error)
 	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
 	MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error)
-	
+
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
