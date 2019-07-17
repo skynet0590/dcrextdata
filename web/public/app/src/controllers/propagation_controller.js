@@ -143,8 +143,7 @@ export default class extends Controller {
                             <td>${vote.validator_id}</td>
                             <td>${vote.validity}</td>
                             <td>${vote.receive_time}</td>
-                            <td>${vote.block_time_diff}</td>
-                            <td>${vote.block_receive_time_diff}</td>
+                            <td>${vote.block_receive_time_diff}s</td>
                             <td><a target="_blank" href="https://explorer.dcrdata.org/tx/${vote.hash}">${vote.hash}</a></td>
                         </tr>`
       })
@@ -158,7 +157,6 @@ export default class extends Controller {
                               <b>Height</b>: ${block.block_height} &nbsp;&nbsp;&nbsp;&nbsp;
                               <b>Timestamp</b>: ${block.block_internal_time}  &nbsp;&nbsp;&nbsp;&nbsp;
                               <b>Received</b>: ${block.block_receive_time}  &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Delay</b>: ${block.delay}<br/>
                               <b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>
                             </td>
                         </tr>
@@ -169,7 +167,6 @@ export default class extends Controller {
                             <td>Validator ID</td>
                             <td>Validity</td>
                             <td>Received</td>
-                            <td>Block Time Diff</td>
                             <td>Block Receive Time Diff</td>
                             <td>Hash</td>
                         </tr>

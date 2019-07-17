@@ -230,7 +230,7 @@ func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.Vot
 
 func (pg *PgDb) votesByBlock(ctx context.Context, blockHeight int64) ([]mempool.VoteDto, error) {
 	voteSlice, err := models.Votes(models.VoteWhere.VotingOn.EQ(null.Int64From(blockHeight)),
-		qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime))).All(ctx, pg.db)
+		qm.OrderBy(models.BlockColumns.ReceiveTime)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
