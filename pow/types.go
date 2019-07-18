@@ -15,7 +15,7 @@ type PowData struct {
 
 type PowDataDto struct {
 	Time              string  `json:"time"`
-	PoolHashrateTh    float64 `json:"pool_hashrate_th"`
+	PoolHashrateTh    string `json:"pool_hashrate_th"`
 	Workers           int64   `json:"workers"`
 	CoinPrice         float64 `json:"coin_price"`
 	BtcPrice          float64 `json:"btc_price"`
