@@ -8,6 +8,7 @@ import (
 	"context"
 	"strings"
 	"time"
+	"strconv"
 
 	"github.com/volatiletech/sqlboiler/boil"
 )
@@ -26,6 +27,22 @@ type upsertable interface {
 func UnixTimeToString(t int64) string {
 	return time.Unix(t, 0).UTC().Format(dateTemplate)
 }
+
+func RoundValue(input float64) string {
+	value := input * 100
+	return strconv.FormatFloat(value, 'f', 3, 64)
+ }
+
+// func RoundValue(input float64, places int) (newVal float64) {
+// 	input := input * 100
+//  	var round float64
+//  	pow := math.Pow(10, float64(places))
+//  	digit := pow * input
+//  	round = math.Ceil(digit)
+//  	newVal = round / pow
+//  	return
+//  }
+
 
 func int64ToTime(t int64) time.Time {
 	return time.Unix(t, 0)
