@@ -427,7 +427,7 @@ func testPowDataSelect(t *testing.T) {
 }
 
 var (
-	powDatumDBTypes = map[string]string{`Time`: `integer`, `NetworkHashrate`: `character varying`, `PoolHashrate`: `character varying`, `Workers`: `integer`, `CoinPrice`: `character varying`, `BTCPrice`: `character varying`, `Source`: `character varying`}
+	powDatumDBTypes = map[string]string{`Time`: `integer`, `PoolHashrate`: `character varying`, `Workers`: `integer`, `CoinPrice`: `character varying`, `BTCPrice`: `character varying`, `Source`: `character varying`}
 	_               = bytes.MinRead
 )
 
