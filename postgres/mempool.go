@@ -210,11 +210,6 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	if err == nil {
 		voteModel.BlockReceiveTime = null.TimeFrom(block.ReceiveTime.Time)
 	}
-	// get the target block
-	block, err := pg.getBlock(ctx, int(vote.VotingOn))
-	if err == nil {
-		voteModel.BlockReceiveTime = null.TimeFrom(block.ReceiveTime.Time)
-	}
 
 	err = voteModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
