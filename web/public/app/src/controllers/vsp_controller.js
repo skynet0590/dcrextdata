@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date, legendFormatter, options, getRandomColor } from '../utils'
+import { hide, show, legendFormatter, options, getRandomColor } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -130,7 +130,7 @@ export default class extends Controller {
       fields[7].innerHTML = vsp.proportion_missed
       fields[8].innerHTML = vsp.user_count
       fields[9].innerHTML = vsp.users_active
-      fields[10].innerHTML = date(vsp.time)
+      fields[10].innerHTML = vsp.time
 
       _this.vspTicksTableTarget.appendChild(vspRow)
     })

@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, date, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -155,7 +155,7 @@ export default class extends Controller {
       fields[5].innerHTML = ex.volume
       fields[6].innerText = ex.interval
       fields[7].innerHTML = ex.currency_pair
-      fields[8].innerHTML = date(ex.time)
+      fields[8].innerHTML = ex.time
 
       _this.exchangeTableTarget.appendChild(exRow)
     })

@@ -30,8 +30,8 @@ type VSPTickDto struct {
 	Voted            int     `json:"voted"`
 	Missed           int     `json:"missed"`
 	PoolFees         float64 `json:"pool_fees"`
-	ProportionLive   float64 `json:"proportion_live"`
-	ProportionMissed float64 `json:"proportion_missed"`
+	ProportionLive   string `json:"proportion_live"`
+	ProportionMissed string `json:"proportion_missed"`
 	UserCount        int     `json:"user_count"`
 	UsersActive      int     `json:"users_active"`
 	Time             string  `json:"time"`
