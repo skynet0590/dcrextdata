@@ -44,27 +44,32 @@ type Block struct {
 }
 
 type BlockDto struct {
-	BlockReceiveTime  string `json:"block_receive_time"`
-	BlockInternalTime string `json:"block_internal_time"`
-	Delay             string `json:"delay"`
-	BlockHeight       uint32 `json:"block_height"`
-	BlockHash         string `json:"block_hash"`
+	BlockReceiveTime  string    `json:"block_receive_time"`
+	BlockInternalTime string    `json:"block_internal_time"`
+	Delay             string    `json:"delay"`
+	BlockHeight       uint32    `json:"block_height"`
+	BlockHash         string    `json:"block_hash"`
+	Votes             []VoteDto `json:"votes"`
 }
 
 type Vote struct {
 	Hash              string
 	ReceiveTime       time.Time
 	TargetedBlockTime time.Time
+	BlockReceiveTime  time.Time
 	VotingOn          int64
 	ValidatorId       int
+	Validity          string
 }
 
 type VoteDto struct {
 	Hash                  string `json:"hash"`
 	ReceiveTime           string `json:"receive_time"`
 	TargetedBlockTimeDiff string `json:"block_time_diff"`
+	BlockReceiveTimeDiff  string `json:"block_receive_time_diff"`
 	VotingOn              int64  `json:"voting_on"`
 	ValidatorId           int    `json:"validator_id"`
+	Validity              string `json:"validity"`
 }
 
 type DataStore interface {

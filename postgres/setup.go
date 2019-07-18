@@ -97,8 +97,10 @@ const (
 		hash VARCHAR(128),
 		voting_on INT8,
 		receive_time timestamp,
+		block_receive_time timestamp,
 		targeted_block_time timestamp,
 		validator_id INT,
+		validity VARCHAR(128),
 		PRIMARY KEY (hash)
 	);`
 )

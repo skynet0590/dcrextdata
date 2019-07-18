@@ -88,6 +88,12 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 					ValidatorId: voteInfo.MempoolTicketIndex,
 				}
 
+				if voteInfo.Validation.Validity {
+					vote.Validity = "Valid"
+				} else {
+					vote.Validity = "Invalid"
+				}
+
 				// wait for some time for the block to get added to the blockchain
 				time.Sleep(2 * time.Second)
 
@@ -98,6 +104,8 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				}
 
 				vote.TargetedBlockTime = targetedBlock.Header.Timestamp.UTC()
+				// todo: check the db for this block and get the receive time if the block is the last to be received,
+				// then update the votes
 
 				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
 					log.Error(err)

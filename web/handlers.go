@@ -570,28 +570,20 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 func (s *Server) propagation(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
 
-	block, err := s.fetchBlockData(req)
+	block, err := s.fetchPropagationData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
 
-	data["blocks"] = block
-
-	votes, err := s.fetchVoteData(req)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data["votes"] = votes
+	data["propagation"] = block
 
 	s.render("propagation.html", data, res)
 }
 
-// /getblocks
-func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
-	data, err := s.fetchBlockData(req)
+// /getPropagationData
+func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchPropagationData(req)
 	defer s.renderJSON(data, res)
 
 	if err != nil {
@@ -602,7 +594,7 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
+func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 
@@ -633,6 +625,57 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	}
 
 	totalTxLoaded := int(offset) + len(blockSlice)
+	if int64(totalTxLoaded) < totalCount {
+		data["nextPage"] = int(pageToLoad + 1)
+	}
+
+	return data, nil
+}
+
+// /getblocks
+func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchBlockData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error)    {
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * recordsPerPage
+
+	ctx := context.Background()
+
+	voteSlice, err := s.db.BlocksWithoutVotes(ctx, offset, recordsPerPage)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := s.db.BlockCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]interface{}{
+		"records":      voteSlice,
+		"currentPage":  pageToLoad,
+		"previousPage": int(pageToLoad - 1),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
+
+	totalTxLoaded := int(offset) + len(voteSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
 	}
@@ -671,7 +714,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 		return nil, err
 	}
 
-	totalCount, err := s.db.BlockCount(ctx)
+	totalCount, err := s.db.VotesCount(ctx)
 	if err != nil {
 		return nil, err
 	}
