@@ -16,7 +16,7 @@ body {
 }
 
 .nav-link {
-  padding: 10px 22px;
+  padding: 0.4rem 0.8rem;
 }
 
 .nav-link span,
@@ -404,6 +404,15 @@ table.collapsible .labels tr td {
 
 .form-control {
   display: inline-block;
+  font-size: 0.8rem;
+}
+
+select.form-control:not([size]):not([multiple]) {
+  height: calc(1.8rem + 2px);
+}
+
+.form-control * {
+  font-size: 0.8rem;
 }
 
 .chart-form-control {
