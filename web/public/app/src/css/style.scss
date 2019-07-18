@@ -377,22 +377,33 @@ table.collapsible .labels tr td {
   display: block;
 }
 
+.control-wrapper {
+  padding-bottom: 0.4rem;
+}
+
 .control-label {
+  display: inline-block;
   font-size: 13px;
   font-weight: 600;
   color: #696969;
+  padding-right: 0.3rem;
 }
 
 .chart-control {
   background: #fff;
   width: max-content;
   border-radius: 3px;
+  display: inline-block;
 }
 
 .chart-control .nav-item {
   background: #fff;
   width: max-content;
   border-radius: 3px;
+}
+
+.form-control {
+  display: inline-block;
 }
 
 .chart-form-control {

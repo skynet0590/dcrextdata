@@ -6,52 +6,50 @@
         {{ template "header" }}
         <div class="content">
             <div class="container">
-
-                <div class="row align-items-center">
-                    <div class="col-md-3 col-sm-12 mb-2">
-                        <div class="control-label">SOURCE</div>
-                        <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
-                            class="form-control" style="width: 150px;">
-                            
-                            <option value="All">All</option>
-
-                            {{ range $index, $filter := .powSource}}
-                            <option value="{{$filter.Source}}">{{$filter.Source}}</option>
-                            {{ end }}
-                        </select>
-                    </div>
-
-                    <div class="chart-control-wrapper col-md-5 mb-2" data-target="pow.chartSelector">
-                        <div class="control-label">VIEW</div>
-                        <div class="chart-control">
-                            <ul
-                            class="nav nav-pills"
-                            >
-                            <li class="nav-item">
-                                <a
-                                class="nav-link active"
-                                href="javascript:void(0);"
-                                data-target="pow.viewOption"
-                                data-action="click->pow#setTable"
-                                data-option="table"
-                                >Table</a>
-                            </li>
-                            <li class="nav-item">
-                                <a
-                                class="nav-link"
-                                href="javascript:void(0);"
-                                data-target="pow.viewOption"
-                                data-action="click->pow#setChart"
-                                data-option="chart"
-                                >Chart</a>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="control-wrapper">
+                 <div class="chart-control-wrapper mb-2" data-target="pow.chartSelector">
+                     <div class="control-label">View:</div>
+                     <div class="chart-control">
+                        <ul
+                        class="nav nav-pills"
+                        >
+                        <li class="nav-item">
+                            <a
+                            class="nav-link active"
+                            href="javascript:void(0);"
+                            data-target="pow.viewOption"
+                            data-action="click->pow#setTable"
+                            data-option="table"
+                            >Table</a>
+                        </li>
+                        <li class="nav-item">
+                            <a
+                            class="nav-link"
+                            href="javascript:void(0);"
+                            data-target="pow.viewOption"
+                            data-action="click->pow#setChart"
+                            data-option="chart"
+                            >Chart</a>
+                        </li>
+                    </ul>
                 </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-md-4 col-sm-12 mb-2">
+                    <div class="control-label">Source:</div>
+                    <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
+                        class="form-control" style="width: 110px;">
 
+                        <option value="All">All</option>
+
+                        {{ range $index, $filter := .powSource}}
+                        <option value="{{$filter.Source}}">{{$filter.Source}}</option>
+                        {{ end }}
+                    </select>
+                </div>
                 <div data-target="pow.numPageWrapper" class="col d-flex  align-items-center justify-content-between float-md-right">
                     <div class=" mb-2 float-md-right">
-                        <div class="control-label">ROWS</div>
+                        <div class="control-label">Page Size:</div>
                         <select data-target="pow.selectedNum" data-action="change->pow#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
                             <option value="20">20</option>
                             <option value="30">30</option>
@@ -60,61 +58,61 @@
                             <option value="150">150</option>
                         </select>
                     </div>
+                    <div class="row float-md-right">
+                        <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                        <div class="row float-md-right">
-                            <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
-
-                            <p class="text-muted"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                            </p>    
-                            <a href="javascript:void(0)" data-target="pow.nextPageButton" data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                        </div>
-                    </div> 
-                </div>
-                
-            <div class="" data-target="pow.powTableWrapper">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Source</th>
-                            <th>Network Hashrate(Th/s)</th>
-                            <th>Pool Hashrate(Th/s)</th>
-                            <th>Workers</th>
-                            <th>Time(UTC)</th>
-                        </tr>
-                    </thead>
-                    <tbody data-target="pow.powTable">
-                        {{range $index, $powdata := .powData}}
-                        <tr>
-                            <td>{{$powdata.Source}}</td>
-                            <td>{{$powdata.NetworkHashrateTh}}</td>
-                            <td>{{$powdata.PoolHashrateTh}}</td>
-                            <td>{{$powdata.Workers}}</td>
-                            <td>{{$powdata.Time}}</td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
-
-                <template data-target="pow.powRowTemplate">
-                    <tr>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </template>
-            </div>
-            <div data-target="pow.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
-                <div id="chart"
-                data-target="pow.chartsView"
-                style="width:100%; height:73vh; margin:0 auto;">
-            </div>
-            <div class="d-flex justify-content-center legend-wrapper">
-                <div class="legend d-flex" data-target="pow.labels"></div>
+                        <p class="text-muted"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                        </p>    
+                        <a href="javascript:void(0)" data-target="pow.nextPageButton" data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                    </div>
+                </div> 
             </div>
         </div>
+
+        <div class="" data-target="pow.powTableWrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Network Hashrate(Th/s)</th>
+                        <th>Pool Hashrate(Th/s)</th>
+                        <th>Workers</th>
+                        <th>Time(UTC)</th>
+                    </tr>
+                </thead>
+                <tbody data-target="pow.powTable">
+                    {{range $index, $powdata := .powData}}
+                    <tr>
+                        <td>{{$powdata.Source}}</td>
+                        <td>{{$powdata.NetworkHashrateTh}}</td>
+                        <td>{{$powdata.PoolHashrateTh}}</td>
+                        <td>{{$powdata.Workers}}</td>
+                        <td>{{$powdata.Time}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+
+            <template data-target="pow.powRowTemplate">
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </template>
+        </div>
+        <div data-target="pow.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
+            <div id="chart"
+            data-target="pow.chartsView"
+            style="width:100%; height:73vh; margin:0 auto;">
+        </div>
+        <div class="d-flex justify-content-center legend-wrapper">
+            <div class="legend d-flex" data-target="pow.labels"></div>
+        </div>
     </div>
+</div>
 </div>
 </div>
 {{ template "footer" }}
