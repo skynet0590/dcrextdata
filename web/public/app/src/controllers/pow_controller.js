@@ -117,10 +117,9 @@ export default class extends Controller {
       const fields = powRow.querySelectorAll('td')
 
       fields[0].innerText = pow.source
-      fields[1].innerText = pow.network_hashrate_th
-      fields[2].innerText = pow.pool_hashrate_th
-      fields[3].innerHTML = pow.workers
-      fields[4].innerHTML = pow.time
+      fields[1].innerText = pow.pool_hashrate_th
+      fields[2].innerHTML = pow.workers
+      fields[3].innerHTML = pow.time
 
       _this.powTableTarget.appendChild(powRow)
     })
