@@ -137,8 +137,9 @@ export default class extends Controller {
     data.forEach(block => {
       let votesHtml = ''
       let i = 0
-      block.votes.forEach(vote => {
-        votesHtml += `<tr>
+      if (block.votes) {
+        block.votes.forEach(vote => {
+          votesHtml += `<tr>
                             <td>${vote.voting_on}</td>
                             <td>${vote.validator_id}</td>
                             <td>${vote.validity}</td>
@@ -146,7 +147,8 @@ export default class extends Controller {
                             <td>${vote.block_receive_time_diff}s</td>
                             <td><a target="_blank" href="https://explorer.dcrdata.org/tx/${vote.hash}">${vote.hash}</a></td>
                         </tr>`
-      })
+        })
+      }
 
       let padding = i > 0 ? 'style="padding-top:50px"' : ''
       i++

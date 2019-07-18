@@ -69,8 +69,7 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
 		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
 		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
-		NetworkHashrate:   null.StringFrom(fmt.Sprint(data.NetworkHashrate / pow.Thash)),
-		PoolHashrate:      null.StringFrom(fmt.Sprint(data.PoolHashrate / pow.Thash)),
+		PoolHashrate:      null.StringFrom(fmt.Sprintf("%.0f", data.PoolHashrate / pow.Thash)),
 		Source:            data.Source,
 		Time:              int(data.Time),
 		Workers:           null.IntFrom(int(data.Workers)),
@@ -134,11 +133,6 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 }
 
 func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, err error) {
-	networkHashRate, err := strconv.ParseFloat(item.NetworkHashrate.String, 64)
-	if err != nil {
-		return dto, err
-	}
-
 	poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 64)
 	if err != nil {
 		return dto, err
@@ -156,8 +150,7 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 
 	return pow.PowDataDto{
 		Time:              time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
-		NetworkHashrateTh: networkHashRate,
-		PoolHashrateTh:    poolHashRate,
+		PoolHashrateTh:    fmt.Sprintf("%.0f", poolHashRate),
 		Workers:           int64(item.Workers.Int),
 		Source:            item.Source,
 		CoinPrice:         coinPrice,

@@ -125,7 +125,6 @@ func (LuxorPow) fetch(res *luxorAPIResponse, start int64) []PowData {
 
 		data = append(data, PowData{
 			Time:              t.Unix(),
-			NetworkHashrate:   j.NetworkHashrate,
 			PoolHashrate:      j.PoolHashrate,
 			Workers:           j.Workers,
 			CoinPrice:         coinPrice,
@@ -180,7 +179,6 @@ func (F2poolPow) fetch(res *f2poolAPIResponse, start int64) []PowData {
 
 		data = append(data, PowData{
 			Time:              t.Unix(),
-			NetworkHashrate:   0,
 			PoolHashrate:      v,
 			Workers:           0,
 			CoinPrice:         0,
@@ -230,7 +228,6 @@ func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 
 	data = append(data, PowData{
 		Time:              t,
-		NetworkHashrate:   res.NetworkHashrate,
 		PoolHashrate:      res.PoolHashrate,
 		Workers:           res.Workers,
 		CoinPrice:         0,
@@ -279,19 +276,8 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
 	t := helpers.NowUtc().Unix()
 
-	n, err := strconv.ParseFloat(res.BtcData.NetworkHashrate, 64)
-	if err != nil {
-		return nil
-	}
-
 	p, err := strconv.ParseFloat(res.BtcData.PoolHashrate, 64)
 	if err != nil {
-		return nil
-	}
-
-	networkHashrate, err := convertHashRate(n, res.BtcData.NetworkHashrateUnit)
-	if err != nil {
-		log.Error("Unable to convert the network hashrage return from api: %s", err.Error())
 		return nil
 	}
 
@@ -303,7 +289,6 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 
 	data = append(data, PowData{
 		Time:              t,
-		NetworkHashrate:   networkHashrate,
 		PoolHashrate:      float64(poolHashrate),
 		Workers:           0,
 		CoinPrice:         0,
@@ -365,7 +350,6 @@ func (UupoolPow) fetch(res *uupoolAPIResponse, start int64) []PowData {
 
 	data = append(data, PowData{
 		Time:              t,
-		NetworkHashrate:   res.Network.NetworkHashrate,
 		PoolHashrate:      res.Pool.PoolHashrate,
 		Workers:           res.Pool.OnlineWorkers,
 		CoinPrice:         0,
