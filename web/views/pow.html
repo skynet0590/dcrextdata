@@ -68,40 +68,42 @@
             </div>
         </div>
 
-        <div class="" data-target="pow.powTableWrapper">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Source</th>
-                        <th>Network Hashrate(Th/s)</th>
-                        <th>Pool Hashrate(Th/s)</th>
-                        <th>Workers</th>
-                        <th>Time(UTC)</th>
-                    </tr>
-                </thead>
-                <tbody data-target="pow.powTable">
-                    {{range $index, $powdata := .powData}}
-                    <tr>
-                        <td>{{$powdata.Source}}</td>
-                        <td>{{$powdata.NetworkHashrateTh}}</td>
-                        <td>{{$powdata.PoolHashrateTh}}</td>
-                        <td>{{$powdata.Workers}}</td>
-                        <td>{{$powdata.Time}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+        <div class="row">
+            <div class="col-md-10 offset-1">
+                <div class="" data-target="pow.powTableWrapper">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Pool Hashrate (Th/s)</th>
+                            <th>Workers</th>
+                            <th>Time (UTC)</th>
+                        </tr>
+                        </thead>
+                        <tbody data-target="pow.powTable">
+                        {{range $index, $powdata := .powData}}
+                            <tr>
+                                <td>{{$powdata.Source}}</td>
+                                <td>{{$powdata.PoolHashrateTh}}</td>
+                                <td>{{$powdata.Workers}}</td>
+                                <td>{{$powdata.Time}}</td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
 
-            <template data-target="pow.powRowTemplate">
-                <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </template>
+                    <template data-target="pow.powRowTemplate">
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
+                </div>
+            </div>
         </div>
+
         <div data-target="pow.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
             <div id="chart"
             data-target="pow.chartsView"
