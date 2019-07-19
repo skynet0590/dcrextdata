@@ -377,8 +377,16 @@ table.collapsible .labels tr td {
   display: block;
 }
 
+.control-div {
+  padding: 0, 0, 0, 1rem !important;
+}
+
 .control-wrapper {
   padding-bottom: 0.4rem;
+}
+
+.nextcontrol {
+  float: right !important;
 }
 
 .control-label {
@@ -386,7 +394,7 @@ table.collapsible .labels tr td {
   font-size: 13px;
   font-weight: 600;
   color: #696969;
-  padding-right: 0.3rem;
+  padding-right: 0.2rem;
 }
 
 .chart-control {
