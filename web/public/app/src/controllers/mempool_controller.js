@@ -169,6 +169,10 @@ export default class extends Controller {
         dateWindow: [minDate, maxDate],
         animatedZooms: true,
         plotter: barChartPlotter,
+        labelsDiv: _this.labelsTarget,
+        labelsUTC: true,
+        labelsKMB: true,
+        maxNumberWidth: 8,
         axes: {
           x: {
             drawGrid: false
