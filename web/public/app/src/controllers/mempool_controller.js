@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options } from '../utils'
+import { barChartPlotter, hide, show } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -91,7 +91,6 @@ export default class extends Controller {
 
         _this.displayMempool(result.mempoolData)
       } else {
-        console.log(result)
         _this.plotGraph(result)
       }
     }).catch(function (e) {
@@ -118,41 +117,65 @@ export default class extends Controller {
 
   // exchange chart
   plotGraph (exs) {
-    var chartData = exs.mempoolchartData
-    var mempool = exs.chartFilter
     const _this = this
-    var ylabelTitle
+    let title
 
-    var data = []
-    var dataSet = []
+    let chartData = exs.mempoolchartData
+    let csv = ''
+    switch (exs.chartFilter) {
+      case 'size':
+        title = 'Mempool Size'
+        csv = 'Date,Size\n'
+        break
+      case 'total_fee':
+        title = 'Total Fee'
+        csv = 'Date,Total Fee\n'
+        break
+      default:
+        title = 'Number of Transactions'
+        csv = 'Date,Number of Transactions\n'
+        break
+    }
+    let minDate, maxDate
+
     chartData.forEach(mp => {
-      data.push(new Date(mp.time))
-      if (mempool === 'size') {
-        ylabelTitle = 'Size'
-        data.push(mp.size)
-      } else if (mempool === 'total_fee') {
-        ylabelTitle = 'Total Fee'
-        data.push(mp.total_fee)
-      } else {
-        ylabelTitle = 'Number of Transactions'
-        data.push(mp.number_of_transactions)
+      let date = new Date(mp.time)
+      if (minDate == null || new Date(mp.time) < minDate) {
+        minDate = new Date(mp.time)
       }
 
-      dataSet.push(data)
-      data = []
+      if (maxDate == null || new Date(mp.time) > maxDate) {
+        maxDate = new Date(mp.time)
+      }
+
+      let record
+      if (exs.chartFilter === 'size') {
+        record = mp.size
+      } else if (exs.chartFilter === 'total_fee') {
+        record = mp.total_fee
+      } else {
+        record = mp.number_of_transactions
+      }
+      csv += `${date},${record}\n`
     })
 
-    var extra = {
-      legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
-      ylabel: ylabelTitle,
-      labels: ['Date', ylabelTitle],
-      colors: ['#2971FF', '#FF8C00']
-    }
-
+    console.log(minDate, maxDate, csv)
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      csv,
+      {
+        legend: 'always',
+        title: title,
+        includeZero: true,
+        dateWindow: [minDate, maxDate],
+        animatedZooms: true,
+        plotter: barChartPlotter,
+        axes: {
+          x: {
+            drawGrid: false
+          }
+        }
+      }
     )
   }
 
