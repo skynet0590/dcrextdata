@@ -171,6 +171,8 @@ export default class extends Controller {
         animatedZooms: true,
         plotter: barChartPlotter,
         labelsDiv: _this.labelsTarget,
+        ylabel: title,
+        xlabel: 'Date',
         labelsUTC: true,
         labelsKMB: true,
         maxNumberWidth: 8,
