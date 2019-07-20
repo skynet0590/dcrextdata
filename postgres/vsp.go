@@ -26,9 +26,9 @@ var (
 
 // StoreVSPs attempts to store the vsp responses by calling storeVspResponseG and returning
 // a slice of errors
-func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
+func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) (int, []error) {
 	if ctx.Err() != nil {
-		return []error{ctx.Err()}
+		return 0, []error{ctx.Err()}
 	}
 	errs := make([]error, 0, len(data))
 	completed := 0
@@ -41,13 +41,13 @@ func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
 			errs = append(errs, err)
 		}
 		if ctx.Err() != nil {
-			return append(errs, ctx.Err())
+			return 0, append(errs, ctx.Err())
 		}
 	}
 	if completed == 0 {
 		log.Info("Unable to store any vsp entry")
 	}
-	return errs
+	return completed, errs
 }
 
 func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.ResposeData) error {
@@ -68,7 +68,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	}
 
 	vspTick := responseToVSPTick(pool.ID, resp)
-	tickTime := time.Unix(int64(resp.LastUpdated), 0).UTC()
 
 	err = vspTick.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -86,8 +85,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	if err != nil {
 		return txr.Rollback()
 	}
-
-	log.Infof("Stored data for VSP %10s %v", name, tickTime.Format(dateTemplate))
 	return nil
 }
 
