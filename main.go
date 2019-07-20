@@ -132,7 +132,6 @@ func _main(ctx context.Context) error {
 		return nil
 	}
 
-
 	var dcrClient *rpcclient.Client
 	var collector *mempool.Collector
 

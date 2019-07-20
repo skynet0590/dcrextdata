@@ -42,14 +42,11 @@ export default class extends Controller {
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
     this.fetchExchange(opt)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
-    console.log(opt)
-    console.log(this.opt)
     this.fetchExchange(opt)
   }
 

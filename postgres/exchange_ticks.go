@@ -134,7 +134,7 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset int, limit int) ([]ticks.TickDto, int64, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-    if err != nil {
+	if err != nil {
 		return nil, 0, err
 	}
 
@@ -151,8 +151,8 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 	}
 
 	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
-    
-    if err != nil {
+
+	if err != nil {
 		return nil, 0, err
 	}
 

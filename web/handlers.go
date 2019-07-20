@@ -334,11 +334,11 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-/*
-	var chartData [][]interface{}
-	for _, points := range resultMap {
-		chartData = append(chartData, points)
-	}*/
+	/*
+		var chartData [][]interface{}
+		for _, points := range resultMap {
+			chartData = append(chartData, points)
+		}*/
 
 	s.renderJSON(resultMap, res)
 }
@@ -632,7 +632,7 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error)    {
+func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 

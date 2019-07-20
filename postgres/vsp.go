@@ -148,7 +148,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int,
 	}
 
 	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vspInfo.ID)
-		vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
+	vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (pg *PgDb) GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]t
 	return dates, nil
 }
 
-func (pg *PgDb) vspIdByName(ctx  context.Context, name string) (id int, err error) {
+func (pg *PgDb) vspIdByName(ctx context.Context, name string) (id int, err error) {
 	vspModel, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(name))).One(ctx, pg.db)
 	if err != nil {
 		return 0, err
