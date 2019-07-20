@@ -33,8 +33,8 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div data-target=exchange.sourceWrapper class="col-md-4">
+                    <div class="row align-items-center justify-content-between">
+                    <div data-target=exchange.sourceWrapper class="col-md-3 control-div">
                             <div class="control-label">Source:</div>
                             <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                                 class="form-control" style="width: 110px;">
@@ -44,8 +44,8 @@
                                 {{ end }}
                             </select>
                         </div>
-                        <div class="col-md-4 mb-2">
-                            <div class="control-label">Currency Pair</div>
+                        <div class="col-md-4 control-div">
+                            <div class="control-label">Currency Pair:</div>
                             <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
                                 class="form-control" style="width: 110px;">
                                 <option data-target="exchange.hideOption value="All">All</option>
@@ -55,7 +55,7 @@
                             </select>
                         </div>
 
-                        <div data-target="exchange.intervalWapper" class="col-md-4 mb-2 d-hide">
+                        <div data-target="exchange.intervalWapper" class="col-md-4 d-hide">
                             <div class="control-label">Interval:</div>
                             <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
                                 class="form-control" style="width: 110px;">
@@ -65,7 +65,7 @@
                             </select>
                         </div>
 
-                        <div data-target="exchange.tickWapper" class="col-md-4 mb-2 d-hide">
+                        <div data-target="exchange.tickWapper" class="col-md-4 d-hide">
                             <div class="control-label">Data Ticks:</div>
                             <select data-target="exchange.selectedDticks" data-action="change->exchange#selectedDticksChanged"
                                 class="form-control" style="width: 90px;">
@@ -76,36 +76,33 @@
                             </select>
                         </div>
 
-                        <div data-target="exchange.numPageWrapper" class="col-md-4 d-flex  align-items-center justify-content-between">
 
-                            <div class=" mb-2 float-md-right">
-                                <div class="control-label">Page Size:</div>
+                        <div data-target="exchange.numPageWrapper" class="col-mb-3 control-div">
+                            <div class="control-label">Page Size:</div>
 
-                                <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="150">150</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <div class="row float-md-right">
-                                    <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
-
-                                    <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                                    </p>    
-                                    <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                                </div>
-                            </div> 
+                            <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
                         </div>
+
+                            <div data-target="exchange.numPageWrapper" class="row justify-content-end float-md-right control-div ml-3 mt-2">
+                                <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}" data-current-page="{{ .totalPages }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                                <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                                </p>    
+                                <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-current-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                            </div>
                     </div>
                 </div>
                 <div class="" data-target="exchange.exchangeTableWrapper">
                     <table class="table">
                         <thead>
                             <tr>
+                                <th>Time(UTC)</th>
                                 <th>Exchange</th>
                                 <th>High</th>
                                 <th>Low</th>
@@ -114,12 +111,12 @@
                                 <th>Volume</th>
                                 <th>Interval</th>
                                 <th>Currency Pair</th>
-                                <th>Time(UTC)</th>
                             </tr>
                         </thead>
                         <tbody data-target="exchange.exchangeTable">
                             {{range $index, $exchange := .exData}}
                             <tr>
+                                <td>{{$exchange.Time}}</td>
                                 <td>{{$exchange.ExchangeName}}</td>
                                 <td>{{$exchange.High}}</td>
                                 <td>{{$exchange.Low}}</td>
@@ -128,7 +125,6 @@
                                 <td>{{$exchange.Volume}}</td>
                                 <td>{{$exchange.Interval}}</td>
                                 <td>{{$exchange.CurrencyPair}}</td>
-                                <td>{{$exchange.Time}}</td>
                             </tr>
                             {{end}}
                         </tbody>

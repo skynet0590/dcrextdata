@@ -34,7 +34,7 @@
                     </div>
                 </div>
 
-                <div class="row ">
+                <div class="row align-items-center justify-content-between">
                     <div data-target="vsp.selectedFilterWrapper" class="col-md-4 col-sm-12 mb-2">
                         <div class="control-label">Source:</div>
                         <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
@@ -87,7 +87,7 @@
                             </select>
                         </div>
 
-                        <div class="row float-md-right">
+                        <div class="d-flex float-md-right">
                             <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                             <p class="text-muted"> Page <span data-target="vsp.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>

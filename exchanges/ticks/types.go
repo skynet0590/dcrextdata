@@ -51,16 +51,16 @@ type Tick struct {
 
 // TickDto represents an exchange data, formatted for presentation
 type TickDto struct {
-	ExchangeID   int       `json:"exchange_id"`
-	ExchangeName string    `json:"exchange_name"`
-	High         float64   `json:"high"`
-	Low          float64   `json:"low"`
-	Open         float64   `json:"open"`
-	Close        float64   `json:"close"`
-	Volume       float64   `json:"volume"`
-	Time         string `json:"time"`
-	Interval     int       `json:"interval"`
-	CurrencyPair string    `json:"currency_pair"`
+	ExchangeID   int     `json:"exchange_id"`
+	ExchangeName string  `json:"exchange_name"`
+	High         float64 `json:"high"`
+	Low          float64 `json:"low"`
+	Open         float64 `json:"open"`
+	Close        float64 `json:"close"`
+	Volume       float64 `json:"volume"`
+	Time         string  `json:"time"`
+	Interval     int     `json:"interval"`
+	CurrencyPair string  `json:"currency_pair"`
 }
 
 // TickDto represents an exchange data, formatted for presentation

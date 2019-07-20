@@ -124,12 +124,12 @@ func (LuxorPow) fetch(res *luxorAPIResponse, start int64) []PowData {
 		}
 
 		data = append(data, PowData{
-			Time:              t.Unix(),
-			PoolHashrate:      j.PoolHashrate,
-			Workers:           j.Workers,
-			CoinPrice:         coinPrice,
-			BtcPrice:          btcPrice,
-			Source:            "luxor",
+			Time:         t.Unix(),
+			PoolHashrate: j.PoolHashrate,
+			Workers:      j.Workers,
+			CoinPrice:    coinPrice,
+			BtcPrice:     btcPrice,
+			Source:       "luxor",
 		})
 	}
 	return data
@@ -178,12 +178,12 @@ func (F2poolPow) fetch(res *f2poolAPIResponse, start int64) []PowData {
 		}
 
 		data = append(data, PowData{
-			Time:              t.Unix(),
-			PoolHashrate:      v,
-			Workers:           0,
-			CoinPrice:         0,
-			BtcPrice:          0,
-			Source:            "f2pool",
+			Time:         t.Unix(),
+			PoolHashrate: v,
+			Workers:      0,
+			CoinPrice:    0,
+			BtcPrice:     0,
+			Source:       "f2pool",
 		})
 	}
 	return data
@@ -227,12 +227,12 @@ func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 	t := helpers.NowUtc().Unix()
 
 	data = append(data, PowData{
-		Time:              t,
-		PoolHashrate:      res.PoolHashrate,
-		Workers:           res.Workers,
-		CoinPrice:         0,
-		BtcPrice:          0,
-		Source:            "coinmine",
+		Time:         t,
+		PoolHashrate: res.PoolHashrate,
+		Workers:      res.Workers,
+		CoinPrice:    0,
+		BtcPrice:     0,
+		Source:       "coinmine",
 	})
 	return data
 }
@@ -288,12 +288,12 @@ func (BtcPow) fetch(res *btcAPIResponse, start int64) []PowData {
 	}
 
 	data = append(data, PowData{
-		Time:              t,
-		PoolHashrate:      float64(poolHashrate),
-		Workers:           0,
-		CoinPrice:         0,
-		BtcPrice:          res.BtcData.Rates.CoinPrice,
-		Source:            "btc",
+		Time:         t,
+		PoolHashrate: float64(poolHashrate),
+		Workers:      0,
+		CoinPrice:    0,
+		BtcPrice:     res.BtcData.Rates.CoinPrice,
+		Source:       "btc",
 	})
 
 	return data
@@ -349,12 +349,12 @@ func (UupoolPow) fetch(res *uupoolAPIResponse, start int64) []PowData {
 	t := helpers.NowUtc().Unix()
 
 	data = append(data, PowData{
-		Time:              t,
-		PoolHashrate:      res.Pool.PoolHashrate,
-		Workers:           res.Pool.OnlineWorkers,
-		CoinPrice:         0,
-		BtcPrice:          0,
-		Source:            "uupool",
+		Time:         t,
+		PoolHashrate: res.Pool.PoolHashrate,
+		Workers:      res.Pool.OnlineWorkers,
+		CoinPrice:    0,
+		BtcPrice:     0,
+		Source:       "uupool",
 	})
 
 	return data

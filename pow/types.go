@@ -5,29 +5,29 @@ type PowDataSource struct {
 }
 
 type PowData struct {
-	Time              int64
-	PoolHashrate      float64
-	Workers           int64
-	CoinPrice         float64
-	BtcPrice          float64
-	Source            string
+	Time         int64
+	PoolHashrate float64
+	Workers      int64
+	CoinPrice    float64
+	BtcPrice     float64
+	Source       string
 }
 
 type PowDataDto struct {
-	Time              string  `json:"time"`
-	PoolHashrateTh    string `json:"pool_hashrate_th"`
-	Workers           int64   `json:"workers"`
-	CoinPrice         float64 `json:"coin_price"`
-	BtcPrice          float64 `json:"btc_price"`
-	Source            string  `json:"source"`
+	Time           string  `json:"time"`
+	PoolHashrateTh string  `json:"pool_hashrate_th"`
+	Workers        int64   `json:"workers"`
+	CoinPrice      float64 `json:"coin_price"`
+	BtcPrice       float64 `json:"btc_price"`
+	Source         string  `json:"source"`
 }
 
 type luxorPowData struct {
-	Time              string  `json:"time"`
-	PoolHashrate      float64 `json:"pool_hashrate"`
-	Workers           int64   `json:"workers"`
-	CoinPrice         string  `json:"coin_price"`
-	BtcPrice          string  `json:"btc_price"`
+	Time         string  `json:"time"`
+	PoolHashrate float64 `json:"pool_hashrate"`
+	Workers      int64   `json:"workers"`
+	CoinPrice    string  `json:"coin_price"`
+	BtcPrice     string  `json:"btc_price"`
 }
 
 type luxorAPIResponse struct {
@@ -41,8 +41,8 @@ type f2poolAPIResponse struct {
 }
 
 type coinmineAPIResponse struct {
-	PoolHashrate    float64 `json:"hashrate"`
-	Workers         int64   `json:"workers"`
+	PoolHashrate float64 `json:"hashrate"`
+	Workers      int64   `json:"workers"`
 }
 
 type btcData struct {

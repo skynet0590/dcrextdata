@@ -67,25 +67,18 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 
 func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
-		BTCPrice:          null.StringFrom(fmt.Sprint(data.BtcPrice)),
-		CoinPrice:         null.StringFrom(fmt.Sprint(data.CoinPrice)),
-		PoolHashrate:      null.StringFrom(fmt.Sprintf("%.0f", data.PoolHashrate / pow.Thash)),
-		Source:            data.Source,
-		Time:              int(data.Time),
-		Workers:           null.IntFrom(int(data.Workers)),
+		BTCPrice:     null.StringFrom(fmt.Sprint(data.BtcPrice)),
+		CoinPrice:    null.StringFrom(fmt.Sprint(data.CoinPrice)),
+		PoolHashrate: null.StringFrom(fmt.Sprintf("%.0f", data.PoolHashrate/pow.Thash)),
+		Source:       data.Source,
+		Time:         int(data.Time),
+		Workers:      null.IntFrom(int(data.Workers)),
 	}, nil
 }
 
 // todo impliment sorting for PoW data as it is currently been sorted by time
 func (pg *PgDb) FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error) {
-	var powDatum models.PowDatumSlice
-	var err error
-	if limit == 3000 {
-		powDatum, err = models.PowData(qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	} else {
-		powDatum, err = models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
-	}
-
+	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -108,14 +101,7 @@ func (pg *PgDb) CountPowData(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error) {
-	var powDatum models.PowDatumSlice
-	var err error
-	if limit == 3000 {
-		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
-	} else {
-		powDatum, err = models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
-	}
-
+	powDatum, err := models.PowData(models.PowDatumWhere.Source.EQ(source), qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
@@ -149,12 +135,12 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 	}
 
 	return pow.PowDataDto{
-		Time:              time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
-		PoolHashrateTh:    fmt.Sprintf("%.0f", poolHashRate),
-		Workers:           int64(item.Workers.Int),
-		Source:            item.Source,
-		CoinPrice:         coinPrice,
-		BtcPrice:          bTCPrice,
+		Time:           time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
+		PoolHashrateTh: fmt.Sprintf("%.0f", poolHashRate),
+		Workers:        int64(item.Workers.Int),
+		Source:         item.Source,
+		CoinPrice:      coinPrice,
+		BtcPrice:       bTCPrice,
 	}, nil
 }
 

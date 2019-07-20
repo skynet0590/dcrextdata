@@ -19,14 +19,7 @@ var (
 
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
-
+	pageToLoad := 1
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
@@ -178,13 +171,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
@@ -347,11 +334,11 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-/*
-	var chartData [][]interface{}
-	for _, points := range resultMap {
-		chartData = append(chartData, points)
-	}*/
+	/*
+		var chartData [][]interface{}
+		for _, points := range resultMap {
+			chartData = append(chartData, points)
+		}*/
 
 	s.renderJSON(resultMap, res)
 }
@@ -645,7 +632,7 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error)    {
+func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 

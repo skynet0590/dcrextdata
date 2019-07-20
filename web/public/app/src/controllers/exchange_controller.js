@@ -15,6 +15,13 @@ export default class extends Controller {
     ]
   }
 
+  initialize () {
+    this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
+    if (this.currentPage < 1) {
+      this.currentPage = 1
+    }
+  }
+
   setTable () {
     opt = 'table'
 
@@ -63,23 +70,13 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.selectedCpair = this.selectedCpairTarget.value
-    this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    if (this.nextPage <= 1) {
-      hide(this.previousPageButtonTarget)
-    }
+    this.nextPage = this.previousPageButtonTarget.getAttribute('data-previous-page')
     this.fetchExchange(opt)
   }
 
   loadNextPage () {
     this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.totalPages = this.nextPageButtonTarget.getAttribute('data-total-page')
-    if (this.nextPage > 1) {
-      show(this.previousPageButtonTarget)
-    }
-    if (this.totalPages === this.nextPage) {
-      hide(this.nextPageButtonTarget)
-    }
     this.fetchExchange(opt)
   }
 
@@ -102,8 +99,6 @@ export default class extends Controller {
   }
 
   fetchExchange (display) {
-    this.exchangeTableTarget.innerHTML = ''
-
     const _this = this
     var url
     var selectedFilter
@@ -123,12 +118,24 @@ export default class extends Controller {
           if (_this.selectedFilterTarget.value !== selectedFilter) {
             return
           }
-          console.log(result.exData)
+
+          _this.currentPage = result.currentPage
+          if (_this.currentPage <= 1) {
+            hide(_this.previousPageButtonTarget)
+          } else {
+            show(_this.previousPageButtonTarget)
+          }
+
+          if (_this.currentPage >= result.totalPages) {
+            hide(_this.nextPageButtonTarget)
+          } else {
+            show(_this.nextPageButtonTarget)
+          }
+
           _this.totalPageCountTarget.textContent = result.totalPages
           _this.currentPageTarget.textContent = result.currentPage
-          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+          _this.previousPageButtonTarget.setAttribute('data-previous-page', `${result.previousPage}`)
           _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-          _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
 
           _this.displayExchange(result.exData)
         } else {
@@ -142,20 +149,21 @@ export default class extends Controller {
 
   displayExchange (exs) {
     const _this = this
+    this.exchangeTableTarget.innerHTML = ''
 
     exs.forEach(ex => {
       const exRow = document.importNode(_this.exRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerText = ex.exchange_name
-      fields[1].innerText = ex.high
-      fields[2].innerText = ex.low
-      fields[3].innerHTML = ex.open
-      fields[4].innerHTML = ex.close
-      fields[5].innerHTML = ex.volume
-      fields[6].innerText = ex.interval
-      fields[7].innerHTML = ex.currency_pair
-      fields[8].innerHTML = ex.time
+      fields[0].innerHTML = ex.time
+      fields[1].innerText = ex.exchange_name
+      fields[2].innerText = ex.high
+      fields[3].innerText = ex.low
+      fields[4].innerHTML = ex.open
+      fields[5].innerHTML = ex.close
+      fields[6].innerHTML = ex.volume
+      fields[7].innerText = ex.interval
+      fields[8].innerHTML = ex.currency_pair
 
       _this.exchangeTableTarget.appendChild(exRow)
     })

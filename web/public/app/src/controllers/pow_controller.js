@@ -21,7 +21,6 @@ export default class extends Controller {
     this.chartWrapperTarget.classList.add('d-hide')
     this.powTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange('table')
   }
@@ -38,68 +37,52 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    if (this.nextPage <= 1) {
-      hide(this.previousPageButtonTarget)
-    }
-    this.powTableTarget.innerHTML = ''
     this.fetchExchange(opt)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
-    if (this.nextPage > 1) {
-      show(this.previousPageButtonTarget)
-    }
-    if (this.totalPages === this.nextPage) {
-      hide(this.nextPageButtonTarget)
-    }
-    this.powTableTarget.innerHTML = ''
     this.fetchExchange(opt)
   }
 
   selectedFilterChanged () {
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
-    console.log(opt)
-    console.log(this.opt)
     this.fetchExchange(opt)
   }
 
   NumberOfRowsChanged () {
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange(opt)
   }
 
   fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    var numberOfRows
-    if (display === 'chart') {
-      numberOfRows = 3000
-    } else {
-      numberOfRows = this.selectedNumTarget.value
-    }
+    var numberOfRows = this.selectedNumTarget.value
 
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
-      // since results are appended to the table, discard this response
-      // if the user has changed the filter before the result is gotten
-        if (_this.selectedFilterTarget.value !== selectedFilter) {
-          return
-        }
-
-        console.log(response.data)
-
         let result = response.data
-        _this.totalPageCountTarget.textContent = result.totalPages
-        _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
 
         if (display === 'table') {
+          _this.currentPage = result.currentPage
+          if (_this.currentPage <= 1) {
+            hide(_this.previousPageButtonTarget)
+          } else {
+            show(_this.previousPageButtonTarget)
+          }
+
+          if (_this.currentPage >= result.totalPages) {
+            hide(_this.nextPageButtonTarget)
+          } else {
+            show(_this.nextPageButtonTarget)
+          }
+
+          _this.totalPageCountTarget.textContent = result.totalPages
+          _this.currentPageTarget.textContent = result.currentPage
+          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+
           _this.displayPoW(result.powData)
         } else {
           _this.plotGraph(result.powData)
@@ -111,6 +94,7 @@ export default class extends Controller {
 
   displayPoW (pows) {
     const _this = this
+    this.powTableTarget.innerHTML = ''
 
     pows.forEach(pow => {
       const powRow = document.importNode(_this.powRowTemplateTarget.content, true)
@@ -133,18 +117,15 @@ export default class extends Controller {
     var dataSet = []
     pows.forEach(pow => {
       data.push(new Date(pow.Time))
-      data.push(pow.PoolHashrate)
-      data.push(pow.NetworkDifficulty)
-      data.push(pow.Workers)
-      data.push(pow.NetworkHashrate)
+      data.push(pow.pool_hashrate_th)
 
       dataSet.push(data)
       data = []
     })
     console.log(dataSet)
     var extra = {
-      labels: ['Date', 'Pool Hashrate', 'Network Difficulty', 'Workers', 'Network Hashrate'],
-      colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090'],
+      labels: ['Date', 'Pool Hashrate'],
+      colors: ['#2971FF', '#FF8C00'],
       labelsDiv: this.labelsTarget,
       ylabel: 'Pool Hashrate',
       y2label: 'Network Difficulty',
