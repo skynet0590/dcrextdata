@@ -106,10 +106,11 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-	r.Get("/", s.getExchangeTicks)
+	r.Get("/", s.getHomeData)
+	r.Get("/exchanges", s.getExchangeTicks)
 	r.Get("/filteredEx", s.getFilteredExchangeTicks)
 	r.Get("/chartExchange", s.getChartData)
-	r.Get("/vspticks", s.getVspTicks)
+	r.Get("/vsp", s.getVspTicks)
 	r.Get("/vspchartdata", s.vspChartData)
 	r.Get("/filteredvspticks", s.getFilteredVspTicks)
 	r.Get("/pow", s.getPowData)

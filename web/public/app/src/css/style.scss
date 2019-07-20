@@ -3,9 +3,20 @@ body {
   font-size: 13px;
 }
 
+a:hover {
+  color: #0056b3;
+  text-decoration: none;
+}
+
 .header-top .inner {
   padding: 15px 0;
   color: #333;
+}
+
+.page-title a {
+  color: #696969;
+  font-size: 2rem;
+  font-weight: 600;
 }
 
 .navbar {

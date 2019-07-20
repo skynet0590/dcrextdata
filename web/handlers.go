@@ -17,6 +17,13 @@ var (
 	recordsPerPage = 20
 )
 
+
+// /home
+func (s *Server) getHomeData(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+	s.render("home.html", data, res)
+}
+
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	pageToLoad := 1
