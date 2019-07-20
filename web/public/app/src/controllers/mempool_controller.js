@@ -15,6 +15,11 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    var num = this.selectedNumTarget.options
+    this.selectedNumTarget.value = num[0].text
+  }
+
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {

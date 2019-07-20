@@ -13,6 +13,13 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    var filter = this.selectedRecordSetTarget.options
+    var num = this.selectedNumTarget.options
+    this.selectedRecordSetTarget.value = filter[0].value
+    this.selectedNumTarget.value = num[0].text
+  }
+
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
