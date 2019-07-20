@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { barChartPlotter, hide, show } from '../utils'
+import { legendFormatter, barChartPlotter, hide, show } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -167,6 +167,7 @@ export default class extends Controller {
         includeZero: true,
         dateWindow: [minDate, maxDate],
         animatedZooms: true,
+        legendFormatter: legendFormatter,
         plotter: barChartPlotter,
         labelsDiv: _this.labelsTarget,
         ylabel: title,
