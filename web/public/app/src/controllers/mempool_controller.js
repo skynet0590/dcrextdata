@@ -4,7 +4,6 @@ import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
-// var ylabel
 
 export default class extends Controller {
   static get targets () {

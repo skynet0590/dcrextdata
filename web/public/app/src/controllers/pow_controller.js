@@ -38,28 +38,16 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    if (this.nextPage <= 1) {
-      hide(this.previousPageButtonTarget)
-    }
-    this.powTableTarget.innerHTML = ''
     this.fetchExchange(opt)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
-    if (this.nextPage > 1) {
-      show(this.previousPageButtonTarget)
-    }
-    if (this.totalPages === this.nextPage) {
-      hide(this.nextPageButtonTarget)
-    }
-    this.powTableTarget.innerHTML = ''
     this.fetchExchange(opt)
   }
 
   selectedFilterChanged () {
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
     console.log(opt)
     console.log(this.opt)
@@ -67,7 +55,6 @@ export default class extends Controller {
   }
 
   NumberOfRowsChanged () {
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange(opt)
   }
@@ -84,22 +71,27 @@ export default class extends Controller {
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
-      // since results are appended to the table, discard this response
-      // if the user has changed the filter before the result is gotten
-        if (_this.selectedFilterTarget.value !== selectedFilter) {
-          return
-        }
-
-        console.log(response.data)
-
         let result = response.data
-        _this.totalPageCountTarget.textContent = result.totalPages
-        _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-total-page', `${result.totalPages}`)
 
         if (display === 'table') {
+          _this.currentPage = result.currentPage
+          if (_this.currentPage <= 1) {
+            hide(_this.previousPageButtonTarget)
+          } else {
+            show(_this.previousPageButtonTarget)
+          }
+
+          if (_this.currentPage >= result.totalPages) {
+            hide(_this.nextPageButtonTarget)
+          } else {
+            show(_this.nextPageButtonTarget)
+          }
+
+          _this.totalPageCountTarget.textContent = result.totalPages
+          _this.currentPageTarget.textContent = result.currentPage
+          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+
           _this.displayPoW(result.powData)
         } else {
           _this.plotGraph(result.powData)
@@ -111,6 +103,7 @@ export default class extends Controller {
 
   displayPoW (pows) {
     const _this = this
+    this.powTableTarget.innerHTML = ''
 
     pows.forEach(pow => {
       const powRow = document.importNode(_this.powRowTemplateTarget.content, true)

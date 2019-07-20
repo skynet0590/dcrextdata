@@ -90,11 +90,11 @@
                         </div>
 
                             <div data-target="exchange.numPageWrapper" class="row justify-content-end float-md-right control-div ml-3 mt-2">
-                                <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                                <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}" data-current-page="{{ .totalPages }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                                 <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
                                 </p>    
-                                <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                                <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-current-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                             </div>
                     </div>
                 </div>
@@ -102,6 +102,7 @@
                     <table class="table">
                         <thead>
                             <tr>
+                                <th>Time(UTC)</th>
                                 <th>Exchange</th>
                                 <th>High</th>
                                 <th>Low</th>
@@ -110,12 +111,12 @@
                                 <th>Volume</th>
                                 <th>Interval</th>
                                 <th>Currency Pair</th>
-                                <th>Time(UTC)</th>
                             </tr>
                         </thead>
                         <tbody data-target="exchange.exchangeTable">
                             {{range $index, $exchange := .exData}}
                             <tr>
+                                <td>{{$exchange.Time}}</td>
                                 <td>{{$exchange.ExchangeName}}</td>
                                 <td>{{$exchange.High}}</td>
                                 <td>{{$exchange.Low}}</td>
@@ -124,7 +125,6 @@
                                 <td>{{$exchange.Volume}}</td>
                                 <td>{{$exchange.Interval}}</td>
                                 <td>{{$exchange.CurrencyPair}}</td>
-                                <td>{{$exchange.Time}}</td>
                             </tr>
                             {{end}}
                         </tbody>
