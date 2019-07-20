@@ -184,11 +184,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 
 	if currencyPair != "" {
 		idQuery := models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair)
-		if limit == 3000 {
-			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-		} else {
-			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
-		}
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -198,12 +194,7 @@ func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offse
 			return nil, 0, err
 		}
 	} else {
-		if limit == 3000 {
-			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Offset(offset), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-		} else {
-			exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
-		}
-
+		exchangeTickSlice, err = models.ExchangeTicks(qm.Load("Exchange"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
 		if err != nil {
 			return nil, 0, err
 		}

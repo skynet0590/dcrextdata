@@ -148,13 +148,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int,
 	}
 
 	vspIdQuery := models.VSPTickWhere.VSPID.EQ(vspInfo.ID)
-
-	var vspTickSlice models.VSPTickSlice
-	if limit == 3000 {
-		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Offset(offset), qm.OrderBy(models.VSPTickColumns.Time)).All(ctx, pg.db)
-	} else {
-		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
-	}
+		vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), vspIdQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
@@ -171,14 +165,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset int,
 // VSPTicks
 // todo impliment sorting for VSP ticks as it is currently been sorted by time
 func (pg *PgDb) AllVSPTicks(ctx context.Context, offset int, limit int) ([]vsp.VSPTickDto, error) {
-	var vspTickSlice models.VSPTickSlice
-	var err error
-	if limit == 3000 {
-		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), qm.Offset(offset), qm.OrderBy(models.VSPTickColumns.Time)).All(ctx, pg.db)
-	} else {
-		vspTickSlice, err = models.VSPTicks(qm.Load("VSP"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
-	}
-
+	vspTickSlice, err := models.VSPTicks(qm.Load("VSP"), qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}

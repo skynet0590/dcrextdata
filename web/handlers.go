@@ -19,14 +19,7 @@ var (
 
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
-
+	pageToLoad := 1
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
@@ -178,14 +171,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
-
+	pageToLoad := 1
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
@@ -358,13 +344,7 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 
 // /PoW
 func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
@@ -510,13 +490,7 @@ func (s *Server) getMempool(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, error) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
@@ -595,13 +569,7 @@ func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) 
 }
 
 func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
@@ -645,14 +613,8 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error)    {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error){
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
@@ -697,13 +659,7 @@ func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 }
 
 func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error) {
-	req.ParseForm()
-	page := req.FormValue("page")
-
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
+	pageToLoad := 1
 
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 

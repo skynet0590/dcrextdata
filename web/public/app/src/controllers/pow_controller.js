@@ -21,7 +21,6 @@ export default class extends Controller {
     this.chartWrapperTarget.classList.add('d-hide')
     this.powTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
-    this.powTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange('table')
   }
@@ -61,12 +60,7 @@ export default class extends Controller {
 
   fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
-    var numberOfRows
-    if (display === 'chart') {
-      numberOfRows = 3000
-    } else {
-      numberOfRows = this.selectedNumTarget.value
-    }
+    var numberOfRows = this.selectedNumTarget.value
 
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
@@ -126,18 +120,15 @@ export default class extends Controller {
     var dataSet = []
     pows.forEach(pow => {
       data.push(new Date(pow.Time))
-      data.push(pow.PoolHashrate)
-      data.push(pow.NetworkDifficulty)
-      data.push(pow.Workers)
-      data.push(pow.NetworkHashrate)
+      data.push(pow.pool_hashrate_th)
 
       dataSet.push(data)
       data = []
     })
     console.log(dataSet)
     var extra = {
-      labels: ['Date', 'Pool Hashrate', 'Network Difficulty', 'Workers', 'Network Hashrate'],
-      colors: ['#2971FF', '#FF8C00', '#006600', '#ff0090'],
+      labels: ['Date', 'Pool Hashrate'],
+      colors: ['#2971FF', '#FF8C00'],
       labelsDiv: this.labelsTarget,
       ylabel: 'Pool Hashrate',
       y2label: 'Network Difficulty',
