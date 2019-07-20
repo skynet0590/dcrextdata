@@ -123,7 +123,7 @@ export default class extends Controller {
     let csv = ''
     switch (exs.chartFilter) {
       case 'size':
-        title = 'Mempool Size'
+        title = 'Size'
         csv = 'Date,Size\n'
         break
       case 'total_fee':
@@ -158,13 +158,12 @@ export default class extends Controller {
       csv += `${date},${record}\n`
     })
 
-    console.log(minDate, maxDate, csv)
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
       csv,
       {
         legend: 'always',
-        title: title,
+        // title: title,
         includeZero: true,
         dateWindow: [minDate, maxDate],
         animatedZooms: true,
@@ -178,6 +177,9 @@ export default class extends Controller {
         axes: {
           x: {
             drawGrid: false
+          },
+          y: {
+            axisLabelWidth: 70
           }
         }
       }
