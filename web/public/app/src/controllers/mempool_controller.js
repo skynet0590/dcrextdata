@@ -10,7 +10,8 @@ export default class extends Controller {
       'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate',
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
       'chartWrapper', 'viewOption', 'labels',
-      'chartDataTypeSelector', 'chartDataType'
+      'chartDataTypeSelector', 'chartDataType','chartOptions', 'labels', 'selectedMempoolOpt',
+      'selectedNum', 'numPageWrapper'
     ]
   }
 
@@ -30,6 +31,7 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
     show(this.btnWrapperTarget)
+    this.currentPage = this.currentPage
     this.fetchData(this.viewOption)
   }
 
@@ -38,6 +40,10 @@ export default class extends Controller {
     show(this.chartDataTypeSelectorTarget)
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
+    var y = this.selectedMempoolOptTarget.options
+    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
+    this.chartOptionsTarget.classList.remove('d-hide')
+    this.numPageWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     show(this.chartWrapperTarget)
     this.nextPage = 1
@@ -85,10 +91,16 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+  NumberOfRowsChanged () {
+    this.selectedNum = this.selectedNumTarget.value
+    this.fetchData(opt)
+  }
+
   fetchData (display) {
     var url
     if (display === 'table') {
-      url = `/getmempool?page=${this.currentPage}`
+      var numberOfRows = this.selectedNumTarget.value
+      url = `/getmempool?page=${this.currentPage}&recordsPerPage=${numberOfRows}`
     } else {
       url = `/getmempoolCharts?chartFilter=${this.dataType}`
     }

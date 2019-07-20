@@ -6,7 +6,7 @@ export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton',
-      'selectedRecordSet',
+      'selectedRecordSet', 'selectedNum', 'numPageWrapper',
       'table', 'blocksTbody', 'votesTbody',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage'
@@ -35,8 +35,15 @@ export default class extends Controller {
     this.fetchData(this.currentPage + 1)
   }
 
+  NumberOfRowsChanged () {
+    this.selectedNum = this.selectedNumTarget.value
+    this.fetchData(1)
+  }
+
   fetchData (page) {
     const _this = this
+
+    var numberOfRows = this.selectedNumTarget.value
     let uri = '/getpropagationdata'
     switch (this.selectedRecordSet) {
       case 'blocks':
@@ -49,7 +56,7 @@ export default class extends Controller {
         uri = 'getpropagationdata'
         break
     }
-    axios.get(`/${uri}?page=${page}`).then(function (response) {
+    axios.get(`/${uri}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage

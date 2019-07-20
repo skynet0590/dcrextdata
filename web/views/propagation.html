@@ -10,7 +10,7 @@
                 <div class="col-md-12" data-controller="propagation">
                     <h4>Propagation</h4>
 
-                    <div class="row align-items-center">
+                    <div class="row align-items-center justify-content-between">
                         <div class="col-md-3 col-sm-12 mb-2">
                             <select data-target="propagation.selectedRecordSet" data-action="change->propagation#selectedRecordSetChanged"
                                     class="form-control" style="width: 150px;">
@@ -20,7 +20,20 @@
                             </select>
                         </div>
 
-                        <div class="col-md-4 float-md-right offset-md-5">
+                        <div data-target="propagation.numPageWrapper" class="col-mb-3 control-div">
+                            <div class="control-label">Page Size:</div>
+
+                            <select data-target="propagation.selectedNum" data-action="change->propagation#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                {{$selectedNum := .selectedNum}}                         
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4 float-md-right">
                             <div class="d-flex float-md-right">
                                 <button data-target="propagation.previousPageButton" data-action="click->propagation#gotoPreviousPage" data-previous-page="{{ .propagation.previousPage}}"
                                         class="btn btn-link {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">

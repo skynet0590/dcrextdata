@@ -30,7 +30,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-
+	fmt.Println(recordsPerPage)
 	// var err error
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
@@ -65,6 +65,8 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 		"selectedFilter": "All",
+		"selectedCpair": "All",
+		"selectedNum": recordsPerPage,
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -82,11 +84,12 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 
+	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		recordsPerPage = recordsPerPage
+		pageSize = recordsPerPage
 	} else {
-		recordsPerPage = numRows
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
@@ -94,7 +97,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
@@ -102,26 +105,26 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var totalCount int64
 
 	if selectedFilter == "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 
 	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
@@ -140,7 +143,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		"selectedFilter": selectedFilter,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	defer s.renderJSON(data, res)
@@ -232,11 +235,12 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	selectedFilter := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 
+	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		recordsPerPage = recordsPerPage
+		pageSize = recordsPerPage
 	} else {
-		recordsPerPage = numRows
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
@@ -244,14 +248,14 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
 	if selectedFilter == "All" || selectedFilter == "" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, recordsPerPage)
+		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -263,7 +267,7 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 			return
 		}
 	} else {
-		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, recordsPerPage)
+		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -288,7 +292,7 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 		"selectedFilter": selectedFilter,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	defer s.renderJSON(data, res)
@@ -414,11 +418,12 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	data := map[string]interface{}{}
 	defer s.renderJSON(data, res)
 
+	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		recordsPerPage = recordsPerPage
+		pageSize = recordsPerPage
 	} else {
-		recordsPerPage = numRows
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
@@ -426,14 +431,14 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
 	var totalCount int64
 	var totalTxLoaded int
 	if selectedFilter == "All" || selectedFilter == "" {
-		allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
+		allPowDataSlice, err := s.db.FetchPowData(ctx, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -449,7 +454,7 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 
 		totalTxLoaded = int(offset) + len(allPowDataSlice)
 	} else {
-		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx, selectedFilter, offset, recordsPerPage)
+		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx, selectedFilter, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -475,7 +480,7 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	data["powSource"] = powSource
 	data["currentPage"] = int(pageToLoad)
 	data["previousPage"] = int(pageToLoad - 1)
-	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(recordsPerPage)))
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
 
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = int(pageToLoad + 1)
@@ -513,17 +518,29 @@ func (s *Server) getMempool(res http.ResponseWriter, req *http.Request) {
 func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	numberOfRows := req.FormValue("recordsPerPage")
 
+	var pageSize = recordsPerPage
+
+	if numberOfRows != "" {
+		numRows, err := strconv.Atoi(numberOfRows)
+		if err != nil || numRows <= 0 {
+			pageSize = pageSize
+		} else {
+			pageSize = numRows
+		}
+	}
+	
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
-	mempoolSlice, err := s.db.Mempools(ctx, offset, recordsPerPage)
+	mempoolSlice, err := s.db.Mempools(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +554,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 		"mempoolData":  mempoolSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
@@ -598,17 +615,29 @@ func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) 
 func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	var pageSize = recordsPerPage
+
+	if numberOfRows != "" {
+		numRows, err := strconv.Atoi(numberOfRows)
+		if err != nil || numRows <= 0 {
+			pageSize = pageSize
+		} else {
+			pageSize = numRows
+		}
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
-	blockSlice, err := s.db.Blocks(ctx, offset, recordsPerPage)
+	blockSlice, err := s.db.Blocks(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -622,7 +651,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		"records":      blockSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(blockSlice)
@@ -649,17 +678,29 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	var pageSize = recordsPerPage
+
+	if numberOfRows != "" {
+		numRows, err := strconv.Atoi(numberOfRows)
+		if err != nil || numRows <= 0 {
+			pageSize = pageSize
+		} else {
+			pageSize = numRows
+		}
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
-	voteSlice, err := s.db.BlocksWithoutVotes(ctx, offset, recordsPerPage)
+	voteSlice, err := s.db.BlocksWithoutVotes(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -673,7 +714,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 		"records":      voteSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(voteSlice)
@@ -700,17 +741,29 @@ func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	numberOfRows := req.FormValue("recordsPerPage")
+
+	var pageSize = recordsPerPage
+
+	if numberOfRows != "" {
+		numRows, err := strconv.Atoi(numberOfRows)
+		if err != nil || numRows <= 0 {
+			pageSize = pageSize
+		} else {
+			pageSize = numRows
+		}
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
-	voteSlice, err := s.db.Votes(ctx, offset, recordsPerPage)
+	voteSlice, err := s.db.Votes(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +777,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 		"records":      voteSlice,
 		"currentPage":  pageToLoad,
 		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(voteSlice)

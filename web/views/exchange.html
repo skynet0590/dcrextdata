@@ -81,6 +81,7 @@
                             <div class="control-label">Page Size:</div>
 
                             <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                {{$selectedNum := .selectedNum}}                         
                                 <option value="20">20</option>
                                 <option value="30">30</option>
                                 <option value="50">50</option>
@@ -88,7 +89,6 @@
                                 <option value="150">150</option>
                             </select>
                         </div>
-
                         <div data-target="exchange.pageSizeWrapper" class="row justify-content-end float-md-right control-div ml-3 mt-2">
                             <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}" data-current-page="{{ .totalPages }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 

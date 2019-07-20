@@ -7,36 +7,35 @@
         <div class="content">
             <div class="container">
                 <div class="control-wrapper">
-                <div class="d-block">
-                    <h4>Mempool</h4>
-                </div>
-                <div class="row">
-                    <div class="chart-control-wrapper pr-3 col-md-2" data-target="mempool.chartSelector">
-                        <div class="chart-control ">
-                            <ul class="nav nav-pills">
-                                <li class="nav-item">
-                                    <a
-                                            class="nav-link active"
-                                            href="javascript:void(0);"
-                                            data-target="mempool.viewOption"
-                                            data-action="click->mempool#setTable"
-                                            data-option="table"
-                                    >Table</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a
-                                            class="nav-link"
-                                            href="javascript:void(0);"
-                                            data-target="mempool.viewOption"
-                                            data-action="click->mempool#setChart"
-                                            data-option="chart"
-                                    >Chart</a>
-                                </li>
-                            </ul>
-                        </div>
+                    <div class="d-block">
+                        <h4>Mempool</h4>
                     </div>
-
-                    <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
+                    <div class="row align-items-center justify-content-between">
+                        <div class="chart-control-wrapper pr-3 col-md-4" data-target="mempool.chartSelector">
+                            <div class="chart-control ">
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item">
+                                        <a
+                                        class="nav-link active"
+                                        href="javascript:void(0);"
+                                        data-target="mempool.viewOption"
+                                        data-action="click->mempool#setTable"
+                                        data-option="table"
+                                        >Table</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a
+                                        class="nav-link"
+                                        href="javascript:void(0);"
+                                        data-target="mempool.viewOption"
+                                        data-action="click->mempool#setChart"
+                                        data-option="chart"
+                                        >Chart</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
                         <div class="chart-control">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
@@ -69,25 +68,47 @@
                             </ul>
                         </div>
                     </div>
+                        <div data-target="mempool.numPageWrapper" class="col-mb-3 ">
+                            <div class="control-label">Page Size:</div>
 
-                    <div  data-target="mempool.btnWrapper" class="row col-md-8 align-items-center justify-content-end">
-                        <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
-                            class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
-                            &lt; Previous
-                        </button>
+                            <select data-target="mempool.selectedNum" data-action="change->mempool#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
+                        </div>
 
-                        <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
-                            Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
-                            <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
-                        </span>
+                        <div data-target="mempool.chartOptions" class="col-md-8 float-md-right d-hide">
+                            <div class="control-label ">Mempool Charts:</div>
 
-                        <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
-                            data-next-page="{{ .mempool.nextPage }}" class="btn btn-link {{ if not .mempool.nextPage }}d-none{{ end }}">
-                            Next &gt;
-                        </button>
+                            <select data-target="mempool.selectedMempoolOpt" data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 " style="width: 200px;">
+                                <option value="size">Size Chart</option>
+                                <option value="total_fee">Total fees Chart</option>
+                                <option value="number_of_transactions">Number of Transactions</option>
+                            </select>
+                        </div>
+
+                        <div  data-target="mempool.btnWrapper" class="row col-md-5 align-items-center justify-content-end">
+                            <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
+                                class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
+                                &lt; Previous
+                            </button>
+
+                            <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
+                                Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
+                                <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
+                            </span>
+
+                            <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
+                                data-next-page="{{ .mempool.nextPage }}" class="btn btn-link {{ if not .mempool.nextPage }}d-none{{ end }}">
+                                Next &gt;
+                            </button>
+                        </div>
                     </div>
                 </div>
-</div>
+                
                 <div >
                     <div data-target="mempool.tableWrapper">
                         <table class="table">
@@ -119,13 +140,13 @@
                                 <td></td>
                             </tr>
                         </template>
+                    </div>
+                    <div data-target="mempool.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
+                        <div id="chart" data-target="mempool.chartsView" style="width:100%; height:73vh; margin:0 auto;"></div>
+                        <div class="d-flex justify-content-center legend-wrapper">
+                            <div class="legend d-flex" data-target="mempool.labels"></div>
                         </div>
-                        <div data-target="mempool.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
-                            <div id="chart" data-target="mempool.chartsView" style="width:100%; height:73vh; margin:0 auto;"></div>
-                            <div class="d-flex justify-content-center legend-wrapper">
-                                <div class="legend d-flex" data-target="mempool.labels"></div>
-                            </div>
-                        </div>
+                    </div>
                 </div>
             </div>
         </div>
