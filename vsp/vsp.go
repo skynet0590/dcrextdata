@@ -132,7 +132,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 
 	// log.Infof("Collected data for %d vsps", len(*resp))
 
-	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
+	numberStored, errs := vsp.dataStore.StoreVSPs(ctx, *resp)
 	for _, err = range errs {
 		if err != nil {
 			if e, ok := err.(PoolTickTimeExistsError); ok {
@@ -143,5 +143,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 			}
 		}
 	}
+
+	log.Infof("Saved ticks for %d VSPs from %s", numberStored, requestURL)
 	return nil
 }
