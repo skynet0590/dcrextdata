@@ -47,7 +47,7 @@
 
                     <div  data-target="mempool.btnWrapper" class="row col-md-8 align-items-center justify-content-end">
                         <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
-                            class="btn btn-link mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
+                            class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
                             &lt; Previous
                         </button>
 
@@ -57,7 +57,7 @@
                         </span>
 
                         <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
-                            data-next-page="{{ .mempool.nextPage }}" class="btn btn-link ml-2 {{ if not .mempool.nextPage }}d-none{{ end }}">
+                            data-next-page="{{ .mempool.nextPage }}" class="btn btn-link {{ if not .mempool.nextPage }}d-none{{ end }}">
                             Next &gt;
                         </button>
                     </div>

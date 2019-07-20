@@ -23,19 +23,19 @@
                         <div class="col-md-4 float-md-right offset-md-5">
                             <div class="d-flex float-md-right">
                                 <button data-target="propagation.previousPageButton" data-action="click->propagation#gotoPreviousPage" data-previous-page="{{ .propagation.previousPage}}"
-                                        class="btn btn-link mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">
+                                        class="btn btn-link {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">
                                     &lt; Previous
                                 </button>
 
                                 <span data-target="propagation.pageReport" class="text-muted"
-                                      data-current-page="{{ .propagation.currentPage }}" style="padding-top: 10px;">
+                                      data-current-page="{{ .propagation.currentPage }}" style="padding-top: 6.5px;">
                                     Page <span data-target="propagation.currentPage"
                                                data-current-page="{{ .propagation.currentPage }}">{{ .propagation.currentPage }}</span> of
                                     <span data-target="propagation.totalPageCount">{{ .propagation.totalPages }}</span>
                                 </span>
 
                                 <button data-target="propagation.nextPageButton" data-action="click->propagation#gotoNextPage"
-                                        data-next-page="{{ .propagation.nextPage }}" class="btn btn-link ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}">
+                                        data-next-page="{{ .propagation.nextPage }}" class="btn btn-link {{ if not .propagation.nextPage }}d-none{{ end }}">
                                     Next &gt;
                                 </button>
                             </div>
