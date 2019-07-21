@@ -152,8 +152,8 @@ export default class extends Controller {
         csv = 'Date,Total Fee\n'
         break
       default:
-        title = 'Number of Transactions'
-        csv = 'Date,# of Transactions\n'
+        title = '# of Transactions'
+        csv = 'Date,Number of Transactions\n'
         break
     }
     let minDate, maxDate
