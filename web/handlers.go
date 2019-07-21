@@ -17,7 +17,6 @@ var (
 	recordsPerPage = 20
 )
 
-
 // /home
 func (s *Server) getHomeData(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
@@ -30,8 +29,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	offset := (int(pageToLoad) - 1) * recordsPerPage
 
 	ctx := context.Background()
-	fmt.Println(recordsPerPage)
-	// var err error
+
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
@@ -65,8 +63,8 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"previousPage":   int(pageToLoad - 1),
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 		"selectedFilter": "All",
-		"selectedCpair": "All",
-		"selectedNum": recordsPerPage,
+		"selectedCpair":  "All",
+		"selectedNum":    recordsPerPage,
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -530,7 +528,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 			pageSize = numRows
 		}
 	}
-	
+
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1

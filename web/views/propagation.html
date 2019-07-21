@@ -60,11 +60,11 @@
                         {{range $index, $block := .propagation.records}}
                             <tbody data-target="propagation.blocksTbody" data-block-hash="{{$block.BlockHash}}">
                             <tr>
-                                <td colspan="7">
-                                    <b>Height</b>: {{$block.BlockHeight}}  &nbsp;&nbsp;&nbsp;&nbsp;
-                                    <b>Timestamp</b>: {{$block.BlockInternalTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
-                                    <b>Received</b>: {{$block.BlockReceiveTime}}  &nbsp;&nbsp;&nbsp;&nbsp;
-                                    <b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a>
+                                <td colspan="100">
+                                    <span class="d-inline-block"><b>Height</b>: {{$block.BlockHeight}}</span>  &#8195;
+                                    <span class="d-inline-block"><b>Timestamp</b>: {{$block.BlockInternalTime}}</span>  &#8195;
+                                    <span class="d-inline-block"><b>Received</b>: {{$block.BlockReceiveTime}}</span>  &#8195;
+                                    <span class="d-inline-block"><b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/{{$block.BlockHeight}}">{{$block.BlockHash}}</a></span>
                                 </td>
                             </tr>
                             </tbody>
