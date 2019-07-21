@@ -10,7 +10,8 @@ export default class extends Controller {
     return [
       'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate',
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
-      'chartWrapper', 'viewOption', 'chartOptions', 'labels', 'selectedMempoolOpt'
+      'chartWrapper', 'viewOption', 'labels',
+      'chartDataTypeSelector', 'chartDataType'
     ]
   }
 
@@ -19,35 +20,55 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+    this.dataType = 'size'
   }
 
   setTable () {
     opt = 'table'
-    this.chartOptionsTarget.classList.add('d-hide')
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.tableWrapperTarget.classList.remove('d-hide')
-    this.btnWrapperTarget.classList.remove('d-hide')
-    this.currentPage = this.currentPage
+    hide(this.chartWrapperTarget)
+    hide(this.chartDataTypeSelectorTarget)
+    show(this.tableWrapperTarget)
+    show(this.btnWrapperTarget)
     this.fetchData(opt)
   }
 
   setChart () {
     opt = 'chart'
-    var y = this.selectedMempoolOptTarget.options
-    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
-    this.chartOptionsTarget.classList.remove('d-hide')
-    this.btnWrapperTarget.classList.add('d-hide')
-    this.tableWrapperTarget.classList.add('d-hide')
+    hide(this.btnWrapperTarget)
+    hide(this.tableWrapperTarget)
     this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
+    show(this.chartWrapperTarget)
+    show(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchData(opt)
   }
 
-  MempoolOptionChanged () {
-    this.chartFilter = this.selectedMempoolOptTarget.value
-    this.fetchData(opt)
+  setSizeDataType (event) {
+    this.dataType = 'size'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchData('chart')
+  }
+
+  setFeesDataType (event) {
+    this.dataType = 'total_fee'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchData('chart')
+  }
+
+  setTransactionsDataType (event) {
+    this.dataType = 'number_of_transactions'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchData('chart')
   }
 
   gotoPreviousPage () {
@@ -65,7 +86,7 @@ export default class extends Controller {
     if (display === 'table') {
       url = `/getmempool?page=${this.currentPage}`
     } else {
-      url = `/getmempoolCharts?chartFilter=${this.chartFilter}`
+      url = `/getmempoolCharts?chartFilter=${this.dataType}`
     }
 
     const _this = this
@@ -121,7 +142,7 @@ export default class extends Controller {
 
     let chartData = exs.mempoolchartData
     let csv = ''
-    switch (exs.chartFilter) {
+    switch (this.dataType) {
       case 'size':
         title = 'Size'
         csv = 'Date,Size\n'
@@ -132,7 +153,7 @@ export default class extends Controller {
         break
       default:
         title = 'Number of Transactions'
-        csv = 'Date,Number of Transactions\n'
+        csv = 'Date,# of Transactions\n'
         break
     }
     let minDate, maxDate
@@ -148,9 +169,9 @@ export default class extends Controller {
       }
 
       let record
-      if (exs.chartFilter === 'size') {
+      if (_this.dataType === 'size') {
         record = mp.size
-      } else if (exs.chartFilter === 'total_fee') {
+      } else if (_this.dataType === 'total_fee') {
         record = mp.total_fee
       } else {
         record = mp.number_of_transactions
@@ -174,13 +195,13 @@ export default class extends Controller {
         xlabel: 'Date',
         labelsUTC: true,
         labelsKMB: true,
-        maxNumberWidth: 8,
+        maxNumberWidth: 10,
         axes: {
           x: {
             drawGrid: false
           },
           y: {
-            axisLabelWidth: 70
+            axisLabelWidth: 90
           }
         }
       }
