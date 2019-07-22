@@ -153,7 +153,7 @@ export default class extends Controller {
         break
       default:
         title = '# of Transactions'
-        csv = 'Date,Number of Transactions\n'
+        csv = 'Date,# of Transactions\n'
         break
     }
     let minDate, maxDate

@@ -38,35 +38,14 @@
 
                     <div class="chart-control-wrapper pr-3 col-md-8 d-none" data-target="mempool.chartDataTypeSelector">
                         <div class="chart-control float-right">
-                            <ul class="nav nav-pills">
-                                <li class="nav-item">
-                                    <a
-                                            class="nav-link active"
-                                            href="javascript:void(0);"
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setSizeDataType"
-                                            data-option="table"
-                                    >Size</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a
-                                            class="nav-link"
-                                            href="javascript:void(0);"
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setFeesDataType"
-                                            data-option="chart"
-                                    >Fees</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a
-                                            class="nav-link"
-                                            href="javascript:void(0);"
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setTransactionsDataType"
-                                            data-option="chart"
-                                    >Transactions</a>
-                                </li>
-                            </ul>
+                            <div class="btn-group" role="group" aria-label="Basic example">
+                                <button type="button" class="btn btn-primary active" data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setSizeDataType">Size</button>
+                                <button type="button" class="btn btn-primary" data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setFeesDataType">Fees</button>
+                                <button type="button" class="btn btn-primary" data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setTransactionsDataType">Transactions</button>
+                            </div>
                         </div>
                     </div>
 
