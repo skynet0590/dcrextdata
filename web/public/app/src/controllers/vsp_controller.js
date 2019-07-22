@@ -193,27 +193,13 @@ export default class extends Controller {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
       ylabel: yLabel,
-      sigFigs: 1,
+      sigFigs: 16,
+      maxNumberWidth: 30,
       labels: labels,
       colors: colors
     }
 
     const _this = this
-
-    /* var data = []
-    var dataSet = []
-    vsps.forEach(vsp => {
-      data.push(new Date(vsp.time))
-      // data.push(vsp.pool_fees)
-      // data.push(vsp.immature)
-      // data.push(vsp.voted)
-      // data.push(vsp.missed)
-      data.push(vsp.proportion_live)
-      data.push(vsp.proportion_missed)
-
-      dataSet.push(data)
-      data = []
-    }) */
 
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
