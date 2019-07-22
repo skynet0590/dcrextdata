@@ -11,7 +11,7 @@
                     <h4>Mempool</h4>
                 </div>
                 <div class="row">
-                    <div class="chart-control-wrapper pr-3 col-md-4" data-target="mempool.chartSelector">
+                    <div class="chart-control-wrapper pr-3 col-md-2" data-target="mempool.chartSelector">
                         <div class="chart-control ">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
@@ -36,16 +36,37 @@
                         </div>
                     </div>
 
-                    <div class="chart-control-wrapper pr-3 col-md-8 d-none" data-target="mempool.chartDataTypeSelector">
-                        <div class="chart-control float-right">
-                            <div class="btn-group" role="group" aria-label="Basic example">
-                                <button type="button" class="btn btn-primary active" data-target="mempool.chartDataType"
-                                        data-action="click->mempool#setSizeDataType">Size</button>
-                                <button type="button" class="btn btn-primary" data-target="mempool.chartDataType"
-                                        data-action="click->mempool#setFeesDataType">Fees</button>
-                                <button type="button" class="btn btn-primary" data-target="mempool.chartDataType"
-                                        data-action="click->mempool#setTransactionsDataType">Transactions</button>
-                            </div>
+                    <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
+                        <div class="chart-control">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setSizeDataType"
+                                            class="nav-link active"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Size</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setFeesDataType"
+                                            class="nav-link"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Fees</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setTransactionsDataType"
+                                            class="nav-link"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Transactions</a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
 
