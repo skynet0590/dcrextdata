@@ -10,7 +10,8 @@ export default class extends Controller {
       'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper', 'intervalWapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper',
+      'pageSizeWrapper', 'chartSourceWrapper', 'chartSource'
     ]
   }
 
@@ -25,6 +26,8 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
 
+    this.chartSourceWrapperTarget.classList.add('d-hide')
+    this.pageSizeWrapperTarget.classList.remove('d-hide')
     this.intervalWapperTarget.classList.add('d-hide')
     this.selectedDticksTarget.value = 'close'
     this.tickWapperTarget.classList.add('d-hide')
@@ -43,6 +46,8 @@ export default class extends Controller {
   setChart () {
     this.viewOption = 'chart'
 
+    this.chartSourceWrapperTarget.classList.remove('d-hide')
+    this.pageSizeWrapperTarget.classList.add('d-hide')
     this.intervalWapperTarget.classList.remove('d-hide')
     this.tickWapperTarget.classList.remove('d-hide')
     this.sourceWrapperTarget.classList.add('d-hide')
@@ -98,6 +103,11 @@ export default class extends Controller {
     this.fetchExchange(this.viewOption)
   }
 
+  chartSourceCheckChanged () {
+    // this.exchangeSource = exchangeSource
+    this.fetchExchange(opt)
+  }
+
   fetchExchange (display) {
     const _this = this
     var url
@@ -108,7 +118,17 @@ export default class extends Controller {
 
       url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
     } else {
-      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}&selectedInterval=${this.selectedInterval}`
+      let exchangeSource = []
+      this.chartSourceTargets.forEach(el => {
+        if (el.checked) {
+          exchangeSource.push(el.value)
+        }
+      })
+
+      if (exchangeSource.length === 0) {
+        return
+      }
+      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}&selectedInterval=${this.selectedInterval}&sources=${exchangeSource.join('|')}`
     }
 
     axios.get(url)

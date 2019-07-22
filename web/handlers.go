@@ -148,6 +148,10 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	selectedDtick := req.FormValue("selectedDtick")
 	selectedCpair := req.FormValue("selectedCpair")
 	selectedInterval := req.FormValue("selectedInterval")
+		sources := req.FormValue("sources")
+			exchanges := strings.Split(sources, "|")
+
+fmt.Println(exchanges)
 
 	ctx := context.Background()
 	interval, err := strconv.Atoi(selectedInterval)
@@ -156,7 +160,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval)
+	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval, exchanges)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
