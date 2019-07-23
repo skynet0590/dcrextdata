@@ -160,6 +160,10 @@ export default class extends Controller {
     const _this = this
     dataSet = Object.values(dataSet)
     let yLabel = this.graphTypeTarget.value.split('_').join(' ')
+    if ((yLabel.toLowerCase() === 'proportion live' || yLabel.toLowerCase() === 'proportion missed')) {
+      yLabel += ' (%)'
+    }
+
     // let labels = ['Date', this.selectedFilterTarget.value]
     // let colors = ['#007BFF']
 

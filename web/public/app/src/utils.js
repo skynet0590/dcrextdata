@@ -42,6 +42,10 @@ export function legendFormatter (data) {
       if (!series.isVisible) return nodes
       let yVal = series.yHTML
       yVal = series.y
+      // propotion missed/live has % sign
+      if ((series.label.toLowerCase() === 'proportion live (%)' || series.label.toLowerCase() === 'proportion missed (%)')) {
+        yVal += '%'
+      }
 
       return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML}: ${yVal}</div>`
     }, '')
