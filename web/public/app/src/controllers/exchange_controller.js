@@ -3,7 +3,6 @@ import axios from 'axios'
 import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -16,6 +15,7 @@ export default class extends Controller {
   }
 
   initialize () {
+    this.viewOption = 'table'
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
@@ -23,7 +23,7 @@ export default class extends Controller {
   }
 
   setTable () {
-    opt = 'table'
+    this.viewOption = 'table'
 
     this.intervalWapperTarget.classList.add('d-hide')
     this.selectedDticksTarget.value = 'close'
@@ -31,17 +31,17 @@ export default class extends Controller {
     this.sourceWrapperTarget.classList.remove('d-hide')
     this.hideOptionTarget.classList.remove('d-hide')
     this.selectedCpair = this.selectedCpairTarget.value
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
     this.exchangeTableTarget.innerHTML = ''
     this.nextPage = 1
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   setChart () {
-    opt = 'chart'
+    this.viewOption = 'chart'
 
     this.intervalWapperTarget.classList.remove('d-hide')
     this.tickWapperTarget.classList.remove('d-hide')
@@ -49,53 +49,53 @@ export default class extends Controller {
     this.hideOptionTarget.classList.add('d-hide')
     this.numPageWrapperTarget.classList.add('d-hide')
     this.exchangeTableWrapperTarget.classList.add('d-hide')
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
     var y = this.selectedIntervalTarget.options
     this.selectedInterval = this.selectedIntervalTarget.value = y[0].text
     this.selectedDtick = this.selectedDticksTarget.value = 'close'
     this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedIntervalChanged () {
     this.selectedInterval = this.selectedIntervalTarget.value
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedDticksChanged () {
     this.selectedDtick = this.selectedDticksTarget.value
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   loadPreviousPage () {
     this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-previous-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   loadNextPage () {
     this.selectedCpair = this.selectedCpairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
     this.selectedCpair = this.selectedCpairTarget.value
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedCpairChanged () {
     this.nextPage = 1
     this.selectedCpair = this.selectedCpairTarget.value
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   NumberOfRowsChanged () {
     this.nextPage = 1
     this.selectedCpair = this.selectedCpairTarget.value
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   fetchExchange (display) {
@@ -218,7 +218,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')

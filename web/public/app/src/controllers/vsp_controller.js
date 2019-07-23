@@ -1,17 +1,16 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options, getRandomColor } from '../utils'
+import { hide, show, legendFormatter, barChartPlotter } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilterWrapper', 'selectedFilter', 'vspTicksTable', 'numPageWrapper',
+      'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'graphTypeWrapper', 'graphType', 'chartSourceWrapper', 'chartSource',
+      'graphTypeWrapper', 'graphType',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
@@ -21,15 +20,14 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+    this.viewOption = 'table'
   }
 
   setTable () {
-    opt = 'table'
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.viewOption = 'table'
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
-    hide(this.chartSourceWrapperTarget)
-    show(this.selectedFilterWrapperTarget)
     show(this.vspTableWrapperTarget)
     show(this.numPageWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
@@ -38,37 +36,45 @@ export default class extends Controller {
   }
 
   setChart () {
-    opt = 'chart'
+    this.viewOption = 'chart'
     hide(this.numPageWrapperTarget)
     hide(this.vspTableWrapperTarget)
-    hide(this.selectedFilterWrapperTarget)
     show(this.graphTypeWrapperTarget)
     show(this.chartWrapperTarget)
-    show(this.chartSourceWrapperTarget)
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
+    if (this.selectedFilterTarget.selectedIndex === 0) {
+      this.selectedFilterTarget.selectedIndex = 1
+    }
     this.fetchExchange('chart')
   }
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {
-    this.nextPage = 1
-    this.fetchExchange(opt)
+    if (this.viewOption === 'table') {
+      this.nextPage = 1
+      this.fetchExchange(this.viewOption)
+    } else {
+      if (this.selectedFilterTarget.selectedIndex === 0) {
+        this.selectedFilterTarget.selectedIndex = 1
+      }
+      this.fetchDataAndGraph()
+    }
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   fetchExchange (display) {
@@ -138,20 +144,8 @@ export default class extends Controller {
   }
 
   fetchDataAndGraph () {
-    let vspSources = []
-    this.chartSourceTargets.forEach(el => {
-      if (el.checked) {
-        vspSources.push(el.value)
-      }
-    })
-
-    if (vspSources.length === 0) {
-      return
-    }
-
     let _this = this
-    const selectedAttribute = this.graphTypeTarget.value
-    let url = `/vspchartdata?selectedAttribute=${selectedAttribute}&sources=${vspSources.join('|')}`
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&sources=${this.selectedFilterTarget.value}`
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     })
@@ -161,69 +155,71 @@ export default class extends Controller {
     this.fetchDataAndGraph()
   }
 
-  chartSourceCheckChanged () {
-    this.fetchDataAndGraph()
-  }
   // vsp chart
   plotGraph (dataSet) {
+    const _this = this
     dataSet = Object.values(dataSet)
+    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
+    if ((yLabel.toLowerCase() === 'proportion live' || yLabel.toLowerCase() === 'proportion missed')) {
+      yLabel += ' (%)'
+    }
+
+    // let labels = ['Date', this.selectedFilterTarget.value]
+    // let colors = ['#007BFF']
+
+    let csv = `Date,${yLabel}\n`
+    let minDate, maxDate
+
     for (let i = 0; i < dataSet.length; i++) {
       if (!Array.isArray(dataSet[i])) continue
       for (let j = 0; j < dataSet[i].length; j++) {
         if (j === 0) {
-          dataSet[i][j] = new Date(dataSet[i][j])
+          const date = new Date(dataSet[i][j])
+          if (minDate === undefined || date < minDate) {
+            minDate = date
+          }
+          if (maxDate === undefined || date > maxDate) {
+            maxDate = date
+          }
+          csv += `${date},`
         } else if (!isNaN(dataSet[i][j])) {
-          dataSet[i][j] = parseFloat(dataSet[i][j])
+          csv += `${dataSet[i][j]}\n`
         }
       }
     }
-
-    let labels = ['Date']
-    let colors = []
-    this.chartSourceTargets.forEach(el => {
-      if (!el.checked) {
-        return
-      }
-      labels.push(el.value)
-      colors.push(getRandomColor())
-    })
-
-    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
-    var extra = {
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      dateWindow: [minDate, maxDate],
+      animatedZooms: true,
       legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
+      plotter: barChartPlotter,
+      labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
-      sigFigs: 1,
-      labels: labels,
-      colors: colors
+      xlabel: 'Date',
+      labelsUTC: true,
+      labelsKMB: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
     }
+    switch (this.graphTypeTarget.value) {
+      case 'Immature':
 
-    const _this = this
-
-    /* var data = []
-    var dataSet = []
-    vsps.forEach(vsp => {
-      data.push(new Date(vsp.time))
-      // data.push(vsp.pool_fees)
-      // data.push(vsp.immature)
-      // data.push(vsp.voted)
-      // data.push(vsp.missed)
-      data.push(vsp.proportion_live)
-      data.push(vsp.proportion_missed)
-
-      dataSet.push(data)
-      data = []
-    }) */
-
+        break
+    }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      csv,
+      options
     )
   }
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')

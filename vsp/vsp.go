@@ -65,7 +65,6 @@ func (vsp *Collector) Run(ctx context.Context) {
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
 		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", vsp.period/60, helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
@@ -79,12 +78,10 @@ func (vsp *Collector) Run(ctx context.Context) {
 		}
 	}
 
-	log.Info("Fetching VSP from source")
-
 	err := vsp.collectAndStore(ctx)
 	app.ReleaseForNewModule()
 	if err != nil {
-		log.Errorf("Could not start collection: %v", err)
+		log.Errorf("Could not start collection: %s", err.Error())
 		return
 	}
 
@@ -104,7 +101,6 @@ func (vsp *Collector) Run(ctx context.Context) {
 						break
 					}
 				}
-				log.Info("Starting a VSP collection cycle")
 				err := vsp.collectAndStore(ctx)
 				app.ReleaseForNewModule()
 				if err != nil {
@@ -119,6 +115,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+	log.Info("Fetching VSP from source")
 
 	resp := new(Response)
 	err := vsp.fetch(ctx, resp)
@@ -130,9 +127,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 		err = vsp.fetch(ctx, resp)
 	}
 
-	// log.Infof("Collected data for %d vsps", len(*resp))
-
-	errs := vsp.dataStore.StoreVSPs(ctx, *resp)
+	numberStored, errs := vsp.dataStore.StoreVSPs(ctx, *resp)
 	for _, err = range errs {
 		if err != nil {
 			if e, ok := err.(PoolTickTimeExistsError); ok {
@@ -143,5 +138,7 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 			}
 		}
 	}
+
+	log.Infof("Saved ticks for %d VSPs from %s", numberStored, requestURL)
 	return nil
 }

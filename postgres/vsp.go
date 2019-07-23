@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -26,9 +27,9 @@ var (
 
 // StoreVSPs attempts to store the vsp responses by calling storeVspResponseG and returning
 // a slice of errors
-func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
+func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) (int, []error) {
 	if ctx.Err() != nil {
-		return []error{ctx.Err()}
+		return 0, []error{ctx.Err()}
 	}
 	errs := make([]error, 0, len(data))
 	completed := 0
@@ -41,13 +42,13 @@ func (pg *PgDb) StoreVSPs(ctx context.Context, data vsp.Response) []error {
 			errs = append(errs, err)
 		}
 		if ctx.Err() != nil {
-			return append(errs, ctx.Err())
+			return 0, append(errs, ctx.Err())
 		}
 	}
 	if completed == 0 {
 		log.Info("Unable to store any vsp entry")
 	}
-	return errs
+	return completed, errs
 }
 
 func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.ResposeData) error {
@@ -68,7 +69,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	}
 
 	vspTick := responseToVSPTick(pool.ID, resp)
-	tickTime := time.Unix(int64(resp.LastUpdated), 0).UTC()
 
 	err = vspTick.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -86,8 +86,6 @@ func (pg *PgDb) storeVspResponse(ctx context.Context, name string, resp *vsp.Res
 	if err != nil {
 		return txr.Rollback()
 	}
-
-	log.Infof("Stored data for VSP %10s %v", name, tickTime.Format(dateTemplate))
 	return nil
 }
 
@@ -126,13 +124,17 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
 
 	var result []vsp.VSPDto
 	for _, item := range vspData {
-
+		parsedURL, err := url.Parse(item.URL.String)
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, vsp.VSPDto{
 			Name:                 item.Name.String,
 			APIEnabled:           item.APIEnabled.Bool,
 			APIVersionsSupported: item.APIVersionsSupported,
 			Network:              item.Network.String,
 			URL:                  item.URL.String,
+			Host:                 parsedURL.Host,
 			Launched:             item.Launched.Time,
 		})
 	}
@@ -217,6 +219,7 @@ func (pg *PgDb) LastVspTickEntryTime() (time time.Time) {
 }
 
 func (pg *PgDb) FetchChartData(ctx context.Context, attribute string, vspName string) (records []vsp.ChartData, err error) {
+	attribute = strings.ToLower(attribute)
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
@@ -232,6 +235,13 @@ func (pg *PgDb) FetchChartData(ctx context.Context, attribute string, vspName st
 		err = rows.Scan(&rec.Date, &rec.Record)
 		if err != nil {
 			return nil, err
+		}
+		if attribute == models.VSPTickColumns.ProportionLive || attribute == models.VSPTickColumns.ProportionMissed {
+			value, err := strconv.ParseFloat(rec.Record, 64)
+			if err != nil {
+				return nil, err
+			}
+			rec.Record = RoundValue(value)
 		}
 		records = append(records, rec)
 	}

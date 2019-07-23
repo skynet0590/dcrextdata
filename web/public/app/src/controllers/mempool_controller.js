@@ -3,7 +3,6 @@ import axios from 'axios'
 import { legendFormatter, barChartPlotter, hide, show } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -24,26 +23,30 @@ export default class extends Controller {
   }
 
   setTable () {
-    opt = 'table'
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.viewOption = 'table'
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
     show(this.btnWrapperTarget)
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   setChart () {
-    opt = 'chart'
+    this.viewOption = 'chart'
+    show(this.chartDataTypeSelectorTarget)
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     show(this.chartWrapperTarget)
-    show(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
+  MempoolOptionChanged () {
+    this.chartFilter = this.selectedMempoolOptTarget.value
+    this.fetchData(this.viewOption)
+  }
   setSizeDataType (event) {
     this.dataType = 'size'
     this.chartDataTypeTargets.forEach(el => {
@@ -73,12 +76,12 @@ export default class extends Controller {
 
   gotoPreviousPage () {
     this.currentPage = this.currentPage - 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   gotoNextPage () {
     this.currentPage = this.currentPage + 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   fetchData (display) {
@@ -160,11 +163,11 @@ export default class extends Controller {
 
     chartData.forEach(mp => {
       let date = new Date(mp.time)
-      if (minDate == null || new Date(mp.time) < minDate) {
+      if (minDate === undefined || new Date(mp.time) < minDate) {
         minDate = new Date(mp.time)
       }
 
-      if (maxDate == null || new Date(mp.time) > maxDate) {
+      if (maxDate === undefined || new Date(mp.time) > maxDate) {
         maxDate = new Date(mp.time)
       }
 
@@ -210,7 +213,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')
