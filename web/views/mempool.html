@@ -11,38 +11,63 @@
                     <h4>Mempool</h4>
                 </div>
                 <div class="row">
-                    <div class="chart-control-wrapper pr-3 col-md-4" data-target="mempool.chartSelector">
+                    <div class="chart-control-wrapper pr-3 col-md-2" data-target="mempool.chartSelector">
                         <div class="chart-control ">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
                                     <a
-                                    class="nav-link active"
-                                    href="javascript:void(0);"
-                                    data-target="mempool.viewOption"
-                                    data-action="click->mempool#setTable"
-                                    data-option="table"
+                                            class="nav-link active"
+                                            href="javascript:void(0);"
+                                            data-target="mempool.viewOption"
+                                            data-action="click->mempool#setTable"
+                                            data-option="table"
                                     >Table</a>
                                 </li>
                                 <li class="nav-item">
                                     <a
-                                    class="nav-link"
-                                    href="javascript:void(0);"
-                                    data-target="mempool.viewOption"
-                                    data-action="click->mempool#setChart"
-                                    data-option="chart"
+                                            class="nav-link"
+                                            href="javascript:void(0);"
+                                            data-target="mempool.viewOption"
+                                            data-action="click->mempool#setChart"
+                                            data-option="chart"
                                     >Chart</a>
                                 </li>
                             </ul>
                         </div>
                     </div>
-                    <div data-target="mempool.chartOptions" class="col-md-8 float-md-right d-hide">
-                        <div class="control-label ">Mempool Charts:</div>
 
-                        <select data-target="mempool.selectedMempoolOpt" data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 " style="width: 200px;">
-                            <option value="size">Size Chart</option>
-                            <option value="total_fee">Total fees Chart</option>
-                            <option value="number_of_transactions">Number of Transactions</option>
-                        </select>
+                    <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
+                        <div class="chart-control">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setSizeDataType"
+                                            class="nav-link active"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Size</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setFeesDataType"
+                                            class="nav-link"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Fees</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a
+                                            data-target="mempool.chartDataType"
+                                            data-action="click->mempool#setTransactionsDataType"
+                                            class="nav-link"
+                                            href="javascript:void(0);"
+                                            data-option="table"
+                                    >Transactions</a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
 
                     <div  data-target="mempool.btnWrapper" class="row col-md-8 align-items-center justify-content-end">
