@@ -27,25 +27,25 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	// var err error
 	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
 	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
 	intervals, err := s.db.AllExchangeTicksInterval(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
@@ -97,33 +97,33 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	if selectedFilter == "All" && selectedCurrencyPair == "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 		if err != nil {
-			s.renderError(err.Error(), res)
+			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 
 	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, recordsPerPage)
 		if err != nil {
-			s.renderError(err.Error(), res)
+			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
 		if err != nil {
-			s.renderError(err.Error(), res)
+			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
-			s.renderError(err.Error(), res)
+			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
