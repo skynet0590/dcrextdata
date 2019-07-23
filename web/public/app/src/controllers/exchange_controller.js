@@ -17,6 +17,7 @@ export default class extends Controller {
 
   initialize () {
     this.viewOption = 'table'
+    this.selectedFilter = this.selectedFilterTarget.value
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
@@ -85,6 +86,8 @@ export default class extends Controller {
   loadNextPage () {
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
+
+    console.log(this.viewOption)
     this.fetchExchange(this.viewOption)
   }
 
@@ -120,6 +123,7 @@ export default class extends Controller {
     axios.get(url)
       .then(function (response) {
         let result = response.data
+        console.log(result)
         if (display === 'table') {
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {

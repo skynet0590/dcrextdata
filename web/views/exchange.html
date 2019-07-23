@@ -38,7 +38,7 @@
                             <div class="control-label">Exchanges:</div>
                             <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                                 class="form-control" style="width: 100px;">
-                                <option data-target="exchange.hideOption" value="All">All</option>
+                                <option data-target="exchange.hideOption" value="All" selected>All</option>
                                 {{ range $index, $filter := .allExData}}
                                 <option value="{{$filter.Name}}">{{$filter.Name}}</option>
                                 {{ end }}
@@ -46,7 +46,7 @@
                         </div>
                         <div class="col-md-4 control-div p-0">
                             <div class="control-label">Currency Pair:</div>
-                            <select data-target="exchange.selectedCurrencyPair" data-action="change->exchange#selectedCpairChanged"
+                            <select data-target="exchange.selectedCurrencyPair" data-action="change->exchange#selectedCurrencyPairChanged"
                                 class="form-control" style="width: 105px;">
                                 <option data-target="exchange.currencyPairHideOption" value="All">All</option>
                                 {{ range $index, $cpair := .currencyPairs}}
@@ -68,7 +68,7 @@
 
                         <div data-target="exchange.tickWapper" class="col-md-3  p-0 d-hide">
                             <div class="control-label">Data Ticks:</div>
-                            <select data-target="exchange.selectedTicks" data-action="change->exchange#selectedDticksChanged"
+                            <select data-target="exchange.selectedTicks" data-action="change->exchange#selectedTicksChanged"
                                 class="form-control" style="width: 90px;">
                                 <option value="close">Close</option>
                                 <option value="high">High</option>

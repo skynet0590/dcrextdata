@@ -73,7 +73,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	page := req.FormValue("page")
 	selectedFilter := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
-	selectedCpair := req.FormValue("selectedCpair")
+	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
@@ -93,27 +93,28 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 	var allExhangeTicksSlice []ticks.TickDto
 	var totalCount int64
-	if selectedFilter == "All" && selectedCpair == "All" {
+
+	if selectedFilter == "All" && selectedCurrencyPair == "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
 
-	} else if selectedFilter == "All" && selectedCpair != "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCpair, offset, recordsPerPage)
+	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
-	} else if selectedFilter != "All" && selectedCpair == "All" {
+	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
 		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
 	} else {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCpair, selectedFilter, offset, recordsPerPage)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, recordsPerPage)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
