@@ -18,7 +18,7 @@ var (
 )
 
 // /home
-func (s *Server) getHomeData(res http.ResponseWriter, req *http.Request) {
+func (s *Server) homePage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
 	s.render("home.html", data, res)
 }
@@ -529,12 +529,12 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 		}
 	}
 
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * pageSize
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
 
@@ -551,13 +551,13 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	data := map[string]interface{}{
 		"mempoolData":  mempoolSlice,
 		"currentPage":  pageToLoad,
-		"previousPage": int(pageToLoad - 1),
+		"previousPage": pageToLoad - 1,
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 
 	return data, nil

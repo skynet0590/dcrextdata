@@ -42,7 +42,7 @@ export default class extends Controller {
     this.fetchData(this.currentPage + 1)
   }
 
-  NumberOfRowsChanged () {
+  numberOfRowsChanged () {
     this.selectedNum = this.selectedNumTarget.value
     this.fetchData(1)
   }

@@ -106,7 +106,7 @@ func FileServer(r chi.Router, path string, root http.FileSystem) {
 }
 
 func (s *Server) registerHandlers(r *chi.Mux) {
-	r.Get("/", s.getHomeData)
+	r.Get("/", s.homePage)
 	r.Get("/exchanges", s.getExchangeTicks)
 	r.Get("/filteredEx", s.getFilteredExchangeTicks)
 	r.Get("/chartExchange", s.getChartData)

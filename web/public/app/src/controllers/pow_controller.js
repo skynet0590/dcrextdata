@@ -28,19 +28,19 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.powTableWrapperTarget.classList.remove('d-hide')
-    this.numPageWrapperTarget.classList.remove('d-hide')
+    hide(this.chartWrapperTarget)
+    show(this.powTableWrapperTarget)
+    show(this.numPageWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('table')
   }
 
   setChart () {
     this.viewOption = 'chart'
-    this.numPageWrapperTarget.classList.add('d-hide')
-    this.powTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
+    hide(this.numPageWrapperTarget)
+    hide(this.powTableWrapperTarget)
+    show(this.chartWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
   }
@@ -60,7 +60,7 @@ export default class extends Controller {
     this.fetchExchange(this.viewOption)
   }
 
-  NumberOfRowsChanged () {
+  numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
   }

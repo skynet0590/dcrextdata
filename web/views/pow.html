@@ -39,8 +39,7 @@
                     <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
                         class="form-control" style="width: 110px;">
 
-                        <option value="All">All</option>
-
+                        <option value="All" selected>All</option>
                         {{ range $index, $filter := .powSource}}
                         <option value="{{$filter.Source}}">{{$filter.Source}}</option>
                         {{ end }}
@@ -49,8 +48,8 @@
                 <div data-target="pow.numPageWrapper" class="col d-flex  align-items-center justify-content-between float-md-right">
                     <div class=" mb-2 float-md-right">
                         <div class="control-label">Page Size:</div>
-                        <select data-target="pow.selectedNum" data-action="change->pow#NumberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
-                            <option value="20">20</option>
+                        <select data-target="pow.selectedNum" data-action="change->pow#numberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                            <option value="20" selected>20</option>
                             <option value="30">30</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
