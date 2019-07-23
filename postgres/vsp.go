@@ -230,6 +230,13 @@ func (pg *PgDb) FetchChartData(ctx context.Context, attribute string, vspName st
 		if err != nil {
 			return nil, err
 		}
+		if attribute == models.VSPTickColumns.ProportionLive || attribute == models.VSPTickColumns.ProportionMissed {
+			value, err := strconv.ParseFloat(rec.Record, 64)
+			if err != nil {
+				return nil, err
+			}
+			rec.Record = RoundValue(value)
+		}
 		records = append(records, rec)
 	}
 	return

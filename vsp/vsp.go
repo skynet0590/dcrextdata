@@ -65,7 +65,6 @@ func (vsp *Collector) Run(ctx context.Context) {
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		//Fetching VSPs every 5m, collected 1m7.99s ago, will fetch in 3m52.01s
 		log.Infof("Fetching VSPs every %dm, collected %s ago, will fetch in %s.", vsp.period/60, helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
