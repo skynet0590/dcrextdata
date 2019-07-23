@@ -24,24 +24,21 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
-    this.chartOptionsTarget.classList.add('d-hide')
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.tableWrapperTarget.classList.remove('d-hide')
-    this.btnWrapperTarget.classList.remove('d-hide')
-    this.currentPage = this.currentPage
+    hide(this.chartWrapperTarget)
+    hide(this.chartDataTypeSelectorTarget)
+    show(this.tableWrapperTarget)
+    show(this.btnWrapperTarget)
     this.fetchData(this.viewOption)
   }
 
   setChart () {
     this.viewOption = 'chart'
-    var y = this.selectedMempoolOptTarget.options
-    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
-    this.chartOptionsTarget.classList.remove('d-hide')
-    this.btnWrapperTarget.classList.add('d-hide')
-    this.tableWrapperTarget.classList.add('d-hide')
+    show(this.chartDataTypeSelectorTarget)
+    hide(this.btnWrapperTarget)
+    hide(this.tableWrapperTarget)
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
+    show(this.chartWrapperTarget)
     this.nextPage = 1
     this.fetchData(this.viewOption)
   }
