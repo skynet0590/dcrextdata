@@ -46,6 +46,11 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+  MempoolOptionChanged () {
+    this.chartFilter = this.selectedMempoolOptTarget.value
+    this.fetchData(this.viewOption)
+  }
+  
   setSizeDataType (event) {
     this.dataType = 'size'
     this.chartDataTypeTargets.forEach(el => {
