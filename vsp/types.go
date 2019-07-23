@@ -19,6 +19,7 @@ type VSPDto struct {
 	APIVersionsSupported []int64   `json:"live"`
 	Network              string    `json:"voted"`
 	URL                  string    `json:"missed"`
+	Host                 string    `json:"host"`
 	Launched             time.Time `json:"pool_fees"`
 }
 

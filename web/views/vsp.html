@@ -36,20 +36,20 @@
 
                 <div class="row align-items-center">
                     <div class="col-md-4 col-sm-12 mb-2">
-                        <div class="control-label">Source:</div>
+                        <div class="control-label">VSP:</div>
                         <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
                             class="form-control" style="width: 278px;">
                             {{$selectedFilter := .selectedFilter}}
                             <option value="All">All</option>
 
                             {{ range $index, $filter := .allVspData}}
-                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}} ({{$filter.URL}})</option>
+                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Host}} ({{$filter.Name}})</option>
                             {{ end }}
                         </select>
                     </div>
 
                     <div data-target="vsp.graphTypeWrapper" class="col-md-3 col-sm-12 mb-2 d-none ">
-                        <div class="control-label">Attribute:</div>
+                        <div class="control-label">Data:</div>
                         <select data-target="vsp.graphType" data-action="change->vsp#graphTypeChanged"
                             class="form-control" style="width: 150px;">
                             <option value="Immature">Immature</option>

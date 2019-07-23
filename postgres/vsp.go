@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -123,13 +124,17 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
 
 	var result []vsp.VSPDto
 	for _, item := range vspData {
-
+		parsedURL, err := url.Parse(item.URL.String)
+		if err != nil {
+			return nil, err
+		}
 		result = append(result, vsp.VSPDto{
 			Name:                 item.Name.String,
 			APIEnabled:           item.APIEnabled.Bool,
 			APIVersionsSupported: item.APIVersionsSupported,
 			Network:              item.Network.String,
 			URL:                  item.URL.String,
+			Host:                 parsedURL.Host,
 			Launched:             item.Launched.Time,
 		})
 	}
