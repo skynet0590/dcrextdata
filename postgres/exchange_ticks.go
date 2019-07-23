@@ -264,11 +264,9 @@ func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, cu
 	}
 
 	exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=? and interval=? and exchange_id=?", currencyPair, selectedInterval, exchange.ID), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
-	fmt.Println(err)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(exchangeFilterResult)
 
 	var Filter float64
 	tickChart := []ticks.TickChart{}

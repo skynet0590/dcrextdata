@@ -166,6 +166,8 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	selectedInterval := req.FormValue("selectedInterval")
 	sources := req.FormValue("sources")
 
+	data := map[string]interface{}{}
+
 	ctx := context.Background()
 	interval, err := strconv.Atoi(selectedInterval)
 	if err != nil {
@@ -178,10 +180,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 		s.renderError(err.Error(), res)
 		return
 	}
-
-	data := map[string]interface{}{
-		"chartData": chartData,
+	if len(chartData) == 0{
+		data["message"] = fmt.Sprintf("Not enough Data to generate %s chart.", sources)
+		s.renderJSON(data, res)
+		return
 	}
+
+	data["chartData"] = chartData
 
 	defer s.renderJSON(data, res)
 }

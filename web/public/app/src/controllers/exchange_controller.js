@@ -11,7 +11,7 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper',
-      'pageSizeWrapper', 'chartSource', 'cPHideOption'
+      'pageSizeWrapper', 'chartSource', 'cPHideOption', 'messageView'
     ]
   }
 
@@ -147,7 +147,7 @@ export default class extends Controller {
           _this.displayExchange(result.exData)
         } else {
           console.log(result)
-          _this.plotGraph(result.chartData)
+          _this.plotGraph(result)
         }
       }).catch(function (e) {
         console.log(e)
@@ -178,54 +178,68 @@ export default class extends Controller {
 
   // exchange chart
   plotGraph (exs) {
-    var data = []
-    var dataSet = []
+    if (exs.chartData) {
+      hide(this.messageViewTarget)
+      show(this.chartsViewTarget)
 
-    const _this = this
-    exs.forEach(ex => {
-      data.push(new Date(ex.time))
-      data.push(ex.filter)
+      var data = []
+      var dataSet = []
 
-      dataSet.push(data)
-      data = []
-    })
+      const _this = this
+      exs.chartData.forEach(ex => {
+        data.push(new Date(ex.time))
+        data.push(ex.filter)
 
-    // var hash = {}
-    // var i, j,
-    //   result,
-    //   item,
-    //   key
+        dataSet.push(data)
+        data = []
+      })
 
-    // for (i = 0; i < dataSet.length; i++) {
-    //   item = dataSet[i]
-    //   key = item[0].toString()
-    //   if (!hash[key]) {
-    //     hash[key] = item.slice()
-    //     continue
-    //   }
-    //   for (j = 1; j < item.length; j++) hash[key][j] += item[j]
-    // }
+      // var hash = {}
+      // var i, j,
+      //   result,
+      //   item,
+      //   key
 
-    // result = Object.values(hash)
+      // for (i = 0; i < dataSet.length; i++) {
+      //   item = dataSet[i]
+      //   key = item[0].toString()
+      //   if (!hash[key]) {
+      //     hash[key] = item.slice()
+      //     continue
+      //   }
+      //   for (j = 1; j < item.length; j++) hash[key][j] += item[j]
+      // }
 
-    let labels = ['Date']
-    let colors = ['#007bff']
-    labels.push(_this.selectedFilter)
-    colors.push(getRandomColor())
+      // result = Object.values(hash)
 
-    var extra = {
-      legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
-      ylabel: 'Price',
-      labels: labels,
-      colors: colors
+      let labels = ['Date']
+      let colors = ['#007bff']
+      labels.push(_this.selectedFilter)
+      colors.push(getRandomColor())
+
+      var extra = {
+        legendFormatter: legendFormatter,
+        labelsDiv: this.labelsTarget,
+        ylabel: 'Price',
+        labels: labels,
+        colors: colors
+      }
+
+      console.log(dataSet)
+      _this.chartsView = new Dygraph(
+        _this.chartsViewTarget,
+        dataSet, { ...options, ...extra }
+      )
+    } else {
+      let messageHTML = ''
+      messageHTML += `<div class="alert alert-primary">
+                           <strong>${exs.message}</strong>
+                      </div>`
+
+      this.messageViewTarget.innerHTML = messageHTML
+      show(this.messageViewTarget)
+      hide(this.chartsViewTarget)
     }
-
-    console.log(dataSet)
-    _this.chartsView = new Dygraph(
-      _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
-    )
   }
 
   setActiveOptionBtn (opt, optTargets) {
