@@ -257,38 +257,38 @@ func (pg *PgDb) AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoIn
 	return TickDtoInterval, err
 }
 
-func (pg *PgDb) ChartExchangeTicks(ctx context.Context, selectedDtick string, currencyPair string, selectedInterval int, source string) ([]ticks.TickChart, error) {
+func (pg *PgDb) ExchangeTicksChartData(ctx context.Context, selectedTick string, currencyPair string, selectedInterval int, source string) ([]ticks.TickChartData, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(source)).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
-	exchangeFilterResult, err := models.ExchangeTicks(qm.Select(fmt.Sprintf("%s, time, exchange_id", selectedDtick)), qm.Where("currency_pair=? and interval=? and exchange_id=?", currencyPair, selectedInterval, exchange.ID), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+	exchangeFilterResult, err := models.ExchangeTicks(qm.Select(selectedTick, models.ExchangeTickColumns.Time), qm.Where("currency_pair=? and interval=? and exchange_id=?", currencyPair, selectedInterval, exchange.ID), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
 	var Filter float64
-	tickChart := []ticks.TickChart{}
+	tickChart := []ticks.TickChartData{}
 	for _, tick := range exchangeFilterResult {
-		if selectedDtick == "high" {
+		if selectedTick == "high" {
 			Filter = tick.High
-		} else if selectedDtick == "low" {
+		} else if selectedTick == "low" {
 			Filter = tick.Low
-		} else if selectedDtick == "open" {
+		} else if selectedTick == "open" {
 			Filter = tick.Open
-		} else if selectedDtick == "Volume" {
+		} else if selectedTick == "Volume" {
 			Filter = tick.Volume
-		} else if selectedDtick == "close" {
+		} else if selectedTick == "close" {
 			Filter = tick.Close
 		} else {
 			Filter = tick.Close
 		}
 
-		tickChart = append(tickChart, ticks.TickChart{
-			ExchangeID: tick.ExchangeID,
-			Time:       tick.Time.UTC(),
-			Filter:     Filter,
+		tickChart = append(tickChart, ticks.TickChartData{
+			Time:   tick.Time.UTC(),
+			Filter: Filter,
 		})
 	}
 

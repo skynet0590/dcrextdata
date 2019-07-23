@@ -43,27 +43,11 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// intervalFilter := make(map[string]int, 0)
 	intervals, err := s.db.AllExchangeTicksInterval(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
-
-	// for _, val := range intervals {
-	// 	if val.Interval == 5 {
-	// 		intervalFilter["5m"] = val.Interval
-	// 	}
-	// 	if val.Interval == 60 {
-	// 		intervalFilter["1h"] = val.Interval
-	// 	}
-	// 	if val.Interval == 120 {
-	// 		intervalFilter["2h"] = val.Interval
-	// 	}
-	// 	if val.Interval == 1440 {
-	// 		intervalFilter["1d"] = val.Interval
-	// 	}
-	// }
 
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
@@ -161,8 +145,8 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	selectedDtick := req.FormValue("selectedDtick")
-	selectedCpair := req.FormValue("selectedCpair")
+	selectedTick := req.FormValue("selectedTick")
+	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	selectedInterval := req.FormValue("selectedInterval")
 	sources := req.FormValue("sources")
 
@@ -175,13 +159,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval, sources)
+	chartData, err := s.db.ExchangeTicksChartData(ctx, selectedTick, selectedCurrencyPair, interval, sources)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
-	if len(chartData) == 0{
-		data["message"] = fmt.Sprintf("Not enough Data to generate %s chart.", sources)
+	if len(chartData) == 0 {
+		data["message"] = fmt.Sprintf("No data to generate %s chart.", sources)
 		s.renderJSON(data, res)
 		return
 	}

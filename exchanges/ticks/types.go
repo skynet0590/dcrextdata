@@ -64,10 +64,9 @@ type TickDto struct {
 }
 
 // TickDto represents an exchange data, formatted for presentation
-type TickChart struct {
-	ExchangeID int       `json:"exchange_id"`
-	Filter     float64   `json:"filter"`
-	Time       time.Time `json:"time"`
+type TickChartData struct {
+	Filter float64   `json:"filter"`
+	Time   time.Time `json:"time"`
 }
 
 type TickDtoCP struct {
