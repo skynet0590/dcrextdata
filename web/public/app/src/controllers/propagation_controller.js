@@ -169,16 +169,16 @@ export default class extends Controller {
       blocksHtml += `<tbody data-target="propagation.blockTbody"
                             data-block-hash="${block.block_hash}">
                         <tr>
-                            <td colspan="7" ${padding}>
-                              <b>Height</b>: ${block.block_height} &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Timestamp</b>: ${block.block_internal_time}  &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Received</b>: ${block.block_receive_time}  &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>
+                            <td colspan="100" ${padding}>
+                              <span class="d-inline-block"><b>Height</b>: ${block.block_height} </span>  &#8195;
+                              <span class="d-inline-block"><b>Timestamp</b>: ${block.block_internal_time}</span>  &#8195;
+                              <span class="d-inline-block"><b>Received</b>: ${block.block_receive_time}</span>  &#8195;
+                              <span class="d-inline-block"><b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a></span>
                             </td>
                         </tr>
                         </tbody>
                         <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">
-                        <tr>
+                        <tr style="white-space: nowrap;">
                             <td>Voting On</td>
                             <td>Validator ID</td>
                             <td>Validity</td>
