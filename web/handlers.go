@@ -43,11 +43,27 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// intervalFilter := make(map[string]int, 0)
 	intervals, err := s.db.AllExchangeTicksInterval(ctx)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
+
+	// for _, val := range intervals {
+	// 	if val.Interval == 5 {
+	// 		intervalFilter["5m"] = val.Interval
+	// 	}
+	// 	if val.Interval == 60 {
+	// 		intervalFilter["1h"] = val.Interval
+	// 	}
+	// 	if val.Interval == 120 {
+	// 		intervalFilter["2h"] = val.Interval
+	// 	}
+	// 	if val.Interval == 1440 {
+	// 		intervalFilter["1d"] = val.Interval
+	// 	}
+	// }
 
 	data := map[string]interface{}{
 		"exData":         allExhangeTicksSlice,
@@ -148,10 +164,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	selectedDtick := req.FormValue("selectedDtick")
 	selectedCpair := req.FormValue("selectedCpair")
 	selectedInterval := req.FormValue("selectedInterval")
-		sources := req.FormValue("sources")
-			exchanges := strings.Split(sources, "|")
-
-fmt.Println(exchanges)
+	sources := req.FormValue("sources")
 
 	ctx := context.Background()
 	interval, err := strconv.Atoi(selectedInterval)
@@ -160,7 +173,7 @@ fmt.Println(exchanges)
 		return
 	}
 
-	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval, exchanges)
+	chartData, err := s.db.ChartExchangeTicks(ctx, selectedDtick, selectedCpair, interval, sources)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
