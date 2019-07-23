@@ -3,7 +3,6 @@ import axios from 'axios'
 import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -22,42 +21,42 @@ export default class extends Controller {
   }
 
   setTable () {
-    opt = 'table'
+    this.viewOption = 'table'
     this.chartOptionsTarget.classList.add('d-hide')
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.add('d-hide')
     this.tableWrapperTarget.classList.remove('d-hide')
     this.btnWrapperTarget.classList.remove('d-hide')
     this.currentPage = this.currentPage
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   setChart () {
-    opt = 'chart'
+    this.viewOption = 'chart'
     var y = this.selectedMempoolOptTarget.options
     this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
     this.chartOptionsTarget.classList.remove('d-hide')
     this.btnWrapperTarget.classList.add('d-hide')
     this.tableWrapperTarget.classList.add('d-hide')
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
     this.nextPage = 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   MempoolOptionChanged () {
     this.chartFilter = this.selectedMempoolOptTarget.value
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   gotoPreviousPage () {
     this.currentPage = this.currentPage - 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   gotoNextPage () {
     this.currentPage = this.currentPage + 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   fetchData (display) {
@@ -157,7 +156,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')
