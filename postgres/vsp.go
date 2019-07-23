@@ -214,6 +214,7 @@ func (pg *PgDb) LastVspTickEntryTime() (time time.Time) {
 }
 
 func (pg *PgDb) FetchChartData(ctx context.Context, attribute string, vspName string) (records []vsp.ChartData, err error) {
+	attribute = strings.ToLower(attribute)
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
@@ -229,6 +230,13 @@ func (pg *PgDb) FetchChartData(ctx context.Context, attribute string, vspName st
 		err = rows.Scan(&rec.Date, &rec.Record)
 		if err != nil {
 			return nil, err
+		}
+		if attribute == models.VSPTickColumns.ProportionLive || attribute == models.VSPTickColumns.ProportionMissed {
+			value, err := strconv.ParseFloat(rec.Record, 64)
+			if err != nil {
+				return nil, err
+			}
+			rec.Record = RoundValue(value)
 		}
 		records = append(records, rec)
 	}

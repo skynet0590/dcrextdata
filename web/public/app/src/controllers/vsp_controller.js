@@ -157,6 +157,7 @@ export default class extends Controller {
 
   // vsp chart
   plotGraph (dataSet) {
+    const _this = this
     dataSet = Object.values(dataSet)
     let yLabel = this.graphTypeTarget.value.split('_').join(' ')
     // let labels = ['Date', this.selectedFilterTarget.value]
@@ -182,34 +183,33 @@ export default class extends Controller {
         }
       }
     }
-    console.log(minDate, maxDate)
-    const _this = this
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      dateWindow: [minDate, maxDate],
+      animatedZooms: true,
+      legendFormatter: legendFormatter,
+      plotter: barChartPlotter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: yLabel,
+      xlabel: 'Date',
+      labelsUTC: true,
+      labelsKMB: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+    switch (this.graphTypeTarget.value) {
+      case 'Immature':
+
+        break
+    }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
       csv,
-      {
-        legend: 'always',
-        // title: title,
-        includeZero: true,
-        dateWindow: [minDate, maxDate],
-        animatedZooms: true,
-        legendFormatter: legendFormatter,
-        plotter: barChartPlotter,
-        labelsDiv: _this.labelsTarget,
-        ylabel: yLabel,
-        xlabel: 'Date',
-        labelsUTC: true,
-        labelsKMB: true,
-        maxNumberWidth: 10,
-        axes: {
-          x: {
-            drawGrid: false
-          },
-          y: {
-            axisLabelWidth: 90
-          }
-        }
-      }
+      options
     )
   }
 
