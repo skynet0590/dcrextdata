@@ -92,7 +92,7 @@ function darkenColor (colorStr) {
 }
 
 export var options = {
-  axes: { y: { axisLabelWidth: 70 } },
+  axes: { y: { axisLabelWidth: 100 } },
   axisLabelFontSize: 12,
   // digitsAfterDecimal: 8,
   retainDateWindow: false,

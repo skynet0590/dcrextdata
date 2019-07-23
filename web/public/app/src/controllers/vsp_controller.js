@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options, getRandomColor } from '../utils'
+import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 var opt = 'table'
@@ -8,10 +8,10 @@ var opt = 'table'
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilterWrapper', 'selectedFilter', 'vspTicksTable', 'numPageWrapper',
+      'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'graphTypeWrapper', 'graphType', 'chartSourceWrapper', 'chartSource',
+      'graphTypeWrapper', 'graphType',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
@@ -24,12 +24,10 @@ export default class extends Controller {
   }
 
   setTable () {
-    opt = 'table'
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.opt = 'table'
+    this.setActiveOptionBtn(this.opt, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
-    hide(this.chartSourceWrapperTarget)
-    show(this.selectedFilterWrapperTarget)
     show(this.vspTableWrapperTarget)
     show(this.numPageWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
@@ -38,15 +36,16 @@ export default class extends Controller {
   }
 
   setChart () {
-    opt = 'chart'
+    this.opt = 'chart'
     hide(this.numPageWrapperTarget)
     hide(this.vspTableWrapperTarget)
-    hide(this.selectedFilterWrapperTarget)
     show(this.graphTypeWrapperTarget)
     show(this.chartWrapperTarget)
-    show(this.chartSourceWrapperTarget)
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.opt, this.viewOptionTargets)
     this.nextPage = 1
+    if (this.selectedFilterTarget.selectedIndex === 0) {
+      this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
+    }
     this.fetchExchange('chart')
   }
 
@@ -62,8 +61,15 @@ export default class extends Controller {
   }
 
   selectedFilterChanged () {
-    this.nextPage = 1
-    this.fetchExchange(opt)
+    if (this.opt === 'table') {
+      this.nextPage = 1
+      this.fetchExchange(opt)
+    } else {
+      if (this.selectedFilterTarget.value === 'All') {
+        this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
+      }
+      this.fetchDataAndGraph()
+    }
   }
 
   numberOfRowsChanged () {
@@ -138,20 +144,8 @@ export default class extends Controller {
   }
 
   fetchDataAndGraph () {
-    let vspSources = []
-    this.chartSourceTargets.forEach(el => {
-      if (el.checked) {
-        vspSources.push(el.value)
-      }
-    })
-
-    if (vspSources.length === 0) {
-      return
-    }
-
     let _this = this
-    const selectedAttribute = this.graphTypeTarget.value
-    let url = `/vspchartdata?selectedAttribute=${selectedAttribute}&sources=${vspSources.join('|')}`
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&sources=${this.selectedFilterTarget.value}`
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     })
@@ -161,9 +155,6 @@ export default class extends Controller {
     this.fetchDataAndGraph()
   }
 
-  chartSourceCheckChanged () {
-    this.fetchDataAndGraph()
-  }
   // vsp chart
   plotGraph (dataSet) {
     dataSet = Object.values(dataSet)
@@ -178,23 +169,16 @@ export default class extends Controller {
       }
     }
 
-    let labels = ['Date']
-    let colors = []
-    this.chartSourceTargets.forEach(el => {
-      if (!el.checked) {
-        return
-      }
-      labels.push(el.value)
-      colors.push(getRandomColor())
-    })
+    let labels = ['Date', this.selectedFilterTarget.value]
+    let colors = ['#007BFF']
 
     let yLabel = this.graphTypeTarget.value.split('_').join(' ')
     var extra = {
       legendFormatter: legendFormatter,
       labelsDiv: this.labelsTarget,
       ylabel: yLabel,
-      sigFigs: 16,
-      maxNumberWidth: 30,
+      sigFigs: 8,
+      maxNumberWidth: 8,
       labels: labels,
       colors: colors
     }
