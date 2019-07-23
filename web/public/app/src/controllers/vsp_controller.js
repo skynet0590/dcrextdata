@@ -3,7 +3,6 @@ import axios from 'axios'
 import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -21,11 +20,12 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+    this.viewOption = 'table'
   }
 
   setTable () {
-    this.opt = 'table'
-    this.setActiveOptionBtn(this.opt, this.viewOptionTargets)
+    this.viewOption = 'table'
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
     show(this.vspTableWrapperTarget)
@@ -36,37 +36,37 @@ export default class extends Controller {
   }
 
   setChart () {
-    this.opt = 'chart'
+    this.viewOption = 'chart'
     hide(this.numPageWrapperTarget)
     hide(this.vspTableWrapperTarget)
     show(this.graphTypeWrapperTarget)
     show(this.chartWrapperTarget)
-    this.setActiveOptionBtn(this.opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
     if (this.selectedFilterTarget.selectedIndex === 0) {
-      this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
+      this.selectedFilterTarget.selectedIndex = 1
     }
     this.fetchExchange('chart')
   }
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {
-    if (this.opt === 'table') {
+    if (this.viewOption === 'table') {
       this.nextPage = 1
-      this.fetchExchange(opt)
+      this.fetchExchange(this.viewOption)
     } else {
-      if (this.selectedFilterTarget.value === 'All') {
-        this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
+      if (this.selectedFilterTarget.selectedIndex === 0) {
+        this.selectedFilterTarget.selectedIndex = 1
       }
       this.fetchDataAndGraph()
     }
@@ -74,7 +74,7 @@ export default class extends Controller {
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   fetchExchange (display) {
@@ -193,7 +193,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')

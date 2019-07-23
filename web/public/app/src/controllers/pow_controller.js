@@ -3,7 +3,6 @@ import axios from 'axios'
 import { hide, show, legendFormatter, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -15,9 +14,13 @@ export default class extends Controller {
     ]
   }
 
+  initialize () {
+    this.viewOption = 'table'
+  }
+
   setTable () {
-    opt = 'table'
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.viewOption = 'table'
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.add('d-hide')
     this.powTableWrapperTarget.classList.remove('d-hide')
     this.numPageWrapperTarget.classList.remove('d-hide')
@@ -26,10 +29,10 @@ export default class extends Controller {
   }
 
   setChart () {
-    opt = 'chart'
+    this.viewOption = 'chart'
     this.numPageWrapperTarget.classList.add('d-hide')
     this.powTableWrapperTarget.classList.add('d-hide')
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.chartWrapperTarget.classList.remove('d-hide')
     this.nextPage = 1
     this.fetchExchange('chart')
@@ -37,22 +40,22 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   NumberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchExchange(opt)
+    this.fetchExchange(this.viewOption)
   }
 
   fetchExchange (display) {
@@ -122,7 +125,7 @@ export default class extends Controller {
       dataSet.push(data)
       data = []
     })
-    console.log(dataSet)
+
     var extra = {
       labels: ['Date', 'Pool Hashrate'],
       colors: ['#2971FF', '#FF8C00'],
@@ -141,7 +144,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')

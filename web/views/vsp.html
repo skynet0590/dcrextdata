@@ -35,15 +35,15 @@
                 </div>
 
                 <div class="row align-items-center">
-                    <div class="col-md-3 col-sm-12 mb-2">
+                    <div class="col-md-4 col-sm-12 mb-2">
                         <div class="control-label">Source:</div>
                         <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
-                            class="form-control" style="width: 110px;">
+                            class="form-control" style="width: 278px;">
                             {{$selectedFilter := .selectedFilter}}
                             <option value="All">All</option>
 
                             {{ range $index, $filter := .allVspData}}
-                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                            <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}} ({{$filter.URL}})</option>
                             {{ end }}
                         </select>
                     </div>

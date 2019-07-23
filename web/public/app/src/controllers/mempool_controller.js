@@ -3,7 +3,6 @@ import axios from 'axios'
 import { legendFormatter, barChartPlotter, hide, show } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
-var opt = 'table'
 
 export default class extends Controller {
   static get targets () {
@@ -24,24 +23,27 @@ export default class extends Controller {
   }
 
   setTable () {
-    opt = 'table'
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    hide(this.chartWrapperTarget)
-    hide(this.chartDataTypeSelectorTarget)
-    show(this.tableWrapperTarget)
-    show(this.btnWrapperTarget)
-    this.fetchData(opt)
+    this.viewOption = 'table'
+    this.chartOptionsTarget.classList.add('d-hide')
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.add('d-hide')
+    this.tableWrapperTarget.classList.remove('d-hide')
+    this.btnWrapperTarget.classList.remove('d-hide')
+    this.currentPage = this.currentPage
+    this.fetchData(this.viewOption)
   }
 
   setChart () {
-    opt = 'chart'
-    hide(this.btnWrapperTarget)
-    hide(this.tableWrapperTarget)
-    this.setActiveOptionBtn(opt, this.viewOptionTargets)
-    show(this.chartWrapperTarget)
-    show(this.chartDataTypeSelectorTarget)
+    this.viewOption = 'chart'
+    var y = this.selectedMempoolOptTarget.options
+    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
+    this.chartOptionsTarget.classList.remove('d-hide')
+    this.btnWrapperTarget.classList.add('d-hide')
+    this.tableWrapperTarget.classList.add('d-hide')
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.chartWrapperTarget.classList.remove('d-hide')
     this.nextPage = 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   setSizeDataType (event) {
@@ -73,12 +75,12 @@ export default class extends Controller {
 
   gotoPreviousPage () {
     this.currentPage = this.currentPage - 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   gotoNextPage () {
     this.currentPage = this.currentPage + 1
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   fetchData (display) {
@@ -210,7 +212,7 @@ export default class extends Controller {
 
   setActiveOptionBtn (opt, optTargets) {
     optTargets.forEach(li => {
-      if (li.dataset.option === opt) {
+      if (li.dataset.option === this.viewOption) {
         li.classList.add('active')
       } else {
         li.classList.remove('active')
