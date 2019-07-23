@@ -179,12 +179,12 @@ export default class extends Controller {
                         </tbody>
                         <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">
                         <tr style="white-space: nowrap;">
-                            <td>Voting On</td>
-                            <td>Validator ID</td>
-                            <td>Validity</td>
-                            <td>Received</td>
-                            <td>Block Receive Time Diff</td>
-                            <td>Hash</td>
+                            <td style="width: 120px;">Voting On</td>
+                            <td style="width: 120px;">Validator ID</td>
+                            <td style="width: 120px;">Validity</td>
+                            <td style="width: 120px;">Received</td>
+                            <td style="width: 120px;">Block Receive Time Diff</td>
+                            <td style="width: 120px;">Hash</td>
                         </tr>
                         ${votesHtml}
                         </tbody>

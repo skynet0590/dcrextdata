@@ -35,7 +35,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <div data-target="mempool.numPageWrapper" class="col-mb-2 ">
+                        <div data-target="mempool.numPageWrapper" class="control-div offset-md-4"">
                             <div class="control-label">Page Size:</div>
 
                             <select data-target="mempool.selectedNum" data-action="change->mempool#NumberOfRowsChanged" class="form-control" style="width: 70px;">
@@ -57,53 +57,55 @@
                             </select>
                         </div>
                         <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
-                        <div class="chart-control">
-                            <ul class="nav nav-pills">
-                                <li class="nav-item">
-                                    <a
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setSizeDataType"
-                                            class="nav-link active"
-                                            href="javascript:void(0);"
-                                            data-option="table"
-                                    >Size</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setFeesDataType"
-                                            class="nav-link"
-                                            href="javascript:void(0);"
-                                            data-option="table"
-                                    >Fees</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a
-                                            data-target="mempool.chartDataType"
-                                            data-action="click->mempool#setTransactionsDataType"
-                                            class="nav-link"
-                                            href="javascript:void(0);"
-                                            data-option="table"
-                                    >Transactions</a>
-                                </li>
-                            </ul>
+                            <div class="chart-control">
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item">
+                                        <a
+                                        data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setSizeDataType"
+                                        class="nav-link active"
+                                        href="javascript:void(0);"
+                                        data-option="table"
+                                        >Size</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a
+                                        data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setFeesDataType"
+                                        class="nav-link"
+                                        href="javascript:void(0);"
+                                        data-option="table"
+                                        >Fees</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a
+                                        data-target="mempool.chartDataType"
+                                        data-action="click->mempool#setTransactionsDataType"
+                                        class="nav-link"
+                                        href="javascript:void(0);"
+                                        data-option="table"
+                                        >Transactions</a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                        <div  data-target="mempool.btnWrapper" class="row col-md-5 align-items-center justify-content-end">
-                            <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
-                                class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
-                                &lt; Previous
-                            </button>
+                        <div class="col-md-4 col-lg-2 float-md-right">
+                            <div data-target="mempool.btnWrapper" class="float-md-right">
+                                <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
+                                    class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
+                                    &lt; Previous
+                                </button>
 
-                            <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
-                                Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
-                                <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
-                            </span>
+                                <span data-target="mempool.pageReport" class="text-muted" data-current-page="{{ .mempool.currentPage }}">
+                                    Page <span data-target="mempool.currentPage" data-current-page="{{ .mempool.currentPage }}">{{ .mempool.currentPage }}</span> of
+                                    <span data-target="mempool.totalPageCount">{{ .mempool.totalPages }}</span>
+                                </span>
 
-                            <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
-                                data-next-page="{{ .mempool.nextPage }}" class="btn btn-link {{ if not .mempool.nextPage }}d-none{{ end }}">
-                                Next &gt;
-                            </button>
+                                <button data-target="mempool.nextPageButton" data-action="click->mempool#gotoNextPage"
+                                    data-next-page="{{ .mempool.nextPage }}" class="btn btn-link {{ if not .mempool.nextPage }}d-none{{ end }}">
+                                    Next &gt;
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

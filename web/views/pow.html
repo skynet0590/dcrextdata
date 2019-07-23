@@ -7,8 +7,8 @@
         <div class="content">
             <div class="container">
                 <div class="control-wrapper">
-                 <div class="chart-control-wrapper mb-2" data-target="pow.chartSelector">
-                     <div class="chart-control">
+                   <div class="chart-control-wrapper mb-2" data-target="pow.chartSelector">
+                       <div class="chart-control">
                         <ul
                         class="nav nav-pills"
                         >
@@ -33,7 +33,7 @@
                     </ul>
                 </div>
             </div>
-            <div class="row align-items-center justify-content-between">
+            <div class="row align-items-center">
                 <div class="col-md-4 col-sm-12 mb-2">
                     <div class="control-label">Pool:</div>
                     <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
@@ -56,14 +56,16 @@
                             <option value="150">150</option>
                         </select>
                     </div>
-                    <div class="d-flex float-md-right">
-                        <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                    <div class="col-md-4 col-lg-3 float-md-right">
+                        <div class="d-flex float-md-right">
+                            <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                        <p class="text-muted"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                        </p>    
-                        <a href="javascript:void(0)" data-target="pow.nextPageButton" data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                    </div>
-                </div> 
+                            <p class="text-muted"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="javascript:void(0)" data-target="pow.nextPageButton" data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                        </div>
+                    </div> 
+                </div>
             </div>
         </div>
 
@@ -72,16 +74,16 @@
                 <div class="" data-target="pow.powTableWrapper">
                     <table class="table">
                         <thead>
-                        <tr>
-                            <th style="width: 110px;">Pool</th>
-                            <th style="text-align: right; width: 150px;">Pool Hashrate (Th/s)</th>
-                            <th style="text-align: right;width: 150px;">Workers</th>
-                            <th style="width: 50px;"></th>
-                            <th>Time (UTC)</th>
-                        </tr>
+                            <tr>
+                                <th style="width: 110px;">Pool</th>
+                                <th style="text-align: right; width: 150px;">Pool Hashrate (Th/s)</th>
+                                <th style="text-align: right;width: 150px;">Workers</th>
+                                <th style="width: 50px;"></th>
+                                <th>Time (UTC)</th>
+                            </tr>
                         </thead>
                         <tbody data-target="pow.powTable">
-                        {{range $index, $powdata := .powData}}
+                            {{range $index, $powdata := .powData}}
                             <tr>
                                 <td>{{$powdata.Source}}</td>
                                 <td style="text-align: right;">{{$powdata.PoolHashrateTh}}</td>
@@ -89,7 +91,7 @@
                                 <td></td>
                                 <td>{{$powdata.Time}}</td>
                             </tr>
-                        {{end}}
+                            {{end}}
                         </tbody>
                     </table>
 

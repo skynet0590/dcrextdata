@@ -99,7 +99,7 @@ export default class extends Controller {
 
   NumberOfRowsChanged () {
     this.selectedNum = this.selectedNumTarget.value
-    this.fetchData(opt)
+    this.fetchData(this.viewOption)
   }
 
   fetchData (display) {

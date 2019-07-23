@@ -17,7 +17,7 @@ export default class extends Controller {
   initialize () {
     this.viewOption = 'table'
   }
-  
+
   connect () {
     var filter = this.selectedFilterTarget.options
     var num = this.selectedNumTarget.options

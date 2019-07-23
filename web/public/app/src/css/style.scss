@@ -400,6 +400,11 @@ table.collapsible .labels tr td {
 .control-div {
   padding: 0, 0, 0, 1rem !important;
   white-space: nowrap;
+  display: inline-block;
+}
+
+.nextPage {
+  float: right;
 }
 
 .control-wrapper {
