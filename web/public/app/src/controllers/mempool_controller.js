@@ -10,7 +10,7 @@ export default class extends Controller {
       'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate',
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
       'chartWrapper', 'viewOption', 'labels',
-      'chartDataTypeSelector', 'chartDataType','chartOptions', 'labels', 'selectedMempoolOpt',
+      'chartDataTypeSelector', 'chartDataType', 'chartOptions', 'labels', 'selectedMempoolOpt',
       'selectedNum', 'numPageWrapper'
     ]
   }

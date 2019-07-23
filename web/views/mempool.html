@@ -11,7 +11,7 @@
                         <h4>Mempool</h4>
                     </div>
                     <div class="row align-items-center justify-content-between">
-                        <div class="chart-control-wrapper pr-3 col-md-4" data-target="mempool.chartSelector">
+                        <div class="chart-control-wrapper pr-3 col-md-3" data-target="mempool.chartSelector">
                             <div class="chart-control ">
                                 <ul class="nav nav-pills">
                                     <li class="nav-item">
@@ -34,6 +34,27 @@
                                     </li>
                                 </ul>
                             </div>
+                        </div>
+                        <div data-target="mempool.numPageWrapper" class="col-mb-3 ">
+                            <div class="control-label">Page Size:</div>
+
+                            <select data-target="mempool.selectedNum" data-action="change->mempool#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                <option value="20">20</option>
+                                <option value="30">30</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="150">150</option>
+                            </select>
+                        </div>
+
+                        <div data-target="mempool.chartOptions" class="col-md-6 float-md-right d-hide">
+                            <div class="control-label ">Mempool Charts:</div>
+
+                            <select data-target="mempool.selectedMempoolOpt" data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 " style="width: 200px;">
+                                <option value="size">Size Chart</option>
+                                <option value="total_fee">Total fees Chart</option>
+                                <option value="number_of_transactions">Number of Transactions</option>
+                            </select>
                         </div>
                         <div class="chart-control-wrapper pr-3 col-md-3 d-none" data-target="mempool.chartDataTypeSelector">
                         <div class="chart-control">
@@ -68,28 +89,6 @@
                             </ul>
                         </div>
                     </div>
-                        <div data-target="mempool.numPageWrapper" class="col-mb-3 ">
-                            <div class="control-label">Page Size:</div>
-
-                            <select data-target="mempool.selectedNum" data-action="change->mempool#NumberOfRowsChanged" class="form-control" style="width: 70px;">
-                                <option value="20">20</option>
-                                <option value="30">30</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                                <option value="150">150</option>
-                            </select>
-                        </div>
-
-                        <div data-target="mempool.chartOptions" class="col-md-8 float-md-right d-hide">
-                            <div class="control-label ">Mempool Charts:</div>
-
-                            <select data-target="mempool.selectedMempoolOpt" data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 " style="width: 200px;">
-                                <option value="size">Size Chart</option>
-                                <option value="total_fee">Total fees Chart</option>
-                                <option value="number_of_transactions">Number of Transactions</option>
-                            </select>
-                        </div>
-
                         <div  data-target="mempool.btnWrapper" class="row col-md-5 align-items-center justify-content-end">
                             <button data-target="mempool.previousPageButton" data-action="click->mempool#gotoPreviousPage" data-previous-page="{{ .mempool.previousPage}}"
                                 class="btn btn-link {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">
