@@ -47,7 +47,6 @@ export default class extends Controller {
     this.chartFilter = this.selectedMempoolOptTarget.value
     this.fetchData(this.viewOption)
   }
-  
   setSizeDataType (event) {
     this.dataType = 'size'
     this.chartDataTypeTargets.forEach(el => {
@@ -164,11 +163,11 @@ export default class extends Controller {
 
     chartData.forEach(mp => {
       let date = new Date(mp.time)
-      if (minDate == null || new Date(mp.time) < minDate) {
+      if (minDate === undefined || new Date(mp.time) < minDate) {
         minDate = new Date(mp.time)
       }
 
-      if (maxDate == null || new Date(mp.time) > maxDate) {
+      if (maxDate === undefined || new Date(mp.time) > maxDate) {
         maxDate = new Date(mp.time)
       }
 

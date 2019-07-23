@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, barChartPlotter } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -158,36 +158,58 @@ export default class extends Controller {
   // vsp chart
   plotGraph (dataSet) {
     dataSet = Object.values(dataSet)
+    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
+    // let labels = ['Date', this.selectedFilterTarget.value]
+    // let colors = ['#007BFF']
+
+    let csv = `Date,${yLabel}\n`
+    let minDate, maxDate
+
     for (let i = 0; i < dataSet.length; i++) {
       if (!Array.isArray(dataSet[i])) continue
       for (let j = 0; j < dataSet[i].length; j++) {
         if (j === 0) {
-          dataSet[i][j] = new Date(dataSet[i][j])
+          const date = new Date(dataSet[i][j])
+          if (minDate === undefined || date < minDate) {
+            minDate = date
+          }
+          if (maxDate === undefined || date > maxDate) {
+            maxDate = date
+          }
+          csv += `${date},`
         } else if (!isNaN(dataSet[i][j])) {
-          dataSet[i][j] = parseFloat(dataSet[i][j])
+          csv += `${dataSet[i][j]}\n`
         }
       }
     }
-
-    let labels = ['Date', this.selectedFilterTarget.value]
-    let colors = ['#007BFF']
-
-    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
-    var extra = {
-      legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
-      ylabel: yLabel,
-      sigFigs: 8,
-      maxNumberWidth: 8,
-      labels: labels,
-      colors: colors
-    }
-
+    console.log(minDate, maxDate)
     const _this = this
-
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      csv,
+      {
+        legend: 'always',
+        // title: title,
+        includeZero: true,
+        dateWindow: [minDate, maxDate],
+        animatedZooms: true,
+        legendFormatter: legendFormatter,
+        plotter: barChartPlotter,
+        labelsDiv: _this.labelsTarget,
+        ylabel: yLabel,
+        xlabel: 'Date',
+        labelsUTC: true,
+        labelsKMB: true,
+        maxNumberWidth: 10,
+        axes: {
+          x: {
+            drawGrid: false
+          },
+          y: {
+            axisLabelWidth: 90
+          }
+        }
+      }
     )
   }
 
