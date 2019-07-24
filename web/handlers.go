@@ -15,6 +15,7 @@ import (
 
 var (
 	recordsPerPage = 20
+	defaultInterval = 5
 )
 
 // /home
@@ -30,7 +31,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, defaultInterval, recordsPerPage)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
@@ -81,6 +82,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	selectedFilter := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
+	interval := req.FormValue("selectedInterval")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -89,6 +91,11 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	} else {
 		pageSize = numRows
 	}
+
+	filterInterval, err := strconv.Atoi(interval)
+	if err != nil || filterInterval <= 0 {
+		filterInterval = defaultInterval
+	} 
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -103,26 +110,26 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var totalCount int64
 
 	if selectedFilter == "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, filterInterval, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 
 	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, filterInterval, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, filterInterval, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, filterInterval, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
