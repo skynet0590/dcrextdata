@@ -20,6 +20,7 @@ export default class extends Controller {
       this.currentPage = 1
     }
     this.dataType = 'size'
+    this.viewOption = 'table'
   }
 
   setTable () {

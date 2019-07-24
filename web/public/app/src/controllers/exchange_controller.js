@@ -7,15 +7,17 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'exchangeTable', 'selectedCpair', 'numPageWrapper', 'intervalWapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedDticks', 'selectedInterval',
+      'selectedFilter', 'exchangeTable', 'selectedCurrencyPair', 'numPageWrapper', 'intervalWapper',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper',
+      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView'
     ]
   }
 
   initialize () {
     this.viewOption = 'table'
+    this.selectedFilter = this.selectedFilterTarget.value
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
@@ -25,17 +27,18 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
 
-    this.intervalWapperTarget.classList.add('d-hide')
-    this.selectedDticksTarget.value = 'close'
-    this.tickWapperTarget.classList.add('d-hide')
-    this.sourceWrapperTarget.classList.remove('d-hide')
-    this.hideOptionTarget.classList.remove('d-hide')
-    this.selectedCpair = this.selectedCpairTarget.value
+    hide(this.tickWapperTarget)
+    show(this.hideOptionTarget)
+    show(this.pageSizeWrapperTarget)
+    hide(this.intervalWapperTarget)
+    hide(this.chartWrapperTarget)
+    show(this.currencyPairHideOptionTarget)
+    show(this.exchangeTableWrapperTarget)
+    show(this.numPageWrapperTarget)
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.exchangeTableWrapperTarget.classList.remove('d-hide')
-    this.numPageWrapperTarget.classList.remove('d-hide')
-    this.exchangeTableTarget.innerHTML = ''
+    this.selectedTicksTarget.value = 'close'
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
   }
@@ -43,18 +46,24 @@ export default class extends Controller {
   setChart () {
     this.viewOption = 'chart'
 
-    this.intervalWapperTarget.classList.remove('d-hide')
-    this.tickWapperTarget.classList.remove('d-hide')
-    this.sourceWrapperTarget.classList.add('d-hide')
-    this.hideOptionTarget.classList.add('d-hide')
-    this.numPageWrapperTarget.classList.add('d-hide')
-    this.exchangeTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
     var y = this.selectedIntervalTarget.options
     this.selectedInterval = this.selectedIntervalTarget.value = y[0].text
-    this.selectedDtick = this.selectedDticksTarget.value = 'close'
-    this.selectedCpair = this.selectedCpairTarget.value = 'BTC/DCR'
+    var interval = this.selectedIntervalTarget.options
+    var sFilter = this.selectedFilterTarget.options
+    show(this.chartWrapperTarget)
+    hide(this.pageSizeWrapperTarget)
+    show(this.intervalWapperTarget)
+    show(this.tickWapperTarget)
+    hide(this.hideOptionTarget)
+    hide(this.currencyPairHideOptionTarget)
+    hide(this.numPageWrapperTarget)
+    hide(this.exchangeTableWrapperTarget)
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedInterval = this.selectedIntervalTarget.value = interval[0].value
+    this.selectedFilter = this.selectedFilterTarget.value = sFilter[1].text
+    this.selectedTick = this.selectedTicksTarget.value = 'close'
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = 'BTC/DCR'
     this.fetchExchange(this.viewOption)
   }
 
@@ -63,62 +72,59 @@ export default class extends Controller {
     this.fetchExchange(this.viewOption)
   }
 
-  selectedDticksChanged () {
-    this.selectedDtick = this.selectedDticksTarget.value
+  selectedTicksChanged () {
+    this.selectedTick = this.selectedTicksTarget.value
     this.fetchExchange(this.viewOption)
   }
 
   loadPreviousPage () {
-    this.selectedCpair = this.selectedCpairTarget.value
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-previous-page')
     this.fetchExchange(this.viewOption)
   }
 
   loadNextPage () {
-    this.selectedCpair = this.selectedCpairTarget.value
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
+
+    console.log(this.viewOption)
     this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
-    this.selectedCpair = this.selectedCpairTarget.value
+    this.selectedFilter = this.selectedFilterTarget.value
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.fetchExchange(this.viewOption)
   }
 
-  selectedCpairChanged () {
+  selectedCurrencyPairChanged () {
     this.nextPage = 1
-    this.selectedCpair = this.selectedCpairTarget.value
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.fetchExchange(this.viewOption)
   }
 
   NumberOfRowsChanged () {
     this.nextPage = 1
-    this.selectedCpair = this.selectedCpairTarget.value
+    this.numberOfRows = this.selectedNumTarget.value
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.fetchExchange(this.viewOption)
   }
 
   fetchExchange (display) {
     const _this = this
     var url
-    var selectedFilter
     if (display === 'table') {
-      const numberOfRows = this.selectedNumTarget.value
-      selectedFilter = this.selectedFilterTarget.value
-
-      url = `/filteredEx?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&selectedCpair=${this.selectedCpair}`
+      url = `/filteredEx?page=${this.nextPage}&filter=${this.selectedFilter}&recordsPerPage=${this.numberOfRows}&selectedCurrencyPair=${this.selectedCurrencyPair}`
     } else {
-      url = `/chartExchange?selectedDtick=${this.selectedDtick}&selectedCpair=${this.selectedCpair}&selectedInterval=${this.selectedInterval}`
+      url = `/chartExchange?selectedTick=${this.selectedTick}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}&sources=${this.selectedFilter}`
     }
 
     axios.get(url)
       .then(function (response) {
         let result = response.data
+        console.log(result)
         if (display === 'table') {
-          if (_this.selectedFilterTarget.value !== selectedFilter) {
-            return
-          }
-
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -140,7 +146,7 @@ export default class extends Controller {
           _this.displayExchange(result.exData)
         } else {
           console.log(result)
-          _this.plotGraph(result.chartData)
+          _this.plotGraph(result)
         }
       }).catch(function (e) {
         console.log(e)
@@ -171,49 +177,47 @@ export default class extends Controller {
 
   // exchange chart
   plotGraph (exs) {
-    var extra = {
-      legendFormatter: legendFormatter,
-      labelsDiv: this.labelsTarget,
-      ylabel: 'Price',
-      labels: ['Date', 'bittrex', 'binance', 'bleutrade', 'poloniex'],
-      colors: ['#2971FF', '#00FF30', '#8F00FF', '#ff1212', '#8ff090']
-    }
+    if (exs.chartData) {
+      hide(this.messageViewTarget)
+      show(this.chartsViewTarget)
 
-    var data = [0, 0, 0, 0, 0]
-    var dataSet = []
+      var data = []
+      var dataSet = []
 
-    const _this = this
-    exs.forEach(ex => {
-      data[0] = new Date(ex.time)
-      data.splice(ex.exchange_id, 1, ex.filter)
+      const _this = this
+      exs.chartData.forEach(ex => {
+        data.push(new Date(ex.time))
+        data.push(ex.filter)
 
-      dataSet.push(data)
-      data = [0, 0, 0, 0, 0]
-    })
+        dataSet.push(data)
+        data = []
+      })
 
-    var hash = {}
-    var i, j,
-      result,
-      item,
-      key
+      let labels = ['Date', _this.selectedFilter]
+      let colors = ['#007bff']
 
-    for (i = 0; i < dataSet.length; i++) {
-      item = dataSet[i]
-      key = item[0].toString()
-      if (!hash[key]) {
-        hash[key] = item.slice()
-        continue
+      var extra = {
+        legendFormatter: legendFormatter,
+        labelsDiv: this.labelsTarget,
+        ylabel: 'Price',
+        labels: labels,
+        colors: colors
       }
-      for (j = 1; j < item.length; j++) hash[key][j] += item[j]
+
+      _this.chartsView = new Dygraph(
+        _this.chartsViewTarget,
+        dataSet, { ...options, ...extra }
+      )
+    } else {
+      let messageHTML = ''
+      messageHTML += `<div class="alert alert-primary">
+                           <strong>${exs.message}</strong>
+                      </div>`
+
+      this.messageViewTarget.innerHTML = messageHTML
+      show(this.messageViewTarget)
+      hide(this.chartsViewTarget)
     }
-
-    result = Object.values(hash)
-
-    console.log(result)
-    _this.chartsView = new Dygraph(
-      _this.chartsViewTarget,
-      result, { ...options, ...extra }
-    )
   }
 
   setActiveOptionBtn (opt, optTargets) {

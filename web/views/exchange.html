@@ -8,7 +8,7 @@
         <div class="content">
             <div class="container">
                 <div class="control-wrapper">
-                    <div class="chart-control-wrapper mb-2" data-target="exchange.chartSelector">
+                    <div class="row chart-control-wrapper mb-2" data-target="exchange.chartSelector">
                         <div class="chart-control">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
@@ -34,40 +34,41 @@
                     </div>
 
                     <div class="row align-items-center justify-content-between">
-                    <div data-target=exchange.sourceWrapper class="col-md-3 control-div">
-                            <div class="control-label">Source:</div>
+                        <div data-target=exchange.sourceWrapper class="col-md-3 control-div p-0">
+                            <div class="control-label">Exchanges:</div>
                             <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
-                                class="form-control" style="width: 110px;">
-                                <option value="All">All</option>
+                                class="form-control" style="width: 100px;">
+                                <option data-target="exchange.hideOption" value="All" selected>All</option>
                                 {{ range $index, $filter := .allExData}}
                                 <option value="{{$filter.Name}}">{{$filter.Name}}</option>
                                 {{ end }}
                             </select>
                         </div>
-                        <div class="col-md-4 control-div">
+                        <div class="col-md-4 control-div p-0">
                             <div class="control-label">Currency Pair:</div>
-                            <select data-target="exchange.selectedCpair" data-action="change->exchange#selectedCpairChanged"
-                                class="form-control" style="width: 110px;">
-                                <option data-target="exchange.hideOption value="All">All</option>
+                            <select data-target="exchange.selectedCurrencyPair" data-action="change->exchange#selectedCurrencyPairChanged"
+                                class="form-control" style="width: 105px;">
+                                <option data-target="exchange.currencyPairHideOption" value="All">All</option>
                                 {{ range $index, $cpair := .currencyPairs}}
                                 <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
                                 {{ end }}
                             </select>
                         </div>
 
-                        <div data-target="exchange.intervalWapper" class="col-md-4 d-hide">
+                        <div data-target="exchange.intervalWapper" class="col-md-2 p-0 d-hide">
                             <div class="control-label">Interval:</div>
                             <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
-                                class="form-control" style="width: 110px;">
-                                {{ range $index, $interval := .intervals}}
-                                <option value="{{$interval.Interval}}">{{$interval.Interval}}</option>
-                                {{ end }}
+                                class="form-control" style="width: 60px;">
+                                <option value="5">5m</option>
+                                <option value="60">1h</option>
+                                <option value="120">2h</option>
+                                <option value="1440">1d</option>
                             </select>
                         </div>
 
-                        <div data-target="exchange.tickWapper" class="col-md-4 d-hide">
+                        <div data-target="exchange.tickWapper" class="col-md-3  p-0 d-hide">
                             <div class="control-label">Data Ticks:</div>
-                            <select data-target="exchange.selectedDticks" data-action="change->exchange#selectedDticksChanged"
+                            <select data-target="exchange.selectedTicks" data-action="change->exchange#selectedTicksChanged"
                                 class="form-control" style="width: 90px;">
                                 <option value="close">Close</option>
                                 <option value="high">High</option>
@@ -76,8 +77,7 @@
                             </select>
                         </div>
 
-
-                        <div data-target="exchange.numPageWrapper" class="col-mb-3 control-div">
+                        <div data-target="exchange.numPageWrapper" class="col-mb-3  p-0 control-div">
                             <div class="control-label">Page Size:</div>
 
                             <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
@@ -89,13 +89,13 @@
                             </select>
                         </div>
 
-                            <div data-target="exchange.numPageWrapper" class="row justify-content-end float-md-right control-div ml-3 mt-2">
-                                <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}" data-current-page="{{ .totalPages }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                        <div data-target="exchange.pageSizeWrapper" class="row justify-content-end float-md-right control-div ml-3 mt-2">
+                            <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}" data-current-page="{{ .totalPages }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                                </p>    
-                                <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-current-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                            </div>
+                            <p class="text-muted"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}" data-current-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+                        </div>
                     </div>
                 </div>
                 <div class="" data-target="exchange.exchangeTableWrapper">
@@ -145,7 +145,7 @@
                     </template>
                 </div>
                 <div data-target="exchange.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5 d-hide">
-                    <div id="chart" data-target="exchange.chartsView" style="width:100%; height:73vh; margin:0 auto;">
+                <div id="chart" data-target="exchange.chartsView" style="width:100%; height:73vh; margin:0 auto;">
                     </div>
                     <div class="spinner-wrapper">
                         <div class="spinner-centerer d-flex align-items-center justify-content-center">
@@ -158,6 +158,8 @@
                         <div class="legend d-flex" data-target="exchange.labels"></div>
                     </div>
                 </div>
+                    <div data-target="exchange.messageView" class="d-hide">
+                    </div>
             </div>
         </div>
         {{ template "footer" }}
