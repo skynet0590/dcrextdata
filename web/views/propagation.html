@@ -2,25 +2,26 @@
 <html lang="en">
 {{ template "html-head" }}
 <body data-controller="receive">
-    <div class="body">
+    <div class="body" data-controller="propagation">
         {{ template "header" }}
         <div class="content">
             <div class="container"> 
-                <div class="row">
-                    <div class="col-md-12" data-controller="propagation">
-                        <h4>Propagation</h4>
+                    <div class="control-div p-0" >
+                                    <div class="d-block">
 
+                        <h4>Propagation</h4>
+</div>
                         <div class="d-flex flex-row">
-                            <div class="col-md-3 col-sm-12 mb-2">
+                            <div class="chart-control control-div p-0">
                                 <select data-target="propagation.selectedRecordSet" data-action="change->propagation#selectedRecordSetChanged"
-                                    class="form-control" style="width: 150px;">
+                                    class="form-control " style="width: 150px;">
                                     <option value="both">Both</option>
                                     <option value="blocks">Blocks</option>
                                     <option value="votes">Votes</option>
                                 </select>
                             </div>
 
-                            <div data-target="propagation.numPageWrapper" class="control-div offset-md-4">
+                            <div data-target="propagation.numPageWrapper" class="control-div ml-auto p-0">
                                 <div class="control-label">Page Size:</div>
                                 <select data-target="propagation.selectedNum" data-action="change->propagation#numberOfRowsChanged" class="form-control" style="width: 70px;">
                                     <option value="20">20</option>
@@ -31,14 +32,14 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-4 col-lg-3 float-md-right">
-                                <div class="d-flex float-md-right">
+                            <div class="d-flex">
+                                <div class="float-md-right">
                                     <button data-target="propagation.previousPageButton" data-action="click->propagation#gotoPreviousPage" data-previous-page="{{ .propagation.previousPage}}"
                                         class="btn btn-link {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">
                                         &lt; Previous
                                     </button>
 
-                                    <span data-target="propagation.pageReport" class="text-muted"
+                                    <span data-target="propagation.pageReport" style="white-space: nowrap;" class="text-muted"
                                     data-current-page="{{ .propagation.currentPage }}" style="padding-top: 6.5px;">
                                     Page <span data-target="propagation.currentPage"
                                     data-current-page="{{ .propagation.currentPage }}">{{ .propagation.currentPage }}</span> of

@@ -34,8 +34,8 @@
                     </div>
                 </div>
 
-                <div class="row align-items-center">
-                    <div class="col-md-4 col-sm-12 mb-2">
+                <div class="d-flex flex-row">
+                    <div class="control-div p-0">
                         <div class="control-label">VSP:</div>
                         <select data-target="vsp.selectedFilter" data-action="change->vsp#selectedFilterChanged"
                             class="form-control" style="width: 278px;">
@@ -48,7 +48,7 @@
                         </select>
                     </div>
 
-                    <div data-target="vsp.graphTypeWrapper" class="col-md-3 col-sm-12 mb-2 d-none ">
+                    <div data-target="vsp.graphTypeWrapper" class="control-div p-0 d-none ">
                         <div class="control-label">Data:</div>
                         <select data-target="vsp.graphType" data-action="change->vsp#graphTypeChanged"
                             class="form-control" style="width: 150px;">
@@ -64,7 +64,7 @@
                         </select>
                     </div>
 
-                    <div class="col-sm-7 d-none" data-target="vsp.chartSourceWrapper">
+                    <div class="control-div p-0 d-none" data-target="vsp.chartSourceWrapper">
                         {{ range $index, $filter := .allVspData}}
                         <div class="form-check form-check-inline">
                             <input name="chartSource" data-target="vsp.chartSource" data-action="click->vsp#chartSourceCheckChanged"
@@ -75,10 +75,10 @@
                         {{ end }}
                     </div>
 
-                    <div data-target="vsp.numPageWrapper" class="col d-flex  align-items-center justify-content-between float-md-right">
+                    <div data-target="vsp.numPageWrapper" class="control-div p-0 ml-auto">
                         <div class=" mb-2 float-md-right">
                             <div class="control-label">Page Size:</div>
-                            <select data-target="vsp.selectedNum" data-action="change->vsp#numberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                            <select data-target="vsp.selectedNum" data-action="change->vsp#numberOfRowsChanged" class="form-control" style="width: 70px;">
                                 <option value="20">20</option>
                                 <option value="30">30</option>
                                 <option value="50">50</option>
@@ -86,17 +86,16 @@
                                 <option value="150">150</option>
                             </select>
                         </div>
-
-                        <div class="d-flex float-md-right">
+                    </div>
+                        <div data-target="vsp.pageSizeWrapper" class="d-flex">
                             <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted"> Page <span data-target="vsp.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="vsp.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
                             </p>
                             <a href="javascript:void(0)" data-target="vsp.nextPageButton" data-action="click->vsp#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
                     </div>
                 </div>
-            </div>
             <div class="" data-target="vsp.vspTableWrapper">
                 <table class="table">
                     <thead>

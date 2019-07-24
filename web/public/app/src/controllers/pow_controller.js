@@ -10,7 +10,7 @@ export default class extends Controller {
       'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
 
@@ -31,6 +31,7 @@ export default class extends Controller {
     hide(this.chartWrapperTarget)
     show(this.powTableWrapperTarget)
     show(this.numPageWrapperTarget)
+    show(this.pageSizeWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('table')
   }
@@ -41,6 +42,7 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     hide(this.powTableWrapperTarget)
     show(this.chartWrapperTarget)
+    hide(this.pageSizeWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
   }

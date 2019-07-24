@@ -401,10 +401,15 @@ table.collapsible .labels tr td {
   padding: 0, 0, 0, 1rem !important;
   white-space: nowrap;
   display: inline-block;
+  margin-right: 1rem;
 }
 
 .nextPage {
   float: right;
+}
+
+.bottom-ctl {
+  flex-wrap: nowrap;
 }
 
 .control-wrapper {
