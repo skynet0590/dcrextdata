@@ -49,7 +49,6 @@ export default class extends Controller {
     this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     show(this.chartDataTypeSelectorTarget)
-    show(this.chartOptionsTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.nextPage = 1
