@@ -10,8 +10,14 @@ export default class extends Controller {
       'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate',
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
       'chartWrapper', 'viewOption', 'labels',
-      'chartDataTypeSelector', 'chartDataType'
+      'chartDataTypeSelector', 'chartDataType', 'chartOptions', 'labels', 'selectedMempoolOpt',
+      'selectedNum', 'numPageWrapper'
     ]
+  }
+
+  connect () {
+    var num = this.selectedNumTarget.options
+    this.selectedNumTarget.value = num[0].text
   }
 
   initialize () {
@@ -29,16 +35,22 @@ export default class extends Controller {
     hide(this.chartWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
+    show(this.numPageWrapperTarget)
     show(this.btnWrapperTarget)
+    this.currentPage = this.currentPage
     this.fetchData(this.viewOption)
   }
 
   setChart () {
     this.viewOption = 'chart'
-    show(this.chartDataTypeSelectorTarget)
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
+    var y = this.selectedMempoolOptTarget.options
+    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    show(this.chartDataTypeSelectorTarget)
+    show(this.chartOptionsTarget)
+    hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.nextPage = 1
     this.fetchData(this.viewOption)
@@ -85,10 +97,16 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+  NumberOfRowsChanged () {
+    this.selectedNum = this.selectedNumTarget.value
+    this.fetchData(this.viewOption)
+  }
+
   fetchData (display) {
     var url
     if (display === 'table') {
-      url = `/getmempool?page=${this.currentPage}`
+      var numberOfRows = this.selectedNumTarget.value
+      url = `/getmempool?page=${this.currentPage}&recordsPerPage=${numberOfRows}`
     } else {
       url = `/getmempoolCharts?chartFilter=${this.dataType}`
     }

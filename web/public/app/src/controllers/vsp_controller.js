@@ -10,9 +10,16 @@ export default class extends Controller {
       'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'graphTypeWrapper', 'graphType',
+      'graphTypeWrapper', 'graphType', 'pageSizeWrapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
+  }
+
+  connect () {
+    var filter = this.selectedFilterTarget.options
+    var num = this.selectedNumTarget.options
+    this.selectedFilterTarget.value = filter[0].text
+    this.selectedNumTarget.value = num[0].text
   }
 
   initialize () {
@@ -30,6 +37,7 @@ export default class extends Controller {
     hide(this.graphTypeWrapperTarget)
     show(this.vspTableWrapperTarget)
     show(this.numPageWrapperTarget)
+    show(this.pageSizeWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange('table')
@@ -41,6 +49,7 @@ export default class extends Controller {
     hide(this.vspTableWrapperTarget)
     show(this.graphTypeWrapperTarget)
     show(this.chartWrapperTarget)
+    hide(this.pageSizeWrapperTarget)
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
     if (this.selectedFilterTarget.selectedIndex === 0) {

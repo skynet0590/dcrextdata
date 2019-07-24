@@ -10,7 +10,7 @@ export default class extends Controller {
       'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
 
@@ -18,22 +18,31 @@ export default class extends Controller {
     this.viewOption = 'table'
   }
 
+  connect () {
+    var filter = this.selectedFilterTarget.options
+    var num = this.selectedNumTarget.options
+    this.selectedFilterTarget.value = filter[0].text
+    this.selectedNumTarget.value = num[0].text
+  }
+
   setTable () {
     this.viewOption = 'table'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.add('d-hide')
-    this.powTableWrapperTarget.classList.remove('d-hide')
-    this.numPageWrapperTarget.classList.remove('d-hide')
+    hide(this.chartWrapperTarget)
+    show(this.powTableWrapperTarget)
+    show(this.numPageWrapperTarget)
+    show(this.pageSizeWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('table')
   }
 
   setChart () {
     this.viewOption = 'chart'
-    this.numPageWrapperTarget.classList.add('d-hide')
-    this.powTableWrapperTarget.classList.add('d-hide')
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.chartWrapperTarget.classList.remove('d-hide')
+    hide(this.numPageWrapperTarget)
+    hide(this.powTableWrapperTarget)
+    show(this.chartWrapperTarget)
+    hide(this.pageSizeWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
   }
@@ -53,7 +62,7 @@ export default class extends Controller {
     this.fetchExchange(this.viewOption)
   }
 
-  NumberOfRowsChanged () {
+  numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
   }

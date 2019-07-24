@@ -15,6 +15,15 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    var filter = this.selectedFilterTarget.options
+    var num = this.selectedNumTarget.options
+    var cpair = this.currencyPairHideOptionTarget.options
+    this.selectedFilterTarget.value = filter[0].text
+    this.currencyPairHideOptionTarget.value = cpair[0].value
+    this.selectedNumTarget.value = num[0].text
+  }
+
   initialize () {
     this.viewOption = 'table'
     this.selectedFilter = this.selectedFilterTarget.value

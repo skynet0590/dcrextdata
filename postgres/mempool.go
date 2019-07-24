@@ -70,7 +70,7 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	for _, m := range mempoolSlice {
 		result = append(result, mempool.MempoolDto{
 			TotalFee:             m.TotalFee.Float64,
-			FirstSeenTime:        m.FirstSeenTime.Time.Format(dateMiliTemplate),
+			FirstSeenTime:        m.FirstSeenTime.Time.Format(dateTemplate),
 			Total:                m.Total.Float64,
 			Voters:               m.Voters.Int,
 			Tickets:              m.Tickets.Int,
@@ -153,8 +153,8 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 		blocks = append(blocks, mempool.BlockDto{
 			BlockHash:         block.Hash.String,
 			BlockHeight:       uint32(block.Height),
-			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
-			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
+			BlockInternalTime: block.InternalTimestamp.Time.Format(dateTemplate),
+			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateTemplate),
 			Delay:             fmt.Sprintf("%04.2f", timeDiff),
 			Votes:             votes,
 		})
@@ -177,8 +177,8 @@ func (pg *PgDb) BlocksWithoutVotes(ctx context.Context, offset int, limit int) (
 		blocks = append(blocks, mempool.BlockDto{
 			BlockHash:         block.Hash.String,
 			BlockHeight:       uint32(block.Height),
-			BlockInternalTime: block.InternalTimestamp.Time.Format(dateMiliTemplate),
-			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateMiliTemplate),
+			BlockInternalTime: block.InternalTimestamp.Time.Format(dateTemplate),
+			BlockReceiveTime:  block.ReceiveTime.Time.Format(dateTemplate),
 			Delay:             fmt.Sprintf("%04.2f", timeDiff),
 		})
 	}
@@ -259,7 +259,7 @@ func (pg *PgDb) voteModelToDto(vote *models.Vote) mempool.VoteDto {
 
 	return mempool.VoteDto{
 		Hash:                  vote.Hash,
-		ReceiveTime:           vote.ReceiveTime.Time.Format(dateMiliTemplate),
+		ReceiveTime:           vote.ReceiveTime.Time.Format(dateTemplate),
 		TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
 		BlockReceiveTimeDiff:  fmt.Sprintf("%04.2f", blockReceiveTimeDiff),
 		VotingOn:              vote.VotingOn.Int64,

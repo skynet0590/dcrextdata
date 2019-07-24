@@ -6,11 +6,18 @@ export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton',
-      'selectedRecordSet',
+      'selectedRecordSet', 'selectedNum', 'numPageWrapper',
       'table', 'blocksTbody', 'votesTbody',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage'
     ]
+  }
+
+  connect () {
+    var filter = this.selectedRecordSetTarget.options
+    var num = this.selectedNumTarget.options
+    this.selectedRecordSetTarget.value = filter[0].value
+    this.selectedNumTarget.value = num[0].text
   }
 
   initialize () {
@@ -35,8 +42,15 @@ export default class extends Controller {
     this.fetchData(this.currentPage + 1)
   }
 
+  numberOfRowsChanged () {
+    this.selectedNum = this.selectedNumTarget.value
+    this.fetchData(1)
+  }
+
   fetchData (page) {
     const _this = this
+
+    var numberOfRows = this.selectedNumTarget.value
     let uri = '/getpropagationdata'
     switch (this.selectedRecordSet) {
       case 'blocks':
@@ -49,7 +63,7 @@ export default class extends Controller {
         uri = 'getpropagationdata'
         break
     }
-    axios.get(`/${uri}?page=${page}`).then(function (response) {
+    axios.get(`/${uri}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
@@ -155,22 +169,22 @@ export default class extends Controller {
       blocksHtml += `<tbody data-target="propagation.blockTbody"
                             data-block-hash="${block.block_hash}">
                         <tr>
-                            <td colspan="7" ${padding}>
-                              <b>Height</b>: ${block.block_height} &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Timestamp</b>: ${block.block_internal_time}  &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Received</b>: ${block.block_receive_time}  &nbsp;&nbsp;&nbsp;&nbsp;
-                              <b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a>
+                            <td colspan="100" ${padding}>
+                              <span class="d-inline-block"><b>Height</b>: ${block.block_height} </span>  &#8195;
+                              <span class="d-inline-block"><b>Timestamp</b>: ${block.block_internal_time}</span>  &#8195;
+                              <span class="d-inline-block"><b>Received</b>: ${block.block_receive_time}</span>  &#8195;
+                              <span class="d-inline-block"><b>Hash</b>: <a target="_blank" href="https://explorer.dcrdata.org/block/${block.block_height}">${block.block_hash}</a></span>
                             </td>
                         </tr>
                         </tbody>
                         <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">
-                        <tr>
-                            <td>Voting On</td>
-                            <td>Validator ID</td>
-                            <td>Validity</td>
-                            <td>Received</td>
-                            <td>Block Receive Time Diff</td>
-                            <td>Hash</td>
+                        <tr style="white-space: nowrap;">
+                            <td style="width: 120px;">Voting On</td>
+                            <td style="width: 120px;">Validator ID</td>
+                            <td style="width: 120px;">Validity</td>
+                            <td style="width: 120px;">Received</td>
+                            <td style="width: 120px;">Block Receive Time Diff</td>
+                            <td style="width: 120px;">Hash</td>
                         </tr>
                         ${votesHtml}
                         </tbody>
