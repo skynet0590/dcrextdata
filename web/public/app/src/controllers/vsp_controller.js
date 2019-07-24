@@ -154,7 +154,7 @@ export default class extends Controller {
 
   fetchDataAndGraph () {
     let _this = this
-    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&sources=${this.selectedFilterTarget.value}`
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsp=${this.selectedFilterTarget.value}`
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     })
@@ -167,7 +167,6 @@ export default class extends Controller {
   // vsp chart
   plotGraph (dataSet) {
     const _this = this
-    dataSet = Object.values(dataSet)
     let yLabel = this.graphTypeTarget.value.split('_').join(' ')
     if ((yLabel.toLowerCase() === 'proportion live' || yLabel.toLowerCase() === 'proportion missed')) {
       yLabel += ' (%)'
@@ -179,23 +178,18 @@ export default class extends Controller {
     let csv = `Date,${yLabel}\n`
     let minDate, maxDate
 
-    for (let i = 0; i < dataSet.length; i++) {
-      if (!Array.isArray(dataSet[i])) continue
-      for (let j = 0; j < dataSet[i].length; j++) {
-        if (j === 0) {
-          const date = new Date(dataSet[i][j])
-          if (minDate === undefined || date < minDate) {
-            minDate = date
-          }
-          if (maxDate === undefined || date > maxDate) {
-            maxDate = date
-          }
-          csv += `${date},`
-        } else if (!isNaN(dataSet[i][j])) {
-          csv += `${dataSet[i][j]}\n`
-        }
+    dataSet.forEach(point => {
+      const date = new Date(point.date)
+      if (date.getFullYear() === 1970) return
+      if (minDate === undefined || date < minDate) {
+        minDate = date
       }
-    }
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+      csv += `${date},${point.record}\n`
+    })
+
     let options = {
       legend: 'always',
       includeZero: true,

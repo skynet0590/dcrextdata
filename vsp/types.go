@@ -81,6 +81,6 @@ func (err PoolTickTimeExistsError) Error() string {
 type ChartPoints []interface{}
 
 type ChartData struct {
-	Date   time.Time
-	Record string
+	Date   time.Time `json:"date"`
+	Record string    `json:"record"`
 }
