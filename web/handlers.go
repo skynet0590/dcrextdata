@@ -83,6 +83,8 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
+	
+	data := map[string]interface{}{}
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -136,20 +138,39 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		}
 	}
 
+	var intervalRange string
+	if len(allExhangeTicksSlice) == 0 {
+		if filterInterval == 5 {
+			intervalRange = "5 minutes"
+		}
+		if filterInterval == 60 {
+			intervalRange = "1 hour"
+		}
+		if filterInterval == 120 {
+			intervalRange = "2 hours"
+		}
+		if filterInterval == 1440 {
+			intervalRange = "1 day"
+		}
+
+		data["message"] = fmt.Sprintf("No exchange data for %s when currency pair is %s and interval is %s.", selectedFilter, selectedCurrencyPair, intervalRange)
+		s.renderJSON(data, res)
+		return
+	}
+
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
-	data := map[string]interface{}{
-		"exData":         allExhangeTicksSlice,
-		"allExData":      allExhangeSlice,
-		"selectedFilter": selectedFilter,
-		"currentPage":    pageToLoad,
-		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
-	}
+		data["exData"] =         allExhangeTicksSlice
+		data["allExData"]  =    allExhangeSlice
+		data["selectedFilter"] = selectedFilter
+		data["currentPage"] =    pageToLoad
+		data["previousPage"] =   int(pageToLoad - 1)
+		data["totalPages"] =     int(math.Ceil(float64(totalCount) / float64(pageSize)))
+	
 
 	defer s.renderJSON(data, res)
 

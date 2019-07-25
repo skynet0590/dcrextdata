@@ -128,26 +128,40 @@ export default class extends Controller {
     axios.get(url)
       .then(function (response) {
         let result = response.data
+
         if (display === 'table') {
-          _this.currentPage = result.currentPage
-          if (_this.currentPage <= 1) {
-            hide(_this.previousPageButtonTarget)
+          if (result.message) {
+            let messageHTML = ''
+            messageHTML += `<div class="alert alert-primary">
+                           <strong>${result.message}</strong>
+                      </div>`
+
+            _this.messageViewTarget.innerHTML = messageHTML
+            show(_this.messageViewTarget)
+            hide(_this.exchangeTableWrapperTarget)
           } else {
-            show(_this.previousPageButtonTarget)
+            hide(_this.messageViewTarget)
+            show(_this.exchangeTableWrapperTarget)
+            _this.currentPage = result.currentPage
+            if (_this.currentPage <= 1) {
+              hide(_this.previousPageButtonTarget)
+            } else {
+              show(_this.previousPageButtonTarget)
+            }
+
+            if (_this.currentPage >= result.totalPages) {
+              hide(_this.nextPageButtonTarget)
+            } else {
+              show(_this.nextPageButtonTarget)
+            }
+
+            _this.totalPageCountTarget.textContent = result.totalPages
+            _this.currentPageTarget.textContent = result.currentPage
+            _this.previousPageButtonTarget.setAttribute('data-previous-page', `${result.previousPage}`)
+            _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+
+            _this.displayExchange(result.exData)
           }
-
-          if (_this.currentPage >= result.totalPages) {
-            hide(_this.nextPageButtonTarget)
-          } else {
-            show(_this.nextPageButtonTarget)
-          }
-
-          _this.totalPageCountTarget.textContent = result.totalPages
-          _this.currentPageTarget.textContent = result.currentPage
-          _this.previousPageButtonTarget.setAttribute('data-previous-page', `${result.previousPage}`)
-          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-
-          _this.displayExchange(result.exData)
         } else {
           console.log(result)
           _this.plotGraph(result)
