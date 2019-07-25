@@ -98,7 +98,6 @@ function darkenColor (colorStr) {
 export var options = {
   axes: { y: { axisLabelWidth: 100 } },
   axisLabelFontSize: 12,
-  // digitsAfterDecimal: 8,
   retainDateWindow: false,
   showRangeSelector: true,
   rangeSelectorHeight: 40,
@@ -107,7 +106,8 @@ export var options = {
   legend: 'always',
   labelsSeparateLines: true,
   highlightCircleSize: 4,
-  yLabelWidth: 20
+  yLabelWidth: 20,
+  drawAxesAtZero: true
 }
 
 export function getRandomColor () {
