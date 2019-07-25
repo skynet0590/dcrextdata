@@ -54,10 +54,11 @@
                                 {{ end }}
                             </select>
                         </div>
-                        <div data-target="exchange.intervalWapper" class="control-div p-0 d-hide">
+                        <div data-target="exchange.intervalWapper" class="control-div p-0">
                             <div class="control-label">Interval:</div>
                             <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
                                 class="form-control" style="width: 60px;">
+                                <option data-target="exchange.hideIntervalOption" value="-1">All</option>
                                 <option value="5">5m</option>
                                 <option value="60">1h</option>
                                 <option value="120">2h</option>
@@ -98,7 +99,7 @@
                 <div class="" data-target="exchange.exchangeTableWrapper">
                     <table class="table">
                         <thead>
-                            <tr>
+                            <tr style="white-space: nowrap;">
                                 <th>Time(UTC)</th>
                                 <th>Exchange</th>
                                 <th>High</th>
