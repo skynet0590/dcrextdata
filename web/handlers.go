@@ -15,7 +15,14 @@ import (
 
 var (
 	recordsPerPage  = 20
-	defaultInterval = 5
+	defaultInterval = -1 // All
+	exchangeTickIntervals = map[int]string{
+		-1:   "All",
+		5:    "5m",
+		60:   "1h",
+		120:  "2h",
+		1440: "1d",
+	}
 )
 
 // /home
@@ -31,7 +38,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", defaultInterval, offset, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, "", "", defaultInterval, offset, recordsPerPage)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
@@ -79,7 +86,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	selectedFilter := req.FormValue("filter")
+	selectedExchange := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
@@ -99,6 +106,10 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		filterInterval = defaultInterval
 	}
 
+	if _, found := exchangeTickIntervals[filterInterval]; !found {
+		filterInterval = defaultInterval
+	}
+
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
@@ -111,49 +122,14 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var allExhangeTicksSlice []ticks.TickDto
 	var totalCount int64
 
-	if selectedFilter == "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", filterInterval, offset, pageSize)
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
-
-	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, filterInterval, offset, pageSize)
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
-	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, filterInterval, offset, pageSize)
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
-	} else {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, filterInterval, offset, pageSize)
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
+	allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), res)
+		return
 	}
 
-	var intervalRange string
 	if len(allExhangeTicksSlice) == 0 {
-		if filterInterval == 5 {
-			intervalRange = "5m"
-		}
-		if filterInterval == 60 {
-			intervalRange = "1h"
-		}
-		if filterInterval == 120 {
-			intervalRange = "2h"
-		}
-		if filterInterval == 1440 {
-			intervalRange = "1d"
-		}
-
-		data["message"] = fmt.Sprintf("%s does not have %s data.", strings.Title(selectedFilter), intervalRange)
+		data["message"] = fmt.Sprintf("%s does not have %s data.", strings.Title(selectedExchange), exchangeTickIntervals[filterInterval])
 		s.renderJSON(data, res)
 		return
 	}
@@ -166,7 +142,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 	data["exData"] = allExhangeTicksSlice
 	data["allExData"] = allExhangeSlice
-	data["selectedFilter"] = selectedFilter
+	data["selectedExchange"] = selectedExchange
 	data["currentPage"] = pageToLoad
 	data["previousPage"] = int(pageToLoad - 1)
 	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
