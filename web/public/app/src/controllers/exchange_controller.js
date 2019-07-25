@@ -210,7 +210,8 @@ export default class extends Controller {
         labelsDiv: this.labelsTarget,
         ylabel: 'Price',
         labels: labels,
-        colors: colors
+        colors: colors,
+        digitsAfterDecimal: 8
       }
 
       _this.chartsView = new Dygraph(
