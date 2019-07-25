@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	recordsPerPage = 20
+	recordsPerPage  = 20
 	defaultInterval = 5
 )
 
@@ -83,7 +83,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
-	
+
 	data := map[string]interface{}{}
 
 	var pageSize int
@@ -97,7 +97,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	filterInterval, err := strconv.Atoi(interval)
 	if err != nil || filterInterval <= 0 {
 		filterInterval = defaultInterval
-	} 
+	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
@@ -164,13 +164,12 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 		return
 	}
 
-		data["exData"] =         allExhangeTicksSlice
-		data["allExData"]  =    allExhangeSlice
-		data["selectedFilter"] = selectedFilter
-		data["currentPage"] =    pageToLoad
-		data["previousPage"] =   int(pageToLoad - 1)
-		data["totalPages"] =     int(math.Ceil(float64(totalCount) / float64(pageSize)))
-	
+	data["exData"] = allExhangeTicksSlice
+	data["allExData"] = allExhangeSlice
+	data["selectedFilter"] = selectedFilter
+	data["currentPage"] = pageToLoad
+	data["previousPage"] = int(pageToLoad - 1)
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
 
 	defer s.renderJSON(data, res)
 
