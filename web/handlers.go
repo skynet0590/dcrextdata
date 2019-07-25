@@ -112,26 +112,26 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var totalCount int64
 
 	if selectedFilter == "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", offset, filterInterval, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, "", filterInterval, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 
 	} else if selectedFilter == "All" && selectedCurrencyPair != "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, offset, filterInterval, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.AllExchangeTicks(ctx, selectedCurrencyPair, filterInterval, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else if selectedFilter != "All" && selectedCurrencyPair == "All" {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, offset, filterInterval, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, "", selectedFilter, filterInterval, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return
 		}
 	} else {
-		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, offset, filterInterval, pageSize)
+		allExhangeTicksSlice, totalCount, err = s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedFilter, filterInterval, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(err.Error(), res)
 			return

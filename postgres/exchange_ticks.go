@@ -132,7 +132,7 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 }
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
-func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset, filteredInteraval, limit int) ([]ticks.TickDto, int64, error) {
+func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, filteredInteraval, offset, limit int) ([]ticks.TickDto, int64, error) {
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
@@ -177,7 +177,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 // todo impliment sorting for Exchange ticks as it is currently been sorted by time
-func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, offset, defaultInterval, limit int) ([]ticks.TickDto, int64, error) {
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, filteredInteraval, offset, limit int) ([]ticks.TickDto, int64, error) {
 	var exchangeTickSlice models.ExchangeTickSlice
 	var exchangeTickSliceCount int64
 	var err error
