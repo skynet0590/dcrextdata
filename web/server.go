@@ -21,9 +21,9 @@ import (
 )
 
 type DataQuery interface {
-	AllExchangeTicks(ctx context.Context, currencyPair string, offset, defaultInterval, limit int) ([]ticks.TickDto, int64, error)
+	AllExchangeTicks(ctx context.Context, currencyPair string, defaultInterval, offset, limit int) ([]ticks.TickDto, int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
-	FetchExchangeTicks(ctx context.Context, currencyPair, name string, offset, filterInterval, limit int) ([]ticks.TickDto, int64, error)
+	FetchExchangeTicks(ctx context.Context, currencyPair, name string, defaultInterval, offset, limit int) ([]ticks.TickDto, int64, error)
 	AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error)
 	ExchangeTicksChartData(ctx context.Context, filter string, currencyPair string, selectedInterval int, exchanges string) ([]ticks.TickChartData, error)
 	AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error)
