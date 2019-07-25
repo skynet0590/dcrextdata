@@ -27,7 +27,6 @@
                                 <div class="control-label">Pool:</div>
                                 <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
                                     class="form-control" style="width: 110px;">
-
                                     <option value="All" selected>All</option>
                                     {{ range $index, $filter := .powSource}}
                                     <option value="{{$filter.Source}}">{{$filter.Source}}</option>
