@@ -39,7 +39,7 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
-
+    hide(this.messageViewTarget)
     hide(this.tickWapperTarget)
     show(this.hideOptionTarget)
     show(this.pageSizeWrapperTarget)
@@ -47,20 +47,23 @@ export default class extends Controller {
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
+    var filter = this.selectedFilterTarget.options
+    var num = this.selectedNumTarget.options
+    var cpair = this.selectedCurrencyPairTarget.options
+    var interval = this.selectedIntervalTarget.options
+    this.selectedFilter = this.selectedFilterTarget.value = filter[0].text
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = cpair[0].text
+    this.selectedNum = this.selectedNumTarget.value = num[0].value
+    this.selectedInterval = this.selectedIntervalTarget.value = interval[0].value
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedTicksTarget.value = 'close'
-    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
   }
 
   setChart () {
     this.viewOption = 'chart'
-
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    var y = this.selectedIntervalTarget.options
-    this.selectedInterval = this.selectedIntervalTarget.value = y[0].text
+    hide(this.messageViewTarget)
     var interval = this.selectedIntervalTarget.options
     var sFilter = this.selectedFilterTarget.options
     show(this.chartWrapperTarget)
@@ -128,7 +131,7 @@ export default class extends Controller {
     axios.get(url)
       .then(function (response) {
         let result = response.data
-
+        console.log(result)
         if (display === 'table') {
           if (result.message) {
             let messageHTML = ''

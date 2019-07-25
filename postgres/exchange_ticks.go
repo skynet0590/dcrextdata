@@ -133,51 +133,59 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, filteredInteraval, offset, limit int) ([]ticks.TickDto, int64, error) {
-	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
-	if err != nil {
-		return nil, 0, err
-	}
+  exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)
+  if err != nil {
+    return nil, 0, err
+  }
+  query := []qm.QueryMod{
+    qm.Load("Exchange"),
+    models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
+  }
+  
+  if currencyPair != "" {
+    query = append(query, models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair))
+  } 
+  if filteredInteraval > 0 {
+    query = append(query, models.ExchangeTickWhere.Interval.EQ(filteredInteraval))
+  }
 
-	var idQuery qm.QueryMod
-	if currencyPair != "" {
-		idQuery = qm.Where("(exchange_id=? and currency_pair=? and interval=?)", exchange.ID, currencyPair, filteredInteraval)
-	} else {
-		idQuery = models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID)
-	}
+  exchangeTickSliceCount, err := models.ExchangeTicks(query...).Count(ctx, pg.db)
 
-	exchangeTickSlice, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery, qm.Limit(limit), qm.Offset(offset), qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time))).All(ctx, pg.db)
-	if err != nil {
-		return nil, 0, err
-	}
+  if err != nil {
+    return nil, 0, err
+  }
 
-	exchangeTickSliceCount, err := models.ExchangeTicks(qm.Load("Exchange"), idQuery).Count(ctx, pg.db)
+  query = append(query,
+    qm.Limit(limit),
+    qm.Offset(offset),
+    qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time)),
+  )
+  exchangeTickSlice, err := models.ExchangeTicks(query...).All(ctx, pg.db)
+  if err != nil {
+    return nil, 0, err
+  }
 
-	if err != nil {
-		return nil, 0, err
-	}
+  tickDtos := []ticks.TickDto{}
+  for _, tick := range exchangeTickSlice {
+    tickDtos = append(tickDtos, ticks.TickDto{
+      ExchangeID:   tick.ExchangeID,
+      Interval:     tick.Interval,
+      CurrencyPair: tick.CurrencyPair,
+      Time:         tick.Time.Format(dateTemplate),
+      Close:        tick.Close,
+      ExchangeName: tick.R.Exchange.Name,
+      High:         tick.High,
+      Low:          tick.Low,
+      Open:         tick.Open,
+      Volume:       tick.Volume,
+    })
+  }
 
-	tickDtos := []ticks.TickDto{}
-	for _, tick := range exchangeTickSlice {
-		tickDtos = append(tickDtos, ticks.TickDto{
-			ExchangeID:   tick.ExchangeID,
-			Interval:     tick.Interval,
-			CurrencyPair: tick.CurrencyPair,
-			Time:         tick.Time.Format(dateTemplate),
-			Close:        tick.Close,
-			ExchangeName: tick.R.Exchange.Name,
-			High:         tick.High,
-			Low:          tick.Low,
-			Open:         tick.Open,
-			Volume:       tick.Volume,
-		})
-	}
-
-	return tickDtos, exchangeTickSliceCount, err
+  return tickDtos, exchangeTickSliceCount, err
 }
-
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 // todo impliment sorting for Exchange ticks as it is currently been sorted by time
-func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, filteredInteraval, offset, limit int) ([]ticks.TickDto, int64, error) {
+func (pg *PgDb) AllExchangeTicks(ctx context.Context, currencyPair string, defaultInterval, offset, limit int) ([]ticks.TickDto, int64, error) {
 	var exchangeTickSlice models.ExchangeTickSlice
 	var exchangeTickSliceCount int64
 	var err error
