@@ -31,7 +31,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 
 	ctx := context.Background()
 
-	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", offset, defaultInterval, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.AllExchangeTicks(ctx, "", defaultInterval, offset, recordsPerPage)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
