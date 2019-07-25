@@ -131,7 +131,6 @@ export default class extends Controller {
     axios.get(url)
       .then(function (response) {
         let result = response.data
-        console.log(result)
         if (display === 'table') {
           if (result.message) {
             let messageHTML = ''
@@ -166,7 +165,6 @@ export default class extends Controller {
             _this.displayExchange(result.exData)
           }
         } else {
-          console.log(result)
           _this.plotGraph(result)
         }
       }).catch(function (e) {
