@@ -92,7 +92,7 @@ func (vsp *Collector) Run(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Infof("Shutting VSP down collector")
+				log.Infof("Shutting down VSP collector")
 				return
 			case <-ticker.C:
 				// continually check the state of the app until its free to run this module

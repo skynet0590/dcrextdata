@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -307,7 +308,7 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 // vspchartdata
 func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	sources := req.FormValue("sources")
+	sources := req.FormValue("vsps")
 	selectedAttribute := req.FormValue("selectedAttribute")
 
 	vsps := strings.Split(sources, "|")
@@ -319,9 +320,23 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var resultMap = map[time.Time][]interface{}{}
+	var vspChartData = struct {
+		CSV     string    `json:"csv"`
+		MinDate time.Time `json:"min_date"`
+		MaxDate time.Time `json:"max_date"`
+	}{
+		CSV: "Date," + strings.Join(vsps, ",") + "\n",
+	}
+
+	var resultMap = map[time.Time][]string{}
 	for _, date := range dates {
-		resultMap[date] = []interface{}{date}
+		if vspChartData.MinDate.IsZero() || date.Before(vspChartData.MinDate) {
+			vspChartData.MinDate = date
+		}
+		if vspChartData.MaxDate.IsZero() || date.After(vspChartData.MaxDate) {
+			vspChartData.MaxDate = date
+		}
+		resultMap[date] = []string{date.String()}
 	}
 
 	for _, source := range vsps {
@@ -331,35 +346,74 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		var vspPointMap = map[time.Time]interface{}{}
+		var vspPointMap = map[time.Time]string{}
+		var vspDates []time.Time
 		for _, point := range points {
 			vspPointMap[point.Date] = point.Record
+			vspDates = append(vspDates, point.Date)
 		}
 
-		//var previousDate time.Time
+		sort.Slice(vspDates, func(i, j int) bool {
+			return vspDates[i].Before(vspDates[j])
+		})
+
 		for date, _ := range resultMap {
+			if date.Year() == 1970 || date.IsZero() {
+				continue
+			}
 			if record, found := vspPointMap[date]; found {
-				resultMap[date] = append(resultMap[date], record)
-				//previousDate = date
-			} else {
-				resultMap[date] = append(resultMap[date], 0)
-				/*if record, found := vspPointMap[previousDate]; found {
+				skip := false
+				if record == "0" || record == "" {
+					skip = true
+					for _, vspDate := range vspDates {
+						if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+							skip = false
+						}
+					}
+				}
+				if !skip {
 					resultMap[date] = append(resultMap[date], record)
 				} else {
-					fmt.Println(fmt.Sprintf("not found and %s not seen before", previousDate.String()))
-					resultMap[date] = append(resultMap[date], 0)
-				}*/
+					resultMap[date] = append(resultMap[date], "Nan")
+				}
+			} else {
+				// if they have not been any record for this vsp, give a gap (Nan) else use space
+				padding := "Nan"
+				for _, vspDate := range vspDates {
+					if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+						padding = ""
+					}
+				}
+				resultMap[date] = append(resultMap[date], padding)
 			}
 		}
 	}
 
-	/*
-		var chartData [][]interface{}
-		for _, points := range resultMap {
-			chartData = append(chartData, points)
-		}*/
+	for _, date := range dates {
+		if date.Year() == 1970 || date.IsZero() {
+			continue
+		}
 
-	s.renderJSON(resultMap, res)
+		points := resultMap[date]
+		hasAtleastOneRecord := false
+		for index, point := range points {
+			// the first index is the date
+			if index == 0 {
+				continue
+			}
+			if point != "" && point != "Nan" {
+				hasAtleastOneRecord = true
+			}
+		}
+
+		if !hasAtleastOneRecord {
+			continue
+		}
+
+		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
+	}
+
+	s.renderJSON(vspChartData, res)
 }
 
 // /PoW

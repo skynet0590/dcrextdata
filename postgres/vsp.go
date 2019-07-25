@@ -117,7 +117,7 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 }
 
 func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
-	vspData, err := models.VSPS().All(ctx, pg.db)
+	vspData, err := models.VSPS(qm.OrderBy(models.VSPColumns.URL), qm.OrderBy(models.VSPColumns.Name)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
