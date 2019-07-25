@@ -141,19 +141,19 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	var intervalRange string
 	if len(allExhangeTicksSlice) == 0 {
 		if filterInterval == 5 {
-			intervalRange = "5 minutes"
+			intervalRange = "5m"
 		}
 		if filterInterval == 60 {
-			intervalRange = "1 hour"
+			intervalRange = "1h"
 		}
 		if filterInterval == 120 {
-			intervalRange = "2 hours"
+			intervalRange = "2h"
 		}
 		if filterInterval == 1440 {
-			intervalRange = "1 day"
+			intervalRange = "1d"
 		}
 
-		data["message"] = fmt.Sprintf("No exchange data for %s when currency pair is %s and interval is %s.", selectedFilter, selectedCurrencyPair, intervalRange)
+		data["message"] = fmt.Sprintf("%s does not have %s data.", strings.Title(selectedFilter), intervalRange)
 		s.renderJSON(data, res)
 		return
 	}
