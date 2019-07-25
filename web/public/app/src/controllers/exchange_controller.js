@@ -11,7 +11,7 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper',
-      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView'
+      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView', 'hideIntervalOption'
     ]
   }
 
@@ -44,6 +44,7 @@ export default class extends Controller {
     show(this.hideOptionTarget)
     show(this.pageSizeWrapperTarget)
     hide(this.chartWrapperTarget)
+    show(this.hideIntervalOptionTarget)
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
@@ -64,6 +65,7 @@ export default class extends Controller {
   setChart () {
     this.viewOption = 'chart'
     hide(this.messageViewTarget)
+    hide(this.hideIntervalOptionTarget)
     var interval = this.selectedIntervalTarget.options
     var sFilter = this.selectedFilterTarget.options
     show(this.chartWrapperTarget)
@@ -74,7 +76,7 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.selectedInterval = this.selectedIntervalTarget.value = interval[0].value
+    this.selectedInterval = this.selectedIntervalTarget.value = interval[1].value
     this.selectedFilter = this.selectedFilterTarget.value = sFilter[1].text
     this.selectedTick = this.selectedTicksTarget.value = 'close'
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = 'BTC/DCR'
