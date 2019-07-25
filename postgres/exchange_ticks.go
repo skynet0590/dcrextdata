@@ -163,7 +163,7 @@ func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name strin
 		qm.Offset(offset),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.ExchangeTickColumns.Time)),
 	)
-	fmt.Println(query)
+
 	exchangeTickSlice, err := models.ExchangeTicks(query...).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
@@ -274,7 +274,17 @@ func (pg *PgDb) ExchangeTicksChartData(ctx context.Context, selectedTick string,
 		return nil, err
 	}
 
-	exchangeFilterResult, err := models.ExchangeTicks(qm.Select(selectedTick, models.ExchangeTickColumns.Time), qm.Where("currency_pair=? and interval=? and exchange_id=?", currencyPair, selectedInterval, exchange.ID), qm.OrderBy(models.ExchangeTickColumns.Time)).All(ctx, pg.db)
+	queryMods := []qm.QueryMod{
+		qm.Select(selectedTick, models.ExchangeTickColumns.Time),
+		models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair),
+		models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
+		qm.OrderBy(models.ExchangeTickColumns.Time),
+	}
+	if selectedInterval != -1 {
+		queryMods = append(queryMods, models.ExchangeTickWhere.Interval.EQ(selectedInterval),)
+	}
+
+	exchangeFilterResult, err := models.ExchangeTicks(queryMods...).All(ctx, pg.db)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
