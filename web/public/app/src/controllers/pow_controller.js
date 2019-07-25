@@ -148,7 +148,7 @@ export default class extends Controller {
     })
   }
 
-  // pow chart
+  // pow chart 
   plotGraph (pows) {
     const _this = this
 
