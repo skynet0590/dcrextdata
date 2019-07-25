@@ -10,12 +10,14 @@ export default class extends Controller {
       'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'pageSizeWrapper'
+      'chartWrapper', 'chartDataTypeSelector', 'chartDataType', 'labels',
+      'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
 
   initialize () {
     this.viewOption = 'table'
+    this.dataType = 'hashrate'
   }
 
   connect () {
@@ -32,6 +34,7 @@ export default class extends Controller {
     show(this.powTableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
+    hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchExchange('table')
   }
@@ -43,7 +46,27 @@ export default class extends Controller {
     hide(this.powTableWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
+    show(this.chartDataTypeSelectorTarget)
+    // hide(this.numPageWrapperTarget)
     this.nextPage = 1
+    this.fetchExchange('chart')
+  }
+
+  setHashrateDataType (event) {
+    this.dataType = 'hashrate'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchExchange('chart')
+  }
+
+  setWorkersDataType (event) {
+    this.dataType = 'workers'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
     this.fetchExchange('chart')
   }
 
@@ -128,18 +151,28 @@ export default class extends Controller {
     var data = []
     var dataSet = []
     pows.forEach(pow => {
-      data.push(new Date(pow.Time))
-      data.push(pow.pool_hashrate_th)
+      data.push(new Date(pow.time))
+
+      if (_this.dataType === 'hashrate') {
+        data.push(parseInt(pow.pool_hashrate_th))
+      } else {
+        data.push(parseInt(pow.workers))
+      }
 
       dataSet.push(data)
       data = []
     })
 
+    let dataTypeLabel = 'Pool Hashrate'
+    if (_this.dataType === 'workers') {
+      dataTypeLabel = 'Workers'
+    }
+
     var extra = {
-      labels: ['Date', 'Pool Hashrate'],
+      labels: ['Date', dataTypeLabel],
       colors: ['#2971FF', '#FF8C00'],
       labelsDiv: this.labelsTarget,
-      ylabel: 'Pool Hashrate',
+      ylabel: dataTypeLabel,
       y2label: 'Network Difficulty',
       sigFigs: 1,
       legendFormatter: legendFormatter
