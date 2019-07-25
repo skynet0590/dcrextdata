@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, barChartPlotter } from '../utils'
+import { hide, show, legendFormatter } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -11,6 +11,7 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
       'graphTypeWrapper', 'graphType', 'pageSizeWrapper',
+      'vspSelectorWrapper', 'chartSourceWrapper', 'chartSource',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
   }
@@ -28,6 +29,13 @@ export default class extends Controller {
       this.currentPage = 1
     }
     this.viewOption = 'table'
+
+    this.vsps = []
+    this.chartSourceTargets.forEach(chartSource => {
+      if (chartSource.checked) {
+        this.vsps.push(chartSource.value)
+      }
+    })
   }
 
   setTable () {
@@ -35,9 +43,11 @@ export default class extends Controller {
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
+    hide(this.chartSourceWrapperTarget)
     show(this.vspTableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
+    show(this.vspSelectorWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = 1
     this.fetchExchange('table')
@@ -47,8 +57,10 @@ export default class extends Controller {
     this.viewOption = 'chart'
     hide(this.numPageWrapperTarget)
     hide(this.vspTableWrapperTarget)
+    hide(this.vspSelectorWrapperTarget)
     show(this.graphTypeWrapperTarget)
     show(this.chartWrapperTarget)
+    show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
@@ -77,7 +89,7 @@ export default class extends Controller {
       if (this.selectedFilterTarget.selectedIndex === 0) {
         this.selectedFilterTarget.selectedIndex = 1
       }
-      this.fetchDataAndGraph()
+      this.fetchDataAndPlotGraph()
     }
   }
 
@@ -90,7 +102,7 @@ export default class extends Controller {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows
     if (display === 'chart') {
-      this.fetchDataAndGraph()
+      this.fetchDataAndPlotGraph()
       return
     } else {
       numberOfRows = this.selectedNumTarget.value
@@ -152,16 +164,34 @@ export default class extends Controller {
     })
   }
 
-  fetchDataAndGraph () {
-    let _this = this
-    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsp=${this.selectedFilterTarget.value}`
-    axios.get(url).then(function (response) {
-      _this.plotGraph(response.data)
+  chartSourceCheckChanged (event) {
+    this.vsps = []
+    this.chartSourceTargets.forEach(chartSource => {
+      if (chartSource.checked) {
+        this.vsps.push(chartSource.value)
+      }
     })
+    const element = event.currentTarget
+    if (this.vsps.length === 0 && !element.checked) {
+      element.checked = true
+      this.vsps.push(element.value)
+    }
+    this.fetchDataAndPlotGraph()
   }
 
   graphTypeChanged () {
-    this.fetchDataAndGraph()
+    this.fetchDataAndPlotGraph()
+  }
+
+  fetchDataAndPlotGraph () {
+    if (this.vsps.length === 0) {
+      return
+    }
+    let _this = this
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}`
+    axios.get(url).then(function (response) {
+      _this.plotGraph(response.data)
+    })
   }
 
   // vsp chart
@@ -172,36 +202,19 @@ export default class extends Controller {
       yLabel += ' (%)'
     }
 
-    // let labels = ['Date', this.selectedFilterTarget.value]
-    // let colors = ['#007BFF']
-
-    let csv = `Date,${yLabel}\n`
-    let minDate, maxDate
-
-    dataSet.forEach(point => {
-      const date = new Date(point.date)
-      if (date.getFullYear() === 1970) return
-      if (minDate === undefined || date < minDate) {
-        minDate = date
-      }
-      if (maxDate === undefined || date > maxDate) {
-        maxDate = date
-      }
-      csv += `${date},${point.record}\n`
-    })
-
     let options = {
       legend: 'always',
       includeZero: true,
-      dateWindow: [minDate, maxDate],
+      // dateWindow: [dataSet.min_date, dataSet.max_date],
       animatedZooms: true,
       legendFormatter: legendFormatter,
-      plotter: barChartPlotter,
+      // plotter: barChartPlotter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
       xlabel: 'Date',
       labelsUTC: true,
       labelsKMB: true,
+      connectSeparatedPoints: true,
       axes: {
         x: {
           drawGrid: false
@@ -215,7 +228,7 @@ export default class extends Controller {
     }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      csv,
+      dataSet.csv,
       options
     )
   }
