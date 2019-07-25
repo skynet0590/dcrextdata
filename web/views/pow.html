@@ -45,6 +45,32 @@
                         {{ end }}
                     </select>
                 </div>
+
+                <div class="chart-control-wrapper control-div p-0 d-none" data-target="pow.chartDataTypeSelector">
+                    <div class="chart-control mempool-control">
+                        <ul class="nav nav-pills">
+                            <li class="nav-item">
+                                <a
+                                data-target="pow.chartDataType"
+                                data-action="click->pow#setHashrateDataType"
+                                class="nav-link active"
+                                href="javascript:void(0);"
+                                data-option="table"
+                                >Hashrate</a>
+                            </li>
+                            <li class="nav-item">
+                                <a
+                                data-target="pow.chartDataType"
+                                data-action="click->pow#setWorkersDataType"
+                                class="nav-link"
+                                href="javascript:void(0);"
+                                data-option="table"
+                                >Workers</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
                 <div data-target="pow.numPageWrapper" class="control-div p-0 ml-auto">
                     <div class=" mb-2 float-md-right">
                         <div class="control-label">Page Size:</div>
@@ -61,7 +87,7 @@
                             <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                             <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                            </p>    
+                            </p>
                             <a href="javascript:void(0)" data-target="pow.nextPageButton" data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                 </div>
             </div>
