@@ -25,6 +25,14 @@ var (
 		120:  "2h",
 		1440: "1d",
 	}
+
+	pageSizeSelector = map[int]int{
+		20:   20,
+		30:    30,
+		50:   50,
+		100:  100,
+		150: 150,
+	}
 )
 
 // /home
@@ -35,32 +43,63 @@ func (s *Server) homePage(res http.ResponseWriter, req *http.Request) {
 
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
-	pageToLoad := 1
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedExchange := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
+	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
+	interval := req.FormValue("selectedInterval")
+	fmt.Println(page, selectedExchange,numberOfRows,selectedCurrencyPair,interval)
+
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else {
+		pageSize = numRows
+	}
+
+	filterInterval, err := strconv.Atoi(interval)
+	if err != nil || filterInterval <= 0 {
+		filterInterval = defaultInterval
+	}
+
+	if _, found := exchangeTickIntervals[filterInterval]; !found {
+		filterInterval = defaultInterval
+	}
+
+	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
 
-	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, "", "", defaultInterval, offset, recordsPerPage)
+	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
 	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	if len(allExhangeTicksSlice) == 0 {
+		message := map[string]interface{}{
+			"message": fmt.Sprintf("%s does not have %s data.", strings.Title(selectedExchange), exchangeTickIntervals[filterInterval]),
+		}
+		s.render("exchange.html", message, res)
 		return
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
+		s.renderError(err.Error(), res)
 		return
 	}
 
 	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
-		return
-	}
-
-	intervals, err := s.db.AllExchangeTicksInterval(ctx)
-	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
+		s.renderError(err.Error(), res)
 		return
 	}
 
@@ -68,13 +107,15 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		"exData":         allExhangeTicksSlice,
 		"allExData":      allExhangeSlice,
 		"currencyPairs":  currencyPairs,
-		"intervals":      intervals,
+		"intervals":      exchangeTickIntervals,
+		"pageSizeSelector": pageSizeSelector,
 		"currentPage":    pageToLoad,
 		"previousPage":   int(pageToLoad - 1),
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
-		"selectedFilter": "All",
-		"selectedCpair":  "All",
-		"selectedNum":    recordsPerPage,
+		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"selectedFilter": selectedExchange,
+		"selectedCurrencyPair":  selectedCurrencyPair,
+		"selectedNum":    pageSize,
+		"selectedInterval": filterInterval,
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -93,6 +134,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
 
+	fmt.Println(page, selectedExchange,numberOfRows,selectedCurrencyPair,interval)
 	data := map[string]interface{}{}
 
 	var pageSize int
@@ -144,10 +186,13 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 
 	data["exData"] = allExhangeTicksSlice
 	data["allExData"] = allExhangeSlice
-	data["selectedExchange"] = selectedExchange
+	data["selectedFilter"] = selectedExchange
 	data["currentPage"] = pageToLoad
 	data["previousPage"] = int(pageToLoad - 1)
 	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
+		data["selectedCurrencyPair"]=  selectedCurrencyPair
+		data["selectedNum"]=    pageSize
+		data["selectedInterval"] = filterInterval
 
 	defer s.renderJSON(data, res)
 

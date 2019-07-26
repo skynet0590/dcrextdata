@@ -23,45 +23,41 @@
                                 </li>
                             </ul>
                         </div>
+                    </div>
+
                         <div class="mr-auto d-flex my-2">
-                            <div class="control-div p-0">
-                                <div class="control-label">Currency Pair:</div>
-                                <select 
-                                    data-target="exchange.selectedCurrencyPair"
-                                    data-action="change->exchange#selectedCurrencyPairChanged" class="form-control"
-                                    style="width: 105px;"
-                                >
-                                    <option data-target="exchange.currencyPairHideOption" value="All">All</option>
-                                    {{ range $index, $cpair := .currencyPairs}}
-                                        <option value="{{$cpair.CurrencyPair}}">{{$cpair.CurrencyPair}}</option>
-                                    {{ end }}
-                                </select>
-                            </div>
-                            <div data-target=exchange.sourceWrapper class="control-div p-0">
-                                <div class="control-label">Exchanges:</div>
-                                <select 
-                                    data-target="exchange.selectedFilter"
-                                    data-action="change->exchange#selectedFilterChanged" class="form-control"
-                                    style="width: 100px;"
-                                >
-                                    <option data-target="exchange.hideOption" value="All" selected>All</option>
-                                    {{ range $index, $filter := .allExData}}
-                                        <option value="{{$filter.Name}}">{{$filter.Name}}</option>
-                                    {{ end }}
-                                </select>
-                            </div>
+                        <div class="control-div p-0">
+                            <div class="control-label">Currency Pair:</div>
+                            <select data-target="exchange.selectedCurrencyPair" data-action="change->exchange#selectedCurrencyPairChanged"
+                                class="form-control" style="width: 105px;">
+                                {{$selectedCurrencyPair := .selectedCurrencyPair}}
+                                <option data-target="exchange.currencyPairHideOption" value="All">All</option>
+                                {{ range $index, $cpair := .currencyPairs}}
+                                <option value="{{$cpair.CurrencyPair}}" {{ if eq $cpair.CurrencyPair $selectedCurrencyPair}} selected {{ end }}>{{$cpair.CurrencyPair}}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+                        <div data-target=exchange.sourceWrapper class="control-div p-0">
+                            <div class="control-label">Exchanges:</div>
+                            <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
+                                class="form-control" style="width: 100px;">
+                                {{$selectedFilter := .selectedFilter}}
+                                <option data-target="exchange.hideOption" value="All">All</option>
+                                {{ range $index, $filter := .allExData}}
+                                <option value="{{$filter.Name}}"  {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                                {{ end }}
+                            </select>
+                        </div>
                             <div data-target="exchange.intervalWapper" class="control-div p-0">
-                                <div class="control-label">Interval:</div>
-                                <select data-target="exchange.selectedInterval"
-                                    data-action="change->exchange#selectedIntervalChanged" class="form-control"
-                                    style="width: 60px;">
-                                    <option data-target="exchange.hideIntervalOption" value="-1">All</option>
-                                    <option value="5">5m</option>
-                                    <option value="60">1h</option>
-                                    <option value="120">2h</option>
-                                    <option value="1440">1d</option>
-                                </select>
-                            </div>
+                            <div class="control-label">Interval:</div>
+                            <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
+                                class="form-control" style="width: 60px;">
+                                {{$selectedInterval := .selectedInterval}}
+                                {{ range $index, $filter := .intervals}}
+                                <option value="{{$index}}" {{ if eq $index $selectedInterval}} selected {{ end }}>{{$filter}}</option>
+                                {{ end }}
+                            </select>
+                        </div>
 
                             <div data-target="exchange.tickWapper" class="control-div  p-0 d-hide">
                                 <div class="control-label">Data Ticks:</div>
@@ -76,32 +72,20 @@
                             </div>
 
                             <div data-target="exchange.numPageWrapper" class="control-div p-0 ml-2">
-                                <div class="control-label">Page Size:</div>
-                                <select data-target="exchange.selectedNum"
-                                    data-action="change->exchange#NumberOfRowsChanged" class="form-control"
-                                    style="width: 70px;">
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="150">150</option>
-                                </select>
-                            </div>
+                            <div class="control-label">Page Size:</div>
+                            <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                                {{$selectedNum := .selectedNum}}
+                                {{ range $index, $filter := .pageSizeSelector}}
+                                <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
+                                {{ end }}
+                            </select>
+                        </div>
                             <div data-target="exchange.pageSizeWrapper" class="control-div pt-1">
-                                <a href="javascript:void(0)" data-target="exchange.previousPageButton"
-                                    data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .previousPage }}"
-                                    data-current-page="{{ .totalPages }}"
-                                    class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                            <a href="?page={{.previousPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}&selectedCurrencyPair={{.selectedCurrencyPair}}&selectedInterval={{.selectedInterval}}" data-target="exchange.previousPageButton" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                <p class="text-muted d-inline" style="white-space: nowrap;"> Page <span
-                                        data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of
-                                    <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                                </p>
-                                <a href="javascript:void(0)" data-target="exchange.nextPageButton"
-                                    data-action="click->exchange#loadNextPage" data-total-page="{{ .totalPages }}"
-                                    data-current-page="{{ .totalPages }}" data-next-page="{{ .nextPage }}"
-                                    class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
-                            </div>
+                            <p class="text-muted m-0" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="?page={{.nextPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}&selectedCurrencyPair={{.selectedCurrencyPair}}&selectedInterval={{.selectedInterval}}" data-target="exchange.nextPageButton" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
                     </div>
                 </div>

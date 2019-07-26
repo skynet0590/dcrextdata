@@ -10,7 +10,7 @@ export default class extends Controller {
       'selectedFilter', 'exchangeTable', 'selectedCurrencyPair', 'numPageWrapper', 'intervalWapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper',
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper', 'chartSelector',
       'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView', 'hideIntervalOption'
     ]
   }
@@ -30,6 +30,8 @@ export default class extends Controller {
     this.setChart()
     this.selectedFilter = this.selectedFilterTarget.value
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
+    this.numberOfRows = this.selectedNumTarget.value
+    this.selectedInterval = this.selectedIntervalTarget.value
 
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -44,7 +46,7 @@ export default class extends Controller {
     show(this.hideOptionTarget)
     show(this.pageSizeWrapperTarget)
     hide(this.chartWrapperTarget)
-    show(this.hideIntervalOptionTarget)
+    show(this.selectedIntervalTarget.options[0])
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
@@ -54,18 +56,17 @@ export default class extends Controller {
     var interval = this.selectedIntervalTarget.options
     this.selectedFilter = this.selectedFilterTarget.value = filter[0].text
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = cpair[0].text
-    this.selectedNum = this.selectedNumTarget.value = num[0].value
+    this.numberOfRows = this.selectedNumTarget.value = num[0].value
     this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedTicksTarget.value = 'close'
-    this.nextPage = 1
+    this.nextPage = this.currentPage + 1
     this.fetchExchange(this.viewOption)
   }
 
   setChart () {
     this.viewOption = 'chart'
     hide(this.messageViewTarget)
-    hide(this.hideIntervalOptionTarget)
     var interval = this.selectedIntervalTarget.options
     var sFilter = this.selectedFilterTarget.options
     show(this.chartWrapperTarget)
@@ -75,6 +76,7 @@ export default class extends Controller {
     hide(this.currencyPairHideOptionTarget)
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)
+    hide(interval[0])
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
     this.selectedFilter = this.selectedFilterTarget.value = sFilter[1].text
@@ -84,22 +86,13 @@ export default class extends Controller {
   }
 
   selectedIntervalChanged () {
+    this.nextPage = 1
     this.selectedInterval = this.selectedIntervalTarget.value
     this.fetchExchange(this.viewOption)
   }
 
   selectedTicksChanged () {
     this.selectedTick = this.selectedTicksTarget.value
-    this.fetchExchange(this.viewOption)
-  }
-
-  loadPreviousPage () {
-    this.nextPage = this.previousPageButtonTarget.getAttribute('data-previous-page')
-    this.fetchExchange(this.viewOption)
-  }
-
-  loadNextPage () {
-    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
     this.fetchExchange(this.viewOption)
   }
 
@@ -127,12 +120,13 @@ export default class extends Controller {
     if (display === 'table') {
       url = `/filteredEx?page=${this.nextPage}&filter=${this.selectedFilter}&recordsPerPage=${this.numberOfRows}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}`
     } else {
-      url = `/chartExchange?selectedTick=${this.selectedTick}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}&sources=${this.selectedFilter}`
+      url = `/exchangechart?selectedTick=${this.selectedTick}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}&sources=${this.selectedFilter}`
     }
 
     axios.get(url)
       .then(function (response) {
         let result = response.data
+        console.log(result)
         if (display === 'table') {
           if (result.message) {
             let messageHTML = ''
@@ -143,6 +137,10 @@ export default class extends Controller {
             _this.messageViewTarget.innerHTML = messageHTML
             show(_this.messageViewTarget)
             hide(_this.exchangeTableWrapperTarget)
+            hide(_this.previousPageButtonTarget)
+            hide(_this.nextPageButtonTarget)
+            _this.totalPageCountTarget.textContent = 0
+            _this.currentPageTarget.textContent = 0
           } else {
             hide(_this.messageViewTarget)
             show(_this.exchangeTableWrapperTarget)
@@ -161,8 +159,8 @@ export default class extends Controller {
 
             _this.totalPageCountTarget.textContent = result.totalPages
             _this.currentPageTarget.textContent = result.currentPage
-            _this.previousPageButtonTarget.setAttribute('data-previous-page', `${result.previousPage}`)
-            _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+            _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
+            _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
 
             _this.displayExchange(result.exData)
           }
@@ -230,6 +228,7 @@ export default class extends Controller {
         _this.chartsViewTarget,
         dataSet, { ...options, ...extra }
       )
+      // _this.exchange.viewOptionTargets.setAttribute(`href`, `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&sources=${_this.selectedFilter}`)
     } else {
       let messageHTML = ''
       messageHTML += `<div class="alert alert-primary">
