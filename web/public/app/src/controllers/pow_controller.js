@@ -37,12 +37,13 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchExchange('table')
+    document.getElementById('page-s').innerHTML = 'Page Size:'
   }
 
   setChart () {
     this.viewOption = 'chart'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    hide(this.numPageWrapperTarget)
+    show(this.numPageWrapperTarget)
     hide(this.powTableWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
@@ -50,6 +51,7 @@ export default class extends Controller {
     // hide(this.numPageWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
+    document.getElementById('page-s').innerHTML = 'Size:'
   }
 
   setHashrateDataType (event) {
@@ -163,7 +165,6 @@ export default class extends Controller {
       dat[3] = 0 // btc
       dat[4] = 0 // f2pool
       dat[5] = 0 // coinmine
-
       // create unique dates
       var lastDate
 
@@ -270,6 +271,7 @@ export default class extends Controller {
         ylabel: dataTypeLabel,
         y2label: 'Network Difficulty',
         labelsKMB: true,
+        xlabel: 'Date',
         legendFormatter: legendFormatter
       }
 
