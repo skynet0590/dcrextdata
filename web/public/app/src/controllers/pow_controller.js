@@ -37,12 +37,13 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchExchange('table')
+    document.getElementById('page-s').innerHTML = 'Page Size:'
   }
 
   setChart () {
     this.viewOption = 'chart'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    hide(this.numPageWrapperTarget)
+    show(this.numPageWrapperTarget)
     hide(this.powTableWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
@@ -50,6 +51,7 @@ export default class extends Controller {
     // hide(this.numPageWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
+    document.getElementById('page-s').innerHTML = 'Size:'
   }
 
   setHashrateDataType (event) {
@@ -150,38 +152,132 @@ export default class extends Controller {
 
     var data = []
     var dataSet = []
-    pows.forEach(pow => {
-      data.push(new Date(pow.time))
 
-      if (_this.dataType === 'hashrate') {
-        data.push(parseInt(pow.pool_hashrate_th))
-      } else {
-        data.push(parseInt(pow.workers))
+    if (this.selectedFilterTarget.value === 'All') {
+    // init states for chartDataTypeSelector
+      var dat = []
+      dat[0] = 0 // not used
+      dat[1] = 0 // luxor
+      dat[2] = 0 // uupool
+      dat[3] = 0 // btc
+      dat[4] = 0 // f2pool
+      dat[5] = 0 // coinmine
+
+      // create unique dates
+      var lastDate
+
+      pows.forEach(pow => {
+        if (pow.source === 'luxor') {
+          if (_this.dataType === 'hashrate') {
+            dat[1] = parseInt(pow.pool_hashrate_th)
+          } else {
+            dat[1] = parseInt(pow.workers)
+          }
+        } else if (pow.source === 'uupool') {
+          if (_this.dataType === 'hashrate') {
+            dat[2] = parseInt(pow.pool_hashrate_th)
+          } else {
+            dat[2] = parseInt(pow.workers)
+          }
+        } else if (pow.source === 'btc') {
+          if (_this.dataType === 'hashrate') {
+            dat[3] = parseInt(pow.pool_hashrate_th)
+          } else {
+            dat[3] = parseInt(pow.workers)
+          }
+        } else if (pow.source === 'f2pool') {
+          if (_this.dataType === 'hashrate') {
+            dat[4] = parseInt(pow.pool_hashrate_th)
+          } else {
+            dat[4] = parseInt(pow.workers)
+          }
+        } else if (pow.source === 'coinmine') {
+          if (_this.dataType === 'hashrate') {
+            dat[5] = parseInt(pow.pool_hashrate_th)
+          } else {
+            dat[5] = parseInt(pow.workers)
+          }
+        }
+
+        data.push(new Date(pow.time))
+        data.push(dat[1])
+        data.push(dat[2])
+        data.push(dat[3])
+        data.push(dat[4])
+        data.push(dat[5])
+
+        // if same as last date  update and fill in missing values
+        // eg row 33 = btc 13340000 0 2019-07-26 17:44
+        //    row 34 = coinmine 1 960 2019-07-26 17:44
+        // then combine to one dataset row
+        /* eslint-disable brace-style */
+        if (lastDate === new Date(pow.time)) {
+          dataSet.splice(dataSet.length, 1, data)
+        }
+
+        // else push to new date dataset row
+        else {
+          dataSet.push(data)
+        }
+        data = []
+      })
+
+      let dataTypeLabel = 'Pool Hashrate'
+      if (_this.dataType === 'workers') {
+        dataTypeLabel = 'Workers'
       }
 
-      dataSet.push(data)
-      data = []
-    })
+      var extra = {
+        labels: ['Date', 'luxor', 'uupool', 'btc', 'f2pool', 'coinmine'],
+        colors: ['#2971FF', '#FF8C00', '#64FFDA', '#84FFFF', '#EEFF41', '#FFCCBC'],
+        labelsDiv: this.labelsTarget,
+        ylabel: dataTypeLabel,
+        y2label: 'Network Difficulty',
+        sigFigs: 1,
+        legendFormatter: legendFormatter
+      }
 
-    let dataTypeLabel = 'Pool Hashrate'
-    if (_this.dataType === 'workers') {
-      dataTypeLabel = 'Workers'
+      _this.chartsView = new Dygraph(
+        _this.chartsViewTarget,
+        dataSet,
+        { ...options, ...extra }
+      )
+    } else {
+      pows.forEach(pow => {
+        data.push(new Date(pow.time))
+
+        if (_this.dataType === 'hashrate') {
+          data.push(parseInt(pow.pool_hashrate_th))
+        } else {
+          data.push(parseInt(pow.workers))
+        }
+
+        dataSet.push(data)
+        data = []
+      })
+
+      let dataTypeLabel = 'Pool Hashrate'
+      if (_this.dataType === 'workers') {
+        dataTypeLabel = 'Workers'
+      }
+
+      /* eslint-disable no-redeclare */
+      var extra = {
+        labels: ['Date', dataTypeLabel],
+        colors: ['#2971FF', '#FF8C00'],
+        labelsDiv: this.labelsTarget,
+        ylabel: dataTypeLabel,
+        y2label: 'Network Difficulty',
+        xlabel: 'Date',
+        sigFigs: 1,
+        legendFormatter: legendFormatter
+      }
+
+      _this.chartsView = new Dygraph(
+        _this.chartsViewTarget,
+        dataSet, { ...options, ...extra }
+      )
     }
-
-    var extra = {
-      labels: ['Date', dataTypeLabel],
-      colors: ['#2971FF', '#FF8C00'],
-      labelsDiv: this.labelsTarget,
-      ylabel: dataTypeLabel,
-      y2label: 'Network Difficulty',
-      sigFigs: 1,
-      legendFormatter: legendFormatter
-    }
-
-    _this.chartsView = new Dygraph(
-      _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
-    )
   }
 
   setActiveOptionBtn (opt, optTargets) {
