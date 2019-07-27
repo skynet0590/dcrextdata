@@ -812,6 +812,10 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 		pageToLoad = 1
 	}
 
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
 	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
@@ -828,6 +832,8 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 
 	data := map[string]interface{}{
 		"mempoolData":  mempoolSlice,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
 		"currentPage":  pageToLoad,
 		"previousPage": pageToLoad - 1,
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),

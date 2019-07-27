@@ -15,11 +15,6 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    var num = this.selectedNumTarget.options
-    this.selectedNumTarget.value = num[0].text
-  }
-
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -32,6 +27,7 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     hide(this.chartWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
@@ -86,16 +82,6 @@ export default class extends Controller {
     this.fetchData('chart')
   }
 
-  gotoPreviousPage () {
-    this.currentPage = this.currentPage - 1
-    this.fetchData(this.viewOption)
-  }
-
-  gotoNextPage () {
-    this.currentPage = this.currentPage + 1
-    this.fetchData(this.viewOption)
-  }
-
   NumberOfRowsChanged () {
     this.selectedNum = this.selectedNumTarget.value
     this.fetchData(this.viewOption)
@@ -116,6 +102,8 @@ export default class extends Controller {
       if (display === 'table') {
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
+        _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&recordsPerPage=${result.selectedNum}`)
+        _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&recordsPerPage=${result.selectedNum}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
@@ -205,7 +193,6 @@ export default class extends Controller {
       csv,
       {
         legend: 'always',
-        // title: title,
         includeZero: true,
         dateWindow: [minDate, maxDate],
         legendFormatter: legendFormatter,
