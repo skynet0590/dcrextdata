@@ -952,12 +952,16 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		}
 	}
 
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * pageSize
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
 
@@ -974,13 +978,16 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	data := map[string]interface{}{
 		"records":      blockSlice,
 		"currentPage":  pageToLoad,
-		"previousPage": int(pageToLoad - 1),
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
+		"url": "/propagation",
+		"previousPage": pageToLoad - 1,
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(blockSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 
 	return data, nil
@@ -997,6 +1004,19 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+}
+
+func (s *Server) getBlockData(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+
+	block, err := s.fetchBlockData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["propagation"] = block
+	defer s.render("propagation.html", data, res)
 }
 
 func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, error) {
@@ -1020,6 +1040,10 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 		pageToLoad = 1
 	}
 
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
 	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
@@ -1037,6 +1061,9 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	data := map[string]interface{}{
 		"records":      voteSlice,
 		"currentPage":  pageToLoad,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
+		"url": "/getBlockData",
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
@@ -1083,6 +1110,10 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 		pageToLoad = 1
 	}
 
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
 	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
@@ -1100,6 +1131,9 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	data := map[string]interface{}{
 		"records":      voteSlice,
 		"currentPage":  pageToLoad,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
+		"url": "/getvotes",
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}

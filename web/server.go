@@ -123,5 +123,6 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getpropagationdata", s.getPropagationData)
 	r.Get("/propagationchartdata", s.propagationChartData)
 	r.Get("/getblocks", s.getBlocks)
+	r.Get("/getBlockData", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
 }

@@ -45,46 +45,22 @@
                                 </select>
                             </div>
 
-                            <div data-target="propagation.numPageWrapper" class="control-div ml-2 p-0">
+                            <div data-target="propagation.numPageWrapper" class="control-div ml-auto p-0">
                                 <div class="control-label">Page Size:</div>
-                                <select data-target="propagation.selectedNum"
-                                    data-action="change->propagation#numberOfRowsChanged" class="form-control"
-                                    style="width: 70px;">
-                                    <option value="20">20</option>
-                                    <option value="30">30</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                    <option value="150">150</option>
+                                <select data-target="propagation.selectedNum" data-action="change->propagation#numberOfRowsChanged" class="form-control" style="width: 70px;">
+                                    {{$selectedNum := .propagation.selectedNum}}
+                                    {{ range $index, $filter := .propagation.pageSizeSelector}}
+                                    <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
+                                    {{ end }}
                                 </select>
                             </div>
-
                             <div class="d-flex" data-target="propagation.paginationButtonsWrapper">
-                                <div class="float-md-right control-div">
-                                    <button data-target="propagation.previousPageButton"
-                                        data-action="click->propagation#gotoPreviousPage"
-                                        data-previous-page="{{ .propagation.previousPage}}"
-                                        class="btn btn-link {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">
-                                        &lt; Previous
-                                    </button>
+                                <a href="{{.propagation.url}}?page={{.propagation.previousPage}}&recordsPerPage={{.propagation.selectedNum}}" data-target="propagation.previousPageButton" class="mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                    <span data-target="propagation.pageReport" style="white-space: nowrap;"
-                                        class="text-muted" data-current-page="{{ .propagation.currentPage }}"
-                                        style="padding-top: 6.5px;">
-                                        Page <span data-target="propagation.currentPage"
-                                            data-current-page="{{ .propagation.currentPage }}">{{ .propagation.currentPage }}</span>
-                                        of
-                                        <span data-target="propagation.totalPageCount">{{ .propagation.totalPages }}</span>
-                                    </span>
-
-                                    <button data-target="propagation.nextPageButton"
-                                        data-action="click->propagation#gotoNextPage"
-                                        data-next-page="{{ .propagation.nextPage }}"
-                                        class="btn btn-link {{ if not .propagation.nextPage }}d-none{{ end }}">
-                                        Next &gt;
-                                    </button>
-                                </div>
+                                <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
+                                </p>    
+                                <a href="{{.propagation.url}}?page={{.propagation.nextPage}}&recordsPerPage={{.propagation.selectedNum}}" data-target="propagation.nextPageButton" class="ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}"> Next&gt;</a>
                             </div>
-                        </div>
                     </div>
                 </div>
 
