@@ -269,7 +269,8 @@ func (pg *PgDb) voteModelToDto(vote *models.Vote) mempool.VoteDto {
 		TargetedBlockTimeDiff: fmt.Sprintf("%04.2f", timeDiff),
 		BlockReceiveTimeDiff:  fmt.Sprintf("%04.2f", blockReceiveTimeDiff),
 		VotingOn:              vote.VotingOn.Int64,
-		ShortBlockHash: 	   shortBlockHash,
+		BlockHash:             vote.BlockHash.String,
+		ShortBlockHash:        shortBlockHash,
 		ValidatorId:           vote.ValidatorID.Int,
 		Validity:              vote.Validity.String,
 	}
