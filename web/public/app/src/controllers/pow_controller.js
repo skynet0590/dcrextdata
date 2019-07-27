@@ -20,15 +20,12 @@ export default class extends Controller {
     this.setChart()
   }
 
-  connect () {
+  setTable () {
+    this.viewOption = 'table'
     var filter = this.selectedFilterTarget.options
     var num = this.selectedNumTarget.options
     this.selectedFilterTarget.value = filter[0].text
     this.selectedNumTarget.value = num[0].text
-  }
-
-  setTable () {
-    this.viewOption = 'table'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartSourceWrapperTarget)
@@ -69,6 +66,7 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+
   selectedFilterChanged () {
     this.nextPage = 1
     this.fetchData(this.viewOption)
@@ -103,8 +101,8 @@ export default class extends Controller {
 
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+        _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
+        _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
 
         _this.displayPoW(result.powData)
       }).catch(function (e) {

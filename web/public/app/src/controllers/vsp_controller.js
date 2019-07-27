@@ -16,13 +16,6 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    var filter = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    this.selectedFilterTarget.value = filter[0].text
-    this.selectedNumTarget.value = num[0].text
-  }
-
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -40,6 +33,10 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
+    var filter = this.selectedFilterTarget.options
+    var num = this.selectedNumTarget.options
+    this.selectedFilterTarget.value = filter[0].text
+    this.selectedNumTarget.value = num[0].text
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
@@ -68,17 +65,6 @@ export default class extends Controller {
       this.selectedFilterTarget.selectedIndex = 1
     }
     this.fetchExchange('chart')
-  }
-
-  loadPreviousPage () {
-    this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(this.viewOption)
-  }
-
-  loadNextPage () {
-    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.totalPages = (this.nextPageButtonTarget.getAttribute('data-total-page'))
-    this.fetchExchange(this.viewOption)
   }
 
   selectedFilterChanged () {

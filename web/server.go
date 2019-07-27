@@ -34,10 +34,8 @@ type DataQuery interface {
 	FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error)
 	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
-	FetchPowData(ctx context.Context, offset int, limit int) ([]pow.PowDataDto, error)
-	CountPowData(ctx context.Context) (int64, error)
-	FetchPowDataBySource(ctx context.Context, source string, offset int, limit int) ([]pow.PowDataDto, error)
-	CountPowDataBySource(ctx context.Context, source string) (int64, error)
+	FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error)
+	FetchPowDataBySource(ctx context.Context, source string, offset, limit int) ([]pow.PowDataDto, int64, error)
 	FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error)
 	FetchPowChartData(ctx context.Context, pool string, dataType string) ([]pow.PowChartData, error)
 	GetPowDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)

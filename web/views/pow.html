@@ -60,30 +60,22 @@
 
                             <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1">
                                 <div class=" mb-2 float-md-right">
-                                    <div class="control-label">Page Size:</div>
-                                    <select data-target="pow.selectedNum" data-action="change->pow#numberOfRowsChanged"
-                                        class="form-control mr-1" style="width: 70px;">
-                                        <option value="20" selected>20</option>
-                                        <option value="30">30</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                        <option value="150">150</option>
-                                    </select>
-                                </div>
+                                    <div class=" mb-2 float-md-right">
+                        <div class="control-label">Page Size:</div>
+                        <select data-target="pow.selectedNum" data-action="change->pow#numberOfRowsChanged" class="form-control mr-5" style="width: 70px;">
+                            {{$selectedNum := .selectedNum}}
+                            {{ range $index, $filter := .pageSizeSelector}}
+                            <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
+                            {{ end }}
+                        </select>
+                    </div>
                             </div>
                             <div data-target="pow.pageSizeWrapper" class="d-inline pt-1 control-div">
-                                <a href="javascript:void(0)" data-target="pow.previousPageButton"
-                                    data-action="click->pow#loadPreviousPage" data-next-page="{{ .previousPage }}"
-                                    class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                                <a href="?page={{.previousPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}" data-target="pow.previousPageButton" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                <p class="text-muted d-inline" style="white-space: nowrap;"> Page <span data-target="pow.currentPage"
-                                        class="text-muted"> {{ .currentPage }}</span> of <span
-                                        data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                                </p>
-                                <a href="javascript:void(0)" data-target="pow.nextPageButton"
-                                    data-action="click->pow#loadNextPage" data-total-page="{{ .totalPages }}"
-                                    data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                                    Next&gt;</a>
+                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="pow.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                            </p>    
+                            <a href="?page={{.nextPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}" data-target="pow.nextPageButton" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                             </div>
                         </div>
                     </div>

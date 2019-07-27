@@ -13,6 +13,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/vsp"
+	"github.com/raedahgroup/dcrextdata/pow"
 )
 
 var (
@@ -84,7 +85,7 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	if selectedCurrencyPair == "" {
 		selectedCurrencyPair = "All"
 	}
-	 
+
 	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
@@ -509,20 +510,50 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
+	selectedPow := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
 
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	fmt.Println(page, selectedPow,numberOfRows)
+
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else {
+		pageSize = numRows
+	}
+	
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
+	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	if selectedPow == "" {
+		selectedPow = "All"
+	} 
+
+	offset := (pageToLoad - 1) * recordsPerPage
 
 	ctx := context.Background()
 
-	allPowDataSlice, err := s.db.FetchPowData(ctx, offset, recordsPerPage)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
+	var totalCount int64
+	var allPowDataSlice []pow.PowDataDto
+	if selectedPow == "All" || selectedPow == "" {
+		allPowDataSlice, totalCount, err = s.db.FetchPowData(ctx, offset, pageSize)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	} else {
+		allPowDataSlice, totalCount, err = s.db.FetchPowDataBySource(ctx, selectedPow, offset, pageSize)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
 	}
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
@@ -531,23 +562,20 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	totalCount, err := s.db.CountPowData(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
 	data := map[string]interface{}{
 		"powData":      allPowDataSlice,
+		"selectedFilter": selectedPow,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
 		"powSource":    powSource,
-		"currentPage":  int(pageToLoad),
-		"previousPage": int(pageToLoad - 1),
+		"currentPage":  pageToLoad,
+		"previousPage": pageToLoad - 1,
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allPowDataSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 
 	s.render("pow.html", data, res)
@@ -556,11 +584,8 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	selectedFilter := req.FormValue("filter")
+	selectedPow := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
-
-	data := map[string]interface{}{}
-	defer s.renderJSON(data, res)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -570,49 +595,37 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		pageSize = numRows
 	}
 
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
+	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * pageSize
+	if selectedPow == "" {
+		selectedPow = "All"
+	}
+
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
 
 	var totalCount int64
-	var totalTxLoaded int
-	if selectedFilter == "All" || selectedFilter == "" {
-		allPowDataSlice, err := s.db.FetchPowData(ctx, offset, pageSize)
+	var allPowDataSlice []pow.PowDataDto
+	if selectedPow == "All" || selectedPow == "" {
+		allPowDataSlice, totalCount, err = s.db.FetchPowData(ctx, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
-
-		data["powData"] = allPowDataSlice
-
-		totalCount, err = s.db.CountPowData(ctx)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-
-		totalTxLoaded = int(offset) + len(allPowDataSlice)
 	} else {
-		allPowDataSlice, err := s.db.FetchPowDataBySource(ctx, selectedFilter, offset, pageSize)
+		allPowDataSlice, totalCount, err = s.db.FetchPowDataBySource(ctx, selectedPow, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
-
-		data["powData"] = allPowDataSlice
-
-		totalCount, err = s.db.CountPowDataBySource(ctx, selectedFilter)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-
-		totalTxLoaded = int(offset) + len(allPowDataSlice)
 	}
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
@@ -621,13 +634,21 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	data["powSource"] = powSource
-	data["currentPage"] = int(pageToLoad)
-	data["previousPage"] = int(pageToLoad - 1)
-	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
+	data := map[string]interface{}{
+		"powData":      allPowDataSlice,
+		"selectedFilter": selectedPow,
+		"selectedNum": pageSize,
+		"powSource":    powSource,
+		"currentPage":  pageToLoad,
+		"previousPage": pageToLoad - 1,
+		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+	}
 
+	defer s.renderJSON(data, res)
+
+	totalTxLoaded := int(offset) + len(allPowDataSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 }
 
