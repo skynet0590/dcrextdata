@@ -109,6 +109,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				// err is ignored since the vote will be updated when the block becomes available
 				if targetedBlock != nil {
 					vote.TargetedBlockTime = targetedBlock.Header.Timestamp.UTC()
+					vote.BlockHash = targetedBlock.Header.BlockHash().String()
 				}
 
 				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
