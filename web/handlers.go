@@ -59,6 +59,10 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		pageSize = numRows
 	}
 
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
 	filterInterval, err := strconv.Atoi(interval)
 	if err != nil || filterInterval <= 0 {
 		filterInterval = defaultInterval
@@ -73,6 +77,14 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		pageToLoad = 1
 	}
 
+	if selectedExchange == "" {
+		selectedExchange = "All"
+	}
+
+	if selectedCurrencyPair == "" {
+		selectedCurrencyPair = "All"
+	}
+	 
 	offset := (int(pageToLoad) - 1) * pageSize
 
 	ctx := context.Background()
@@ -236,16 +248,52 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
-	pageToLoad := 1
+	req.ParseForm()
+	page := req.FormValue("page")
+	selectedVsp := req.FormValue("filter")
+	numberOfRows := req.FormValue("recordsPerPage")
 
-	offset := (int(pageToLoad) - 1) * recordsPerPage
+	fmt.Println(page, selectedVsp,numberOfRows)
+
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else {
+		pageSize = numRows
+	}
+	
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
+	pageToLoad, err := strconv.Atoi(page)
+	if err != nil || pageToLoad <= 0 {
+		pageToLoad = 1
+	}
+
+	if selectedVsp == "" {
+		selectedVsp = "All"
+	} 
+
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
 
-	allVSPSlice, err := s.db.AllVSPTicks(ctx, offset, recordsPerPage)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
+	var allVSPSlice []vsp.VSPTickDto
+	var totalCount int64
+	if selectedVsp == "All" || selectedVsp == "" {
+		allVSPSlice, totalCount, err = s.db.AllVSPTicks(ctx, offset, pageSize)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
+	} else {
+		allVSPSlice, totalCount, err = s.db.FiltredVSPTicks(ctx, selectedVsp, offset, pageSize)
+		if err != nil {
+			s.renderError(err.Error(), res)
+			return
+		}
 	}
 
 	allVspData, err := s.db.FetchVSPs(ctx)
@@ -254,24 +302,20 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	totalCount, err := s.db.AllVSPTickCount(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
 		"allVspData":     allVspData,
-		"selectedFilter": "All",
+		"pageSizeSelector": pageSizeSelector,
+		"selectedFilter": selectedVsp,
 		"currentPage":    pageToLoad,
-		"previousPage":   int(pageToLoad - 1),
+		"selectedNum": pageSize,
+		"previousPage":   pageToLoad - 1,
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 
 	s.render("vsp.html", data, res)
@@ -280,8 +324,10 @@ func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	selectedFilter := req.FormValue("filter")
+	selectedVsp := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
+
+	fmt.Println(page, selectedVsp,numberOfRows)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -291,37 +337,33 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 		pageSize = numRows
 	}
 
-	pageToLoad, err := strconv.ParseInt(page, 10, 32)
+	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
+		pageSize = recordsPerPage
+	}
+
+	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
 	}
 
-	offset := (int(pageToLoad) - 1) * pageSize
+	if selectedVsp == "" {
+		selectedVsp = "All"
+	} 
+
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := context.Background()
 
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
-	if selectedFilter == "All" || selectedFilter == "" {
-		allVSPSlice, err = s.db.AllVSPTicks(ctx, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-
-		totalCount, err = s.db.AllVSPTickCount(ctx)
+	if selectedVsp == "All" || selectedVsp == "" {
+		allVSPSlice, totalCount, err = s.db.AllVSPTicks(ctx, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
 		}
 	} else {
-		allVSPSlice, err = s.db.FiltredVSPTicks(ctx, selectedFilter, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-
-		totalCount, err = s.db.FiltredVSPTicksCount(ctx, selectedFilter)
+		allVSPSlice, totalCount, err = s.db.FiltredVSPTicks(ctx, selectedVsp, offset, pageSize)
 		if err != nil {
 			s.renderError(err.Error(), res)
 			return
@@ -337,9 +379,10 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
 		"allVspData":     allVspData,
-		"selectedFilter": selectedFilter,
+		"selectedFilter": selectedVsp,
+		"selectedNum": numberOfRows,
 		"currentPage":    pageToLoad,
-		"previousPage":   int(pageToLoad - 1),
+		"previousPage":   pageToLoad - 1,
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
@@ -347,7 +390,7 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
 	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = int(pageToLoad + 1)
+		data["nextPage"] = pageToLoad + 1
 	}
 }
 

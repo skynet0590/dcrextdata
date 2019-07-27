@@ -128,8 +128,8 @@ export default class extends Controller {
           }
           _this.totalPageCountTarget.textContent = result.totalPages
           _this.currentPageTarget.textContent = result.currentPage
-          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+          _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
+          _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
 
           _this.displayVSPs(result.vspData)
         } else {
