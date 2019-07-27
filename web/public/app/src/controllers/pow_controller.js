@@ -37,13 +37,14 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchExchange('table')
-    document.getElementById('page-s').innerHTML = 'Page Size:'
+    $('[value="20"]').prop('selected', true)
   }
 
   setChart () {
+    $('[value="150"]').prop('selected', true)
     this.viewOption = 'chart'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    show(this.numPageWrapperTarget)
+    hide(this.numPageWrapperTarget)
     hide(this.powTableWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
@@ -51,7 +52,6 @@ export default class extends Controller {
     // hide(this.numPageWrapperTarget)
     this.nextPage = 1
     this.fetchExchange('chart')
-    document.getElementById('page-s').innerHTML = 'Size:'
   }
 
   setHashrateDataType (event) {
@@ -233,7 +233,8 @@ export default class extends Controller {
         labelsDiv: this.labelsTarget,
         ylabel: dataTypeLabel,
         y2label: 'Network Difficulty',
-        sigFigs: 1,
+        xlabel: 'Date',
+        labelsKMB: true,
         legendFormatter: legendFormatter
       }
 
@@ -269,7 +270,7 @@ export default class extends Controller {
         ylabel: dataTypeLabel,
         y2label: 'Network Difficulty',
         xlabel: 'Date',
-        sigFigs: 1,
+        labelsKMB: true,
         legendFormatter: legendFormatter
       }
 
