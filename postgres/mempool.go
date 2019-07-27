@@ -260,7 +260,7 @@ func (pg *PgDb) voteModelToDto(vote *models.Vote) mempool.VoteDto {
 	blockReceiveTimeDiff := vote.ReceiveTime.Time.Sub(vote.BlockReceiveTime.Time).Seconds()
 	var shortBlockHash string
 	if len(vote.BlockHash.String) > 0 {
-		shortBlockHash = vote.BlockHash.String[len(vote.BlockHash.String) - 8:]
+		shortBlockHash = vote.BlockHash.String[len(vote.BlockHash.String)-8:]
 	}
 
 	return mempool.VoteDto{
