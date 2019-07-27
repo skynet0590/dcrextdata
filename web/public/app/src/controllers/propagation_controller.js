@@ -17,13 +17,6 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    var filter = this.selectedRecordSetTarget.options
-    var num = this.selectedNumTarget.options
-    this.selectedRecordSetTarget.value = filter[0].value
-    this.selectedNumTarget.value = num[0].text
-  }
-
   initialize () {
     this.setChart()
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
@@ -60,6 +53,8 @@ export default class extends Controller {
 
   selectedRecordSetChanged () {
     this.currentPage = 1
+    var num = this.selectedNumTarget.options
+    this.selectedNumTarget.value = num[0].text
     this.selectedRecordSet = this.selectedRecordSetTarget.value
     if (this.viewOption === 'table') {
       this.fetchData(1)
@@ -85,22 +80,24 @@ export default class extends Controller {
     const _this = this
 
     var numberOfRows = this.selectedNumTarget.value
-    let uri = '/getpropagationdata'
+    let url = '/getpropagationdata'
     switch (this.selectedRecordSet) {
       case 'blocks':
-        uri = 'getblocks'
+        url = 'getblocks'
         break
       case 'votes':
-        uri = 'getvotes'
+        url = 'getvotes'
         break
       default:
-        uri = 'getpropagationdata'
+        url = 'getpropagationdata'
         break
     }
-    axios.get(`/${uri}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
+    axios.get(`/${url}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
+      _this.previousPageButtonTarget.setAttribute('href', `${result.url}?page=${result.previousPage}&recordsPerPage=${result.selectedNum}`)
+      _this.nextPageButtonTarget.setAttribute('href', `${result.url}?page=${result.nextPage}&recordsPerPage=${result.selectedNum}`)
 
       _this.currentPage = result.currentPage
       if (_this.currentPage <= 1) {
