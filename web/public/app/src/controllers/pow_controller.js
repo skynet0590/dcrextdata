@@ -28,6 +28,7 @@ export default class extends Controller {
   }
 
   setTable () {
+    $('[value="20"]').prop('selected', true)
     this.viewOption = 'table'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
@@ -37,7 +38,6 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
     this.fetchExchange('table')
-    $('[value="20"]').prop('selected', true)
   }
 
   setChart () {
@@ -95,7 +95,6 @@ export default class extends Controller {
   fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows = this.selectedNumTarget.value
-
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
@@ -232,14 +231,13 @@ export default class extends Controller {
         labelsDiv: this.labelsTarget,
         ylabel: dataTypeLabel,
         y2label: 'Network Difficulty',
-        xlabel: 'Date',
         labelsKMB: true,
         legendFormatter: legendFormatter
       }
 
       _this.chartsView = new Dygraph(
         _this.chartsViewTarget,
-        dataSet,
+        dataSet.reverse(),
         { ...options, ...extra }
       )
     } else {
@@ -268,14 +266,13 @@ export default class extends Controller {
         labelsDiv: this.labelsTarget,
         ylabel: dataTypeLabel,
         y2label: 'Network Difficulty',
-        xlabel: 'Date',
         labelsKMB: true,
         legendFormatter: legendFormatter
       }
 
       _this.chartsView = new Dygraph(
         _this.chartsViewTarget,
-        dataSet, { ...options, ...extra }
+        dataSet.reverse(), { ...options, ...extra }
       )
     }
   }
