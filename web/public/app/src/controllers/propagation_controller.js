@@ -63,15 +63,8 @@ export default class extends Controller {
     }
   }
 
-  gotoPreviousPage () {
-    this.fetchData(this.currentPage - 1)
-  }
-
-  gotoNextPage () {
-    this.fetchData(this.currentPage + 1)
-  }
-
   numberOfRowsChanged () {
+    this.selectedRecordSet = this.selectedRecordSetTarget.value
     this.selectedNum = this.selectedNumTarget.value
     this.fetchData(1)
   }
@@ -112,7 +105,7 @@ export default class extends Controller {
         show(_this.nextPageButtonTarget)
       }
 
-      _this.displayData(result.records)
+      _this.displayData(result)
     }).catch(function (e) {
       console.log(e) // todo: handle error
     })
@@ -121,13 +114,13 @@ export default class extends Controller {
   displayData (data) {
     switch (this.selectedRecordSet) {
       case 'blocks':
-        this.displayBlocks(data)
+        this.displayBlocks(data.records)
         break
       case 'votes':
-        this.displayVotes(data)
+        this.displayVotes(data.voteRecords)
         break
       default:
-        this.displayPropagationData(data)
+        this.displayPropagationData(data.records)
         break
     }
   }

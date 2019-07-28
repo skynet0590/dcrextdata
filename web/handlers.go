@@ -34,6 +34,11 @@ var (
 		100:  100,
 		150: 150,
 	}
+
+	propagationFilter = map[string]string{
+		"blocks":    "Blocks",
+		"votes":   "Votes",
+	}
 )
 
 // /home
@@ -978,9 +983,12 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	data := map[string]interface{}{
 		"records":      blockSlice,
 		"currentPage":  pageToLoad,
+		"propagationFilter": propagationFilter,
 		"pageSizeSelector": pageSizeSelector,
+		"selectedFilter": "both",
 		"selectedNum": pageSize,
 		"url": "/propagation",
+		"propagation": true,
 		"previousPage": pageToLoad - 1,
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
@@ -1061,9 +1069,12 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	data := map[string]interface{}{
 		"records":      voteSlice,
 		"currentPage":  pageToLoad,
+		"propagationFilter": propagationFilter,
 		"pageSizeSelector": pageSizeSelector,
+		"selectedFilter": "blocks",
 		"selectedNum": pageSize,
-		"url": "/getBlockData",
+		"url": "/blockdata",
+		"blocks": true,
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
@@ -1087,6 +1098,19 @@ func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+}
+
+func (s *Server) getVoteData(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+
+	vote, err := s.fetchVoteData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["propagation"] = vote
+	defer s.render("propagation.html", data, res)
 }
 
 func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error) {
@@ -1129,11 +1153,14 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	data := map[string]interface{}{
-		"records":      voteSlice,
+		"voteRecords":      voteSlice,
 		"currentPage":  pageToLoad,
+		"propagationFilter": propagationFilter,
 		"pageSizeSelector": pageSizeSelector,
+		"selectedFilter": "votes",
 		"selectedNum": pageSize,
-		"url": "/getvotes",
+		"url": "/votesdata",
+		"votes": true,
 		"previousPage": int(pageToLoad - 1),
 		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
