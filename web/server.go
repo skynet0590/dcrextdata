@@ -117,7 +117,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/filteredpow", s.getFilteredPowData)
 	r.Get("/powchartdata", s.getPowChartDate)
 	r.Get("/mempool", s.mempoolPage)
-	r.Get("/getmempoolCharts", s.getMempoolChartData)
+	r.Get("/mempoolcharts", s.getMempoolChartData)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)

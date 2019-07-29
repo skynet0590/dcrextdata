@@ -33,7 +33,7 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.btnWrapperTarget)
-    this.currentPage = this.currentPage
+    this.nextPage = 1
     this.fetchData(this.viewOption)
   }
 
@@ -55,6 +55,7 @@ export default class extends Controller {
     this.chartFilter = this.selectedMempoolOptTarget.value
     this.fetchData(this.viewOption)
   }
+
   setSizeDataType (event) {
     this.dataType = 'size'
     this.chartDataTypeTargets.forEach(el => {
@@ -87,13 +88,24 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+  loadPreviousPage () {
+    this.nextPage = this.currentPage - 1
+    this.fetchData(this.viewOption)
+  }
+
+  loadNextPage () {
+    this.nextPage = this.currentPage + 1
+    this.fetchData(this.viewOption)
+  }
+
   fetchData (display) {
     var url
     if (display === 'table') {
       var numberOfRows = this.selectedNumTarget.value
-      url = `/getmempool?page=${this.currentPage}&recordsPerPage=${numberOfRows}`
+      url = `/getmempool?page=${this.nextPage}&recordsPerPage=${numberOfRows}`
     } else {
-      url = `/getmempoolCharts?chartFilter=${this.dataType}`
+      url = `/mempoolcharts?chartFilter=${this.dataType}`
+      window.history.pushState(window.history.state, this.addr, url)
     }
 
     const _this = this
@@ -102,8 +114,7 @@ export default class extends Controller {
       if (display === 'table') {
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&recordsPerPage=${result.selectedNum}`)
-        _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&recordsPerPage=${result.selectedNum}`)
+        window.history.pushState(window.history.state, _this.addr, `/mempool?page=${result.currentPage}&recordsPerPage=${result.selectedNum}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
