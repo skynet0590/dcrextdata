@@ -80,16 +80,17 @@
                                 {{ end }}
                             </select>
                         </div>
-                            <div data-target="exchange.pageSizeWrapper" class="control-div pt-1">
-                            <a href="?page={{.previousPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}&selectedCurrencyPair={{.selectedCurrencyPair}}&selectedInterval={{.selectedInterval}}" data-target="exchange.previousPageButton" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted m-0" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted"  data-current-page="{{ .exchanges.currentPage }}"> {{ .exchanges.currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .exchanges.totalPages }}</span>
-                            </p>    
-                             <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .exchanges.totalPages }}" data-current-page="{{ .exchanges.totalPages }}" data-next-page="{{ .exchanges.nextPage }}" class="ml-2 {{ if not .exchanges.nextPage }}d-none{{ end }}"> Next&gt;</a>                        </div>
-                    </div>
-                </div>
-                <div class="d-none" data-target="exchange.exchangeTableWrapper">
-                    <table class="table mx-auto">
+                            <div data-target="exchange.pageSizeWrapper" class="control-div pt-1">
+                           <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" data-previous-page="{{ .exchanges.previousPage }}" data-current-page="{{ .exchanges.totalPages }}" class="mr-2 {{ if lt .exchanges.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                           <p class="text-muted m-0" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted"  data-current-page="{{ .exchanges.currentPage }}"> {{ .exchanges.currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .exchanges.totalPages }}</span>
+                           </p>    
+                           <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .exchanges.totalPages }}" data-current-page="{{ .exchanges.totalPages }}" data-next-page="{{ .exchanges.nextPage }}" class="ml-2 {{ if not .exchanges.nextPage }}d-none{{ end }}"> Next&gt;</a>                        </div>
+                       </div>
+                   </div>
+                   <div class="" data-target="exchange.exchangeTableWrapper">
+                    <table class="table">
                         <thead>
                             <tr style="white-space: nowrap;">
                                 <th>Time(UTC)</th>

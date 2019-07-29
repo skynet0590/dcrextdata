@@ -72,6 +72,16 @@ export default class extends Controller {
     this.fetchData(this.viewOption)
   }
 
+  loadPreviousPage () {
+    this.nextPage = this.currentPage - 1
+    this.fetchExchange(this.viewOption)
+  }
+
+  loadNextPage () {
+    this.nextPage = this.currentPage + 1
+    this.fetchExchange(this.viewOption)
+  }
+
   numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchData(this.viewOption)
@@ -85,6 +95,7 @@ export default class extends Controller {
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
         let result = response.data
+        window.history.pushState(window.history.state, _this.addr, `vsp?page=${result.previousPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {

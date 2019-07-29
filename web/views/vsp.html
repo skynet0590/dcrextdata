@@ -91,7 +91,7 @@
                             </tr>
                         </thead>
                         <tbody data-target="vsp.vspTicksTable">
-                            {{range $index, $vspticks := .vspData}}
+                            {{range $index, $vspticks := .vsp.vspData}}
                             <tr>
                                 <td>{{$vspticks.VSP}}</td>
                                 <td>{{$vspticks.Immature}}</td>
@@ -130,15 +130,12 @@
                     <div class="row">
                         <div class="col-sm-3 side-vsp-panel">
                             <div class="p-0 d-none" data-target="vsp.chartSourceWrapper">
-                                {{ range $index, $filter := .allVspData}}
+                                {{ range $index, $filter := .vsp.allVspData}}
                                 <div class="form-check form-check-inline">
-                                    <input name="chartSource" data-target="vsp.chartSource"
-                                        data-action="click->vsp#chartSourceCheckChanged" class="form-check-input"
-                                        type="checkbox" id="inlineCheckbox-{{$filter.Name}}" value="{{$filter.Name}}"
-                                        {{ if eq $index 0 }} checked {{ end }}>
-                                    <label class="form-check-label"
-                                        for="inlineCheckbox-{{$filter.Name}}">{{$filter.Host}}
-                                        ({{$filter.Name}})</label>
+                                    <input name="chartSource" data-target="vsp.chartSource" data-action="click->vsp#chartSourceCheckChanged"
+                                    class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Name}}"
+                                    value="{{$filter.Name}}" {{ if eq $index 0 }} checked {{ end }}>
+                                    <label class="form-check-label" for="inlineCheckbox-{{$filter.Name}}">{{$filter.Host}} ({{$filter.Name}})</label>
                                 </div>
                                 {{ end }}
                             </div>
@@ -157,6 +154,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     {{ template "footer" }}
 </body>

@@ -110,7 +110,7 @@ export default class extends Controller {
         let result = response.data
 
         if (display === 'table') {
-          window.history.pushState(window.history.state, _this.addr, `vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
+          window.history.pushState(window.history.state, _this.addr, `pow?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)

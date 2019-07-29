@@ -199,13 +199,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
 
-	exchanges, err := s.fetchVSPData(req)
+	vsps, err := s.fetchVSPData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
 
-	data["vsp"] = exchanges
+	data["vsp"] = vsps
 	defer s.render("vsp.html", data, res)
 }
 
@@ -405,6 +405,31 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 
 // /PoW
 func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
+	data := map[string]interface{}{}
+
+	pows, err := s.fetchPoWData(req)
+	if err != nil {
+		s.renderError(err.Error(), res)
+		return
+	}
+
+	data["pow"] = pows
+	defer s.render("pow.html", data, res)
+}
+
+func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchPoWData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 	selectedPow := req.FormValue("filter")
@@ -442,21 +467,18 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 	if selectedPow == "All" || selectedPow == "" {
 		allPowDataSlice, totalCount, err = s.db.FetchPowData(ctx, offset, pageSize)
 		if err != nil {
-			s.renderError(err.Error(), res)
-			return
+					return nil, err
 		}
 	} else {
 		allPowDataSlice, totalCount, err = s.db.FetchPowDataBySource(ctx, selectedPow, offset, pageSize)
 		if err != nil {
-			s.renderError(err.Error(), res)
-			return
+					return nil, err
 		}
 	}
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
-		return
+		return nil, err
 	}
 
 	data := map[string]interface{}{
@@ -475,78 +497,7 @@ func (s *Server) getPowData(res http.ResponseWriter, req *http.Request) {
 		data["nextPage"] = pageToLoad + 1
 	}
 
-	s.render("pow.html", data, res)
-}
-
-func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-	selectedPow := req.FormValue("filter")
-	numberOfRows := req.FormValue("recordsPerPage")
-
-	var pageSize int
-	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
-	} else {
-		pageSize = numRows
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
-	}
-
-	pageToLoad, err := strconv.Atoi(page)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
-
-	if selectedPow == "" {
-		selectedPow = "All"
-	}
-
-	offset := (pageToLoad - 1) * pageSize
-
-	ctx := context.Background()
-
-	var totalCount int64
-	var allPowDataSlice []pow.PowDataDto
-	if selectedPow == "All" || selectedPow == "" {
-		allPowDataSlice, totalCount, err = s.db.FetchPowData(ctx, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-	} else {
-		allPowDataSlice, totalCount, err = s.db.FetchPowDataBySource(ctx, selectedPow, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-	}
-
-	powSource, err := s.db.FetchPowSourceData(ctx)
-	if err != nil {
-		s.renderError(err.Error(), res)
-		return
-	}
-
-	data := map[string]interface{}{
-		"powData":      allPowDataSlice,
-		"selectedFilter": selectedPow,
-		"selectedNum": pageSize,
-		"powSource":    powSource,
-		"currentPage":  pageToLoad,
-		"previousPage": pageToLoad - 1,
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
-	}
-
-	defer s.renderJSON(data, res)
-
-	totalTxLoaded := int(offset) + len(allPowDataSlice)
-	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = pageToLoad + 1
-	}
+	return data, nil
 }
 
 func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
