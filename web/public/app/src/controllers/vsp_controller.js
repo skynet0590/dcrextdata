@@ -16,6 +16,11 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
+    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
+  }
+
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -33,10 +38,8 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
-    var filter = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    this.selectedFilterTarget.value = filter[0].text
-    this.selectedNumTarget.value = num[0].text
+    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
@@ -110,7 +113,7 @@ export default class extends Controller {
         let result = response.data
 
         if (display === 'table') {
-          window.history.pushState(window.history.state, _this.addr, `pow?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
+          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -184,7 +187,7 @@ export default class extends Controller {
     }
     let _this = this
     let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}`
-    window.history.pushState(window.history.state, _this.addr, url)
+    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     })

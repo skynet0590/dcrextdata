@@ -15,6 +15,11 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    var y = this.selectedMempoolOptTarget.options
+    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
+  }
+
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -105,7 +110,7 @@ export default class extends Controller {
       url = `/getmempool?page=${this.nextPage}&recordsPerPage=${numberOfRows}`
     } else {
       url = `/mempoolcharts?chartFilter=${this.dataType}`
-      window.history.pushState(window.history.state, this.addr, url)
+      window.history.pushState(window.history.state, this.addr, url + `&refresh=${1}`)
     }
 
     const _this = this

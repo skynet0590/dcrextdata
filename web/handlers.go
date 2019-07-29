@@ -78,11 +78,11 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
-	fmt.Println(page, selectedExchange, numberOfRows, selectedCurrencyPair, interval)
+	refresh := req.FormValue("refresh")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 {
+	if err != nil || numRows <= 0 || refresh == "1" {
 		pageSize = recordsPerPage
 	} else {
 		pageSize = numRows
@@ -93,7 +93,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	}
 
 	filterInterval, err := strconv.Atoi(interval)
-	if err != nil || filterInterval <= 0 {
+	if err != nil || filterInterval <= 0 || refresh == "1" {
 		filterInterval = defaultInterval
 	}
 
@@ -102,15 +102,15 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
-	if err != nil || pageToLoad <= 0 {
+	if err != nil || pageToLoad <= 0 || refresh == "1" {
 		pageToLoad = 1
 	}
 
-	if selectedExchange == "" {
+	if selectedExchange == "" || refresh == "1" {
 		selectedExchange = "All"
 	}
 
-	if selectedCurrencyPair == "" {
+	if selectedCurrencyPair == "" || refresh == "1" {
 		selectedCurrencyPair = "All"
 	}
 
@@ -169,6 +169,12 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	selectedInterval := req.FormValue("selectedInterval")
 	sources := req.FormValue("sources")
+	refresh := req.FormValue("refresh")
+
+	if refresh == "1" {
+		s.getExchangeTicks(res, req)
+		return
+	}
 
 	data := map[string]interface{}{}
 
@@ -226,12 +232,13 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	page := req.FormValue("page")
 	selectedVsp := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
+	refresh := req.FormValue("refresh")
 
 	fmt.Println(page, selectedVsp, numberOfRows)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 {
+	if err != nil || numRows <= 0 || refresh == "1" {
 		pageSize = recordsPerPage
 	} else {
 		pageSize = numRows
@@ -242,11 +249,11 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
-	if err != nil || pageToLoad <= 0 {
+	if err != nil || pageToLoad <= 0 || refresh == "1" {
 		pageToLoad = 1
 	}
 
-	if selectedVsp == "" {
+	if selectedVsp == "" || refresh == "1" {
 		selectedVsp = "All"
 	}
 
@@ -297,6 +304,12 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	sources := req.FormValue("vsps")
 	selectedAttribute := req.FormValue("selectedAttribute")
+	refresh := req.FormValue("refresh")
+
+	if refresh == "1" {
+		s.getVspTicks(res, req)
+		return
+	}
 
 	vsps := strings.Split(sources, "|")
 
@@ -643,10 +656,11 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	req.ParseForm()
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
+	refresh := req.FormValue("refresh")
 
 	var pageSize = recordsPerPage
 
-	if numberOfRows != "" {
+	if numberOfRows != "" || refresh == "1" {
 		numRows, err := strconv.Atoi(numberOfRows)
 		if err != nil || numRows <= 0 {
 			pageSize = pageSize
@@ -656,7 +670,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
-	if err != nil || pageToLoad <= 0 {
+	if err != nil || pageToLoad <= 0 || refresh == "1" {
 		pageToLoad = 1
 	}
 
@@ -698,6 +712,13 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	chartFilter := req.FormValue("chartFilter")
+	refresh := req.FormValue("refresh")
+
+	if refresh == "1" {
+		s.mempoolPage(res, req)
+		return
+	}
+	
 	ctx := context.Background()
 
 	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)

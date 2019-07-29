@@ -17,6 +17,13 @@ export default class extends Controller {
     ]
   }
 
+  connect () {
+    var num = this.selectedNumTarget.options
+    var record = this.selectedRecordSetTarget.options
+    this.selectedNumTarget.value = num[0].text
+    this.selectedRecordSetTarget.value = record[0].text
+  }
+
   initialize () {
     this.setChart()
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))

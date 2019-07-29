@@ -16,14 +16,10 @@ export default class extends Controller {
   }
 
   connect () {
-    var filter = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    var cpair = this.selectedCurrencyPairTarget.options
-    var interval = this.selectedIntervalTarget.options
-    this.selectedFilterTarget.value = filter[0].text
-    this.selectedCurrencyPairTarget.value = cpair[0].text
-    this.selectedNumTarget.value = num[0].text
-    this.selectedIntervalTarget.value = interval[4].value
+    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
+    this.selectedCurrencyPairTarget.value = this.selectedCurrencyPairTarget[0].text
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
+    this.selectedIntervalTarget.value = this.selectedIntervalTarget[0].value
   }
 
   initialize () {
@@ -60,7 +56,7 @@ export default class extends Controller {
     this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedTicksTarget.value = 'close'
-    this.nextPage = this.currentPage + 1
+    this.nextPage = 1
     this.fetchExchange(this.viewOption)
   }
 
@@ -125,15 +121,13 @@ export default class extends Controller {
   }
 
   fetchExchange (display) {
-    console.log(this.currentPage)
-    console.log(this.nextPage)
     const _this = this
     var url
     if (display === 'table') {
       url = `/exchange?page=${_this.nextPage}&filter=${_this.selectedFilter}&recordsPerPage=${_this.numberOfRows}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}`
     } else {
       url = `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&sources=${_this.selectedFilter}`
-      window.history.pushState(window.history.state, this.addr, url)
+      window.history.pushState(window.history.state, this.addr, url + `&refresh=${1}`)
     }
 
     axios.get(url)
