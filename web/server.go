@@ -29,7 +29,7 @@ type DataQuery interface {
 	AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error)
 
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
-	FiltredVSPTicks(ctx context.Context, vspName string, offset, limit int) ([]vsp.VSPTickDto, int64, error)	
+	FiltredVSPTicks(ctx context.Context, vspName string, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	AllVSPTicks(ctx context.Context, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error)
 	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)

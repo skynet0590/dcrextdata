@@ -156,7 +156,7 @@ func (pg *PgDb) FiltredVSPTicks(ctx context.Context, vspName string, offset, lim
 	}
 
 	vspTickCount, err := models.VSPTicks(qm.Load("VSP"), vspIdQuery).Count(ctx, pg.db)
-	
+
 	vspTicks := []vsp.VSPTickDto{}
 	for _, tick := range vspTickSlice {
 		vspTicks = append(vspTicks, pg.vspTickModelToDto(tick))

@@ -56,12 +56,13 @@
                                 </select>
                             </div>
                             <div class="d-flex" data-target="propagation.paginationButtonsWrapper">
-                                <a href="{{.propagation.url}}?page={{.propagation.previousPage}}&recordsPerPage={{.propagation.selectedNum}}" data-target="propagation.previousPageButton" class="mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                               <a href="javascript:void(0)" data-target="propagation.previousPageButton" data-action="click->propagation#loadPreviousPage" class="mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
-                                </p>    
-                                <a href="{{.propagation.url}}?page={{.propagation.nextPage}}&recordsPerPage={{.propagation.selectedNum}}" data-target="propagation.nextPageButton" class="ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}"> Next&gt;</a>
-                            </div>
+                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" data-current-page="{{ .propagation.currentPage }}" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
+                            </p>   
+
+                            <a href="javascript:void(0)" data-target="propagation.nextPageButton" data-action="click->propagation#loadNextPage" class="ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}"> Next&gt;</a>
+                        </div>
                     </div>
                 </div>
 
@@ -130,15 +131,6 @@
                         </thead>
 
                         <tbody data-target="propagation.blocksTableBody">
-                        {{range $index, $block := .propagation.records}}
-                            <tr>
-                        <td><a target="_blank" href="https://explorer.dcrdata.org/block/${{$block.BlockHeight}}">{{$block.BlockHeight}}</a></td>
-                        <td>{{$block.BlockInternalTime}}</td>
-                        <td>{{$block.BlockReceiveTime}}</td>
-                        <td>{{$block.Delay}}</td>
-                        <td><a target="_blank" href="https://explorer.dcrdata.org/block/${{$block.BlockHash}}">{{$block.BlockHash}}</a></td>
-                        {{end}}
-                            </tr>
                         </tbody>
                     </table>
 
@@ -167,17 +159,7 @@
                         </tr>
                         </thead>
                         <tbody data-target="propagation.votesTableBody">
-                        {{range $index, $vote := .propagation.voteRecords}}
-                            <tr>
-                        <td><a target="_blank" href="https://explorer.dcrdata.org/block/{{$vote.VotingOn}}">{{$vote.VotingOn}}</a></td>
-                        <td>{{$vote.ValidatorId}}</td>
-                        <td>{{$vote.Validity}}</td>
-                        <td>{{$vote.ReceiveTime}}</td>
-                        <td>{{$vote.TargetedBlockTimeDiff}}</td>
-                        <td>{{$vote.BlockReceiveTimeDiff}}</td>
-                        <td><a target="_blank" href="https://explorer.dcrdata.org/tx/{{$vote.Hash}}">{{$vote.Hash}}</a></td>
-                        {{end}}
-                            </tr>
+
                         </tbody>
                     </table>
 

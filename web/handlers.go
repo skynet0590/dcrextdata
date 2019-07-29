@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/pow"
+	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
 var (
@@ -26,16 +26,16 @@ var (
 	}
 
 	pageSizeSelector = map[int]int{
-		20:   20,
-		30:    30,
-		50:   50,
-		100:  100,
+		20:  20,
+		30:  30,
+		50:  50,
+		100: 100,
 		150: 150,
 	}
 
 	propagationFilter = map[string]string{
-		"blocks":    "Blocks",
-		"votes":   "Votes",
+		"blocks": "Blocks",
+		"votes":  "Votes",
 	}
 )
 
@@ -78,7 +78,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
-	fmt.Println(page, selectedExchange,numberOfRows,selectedCurrencyPair,interval)
+	fmt.Println(page, selectedExchange, numberOfRows, selectedCurrencyPair, interval)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -120,39 +120,39 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 
 	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
 	if err != nil {
-				return nil, err
+		return nil, err
 	}
 
 	if len(allExhangeTicksSlice) == 0 {
 		data := map[string]interface{}{
 			"message": fmt.Sprintf("%s does not have %s data.", strings.Title(selectedExchange), exchangeTickIntervals[filterInterval]),
 		}
-				return data, nil
+		return data, nil
 	}
 
 	allExhangeSlice, err := s.db.AllExchange(ctx)
 	if err != nil {
-				return nil, err
+		return nil, err
 	}
 
 	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
-				return nil, err
+		return nil, err
 	}
 
 	data := map[string]interface{}{
-		"exData":         allExhangeTicksSlice,
-		"allExData":      allExhangeSlice,
-		"currencyPairs":  currencyPairs,
-		"intervals":      exchangeTickIntervals,
-		"pageSizeSelector": pageSizeSelector,
-		"currentPage":    pageToLoad,
-		"previousPage":   pageToLoad - 1,
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
-		"selectedFilter": selectedExchange,
-		"selectedCurrencyPair":  selectedCurrencyPair,
-		"selectedNum":    pageSize,
-		"selectedInterval": filterInterval,
+		"exData":               allExhangeTicksSlice,
+		"allExData":            allExhangeSlice,
+		"currencyPairs":        currencyPairs,
+		"intervals":            exchangeTickIntervals,
+		"pageSizeSelector":     pageSizeSelector,
+		"currentPage":          pageToLoad,
+		"previousPage":         pageToLoad - 1,
+		"totalPages":           int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"selectedFilter":       selectedExchange,
+		"selectedCurrencyPair": selectedCurrencyPair,
+		"selectedNum":          pageSize,
+		"selectedInterval":     filterInterval,
 	}
 
 	totalTxLoaded := int(offset) + len(allExhangeTicksSlice)
@@ -227,7 +227,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	selectedVsp := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	fmt.Println(page, selectedVsp,numberOfRows)
+	fmt.Println(page, selectedVsp, numberOfRows)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -248,7 +248,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 
 	if selectedVsp == "" {
 		selectedVsp = "All"
-	} 
+	}
 
 	offset := (pageToLoad - 1) * pageSize
 
@@ -274,14 +274,14 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	data := map[string]interface{}{
-		"vspData":        allVSPSlice,
-		"allVspData":     allVspData,
-		"selectedFilter": selectedVsp,
+		"vspData":          allVSPSlice,
+		"allVspData":       allVspData,
+		"selectedFilter":   selectedVsp,
 		"pageSizeSelector": pageSizeSelector,
-		"selectedNum": pageSize,
-		"currentPage":    pageToLoad,
-		"previousPage":   pageToLoad - 1,
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"selectedNum":      pageSize,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad - 1,
+		"totalPages":       int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(allVSPSlice)
@@ -435,7 +435,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	selectedPow := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	fmt.Println(page, selectedPow,numberOfRows)
+	fmt.Println(page, selectedPow, numberOfRows)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -444,7 +444,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	} else {
 		pageSize = numRows
 	}
-	
+
 	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
 		pageSize = recordsPerPage
 	}
@@ -456,7 +456,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 
 	if selectedPow == "" {
 		selectedPow = "All"
-	} 
+	}
 
 	offset := (pageToLoad - 1) * recordsPerPage
 
@@ -467,12 +467,12 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	if selectedPow == "All" || selectedPow == "" {
 		allPowDataSlice, totalCount, err = s.db.FetchPowData(ctx, offset, pageSize)
 		if err != nil {
-					return nil, err
+			return nil, err
 		}
 	} else {
 		allPowDataSlice, totalCount, err = s.db.FetchPowDataBySource(ctx, selectedPow, offset, pageSize)
 		if err != nil {
-					return nil, err
+			return nil, err
 		}
 	}
 
@@ -482,14 +482,14 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	data := map[string]interface{}{
-		"powData":      allPowDataSlice,
-		"selectedFilter": selectedPow,
+		"powData":          allPowDataSlice,
+		"selectedFilter":   selectedPow,
 		"pageSizeSelector": pageSizeSelector,
-		"selectedNum": pageSize,
-		"powSource":    powSource,
-		"currentPage":  pageToLoad,
-		"previousPage": pageToLoad - 1,
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
+		"selectedNum":      pageSize,
+		"powSource":        powSource,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad - 1,
+		"totalPages":       int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
 	}
 
 	totalTxLoaded := int(offset) + len(allPowDataSlice)
@@ -679,12 +679,12 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	}
 
 	data := map[string]interface{}{
-		"mempoolData":  mempoolSlice,
+		"mempoolData":      mempoolSlice,
 		"pageSizeSelector": pageSizeSelector,
-		"selectedNum": pageSize,
-		"currentPage":  pageToLoad,
-		"previousPage": pageToLoad - 1,
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"selectedNum":      pageSize,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad - 1,
+		"totalPages":       int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
@@ -824,16 +824,15 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	}
 
 	data := map[string]interface{}{
-		"records":      blockSlice,
-		"currentPage":  pageToLoad,
+		"records":           blockSlice,
+		"currentPage":       pageToLoad,
 		"propagationFilter": propagationFilter,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedFilter": "both",
-		"selectedNum": pageSize,
-		"url": "/propagation",
-		"propagation": true,
-		"previousPage": pageToLoad - 1,
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "both",
+		"selectedNum":       pageSize,
+		"url":               "/propagation",
+		"previousPage":      pageToLoad - 1,
+		"totalPages":        int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(blockSlice)
@@ -910,16 +909,15 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	}
 
 	data := map[string]interface{}{
-		"records":      voteSlice,
-		"currentPage":  pageToLoad,
+		"records":           voteSlice,
+		"currentPage":       pageToLoad,
 		"propagationFilter": propagationFilter,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedFilter": "blocks",
-		"selectedNum": pageSize,
-		"url": "/blockdata",
-		"blocks": true,
-		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "blocks",
+		"selectedNum":       pageSize,
+		"url":               "/blockdata",
+		"previousPage":      int(pageToLoad - 1),
+		"totalPages":        int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(voteSlice)
@@ -996,16 +994,15 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	data := map[string]interface{}{
-		"voteRecords":      voteSlice,
-		"currentPage":  pageToLoad,
+		"voteRecords":       voteSlice,
+		"currentPage":       pageToLoad,
 		"propagationFilter": propagationFilter,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedFilter": "votes",
-		"selectedNum": pageSize,
-		"url": "/votesdata",
-		"votes": true,
-		"previousPage": int(pageToLoad - 1),
-		"totalPages":   int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "votes",
+		"selectedNum":       pageSize,
+		"url":               "/votesdata",
+		"previousPage":      int(pageToLoad - 1),
+		"totalPages":        int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(voteSlice)

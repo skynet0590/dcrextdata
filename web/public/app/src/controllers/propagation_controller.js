@@ -63,6 +63,14 @@ export default class extends Controller {
     }
   }
 
+  loadPreviousPage () {
+    this.fetchData(this.currentPage - 1)
+  }
+
+  loadNextPage () {
+    this.fetchData(this.currentPage + 1)
+  }
+
   numberOfRowsChanged () {
     this.selectedRecordSet = this.selectedRecordSetTarget.value
     this.selectedNum = this.selectedNumTarget.value
@@ -87,10 +95,10 @@ export default class extends Controller {
     }
     axios.get(`/${url}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
       let result = response.data
+      console.log(result)
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      _this.previousPageButtonTarget.setAttribute('href', `${result.url}?page=${result.previousPage}&recordsPerPage=${result.selectedNum}`)
-      _this.nextPageButtonTarget.setAttribute('href', `${result.url}?page=${result.nextPage}&recordsPerPage=${result.selectedNum}`)
+      window.history.pushState(window.history.state, _this.addr, `${result.url}?page=${result.currentPage}&recordsPerPage=${result.selectedNum}`)
 
       _this.currentPage = result.currentPage
       if (_this.currentPage <= 1) {
@@ -107,7 +115,7 @@ export default class extends Controller {
 
       _this.displayData(result)
     }).catch(function (e) {
-      console.log(e) // todo: handle error
+      // console.log(e) // todo: handle error
     })
   }
 
