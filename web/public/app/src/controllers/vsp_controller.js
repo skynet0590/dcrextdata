@@ -79,6 +79,16 @@ export default class extends Controller {
     }
   }
 
+  loadPreviousPage () {
+    this.nextPage = this.currentPage - 1
+    this.fetchExchange(this.viewOption)
+  }
+
+  loadNextPage () {
+    this.nextPage = this.currentPage + 1
+    this.fetchExchange(this.viewOption)
+  }
+
   numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
@@ -95,11 +105,12 @@ export default class extends Controller {
     }
 
     const _this = this
-    axios.get(`/filteredvspticks?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
+    axios.get(`/vsps?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
         let result = response.data
 
         if (display === 'table') {
+          window.history.pushState(window.history.state, _this.addr, `vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -114,8 +125,6 @@ export default class extends Controller {
           }
           _this.totalPageCountTarget.textContent = result.totalPages
           _this.currentPageTarget.textContent = result.currentPage
-          _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
-          _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}`)
 
           _this.displayVSPs(result.vspData)
         } else {
@@ -175,6 +184,7 @@ export default class extends Controller {
     }
     let _this = this
     let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}`
+    window.history.pushState(window.history.state, _this.addr, url)
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     })

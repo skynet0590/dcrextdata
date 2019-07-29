@@ -28,7 +28,6 @@
                                     class="form-control" style="width: 278px;">
                                     {{$selectedFilter := .selectedFilter}}
                                     <option value="All">All</option>
-
                                     {{ range $index, $filter := .allVspData}}
                                     <option value="{{$filter.Name}}" {{ if eq $filter.Name $selectedFilter}} selected
                                         {{ end }}>{{$filter.Host}} ({{$filter.Name}})</option>
@@ -51,52 +50,25 @@
                                     <option value="Users_Active">Users Active</option>
                                 </select>
                             </div>
-
-<<<<<<< HEAD
-                            <div data-target="vsp.numPageWrapper" class="control-div p-0 ml-1">
-                                <div class=" mb-2 float-md-right">
-                                    <div class="control-label">Page Size:</div>
-                                    <select data-target="vsp.selectedNum" data-action="change->vsp#numberOfRowsChanged"
-                                        class="form-control" style="width: 70px;">
-                                        <option value="20">20</option>
-                                        <option value="30">30</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                        <option value="150">150</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div data-target="vsp.pageSizeWrapper" class="d-inline pt-1 control-div">
-                                <a href="javascript:void(0)" data-target="vsp.previousPageButton"
-                                    data-action="click->vsp#loadPreviousPage" data-next-page="{{ .previousPage }}"
-                                    class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
-
-                                <p class="text-muted d-inline" style="white-space: nowrap;"> Page <span data-target="vsp.currentPage"
-                                        class="text-muted"> {{ .currentPage }}</span> of <span
-                                        data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
-                                </p>
-                                <a href="javascript:void(0)" data-target="vsp.nextPageButton"
-                                    data-action="click->vsp#loadNextPage" data-total-page="{{ .totalPages }}"
-                                    data-next-page="{{ .nextPage }}" class="ml-2 {{ if not .nextPage }}d-none{{ end }}">
-                                    Next&gt;</a>
-                            </div>
                             <div data-target="vsp.numPageWrapper" class="control-div p-0 ml-1">
                         <div class=" mb-2 float-md-right">
                             <div class="control-label">Page Size:</div>
                             <select data-target="vsp.selectedNum" data-action="change->vsp#numberOfRowsChanged" class="form-control" style="width: 70px;">
-                                {{$selectedNum := .selectedNum}}
-                                {{ range $index, $filter := .pageSizeSelector}}
+                                {{$selectedNum := .vsp.selectedNum}}
+                                {{ range $index, $filter := .vsp.pageSizeSelector}}
                                 <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
                                 {{ end }}
                             </select>
                         </div>
                     </div>
-                            <div data-target="vsp.pageSizeWrapper" class="d-inline pt-1 control-div">
-                            <a href="?page={{.previousPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}" data-target="vsp.previousPageButton" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="vsp.currentPage" class="text-muted"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
+                        <div data-target="vsp.pageSizeWrapper" class="d-flex">
+                            <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" class="mr-2 {{ if lt .vsp.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="vsp.currentPage" class="text-muted" data-current-page="{{ .vsp.currentPage }}"> {{ .vsp.currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .vsp.totalPages }}</span>
                             </p>
-                            <a href="?page={{.nextPage}}&filter={{.selectedFilter}}&recordsPerPage={{.selectedNum}}" data-target="vsp.nextPageButton" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
+
+                            <a href="javascript:void(0)"  data-target="vsp.nextPageButton"  data-action="click->vsp#loadNextPage" class="ml-2 {{ if not .vsp.nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
                     </div>
                 </div>

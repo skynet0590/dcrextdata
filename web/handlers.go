@@ -197,80 +197,31 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	page := req.FormValue("page")
-	selectedVsp := req.FormValue("filter")
-	numberOfRows := req.FormValue("recordsPerPage")
+	data := map[string]interface{}{}
 
-	fmt.Println(page, selectedVsp,numberOfRows)
-
-	var pageSize int
-	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
-	} else {
-		pageSize = numRows
-	}
-	
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
-	}
-
-	pageToLoad, err := strconv.Atoi(page)
-	if err != nil || pageToLoad <= 0 {
-		pageToLoad = 1
-	}
-
-	if selectedVsp == "" {
-		selectedVsp = "All"
-	} 
-
-	offset := (pageToLoad - 1) * pageSize
-
-	ctx := context.Background()
-
-	var allVSPSlice []vsp.VSPTickDto
-	var totalCount int64
-	if selectedVsp == "All" || selectedVsp == "" {
-		allVSPSlice, totalCount, err = s.db.AllVSPTicks(ctx, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-	} else {
-		allVSPSlice, totalCount, err = s.db.FiltredVSPTicks(ctx, selectedVsp, offset, pageSize)
-		if err != nil {
-			s.renderError(err.Error(), res)
-			return
-		}
-	}
-
-	allVspData, err := s.db.FetchVSPs(ctx)
+	exchanges, err := s.fetchVSPData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
 
-	data := map[string]interface{}{
-		"vspData":        allVSPSlice,
-		"allVspData":     allVspData,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedFilter": selectedVsp,
-		"currentPage":    pageToLoad,
-		"selectedNum": pageSize,
-		"previousPage":   pageToLoad - 1,
-		"totalPages":     int(math.Ceil(float64(totalCount) / float64(recordsPerPage))),
-	}
-
-	totalTxLoaded := int(offset) + len(allVSPSlice)
-	if int64(totalTxLoaded) < totalCount {
-		data["nextPage"] = pageToLoad + 1
-	}
-
-	s.render("vsp.html", data, res)
+	data["vsp"] = exchanges
+	defer s.render("vsp.html", data, res)
 }
 
 func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
+	data, err := s.fetchVSPData(req)
+	defer s.renderJSON(data, res)
+
+	if err != nil {
+		data = map[string]interface{}{
+			"error": err.Error(),
+		}
+		return
+	}
+}
+
+func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
 	selectedVsp := req.FormValue("filter")
@@ -308,39 +259,37 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	if selectedVsp == "All" || selectedVsp == "" {
 		allVSPSlice, totalCount, err = s.db.AllVSPTicks(ctx, offset, pageSize)
 		if err != nil {
-			s.renderError(err.Error(), res)
-			return
+			return nil, err
 		}
 	} else {
 		allVSPSlice, totalCount, err = s.db.FiltredVSPTicks(ctx, selectedVsp, offset, pageSize)
 		if err != nil {
-			s.renderError(err.Error(), res)
-			return
+			return nil, err
 		}
 	}
 
 	allVspData, err := s.db.FetchVSPs(ctx)
 	if err != nil {
-		s.renderError(err.Error(), res)
-		return
+		return nil, err
 	}
 
 	data := map[string]interface{}{
 		"vspData":        allVSPSlice,
 		"allVspData":     allVspData,
 		"selectedFilter": selectedVsp,
-		"selectedNum": numberOfRows,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum": pageSize,
 		"currentPage":    pageToLoad,
 		"previousPage":   pageToLoad - 1,
 		"totalPages":     int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
-	defer s.renderJSON(data, res)
-
 	totalTxLoaded := int(offset) + len(allVSPSlice)
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = pageToLoad + 1
 	}
+
+	return data, nil
 }
 
 // vspchartdata

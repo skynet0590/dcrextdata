@@ -239,7 +239,6 @@ export default class extends Controller {
         _this.chartsViewTarget,
         dataSet, { ...options, ...extra }
       )
-      // _this.exchange.viewOptionTargets.setAttribute(`href`, `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&sources=${_this.selectedFilter}`)
     } else {
       let messageHTML = ''
       messageHTML += `<div class="alert alert-primary">
