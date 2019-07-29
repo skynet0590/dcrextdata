@@ -102,6 +102,16 @@ export default class extends Controller {
     this.fetchExchange(this.viewOption)
   }
 
+  loadPreviousPage () {
+    this.nextPage = this.currentPage - 1
+    this.fetchExchange(this.viewOption)
+  }
+
+  loadNextPage () {
+    this.nextPage = this.currentPage + 1
+    this.fetchExchange(this.viewOption)
+  }
+
   selectedCurrencyPairChanged () {
     this.nextPage = 1
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
@@ -115,12 +125,14 @@ export default class extends Controller {
   }
 
   fetchExchange (display) {
+    console.log(this.currentPage)
+    console.log(this.nextPage)
     const _this = this
     var url
     if (display === 'table') {
-      url = `/filteredEx?page=${this.nextPage}&filter=${this.selectedFilter}&recordsPerPage=${this.numberOfRows}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}`
+      url = `/exchange?page=${_this.nextPage}&filter=${_this.selectedFilter}&recordsPerPage=${_this.numberOfRows}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}`
     } else {
-      url = `/exchangechart?selectedTick=${this.selectedTick}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}&sources=${this.selectedFilter}`
+      url = `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&sources=${_this.selectedFilter}`
       window.history.pushState(window.history.state, this.addr, url)
     }
 
@@ -143,6 +155,7 @@ export default class extends Controller {
             _this.totalPageCountTarget.textContent = 0
             _this.currentPageTarget.textContent = 0
           } else {
+            window.history.pushState(window.history.state, _this.addr, `/exchanges?page=${result.currentPage}&filter=${_this.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
             hide(_this.messageViewTarget)
             show(_this.exchangeTableWrapperTarget)
             _this.currentPage = result.currentPage
@@ -160,9 +173,6 @@ export default class extends Controller {
 
             _this.totalPageCountTarget.textContent = result.totalPages
             _this.currentPageTarget.textContent = result.currentPage
-            _this.previousPageButtonTarget.setAttribute('href', `?page=${result.previousPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
-            _this.nextPageButtonTarget.setAttribute('href', `?page=${result.nextPage}&filter=${result.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
-
             _this.displayExchange(result.exData)
           }
         } else {
