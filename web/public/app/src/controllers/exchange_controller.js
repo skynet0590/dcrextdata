@@ -121,6 +121,7 @@ export default class extends Controller {
       url = `/filteredEx?page=${this.nextPage}&filter=${this.selectedFilter}&recordsPerPage=${this.numberOfRows}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}`
     } else {
       url = `/exchangechart?selectedTick=${this.selectedTick}&selectedCurrencyPair=${this.selectedCurrencyPair}&selectedInterval=${this.selectedInterval}&sources=${this.selectedFilter}`
+      window.history.pushState(window.history.state, this.addr, url)
     }
 
     axios.get(url)
