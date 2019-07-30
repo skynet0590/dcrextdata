@@ -64,9 +64,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+				s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -179,13 +177,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	interval, err := strconv.Atoi(selectedInterval)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
 	chartData, err := s.db.ExchangeTicksChartData(ctx, selectedTick, selectedCurrencyPair, interval, sources)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 	if len(chartData) == 0 {
@@ -218,9 +216,7 @@ func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request)
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -232,18 +228,14 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	numberOfRows := req.FormValue("recordsPerPage")
 	refresh := req.FormValue("refresh")
 
-	fmt.Println(page, selectedVsp, numberOfRows)
-
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 || refresh == "1" {
+	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
 	} else {
 		pageSize = numRows
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
@@ -433,9 +425,7 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+				s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -446,18 +436,14 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	selectedPow := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	fmt.Println(page, selectedPow, numberOfRows)
-
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
 	} else {
 		pageSize = numRows
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
@@ -643,9 +629,7 @@ func (s *Server) getMempool(res http.ResponseWriter, req *http.Request) {
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -656,24 +640,19 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	numberOfRows := req.FormValue("recordsPerPage")
 	refresh := req.FormValue("refresh")
 
-	var pageSize = recordsPerPage
-
-	if numberOfRows != "" || refresh == "1" {
-		numRows, err := strconv.Atoi(numberOfRows)
-		if err != nil || numRows <= 0 {
-			pageSize = pageSize
-		} else {
-			pageSize = numRows
-		}
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
+	} else {
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 || refresh == "1" {
 		pageToLoad = 1
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	offset := (pageToLoad - 1) * pageSize
@@ -721,7 +700,7 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 
 	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
 	if err != nil {
-		s.renderError(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 
@@ -754,9 +733,7 @@ func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) 
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -808,24 +785,19 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	var pageSize = recordsPerPage
-
-	if numberOfRows != "" {
-		numRows, err := strconv.Atoi(numberOfRows)
-		if err != nil || numRows <= 0 {
-			pageSize = pageSize
-		} else {
-			pageSize = numRows
-		}
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
+	} else {
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.Atoi(page)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	offset := (pageToLoad - 1) * pageSize
@@ -868,9 +840,7 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+				s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -893,24 +863,19 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	var pageSize = recordsPerPage
-
-	if numberOfRows != "" {
-		numRows, err := strconv.Atoi(numberOfRows)
-		if err != nil || numRows <= 0 {
-			pageSize = pageSize
-		} else {
-			pageSize = numRows
-		}
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
+	} else {
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	offset := (int(pageToLoad) - 1) * pageSize
@@ -953,9 +918,7 @@ func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-		data = map[string]interface{}{
-			"error": err.Error(),
-		}
+				s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -978,24 +941,19 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
 
-	var pageSize = recordsPerPage
-
-	if numberOfRows != "" {
-		numRows, err := strconv.Atoi(numberOfRows)
-		if err != nil || numRows <= 0 {
-			pageSize = pageSize
-		} else {
-			pageSize = numRows
-		}
+	var pageSize int
+	numRows, err := strconv.Atoi(numberOfRows)
+	if err != nil || numRows <= 0 {
+		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
+	} else {
+		pageSize = numRows
 	}
 
 	pageToLoad, err := strconv.ParseInt(page, 10, 32)
 	if err != nil || pageToLoad <= 0 {
 		pageToLoad = 1
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	offset := (int(pageToLoad) - 1) * pageSize
