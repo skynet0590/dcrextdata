@@ -1,7 +1,6 @@
 package web
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 )
 
 var (
+	maxPageSize = 250
 	recordsPerPage        = 20
 	defaultInterval       = -1 // All
 	exchangeTickIntervals = map[int]string{
@@ -82,14 +82,12 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 || refresh == "1" {
+	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
+	} else if numRows > maxPageSize {
+	    pageSize = maxPageSize
 	} else {
 		pageSize = numRows
-	}
-
-	if _, foundPageSize := pageSizeSelector[pageSize]; !foundPageSize {
-		pageSize = recordsPerPage
 	}
 
 	filterInterval, err := strconv.Atoi(interval)
@@ -116,7 +114,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 
 	offset := (pageToLoad - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
 	if err != nil {
@@ -178,7 +176,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 	data := map[string]interface{}{}
 
-	ctx := context.Background()
+	ctx := req.Context()
 	interval, err := strconv.Atoi(selectedInterval)
 	if err != nil {
 		s.renderError(err.Error(), res)
@@ -259,7 +257,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 
 	offset := (pageToLoad - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
@@ -473,7 +471,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 
 	offset := (pageToLoad - 1) * recordsPerPage
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	var totalCount int64
 	var allPowDataSlice []pow.PowDataDto
@@ -680,7 +678,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 
 	offset := (pageToLoad - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	mempoolSlice, err := s.db.Mempools(ctx, offset, pageSize)
 	if err != nil {
@@ -719,7 +717,7 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 		return
 	}
 	
-	ctx := context.Background()
+	ctx := req.Context()
 
 	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
 	if err != nil {
@@ -832,7 +830,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	offset := (pageToLoad - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	blockSlice, err := s.db.Blocks(ctx, offset, pageSize)
 	if err != nil {
@@ -917,7 +915,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 
 	offset := (int(pageToLoad) - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	voteSlice, err := s.db.BlocksWithoutVotes(ctx, offset, pageSize)
 	if err != nil {
@@ -1002,7 +1000,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 
 	offset := (int(pageToLoad) - 1) * pageSize
 
-	ctx := context.Background()
+	ctx := req.Context()
 
 	voteSlice, err := s.db.Votes(ctx, offset, pageSize)
 	if err != nil {
