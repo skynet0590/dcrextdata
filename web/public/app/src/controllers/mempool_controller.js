@@ -15,11 +15,6 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    var y = this.selectedMempoolOptTarget.options
-    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
-  }
-
   initialize () {
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -32,7 +27,6 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.selectedNumberOfRowsTarget.value = this.selectedNumberOfRowsTarget.options[0].text
     hide(this.chartWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
@@ -47,7 +41,7 @@ export default class extends Controller {
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
     this.chartFilter = this.selectedMempoolOptTarget.value = this.selectedMempoolOptTarget.options[0].value
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     show(this.chartDataTypeSelectorTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)

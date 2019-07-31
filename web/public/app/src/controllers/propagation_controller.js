@@ -17,43 +17,39 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
-    this.selectedRecordSetTarget.value = this.selectedRecordSetTarget.options[0].text
-  }
-
   initialize () {
     this.setChart()
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
-    this.selectedRecordSet = 'both'
   }
 
   setTable () {
     this.viewOption = 'table'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    show(this.selectedRecordSetTarget.options[0])
+    this.selectedRecordSet = this.selectedRecordSetTarget.value = this.selectedRecordSetTarget.options[0].value
     hide(this.chartWrapperTarget)
     show(this.bothRecordSetOptionTarget)
     show(this.paginationButtonsWrapperTarget)
     show(this.numPageWrapperTarget)
     hide(this.chartWrapperTarget)
     show(this.tablesWrapperTarget)
+    this.fetchData(this.currentPage)
   }
 
   setChart () {
     this.viewOption = 'chart'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    hide(this.bothRecordSetOptionTarget)
+    hide(this.selectedRecordSetTarget.options[0])
     hide(this.numPageWrapperTarget)
     hide(this.paginationButtonsWrapperTarget)
     hide(this.tablesWrapperTarget)
-    if (this.selectedRecordSet === 'both') {
-      this.selectedRecordSetTarget.value = this.selectedRecordSet = 'blocks'
-    }
-    this.fetchChartDataAndPlot()
     show(this.chartWrapperTarget)
+    this.selectedRecordSet = this.selectedRecordSetTarget.value = this.selectedRecordSetTarget.options[1].value
+
+    this.fetchChartDataAndPlot()
   }
 
   selectedRecordSetChanged () {
@@ -245,7 +241,10 @@ export default class extends Controller {
 
   fetchChartDataAndPlot () {
     const _this = this
-    axios.get('/propagationchartdata?recordset=' + this.selectedRecordSet).then(function (response) {
+    const url = '/propagationchartdata?recordset=' + this.selectedRecordSet
+    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
+
+    axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
     }).catch(function (e) {
       console.log(e) // todo: handle error

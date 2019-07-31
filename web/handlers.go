@@ -498,10 +498,16 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	return data, nil
 }
 
-func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
+func (s *Server) getPowChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	sources := req.FormValue("pools")
 	dataType := req.FormValue("datatype")
+	refresh := req.FormValue("refresh")
+
+	if refresh == "1" {
+		s.getPowData(res, req)
+		return
+	}
 
 	pools := strings.Split(sources, "|")
 
@@ -742,6 +748,13 @@ func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) 
 // /propagationchartdata
 func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
 	requestedRecordSet := req.FormValue("recordset")
+	refresh := req.FormValue("refresh")
+
+	if refresh == "1" {
+		s.propagation(res, req)
+		return
+	}
+
 	var data []mempool.PropagationChartData
 	var err error
 
