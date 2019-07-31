@@ -72,6 +72,7 @@
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <div class="row d-hide" data-target="pow.powTableWrapper">
                     <div class="col-md-12">
                         <div class="">
@@ -107,6 +108,24 @@
                                     <td></td>
                                 </tr>
                             </template>
+=======
+                <div class="chart-control-wrapper control-div p-0 d-none" data-target="pow.chartDataTypeSelector">
+                    <div class="control-label">Data:</div>
+                    <select data-target="pow.chartDataType" data-action="change->pow#selectedChartDataTypeChanged"
+                            class="form-control" style="width: 110px;">
+                        <option value="pool_hashrate" selected>Hashrate</option>
+                        <option value="workers">Workers</option>
+                    </select>
+                </div>
+
+                <div class="control-div p-0 d-none" data-target="pow.chartSourceWrapper">
+                    {{ range $index, $filter := .powSource}}
+                        <div class="form-check form-check-inline">
+                            <input data-target="pow.pool" data-action="click->pow#poolCheckChanged"
+                                   class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Source}}"
+                                   value="{{$filter.Source}}" {{ if eq 0 $index}}checked{{ end }}>
+                            <label class="form-check-label" for="inlineCheckbox-{{$filter.Source}}">{{$filter.Source}}</label>
+>>>>>>> added the ability to plot multi pools at once
                         </div>
                     </div>
                 </div>

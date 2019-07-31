@@ -205,7 +205,6 @@ export default class extends Controller {
     let options = {
       legend: 'always',
       includeZero: true,
-      // dateWindow: [dataSet.min_date, dataSet.max_date],
       animatedZooms: true,
       legendFormatter: legendFormatter,
       // plotter: barChartPlotter,

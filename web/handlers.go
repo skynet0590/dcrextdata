@@ -314,7 +314,7 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 
 	vsps := strings.Split(sources, "|")
 
-	ctx := context.Background()
+	ctx := req.Context()
 	dates, err := s.db.GetVspTickDistinctDates(ctx, vsps)
 	if err != nil {
 		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from VSP table, %s", err.Error()), res)
@@ -543,6 +543,117 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	}
 }
 
+func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	sources := req.FormValue("pools")
+	dataType := req.FormValue("datatype")
+
+	pools := strings.Split(sources, "|")
+
+	ctx := req.Context()
+	dates, err := s.db.GetPowDistinctDates(ctx, pools)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from PoW table, %s", err.Error()), res)
+		return
+	}
+
+	var vspChartData = struct {
+		CSV     string    `json:"csv"`
+		MinDate time.Time `json:"min_date"`
+		MaxDate time.Time `json:"max_date"`
+	}{
+		CSV: "Date," + strings.Join(pools, ",") + "\n",
+	}
+
+	var resultMap = map[time.Time][]string{}
+	for _, date := range dates {
+		if vspChartData.MinDate.IsZero() || date.Before(vspChartData.MinDate) {
+			vspChartData.MinDate = date
+		}
+		if vspChartData.MaxDate.IsZero() || date.After(vspChartData.MaxDate) {
+			vspChartData.MaxDate = date
+		}
+		resultMap[date] = []string{date.String()}
+	}
+
+	for _, source := range pools {
+		points, err := s.db.FetchPowChartData(ctx, source, dataType)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("Error in fetching %s records for %s: %s", dataType, source, err.Error()), res)
+			return
+		}
+
+		var vspPointMap = map[time.Time]string{}
+		var vspDates []time.Time
+		for _, point := range points {
+			vspPointMap[point.Date] = point.Record
+			vspDates = append(vspDates, point.Date)
+		}
+
+		sort.Slice(vspDates, func(i, j int) bool {
+			return vspDates[i].Before(vspDates[j])
+		})
+
+		for date, _ := range resultMap {
+			if date.Year() == 1970 || date.IsZero() {
+				continue
+			}
+			if record, found := vspPointMap[date]; found {
+				skip := false
+				if record == "0" || record == "" {
+					skip = true
+					for _, vspDate := range vspDates {
+						if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+							skip = false
+						}
+					}
+				}
+				if !skip {
+					resultMap[date] = append(resultMap[date], record)
+				} else {
+					resultMap[date] = append(resultMap[date], "Nan")
+				}
+			} else {
+				// if they have not been any record for this vsp, give a gap (Nan) else use space
+				padding := "Nan"
+				for _, vspDate := range vspDates {
+					if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+						padding = ""
+					}
+				}
+				resultMap[date] = append(resultMap[date], padding)
+			}
+		}
+	}
+
+	for _, date := range dates {
+		if date.Year() == 1970 || date.IsZero() {
+			continue
+		}
+
+		points := resultMap[date]
+		hasAtleastOneRecord := false
+		for index, point := range points {
+			// the first index is the date
+			if index == 0 {
+				continue
+			}
+			if point != "" && point != "Nan" {
+				hasAtleastOneRecord = true
+			}
+		}
+
+		if !hasAtleastOneRecord {
+			continue
+		}
+
+		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
+	}
+
+	s.renderJSON(vspChartData, res)
+
+}
+
 // /mempool
 func (s *Server) mempoolPage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
@@ -708,10 +819,6 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	}
 
 	s.renderJSON(csv, res)
-}
-
-func (s *Server) fetchPropagationBlockData(res http.ResponseWriter, req *http.Request) {
-	//recordset
 }
 
 func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {

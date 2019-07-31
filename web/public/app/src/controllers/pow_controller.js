@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, options, setActiveOptionBtn } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -10,14 +10,19 @@ export default class extends Controller {
       'vspFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartSourceWrapper', 'chartSource', 'chartWrapper', 'chartDataTypeSelector', 'labels',
+      'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
 
   initialize () {
+<<<<<<< HEAD
     this.setChart()
     this.dataType = 'hashrate'
+=======
+    this.viewOption = 'table'
+    this.dataType = 'pool_hashrate'
+>>>>>>> added the ability to plot multi pools at once
   }
 
   connect () {
@@ -29,7 +34,7 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartSourceWrapperTarget)
     show(this.vspFilterWrapperTarget)
@@ -43,7 +48,7 @@ export default class extends Controller {
 
   setChart () {
     this.viewOption = 'chart'
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.numPageWrapperTarget)
     hide(this.vspFilterWrapperTarget)
     hide(this.powTableWrapperTarget)
@@ -55,8 +60,7 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
-  selectedChartDataTypeChanged (event) {
-    this.dataType = event.currentTarget.value
+  poolCheckChanged (event) {
     this.fetchDataAndPlotGraph()
   }
 
@@ -130,13 +134,37 @@ export default class extends Controller {
     })
   }
 
-  fetchDataAndPlotGraph () {
-
+  selectedChartDataTypeChanged (event) {
+    this.dataType = event.currentTarget.value
+    this.fetchDataAndPlotGraph()
   }
 
-  plotGraph (pows) {
+  fetchDataAndPlotGraph () {
+    let selectedPools = []
+    this.poolTargets.forEach(el => {
+      if (el.checked) {
+        selectedPools.push(el.value)
+      }
+    })
+
+    const _this = this
+    axios.get(`/powchartdata?pools=${selectedPools.join('|')}&datatype=${this.dataType}`).then(function (response) {
+      let result = response.data
+      if (result.error) {
+        console.log(result.error) // todo show error page fron front page
+        return
+      }
+
+      _this.plotGraph(result)
+    }).catch(function (e) {
+      console.log(e)
+    })
+  }
+
+  plotGraph1 (data) {
     const _this = this
 
+<<<<<<< HEAD
     var data = []
     var dataSet = []
     if (this.selectedFilterTarget.value === 'All') {
@@ -199,43 +227,56 @@ export default class extends Controller {
         if (lastDate === new Date(pow.time)) {
           dataSet.splice(dataSet.length, 1, data)
         }
+=======
+    console.log(data.csv)
+    let dataTypeLabel = 'Pool Hashrate'
+    if (_this.dataType === 'workers') {
+      dataTypeLabel = 'Workers'
+    }
+>>>>>>> added the ability to plot multi pools at once
 
-        // else push to new date dataset row
-        else {
-          dataSet.push(data)
+    const extra = {
+      includeZero: true,
+      colors: ['#2971FF', '#FF8C00'],
+      labelsDiv: this.labelsTarget,
+      ylabel: dataTypeLabel,
+      labelsKMB: true,
+      legendFormatter: legendFormatter,
+      dateWindow: [data.minDate, data.maxDate],
+      xlabel: 'Date',
+      labelsUTC: true,
+      connectSeparatedPoints: true
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, data.csv, { ...options, ...extra }
+    )
+  }
+
+  // vsp chart
+  plotGraph (dataSet) {
+    const _this = this
+    let dataTypeLabel = 'Pool Hashrate'
+    if (_this.dataType === 'workers') {
+      dataTypeLabel = 'Workers'
+    }
+
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      animatedZooms: true,
+      legendFormatter: legendFormatter,
+      // plotter: barChartPlotter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: dataTypeLabel,
+      xlabel: 'Date',
+      labelsUTC: true,
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      axes: {
+        x: {
+          drawGrid: false
         }
-        data = []
-      })
-
-      let dataTypeLabel = 'Pool Hashrate'
-      if (_this.dataType === 'workers') {
-        dataTypeLabel = 'Workers'
-      }
-
-      var extra = {
-        labels: ['Date', 'luxor', 'uupool', 'btc', 'f2pool', 'coinmine'],
-        colors: ['#2971FF', '#FF8C00', '#64FFDA', '#84FFFF', '#EEFF41', '#FFCCBC'],
-        labelsDiv: this.labelsTarget,
-        ylabel: dataTypeLabel,
-        y2label: 'Network Difficulty',
-        labelsKMB: true,
-        legendFormatter: legendFormatter
-      }
-
-      _this.chartsView = new Dygraph(
-        _this.chartsViewTarget,
-        dataSet.reverse(),
-        { ...options, ...extra }
-      )
-    } else {
-      pows.forEach(pow => {
-        data.push(new Date(pow.time))
-
-        if (_this.dataType === 'hashrate') {
-          data.push(parseInt(pow.pool_hashrate_th))
-        } else {
-          data.push(parseInt(pow.workers))
-        }
+<<<<<<< HEAD
 
         dataSet.push(data)
         data = []
@@ -256,23 +297,12 @@ export default class extends Controller {
         labelsKMB: true,
         xlabel: 'Date',
         legendFormatter: legendFormatter
+=======
+>>>>>>> added the ability to plot multi pools at once
       }
-
-      _this.chartsView = new Dygraph(
-        _this.chartsViewTarget,
-        dataSet.reverse(), { ...options, ...extra }
-      )
     }
-  }
 
-  setActiveOptionBtn (opt, optTargets) {
-    optTargets.forEach(li => {
-      if (li.dataset.option === this.viewOption) {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
   }
 
   formatPowDateTime (dateTime) {

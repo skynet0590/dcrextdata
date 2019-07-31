@@ -118,6 +118,80 @@ func (pg *PgDb) FetchPowDataBySource(ctx context.Context, source string, offset 
 	return result, nil
 }
 
+func (pg *PgDb) GetPowDistinctDates(ctx context.Context, sources []string) ([]time.Time, error) {
+	query := fmt.Sprintf("SELECT DISTINCT %s FROM %s WHERE %s IN ('%s') ORDER BY %s", models.PowDatumColumns.Time,
+		models.TableNames.PowData,
+		models.PowDatumColumns.Source, strings.Join(sources, "', '"), models.PowDatumColumns.Time)
+
+	rows, err := pg.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	var dates []time.Time
+
+	for rows.Next() {
+		var date int64
+		err = rows.Scan(&date)
+		if err != nil {
+			return nil, err
+		}
+		dates = append(dates, time.Unix(date, 0).UTC())
+	}
+	return dates, nil
+}
+
+func (pg *PgDb) FetchPowChartData(ctx context.Context, source string, dataType string) (records []pow.PowChartData, err error) {
+	dataType = strings.ToLower(dataType)
+	query := fmt.Sprintf("SELECT %s as date, %s as record FROM %s where %s = '%s' ORDER BY %s",
+		models.PowDatumColumns.Time, dataType, models.TableNames.PowData, models.PowDatumColumns.Source, source, models.PowDatumColumns.Time)
+	rows, err := pg.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var rec pow.PowChartData
+		var unixDate int64
+		err = rows.Scan(&unixDate, &rec.Record)
+		if err != nil {
+			return nil, err
+		}
+
+		rec.Date = time.Unix(unixDate, 0).UTC()
+		records = append(records, rec)
+	}
+
+	return
+}
+
+func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType string) ([]pow.PowChartData, error)  {
+	powDatum, err := models.PowData(qm.Select(models.PowDatumColumns.Time, dataType),
+		models.PowDatumWhere.Source.EQ(source), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []pow.PowChartData
+	for _, item := range powDatum {
+		var record string
+		if dataType == models.PowDatumColumns.Workers {
+			record = strconv.FormatInt(int64(item.Workers.Int), 10)
+		}else if dataType == models.PowDatumColumns.PoolHashrate {
+			record = item.PoolHashrate.String
+		} else {
+			return nil, fmt.Errorf("unsupported data type: %s", dataType)
+		}
+		powChartData := pow.PowChartData{
+			Date:   time.Unix(int64(item.Time), 0).UTC(),
+			Record: record,
+		}
+		result = append(result, powChartData)
+	}
+
+	return result, nil
+}
+
 func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, err error) {
 	poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 64)
 	if err != nil {
