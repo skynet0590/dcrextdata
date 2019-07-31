@@ -40,7 +40,7 @@ export default class extends Controller {
     this.viewOption = 'table'
     this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
     hide(this.chartSourceWrapperTarget)
@@ -62,7 +62,7 @@ export default class extends Controller {
     show(this.chartWrapperTarget)
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.nextPage = 1
     if (this.selectedFilterTarget.selectedIndex === 0) {
       this.selectedFilterTarget.selectedIndex = 1
@@ -228,15 +228,5 @@ export default class extends Controller {
       dataSet.csv,
       options
     )
-  }
-
-  setActiveOptionBtn (opt, optTargets) {
-    optTargets.forEach(li => {
-      if (li.dataset.option === this.viewOption) {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
   }
 }

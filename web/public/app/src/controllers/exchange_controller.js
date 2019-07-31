@@ -15,13 +15,6 @@ export default class extends Controller {
     ]
   }
 
-  connect () {
-    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
-    this.selectedCurrencyPairTarget.value = this.selectedCurrencyPairTarget[0].text
-    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
-    this.selectedIntervalTarget.value = this.selectedIntervalTarget[0].value
-  }
-
   initialize () {
     this.setChart()
     this.selectedFilter = this.selectedFilterTarget.value
@@ -187,7 +180,7 @@ export default class extends Controller {
       fields[4].innerHTML = ex.open
       fields[5].innerHTML = ex.close
       fields[6].innerHTML = ex.volume
-      fields[7].innerText = ex.intervals
+      fields[7].innerText = ex.interval
       fields[8].innerHTML = ex.currency_pair
 
       _this.exchangeTableTarget.appendChild(exRow)
