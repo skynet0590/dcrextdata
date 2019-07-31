@@ -205,15 +205,14 @@ export default class extends Controller {
     let options = {
       legend: 'always',
       includeZero: true,
-      animatedZooms: true,
       legendFormatter: legendFormatter,
-      // plotter: barChartPlotter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
       xlabel: 'Date',
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
+      showRangeSelector: true,
       axes: {
         x: {
           drawGrid: false
