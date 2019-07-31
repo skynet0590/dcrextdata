@@ -208,7 +208,6 @@ export default class extends Controller {
         // title: title,
         includeZero: true,
         dateWindow: [minDate, maxDate],
-        animatedZooms: true,
         legendFormatter: legendFormatter,
         plotter: barChartPlotter,
         labelsDiv: _this.labelsTarget,
@@ -217,6 +216,7 @@ export default class extends Controller {
         labelsUTC: true,
         labelsKMB: true,
         maxNumberWidth: 10,
+        showRangeSelector: true,
         axes: {
           x: {
             drawGrid: false

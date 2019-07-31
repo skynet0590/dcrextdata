@@ -257,14 +257,14 @@ export default class extends Controller {
     let options = {
       legend: 'always',
       includeZero: true,
-      animatedZooms: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
       xlabel: 'Height',
       labelsKMB: true,
       drawPoints: true,
-      strokeWidth: 0.0
+      strokeWidth: 0.0,
+      showRangeSelector: true
     }
 
     _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
