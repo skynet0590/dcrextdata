@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
+	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
 
@@ -665,6 +666,52 @@ func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) 
 		}
 		return
 	}
+}
+
+// /propagationchartdata
+func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
+	requestedRecordSet := req.FormValue("recordset")
+	var data []mempool.PropagationChartData
+	var err error
+
+	if requestedRecordSet == "votes" {
+		data, err = s.db.PropagationVoteChartData(req.Context())
+	} else {
+		data, err = s.db.PropagationBlockChartData(req.Context())
+	}
+
+	if err != nil {
+		s.renderErrorJSON(err.Error(), res)
+		return
+	}
+
+	var avgTimeForHeight = map[int64]float64{}
+	var heightArr []int64
+	for _, record := range data {
+		if existingTime, found := avgTimeForHeight[record.BlockHeight]; found {
+			avgTimeForHeight[record.BlockHeight] = (record.TimeDifference + existingTime)/2
+		} else {
+			avgTimeForHeight[record.BlockHeight] = record.TimeDifference
+			heightArr = append(heightArr, record.BlockHeight)
+		}
+	}
+
+	var yLabel = "Delay (s)"
+	if requestedRecordSet == "votes" {
+		yLabel = "Time Difference (s)"
+	}
+
+	var csv = fmt.Sprintf("Height,%s\n", yLabel)
+	for _, height := range heightArr {
+		timeDifference := fmt.Sprintf("%04.2f", avgTimeForHeight[height])
+		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
+	}
+
+	s.renderJSON(csv, res)
+}
+
+func (s *Server) fetchPropagationBlockData(res http.ResponseWriter, req *http.Request) {
+	//recordset
 }
 
 func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {

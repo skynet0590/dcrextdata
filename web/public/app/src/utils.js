@@ -118,3 +118,13 @@ export function getRandomColor () {
   }
   return color
 }
+
+export function setActiveOptionBtn (opt, optTargets) {
+  optTargets.forEach(li => {
+    if (li.dataset.option === opt) {
+      li.classList.add('active')
+    } else {
+      li.classList.remove('active')
+    }
+  })
+}

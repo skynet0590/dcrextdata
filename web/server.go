@@ -52,6 +52,8 @@ type DataQuery interface {
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
 	VotesCount(ctx context.Context) (int64, error)
+	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
+	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 }
 
 type Server struct {
@@ -120,6 +122,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
+	r.Get("/propagationchartdata", s.propagationChartData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/getvotes", s.getVotes)
 }

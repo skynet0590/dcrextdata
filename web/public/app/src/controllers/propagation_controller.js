@@ -1,15 +1,19 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show } from '../utils'
+import { hide, show, setActiveOptionBtn, legendFormatter } from '../utils'
+
+const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton',
-      'selectedRecordSet', 'selectedNum', 'numPageWrapper',
-      'table', 'blocksTbody', 'votesTbody',
+      'bothRecordSetOption', 'selectedRecordSet', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'tablesWrapper', 'table', 'blocksTbody', 'votesTbody',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
-      'totalPageCount', 'currentPage'
+      'totalPageCount', 'currentPage',
+      'chartSelector', 'viewOption',
+      'chartWrapper', 'chartsView', 'labels'
     ]
   }
 
@@ -26,12 +30,42 @@ export default class extends Controller {
       this.currentPage = 1
     }
     this.selectedRecordSet = 'both'
+    this.viewOption = 'table'
+  }
+
+  setTable () {
+    this.viewOption = 'table'
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    hide(this.chartWrapperTarget)
+    show(this.bothRecordSetOptionTarget)
+    show(this.paginationButtonsWrapperTarget)
+    show(this.numPageWrapperTarget)
+    hide(this.chartWrapperTarget)
+    show(this.tablesWrapperTarget)
+  }
+
+  setChart () {
+    this.viewOption = 'chart'
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    hide(this.bothRecordSetOptionTarget)
+    hide(this.numPageWrapperTarget)
+    hide(this.paginationButtonsWrapperTarget)
+    hide(this.tablesWrapperTarget)
+    if (this.selectedRecordSet === 'both') {
+      this.selectedRecordSetTarget.value = this.selectedRecordSet = 'blocks'
+    }
+    this.fetchChartDataAndPlot()
+    show(this.chartWrapperTarget)
   }
 
   selectedRecordSetChanged () {
     this.currentPage = 1
     this.selectedRecordSet = this.selectedRecordSetTarget.value
-    this.fetchData(1)
+    if (this.viewOption === 'table') {
+      this.fetchData(1)
+    } else {
+      this.fetchChartDataAndPlot()
+    }
   }
 
   gotoPreviousPage () {
@@ -201,5 +235,34 @@ export default class extends Controller {
     show(this.tableTarget)
     hide(this.blocksTableTarget)
     hide(this.votesTableTarget)
+  }
+
+  fetchChartDataAndPlot () {
+    const _this = this
+    axios.get('/propagationchartdata?recordset=' + this.selectedRecordSet).then(function (response) {
+      _this.plotGraph(response.data)
+    }).catch(function (e) {
+      console.log(e) // todo: handle error
+    })
+  }
+
+  plotGraph (csv) {
+    const _this = this
+
+    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (s)' : 'Delay (s)'
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      animatedZooms: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: yLabel,
+      xlabel: 'Height',
+      labelsKMB: true,
+      drawPoints: true,
+      strokeWidth: 0.0
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
   }
 }
