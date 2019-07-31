@@ -72,7 +72,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, error) {
 	req.ParseForm()
 	page := req.FormValue("page")
-	selectedExchange := req.FormValue("filter")
+	selectedExchange := req.FormValue("selectedExchange")
 	numberOfRows := req.FormValue("recordsPerPage")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
@@ -145,7 +145,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		"currentPage":          pageToLoad,
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           int(math.Ceil(float64(totalCount) / float64(pageSize))),
-		"selectedFilter":       selectedExchange,
+		"selectedExchange":       selectedExchange,
 		"selectedCurrencyPair": selectedCurrencyPair,
 		"selectedNum":          pageSize,
 		"selectedInterval":     filterInterval,
@@ -164,7 +164,7 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 	selectedTick := req.FormValue("selectedTick")
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	selectedInterval := req.FormValue("selectedInterval")
-	sources := req.FormValue("sources")
+	selectedExchange := req.FormValue("selectedExchange")
 	refresh := req.FormValue("refresh")
 
 	if refresh == "1" {
@@ -181,13 +181,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	chartData, err := s.db.ExchangeTicksChartData(ctx, selectedTick, selectedCurrencyPair, interval, sources)
+	chartData, err := s.db.ExchangeTicksChartData(ctx, selectedTick, selectedCurrencyPair, interval, selectedExchange)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 	if len(chartData) == 0 {
-		data["message"] = fmt.Sprintf("No data to generate %s chart.", sources)
+		data["message"] = fmt.Sprintf("No data to generate %s chart.", selectedExchange)
 		s.renderJSON(data, res)
 		return
 	}
@@ -292,7 +292,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 // vspchartdata
 func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	sources := req.FormValue("vsps")
+	selectedExchange := req.FormValue("vsps")
 	selectedAttribute := req.FormValue("selectedAttribute")
 	refresh := req.FormValue("refresh")
 
@@ -301,7 +301,7 @@ func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	vsps := strings.Split(sources, "|")
+	vsps := strings.Split(selectedExchange, "|")
 
 	ctx := req.Context()
 	dates, err := s.db.GetVspTickDistinctDates(ctx, vsps)
@@ -672,7 +672,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	data := map[string]interface{}{
 		"mempoolData":      mempoolSlice,
 		"pageSizeSelector": pageSizeSelector,
-		"selectedNum":      pageSize,
+		"selectedNumberOfRows":      pageSize,
 		"currentPage":      pageToLoad,
 		"previousPage":     pageToLoad - 1,
 		"totalPages":       int(math.Ceil(float64(totalCount) / float64(pageSize))),

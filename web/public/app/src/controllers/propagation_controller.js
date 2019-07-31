@@ -18,10 +18,8 @@ export default class extends Controller {
   }
 
   connect () {
-    var num = this.selectedNumTarget.options
-    var record = this.selectedRecordSetTarget.options
-    this.selectedNumTarget.value = num[0].text
-    this.selectedRecordSetTarget.value = record[0].text
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
+    this.selectedRecordSetTarget.value = this.selectedRecordSetTarget.options[0].text
   }
 
   initialize () {
@@ -60,8 +58,7 @@ export default class extends Controller {
 
   selectedRecordSetChanged () {
     this.currentPage = 1
-    var num = this.selectedNumTarget.options
-    this.selectedNumTarget.value = num[0].text
+    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     this.selectedRecordSet = this.selectedRecordSetTarget.value
     if (this.viewOption === 'table') {
       this.fetchData(1)

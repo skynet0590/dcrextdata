@@ -41,10 +41,10 @@
                             <div class="control-label">Exchanges:</div>
                             <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                                 class="form-control" style="width: 100px;">
-                                {{$selectedFilter := .exchanges.selectedFilter}}
+                                {{$selectedExchange := .exchanges.selectedExchange}}
                                 <option data-target="exchange.hideOption" value="All">All</option>
                                 {{ range $index, $filter := .exchanges.allExData}}
-                                <option value="{{$filter.Name}}"  {{ if eq $filter.Name $selectedFilter}} selected {{ end }}>{{$filter.Name}}</option>
+                                <option value="{{$filter.Name}}"  {{ if eq $filter.Name $selectedExchange}} selected {{ end }}>{{$filter.Name}}</option>
                                 {{ end }}
                             </select>
                         </div>
@@ -86,7 +86,8 @@
 
                            <p class="text-muted m-0" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted"  data-current-page="{{ .exchanges.currentPage }}"> {{ .exchanges.currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .exchanges.totalPages }}</span>
                            </p>    
-                           <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .exchanges.totalPages }}" data-current-page="{{ .exchanges.totalPages }}" data-next-page="{{ .exchanges.nextPage }}" class="ml-2 {{ if not .exchanges.nextPage }}d-none{{ end }}"> Next&gt;</a>                        </div>
+                           <a href="javascript:void(0)" data-target="exchange.nextPageButton" data-action="click->exchange#loadNextPage" data-total-page="{{ .exchanges.totalPages }}" data-current-page="{{ .exchanges.totalPages }}" data-next-page="{{ .exchanges.nextPage }}" class="ml-2 {{ if not .exchanges.nextPage }}d-none{{ end }}"> Next&gt;</a>                        
+                           </div>
                        </div>
                    </div>
                    <div class="" data-target="exchange.exchangeTableWrapper">

@@ -7,7 +7,7 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'exchangeTable', 'selectedCurrencyPair', 'numPageWrapper', 'intervalWapper',
+      'selectedFilter', 'exchangeTable', 'selectedCurrencyPair', 'numPageWrapper', 'intervalsWapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'hideOption', 'sourceWrapper', 'chartSelector',
@@ -46,11 +46,11 @@ export default class extends Controller {
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
-    var filter = this.selectedFilterTarget.options
+    var exhange = this.selectedFilterTarget.options
     var num = this.selectedNumTarget.options
     var cpair = this.selectedCurrencyPairTarget.options
-    var interval = this.selectedIntervalTarget.options
-    this.selectedFilter = this.selectedFilterTarget.value = filter[0].text
+    var intervals = this.selectedIntervalTarget.options
+    this.selectedExchange = this.selectedFilterTarget.value = exhange[0].text
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = cpair[0].text
     this.numberOfRows = this.selectedNumTarget.value = num[0].value
     this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
@@ -63,8 +63,8 @@ export default class extends Controller {
   setChart () {
     this.viewOption = 'chart'
     hide(this.messageViewTarget)
-    var interval = this.selectedIntervalTarget.options
-    var sFilter = this.selectedFilterTarget.options
+    var intervals = this.selectedIntervalTarget.options
+    var exhange = this.selectedFilterTarget.options
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     show(this.tickWapperTarget)
@@ -72,10 +72,10 @@ export default class extends Controller {
     hide(this.currencyPairHideOptionTarget)
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)
-    hide(interval[0])
+    hide(intervals[0])
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
-    this.selectedFilter = this.selectedFilterTarget.value = sFilter[1].text
+    this.selectedInterval = this.selectedIntervalTarget.value = intervals[4].value
+    this.selectedExchange = this.selectedFilterTarget.value = exhange[1].text
     this.selectedTick = this.selectedTicksTarget.value = 'close'
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = 'BTC/DCR'
     this.fetchExchange(this.viewOption)
@@ -94,7 +94,7 @@ export default class extends Controller {
 
   selectedFilterChanged () {
     this.nextPage = 1
-    this.selectedFilter = this.selectedFilterTarget.value
+    this.selectedExchange = this.selectedFilterTarget.value
     this.fetchExchange(this.viewOption)
   }
 
@@ -124,9 +124,9 @@ export default class extends Controller {
     const _this = this
     var url
     if (display === 'table') {
-      url = `/exchange?page=${_this.nextPage}&filter=${_this.selectedFilter}&recordsPerPage=${_this.numberOfRows}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}`
+      url = `/exchange?page=${_this.nextPage}&selectedExchange=${_this.selectedExchange}&recordsPerPage=${_this.numberOfRows}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}`
     } else {
-      url = `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&sources=${_this.selectedFilter}`
+      url = `/exchangechart?selectedTick=${_this.selectedTick}&selectedCurrencyPair=${_this.selectedCurrencyPair}&selectedInterval=${_this.selectedInterval}&selectedExchange=${_this.selectedExchange}`
       window.history.pushState(window.history.state, this.addr, url + `&refresh=${1}`)
     }
 
@@ -144,12 +144,11 @@ export default class extends Controller {
             _this.messageViewTarget.innerHTML = messageHTML
             show(_this.messageViewTarget)
             hide(_this.exchangeTableWrapperTarget)
-            hide(_this.previousPageButtonTarget)
-            hide(_this.nextPageButtonTarget)
+            hide(_this.pageSizeWrapperTarget)
             _this.totalPageCountTarget.textContent = 0
             _this.currentPageTarget.textContent = 0
           } else {
-            window.history.pushState(window.history.state, _this.addr, `/exchanges?page=${result.currentPage}&filter=${_this.selectedFilter}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
+            window.history.pushState(window.history.state, _this.addr, `/exchanges?page=${result.currentPage}&selectedExchange=${_this.selectedExchange}&recordsPerPage=${result.selectedNum}&selectedCurrencyPair=${result.selectedCurrencyPair}&selectedInterval=${result.selectedInterval}`)
             hide(_this.messageViewTarget)
             show(_this.exchangeTableWrapperTarget)
             _this.currentPage = result.currentPage
@@ -192,7 +191,7 @@ export default class extends Controller {
       fields[4].innerHTML = ex.open
       fields[5].innerHTML = ex.close
       fields[6].innerHTML = ex.volume
-      fields[7].innerText = ex.interval
+      fields[7].innerText = ex.intervals
       fields[8].innerHTML = ex.currency_pair
 
       _this.exchangeTableTarget.appendChild(exRow)

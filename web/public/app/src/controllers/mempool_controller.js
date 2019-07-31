@@ -11,7 +11,7 @@ export default class extends Controller {
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
       'chartWrapper', 'viewOption', 'labels',
       'chartDataTypeSelector', 'chartDataType', 'chartOptions', 'labels', 'selectedMempoolOpt',
-      'selectedNum', 'numPageWrapper'
+      'selectedNumberOfRows', 'numPageWrapper'
     ]
   }
 
@@ -32,13 +32,13 @@ export default class extends Controller {
   setTable () {
     this.viewOption = 'table'
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
+    this.selectedNumberOfRowsTarget.value = this.selectedNumberOfRowsTarget.options[0].text
     hide(this.chartWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.btnWrapperTarget)
-    this.nextPage = 1
+    this.nextPage = this.currentPage
     this.fetchData(this.viewOption)
   }
 
@@ -46,13 +46,11 @@ export default class extends Controller {
     this.viewOption = 'chart'
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
-    var y = this.selectedMempoolOptTarget.options
-    this.chartFilter = this.selectedMempoolOptTarget.value = y[0].value
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.chartFilter = this.selectedMempoolOptTarget.value = this.selectedMempoolOptTarget.options[0].value
+    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     show(this.chartDataTypeSelectorTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
-    this.nextPage = 1
     this.fetchData(this.viewOption)
   }
 
@@ -88,8 +86,8 @@ export default class extends Controller {
     this.fetchData('chart')
   }
 
-  NumberOfRowsChanged () {
-    this.selectedNum = this.selectedNumTarget.value
+  numberOfRowsChanged () {
+    this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
     this.fetchData(this.viewOption)
   }
 
@@ -106,7 +104,7 @@ export default class extends Controller {
   fetchData (display) {
     var url
     if (display === 'table') {
-      var numberOfRows = this.selectedNumTarget.value
+      var numberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&recordsPerPage=${numberOfRows}`
     } else {
       url = `/mempoolcharts?chartFilter=${this.dataType}`
@@ -119,7 +117,7 @@ export default class extends Controller {
       if (display === 'table') {
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        window.history.pushState(window.history.state, _this.addr, `/mempool?page=${result.currentPage}&recordsPerPage=${result.selectedNum}`)
+        window.history.pushState(window.history.state, _this.addr, `/mempool?page=${result.currentPage}&recordsPerPage=${result.selectedNumberOfRows}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {

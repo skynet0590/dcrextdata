@@ -62,12 +62,10 @@
 
                             <div data-target="mempool.numPageWrapper" class="control-div p-0">
                                 <div class="control-label">Page Size:</div>
-
-                                <select data-target="mempool.selectedNum" data-action="change->mempool#NumberOfRowsChanged"
-                                    class="form-control" style="width: 70px;">
-                                   {{$selectedNum := .mempool.selectedNum}}
+                            <select data-target="mempool.selectedNumberOfRows" data-action="change->mempool#numberOfRowsChanged" class="form-control" style="width: 70px;">
+                                {{$selectedNumberOfRows := .mempool.selectedNumberOfRows}}
                                 {{ range $index, $filter := .mempool.pageSizeSelector}}
-                                <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
+                                <option value="{{$index}}" {{ if eq $index $selectedNumberOfRows}} selected {{ end }}>{{$filter}}</option>
                                 {{ end }}
                             </select>
                         </div>

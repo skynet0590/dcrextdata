@@ -95,7 +95,7 @@ export default class extends Controller {
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
         let result = response.data
-        window.history.pushState(window.history.state, _this.addr, `vsp?page=${result.previousPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
+        window.history.pushState(window.history.state, _this.addr, `pow?page=${result.previousPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
