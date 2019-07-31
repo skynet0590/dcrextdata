@@ -6,6 +6,7 @@
     <div class="body" data-controller="propagation">
         {{ template "header" }}
         <div class="content">
+<<<<<<< HEAD
             <div class="container-fluid">
                 <div class="control-div p-0">
                     <div class="d-flex flex-row mb-3 mt-1">
@@ -58,13 +59,13 @@
                             <div class="d-flex" data-target="propagation.paginationButtonsWrapper">
                                <a href="javascript:void(0)" data-target="propagation.previousPageButton" data-action="click->propagation#loadPreviousPage" class="mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" data-current-page="{{ .propagation.currentPage }}" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
-                            </p>   
+                                <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" data-current-page="{{ .propagation.currentPage }}" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
+                                </p>   
 
-                            <a href="javascript:void(0)" data-target="propagation.nextPageButton" data-action="click->propagation#loadNextPage" class="ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}"> Next&gt;</a>
+                                <a href="javascript:void(0)" data-target="propagation.nextPageButton" data-action="click->propagation#loadNextPage" class="ml-2 {{ if not .propagation.nextPage }}d-none{{ end }}"> Next&gt;</a>
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <div class="d-none" data-target="propagation.tablesWrapper">
                     {{/*combine view*/}}
@@ -129,7 +130,6 @@
                             <th>Hash</th>
                         </tr>
                         </thead>
-
                         <tbody data-target="propagation.blocksTableBody">
                         </tbody>
                     </table>
@@ -159,7 +159,6 @@
                         </tr>
                         </thead>
                         <tbody data-target="propagation.votesTableBody">
-
                         </tbody>
                     </table>
 
