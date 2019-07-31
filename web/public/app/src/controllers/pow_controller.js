@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options, setActiveOptionBtn } from '../utils'
+import { hide, show, legendFormatter, setActiveOptionBtn } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -16,13 +16,8 @@ export default class extends Controller {
   }
 
   initialize () {
-<<<<<<< HEAD
-    this.setChart()
-    this.dataType = 'hashrate'
-=======
-    this.viewOption = 'table'
     this.dataType = 'pool_hashrate'
->>>>>>> added the ability to plot multi pools at once
+    this.setChart()
   }
 
   connect () {
@@ -161,101 +156,10 @@ export default class extends Controller {
     })
   }
 
-  plotGraph1 (data) {
-    const _this = this
-
-<<<<<<< HEAD
-    var data = []
-    var dataSet = []
-    if (this.selectedFilterTarget.value === 'All') {
-    // init states for chartDataTypeSelector
-      var dat = []
-      dat[0] = 0 // not used
-      dat[1] = 0 // luxor
-      dat[2] = 0 // uupool
-      dat[3] = 0 // btc
-      dat[4] = 0 // f2pool
-      dat[5] = 0 // coinmine
-      // create unique dates
-      var lastDate
-
-      pows.forEach(pow => {
-        if (pow.source === 'luxor') {
-          if (_this.dataType === 'hashrate') {
-            dat[1] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[1] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'uupool') {
-          if (_this.dataType === 'hashrate') {
-            dat[2] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[2] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'btc') {
-          if (_this.dataType === 'hashrate') {
-            dat[3] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[3] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'f2pool') {
-          if (_this.dataType === 'hashrate') {
-            dat[4] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[4] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'coinmine') {
-          if (_this.dataType === 'hashrate') {
-            dat[5] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[5] = parseInt(pow.workers)
-          }
-        }
-
-        data.push(new Date(pow.time))
-        data.push(dat[1])
-        data.push(dat[2])
-        data.push(dat[3])
-        data.push(dat[4])
-        data.push(dat[5])
-
-        // if same as last date  update and fill in missing values
-        // eg row 33 = btc 13340000 0 2019-07-26 17:44
-        //    row 34 = coinmine 1 960 2019-07-26 17:44
-        // then combine to one dataset row
-        /* eslint-disable brace-style */
-        if (lastDate === new Date(pow.time)) {
-          dataSet.splice(dataSet.length, 1, data)
-        }
-=======
-    console.log(data.csv)
-    let dataTypeLabel = 'Pool Hashrate'
-    if (_this.dataType === 'workers') {
-      dataTypeLabel = 'Workers'
-    }
->>>>>>> added the ability to plot multi pools at once
-
-    const extra = {
-      includeZero: true,
-      // colors: ['#2971FF', '#FF8C00'],
-      labelsDiv: this.labelsTarget,
-      ylabel: dataTypeLabel,
-      labelsKMB: true,
-      legendFormatter: legendFormatter,
-      dateWindow: [data.minDate, data.maxDate],
-      xlabel: 'Date',
-      labelsUTC: true,
-      connectSeparatedPoints: true
-    }
-
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, data.csv, { ...options, ...extra }
-    )
-  }
-
   // vsp chart
   plotGraph (dataSet) {
     const _this = this
-    let dataTypeLabel = 'Pool Hashrate'
+    let dataTypeLabel = 'Pool Hashrate (Th/s)'
     if (_this.dataType === 'workers') {
       dataTypeLabel = 'Workers'
     }
@@ -263,7 +167,6 @@ export default class extends Controller {
     let options = {
       legend: 'always',
       includeZero: true,
-      animatedZooms: true,
       legendFormatter: legendFormatter,
       // plotter: barChartPlotter,
       labelsDiv: _this.labelsTarget,
@@ -272,42 +175,14 @@ export default class extends Controller {
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
+      showRangeSelector: true,
       axes: {
         x: {
           drawGrid: false
         }
-<<<<<<< HEAD
-
-        dataSet.push(data)
-        data = []
-      })
-
-      let dataTypeLabel = 'Pool Hashrate'
-      if (_this.dataType === 'workers') {
-        dataTypeLabel = 'Workers'
-      }
-
-      /* eslint-disable no-redeclare */
-      var extra = {
-        labels: ['Date', dataTypeLabel],
-        colors: ['#2971FF', '#FF8C00'],
-        labelsDiv: this.labelsTarget,
-        ylabel: dataTypeLabel,
-        y2label: 'Network Difficulty',
-        labelsKMB: true,
-        xlabel: 'Date',
-        legendFormatter: legendFormatter
-=======
->>>>>>> added the ability to plot multi pools at once
       }
     }
 
     _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
-  }
-
-  formatPowDateTime (dateTime) {
-    // dateTime is coming in format yy-mm-dd hh:mm
-    // Date method expects format yy-mm-ddThh:mm:ss
-    return (dateTime + ':00').split(' ').join('T')
   }
 }

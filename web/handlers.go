@@ -557,7 +557,7 @@ func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var vspChartData = struct {
+	var powChartData = struct {
 		CSV     string    `json:"csv"`
 		MinDate time.Time `json:"min_date"`
 		MaxDate time.Time `json:"max_date"`
@@ -567,11 +567,11 @@ func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
 
 	var resultMap = map[time.Time][]string{}
 	for _, date := range dates {
-		if vspChartData.MinDate.IsZero() || date.Before(vspChartData.MinDate) {
-			vspChartData.MinDate = date
+		if powChartData.MinDate.IsZero() || date.Before(powChartData.MinDate) {
+			powChartData.MinDate = date
 		}
-		if vspChartData.MaxDate.IsZero() || date.After(vspChartData.MaxDate) {
-			vspChartData.MaxDate = date
+		if powChartData.MaxDate.IsZero() || date.After(powChartData.MaxDate) {
+			powChartData.MaxDate = date
 		}
 		resultMap[date] = []string{date.String()}
 	}
@@ -583,27 +583,27 @@ func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		var vspPointMap = map[time.Time]string{}
-		var vspDates []time.Time
+		var pointMaps = map[time.Time]string{}
+		var powDates []time.Time
 		for _, point := range points {
-			vspPointMap[point.Date] = point.Record
-			vspDates = append(vspDates, point.Date)
+			pointMaps[point.Date] = point.Record
+			powDates = append(powDates, point.Date)
 		}
 
-		sort.Slice(vspDates, func(i, j int) bool {
-			return vspDates[i].Before(vspDates[j])
+		sort.Slice(powDates, func(i, j int) bool {
+			return powDates[i].Before(powDates[j])
 		})
 
 		for date, _ := range resultMap {
 			if date.Year() == 1970 || date.IsZero() {
 				continue
 			}
-			if record, found := vspPointMap[date]; found {
+			if record, found := pointMaps[date]; found {
 				skip := false
 				if record == "0" || record == "" {
 					skip = true
-					for _, vspDate := range vspDates {
-						if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+					for _, powDate := range powDates {
+						if powDate.Before(date) && pointMaps[powDate] != "" && pointMaps[powDate] != "0" {
 							skip = false
 						}
 					}
@@ -616,8 +616,8 @@ func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
 			} else {
 				// if they have not been any record for this vsp, give a gap (Nan) else use space
 				padding := "Nan"
-				for _, vspDate := range vspDates {
-					if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
+				for _, powDate := range powDates {
+					if powDate.Before(date) && pointMaps[powDate] != "" && pointMaps[powDate] != "0" {
 						padding = ""
 					}
 				}
@@ -647,10 +647,10 @@ func (s *Server) getPowChartDate(res http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
+		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
 	}
 
-	s.renderJSON(vspChartData, res)
+	s.renderJSON(powChartData, res)
 
 }
 
