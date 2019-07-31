@@ -56,17 +56,6 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
-  loadPreviousPage () {
-    this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchData(this.viewOption)
-  }
-
-  loadNextPage () {
-    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.fetchData(this.viewOption)
-  }
-
-
   selectedFilterChanged () {
     this.nextPage = 1
     this.fetchData(this.viewOption)

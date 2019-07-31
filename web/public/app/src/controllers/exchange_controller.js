@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, setActiveOptionBtn, options } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -46,15 +46,11 @@ export default class extends Controller {
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
-    var exhange = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    var cpair = this.selectedCurrencyPairTarget.options
-    var intervals = this.selectedIntervalTarget.options
-    this.selectedExchange = this.selectedFilterTarget.value = exhange[0].text
-    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = cpair[0].text
-    this.numberOfRows = this.selectedNumTarget.value = num[0].value
-    this.selectedInterval = this.selectedIntervalTarget.value = interval[4].value
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedExchange = this.selectedFilterTarget.value = this.selectedFilterTarget[0].text
+    this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = this.selectedCurrencyPairTarget.options[0].text
+    this.numberOfRows = this.selectedNumTarget.value = this.selectedNumTarget.options[0].value
+    this.selectedInterval = this.selectedIntervalTarget.value = this.selectedIntervalTarget.options[4].value
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedTicksTarget.value = 'close'
     this.nextPage = 1
     this.fetchExchange(this.viewOption)
@@ -73,7 +69,7 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)
     hide(intervals[0])
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     this.selectedInterval = this.selectedIntervalTarget.value = intervals[4].value
     this.selectedExchange = this.selectedFilterTarget.value = exhange[1].text
     this.selectedTick = this.selectedTicksTarget.value = 'close'
@@ -242,15 +238,5 @@ export default class extends Controller {
       show(this.messageViewTarget)
       hide(this.chartsViewTarget)
     }
-  }
-
-  setActiveOptionBtn (opt, optTargets) {
-    optTargets.forEach(li => {
-      if (li.dataset.option === this.viewOption) {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
   }
 }
