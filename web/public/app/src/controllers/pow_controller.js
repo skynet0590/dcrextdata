@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, options } from '../utils'
+import { hide, show, legendFormatter, options, setActiveOptionBtn } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -10,14 +10,14 @@ export default class extends Controller {
       'vspFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartSourceWrapper', 'chartSource', 'chartWrapper', 'chartDataTypeSelector', 'labels',
+      'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
 
   initialize () {
     this.viewOption = 'table'
-    this.dataType = 'hashrate'
+    this.dataType = 'pool_hashrate'
   }
 
   connect () {
@@ -29,7 +29,7 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartSourceWrapperTarget)
     show(this.vspFilterWrapperTarget)
@@ -43,7 +43,7 @@ export default class extends Controller {
 
   setChart () {
     this.viewOption = 'chart'
-    this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.numPageWrapperTarget)
     hide(this.vspFilterWrapperTarget)
     hide(this.powTableWrapperTarget)
@@ -55,8 +55,7 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
-  selectedChartDataTypeChanged (event) {
-    this.dataType = event.currentTarget.value
+  poolCheckChanged (event) {
     this.fetchDataAndPlotGraph()
   }
 
@@ -130,149 +129,86 @@ export default class extends Controller {
     })
   }
 
+  selectedChartDataTypeChanged (event) {
+    this.dataType = event.currentTarget.value
+    this.fetchDataAndPlotGraph()
+  }
+
   fetchDataAndPlotGraph () {
-
-  }
-
-  plotGraph (pows) {
-    const _this = this
-
-    var data = []
-    var dataSet = []
-
-    if (this.selectedFilterTarget.value === 'All') {
-    // init states for chartDataTypeSelector
-      var dat = []
-      dat[0] = 0 // not used
-      dat[1] = 0 // luxor
-      dat[2] = 0 // uupool
-      dat[3] = 0 // btc
-      dat[4] = 0 // f2pool
-      dat[5] = 0 // coinmine
-
-      // create unique dates
-      var lastDate
-
-      pows.forEach(pow => {
-        if (pow.source === 'luxor') {
-          if (_this.dataType === 'hashrate') {
-            dat[1] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[1] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'uupool') {
-          if (_this.dataType === 'hashrate') {
-            dat[2] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[2] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'btc') {
-          if (_this.dataType === 'hashrate') {
-            dat[3] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[3] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'f2pool') {
-          if (_this.dataType === 'hashrate') {
-            dat[4] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[4] = parseInt(pow.workers)
-          }
-        } else if (pow.source === 'coinmine') {
-          if (_this.dataType === 'hashrate') {
-            dat[5] = parseInt(pow.pool_hashrate_th)
-          } else {
-            dat[5] = parseInt(pow.workers)
-          }
-        }
-
-        data.push(new Date(pow.time))
-        data.push(dat[1])
-        data.push(dat[2])
-        data.push(dat[3])
-        data.push(dat[4])
-        data.push(dat[5])
-
-        // if same as last date  update and fill in missing values
-        // eg row 33 = btc 13340000 0 2019-07-26 17:44
-        //    row 34 = coinmine 1 960 2019-07-26 17:44
-        // then combine to one dataset row
-        /* eslint-disable brace-style */
-        if (lastDate === new Date(pow.time)) {
-          dataSet.splice(dataSet.length, 1, data)
-        }
-
-        // else push to new date dataset row
-        else {
-          dataSet.push(data)
-        }
-        data = []
-      })
-
-      let dataTypeLabel = 'Pool Hashrate'
-      if (_this.dataType === 'workers') {
-        dataTypeLabel = 'Workers'
-      }
-
-      var extra = {
-        labels: ['Date', 'luxor', 'uupool', 'btc', 'f2pool', 'coinmine'],
-        colors: ['#2971FF', '#FF8C00', '#64FFDA', '#84FFFF', '#EEFF41', '#FFCCBC'],
-        labelsDiv: this.labelsTarget,
-        ylabel: dataTypeLabel,
-        y2label: 'Network Difficulty',
-        labelsKMB: true,
-        legendFormatter: legendFormatter
-      }
-
-      _this.chartsView = new Dygraph(
-        _this.chartsViewTarget,
-        dataSet.reverse(),
-        { ...options, ...extra }
-      )
-    } else {
-      pows.forEach(pow => {
-        data.push(new Date(pow.time))
-
-        if (_this.dataType === 'hashrate') {
-          data.push(parseInt(pow.pool_hashrate_th))
-        } else {
-          data.push(parseInt(pow.workers))
-        }
-
-        dataSet.push(data)
-        data = []
-      })
-
-      let dataTypeLabel = 'Pool Hashrate'
-      if (_this.dataType === 'workers') {
-        dataTypeLabel = 'Workers'
-      }
-
-      /* eslint-disable no-redeclare */
-      var extra = {
-        labels: ['Date', dataTypeLabel],
-        colors: ['#2971FF', '#FF8C00'],
-        labelsDiv: this.labelsTarget,
-        ylabel: dataTypeLabel,
-        y2label: 'Network Difficulty',
-        labelsKMB: true,
-        legendFormatter: legendFormatter
-      }
-
-      _this.chartsView = new Dygraph(
-        _this.chartsViewTarget,
-        dataSet.reverse(), { ...options, ...extra }
-      )
-    }
-  }
-
-  setActiveOptionBtn (opt, optTargets) {
-    optTargets.forEach(li => {
-      if (li.dataset.option === this.viewOption) {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
+    let selectedPools = []
+    this.poolTargets.forEach(el => {
+      if (el.checked) {
+        selectedPools.push(el.value)
       }
     })
+
+    const _this = this
+    axios.get(`/powchartdata?pools=${selectedPools.join('|')}&datatype=${this.dataType}`).then(function (response) {
+      let result = response.data
+      if (result.error) {
+        console.log(result.error) // todo show error page fron front page
+        return
+      }
+
+      _this.plotGraph(result)
+    }).catch(function (e) {
+      console.log(e)
+    })
+  }
+
+  plotGraph1 (data) {
+    const _this = this
+
+    console.log(data.csv)
+    let dataTypeLabel = 'Pool Hashrate'
+    if (_this.dataType === 'workers') {
+      dataTypeLabel = 'Workers'
+    }
+
+    const extra = {
+      includeZero: true,
+      colors: ['#2971FF', '#FF8C00'],
+      labelsDiv: this.labelsTarget,
+      ylabel: dataTypeLabel,
+      labelsKMB: true,
+      legendFormatter: legendFormatter,
+      dateWindow: [data.minDate, data.maxDate],
+      xlabel: 'Date',
+      labelsUTC: true,
+      connectSeparatedPoints: true
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, data.csv, { ...options, ...extra }
+    )
+  }
+
+  // vsp chart
+  plotGraph (dataSet) {
+    const _this = this
+    let dataTypeLabel = 'Pool Hashrate'
+    if (_this.dataType === 'workers') {
+      dataTypeLabel = 'Workers'
+    }
+
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      animatedZooms: true,
+      legendFormatter: legendFormatter,
+      // plotter: barChartPlotter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: dataTypeLabel,
+      xlabel: 'Date',
+      labelsUTC: true,
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
   }
 }
