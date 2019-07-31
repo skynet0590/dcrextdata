@@ -10,7 +10,7 @@ export default class extends Controller {
       'vspFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'labels',
+      'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'dataType', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
@@ -129,8 +129,9 @@ export default class extends Controller {
     })
   }
 
-  selectedChartDataTypeChanged (event) {
-    this.dataType = event.currentTarget.value
+  setDataType (event) {
+    this.dataType = event.currentTarget.getAttribute('data-option')
+    setActiveOptionBtn(this.dataType, this.dataTypeTargets)
     this.fetchDataAndPlotGraph()
   }
 

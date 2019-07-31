@@ -34,16 +34,20 @@
                                 </select>
                             </div>
 
-                            <div class="chart-control-wrapper control-div p-0" data-target="pow.chartDataTypeSelector">
-                                <div class="control-label">Data:</div>
-                                <select data-target="pow.chartDataType" data-action="change->pow#selectedChartDataTypeChanged"
-                                        class="form-control" style="width: 110px;">
-                                    <option value="pool_hashrate" selected>Hashrate</option>
-                                    <option value="workers">Workers</option>
-                                </select>
+                            <div class="chart-control ml-auto mr-3" data-target="pow.chartDataTypeSelector">
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" href="javascript:void(0);" data-target="pow.dataType" data-option="pool_hashrate"
+                                           data-action="click->pow#setDataType">Hashrate</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="javascript:void(0);" data-target="pow.dataType" data-option="workers"
+                                           data-action="click->pow#setDataType">Workers</a>
+                                    </li>
+                                </ul>
                             </div>
 
-                            <div class="control-div p-0" data-target="pow.chartSourceWrapper">
+                            <div class="control-div pt-2" data-target="pow.chartSourceWrapper">
                                 {{ range $index, $filter := .powSource}}
                                 <div class="form-check form-check-inline">
                                     <input data-target="pow.pool" data-action="click->pow#poolCheckChanged"
