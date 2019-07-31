@@ -237,7 +237,7 @@ export default class extends Controller {
 
     const extra = {
       includeZero: true,
-      colors: ['#2971FF', '#FF8C00'],
+      // colors: ['#2971FF', '#FF8C00'],
       labelsDiv: this.labelsTarget,
       ylabel: dataTypeLabel,
       labelsKMB: true,
