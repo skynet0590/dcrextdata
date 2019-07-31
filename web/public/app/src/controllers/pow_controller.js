@@ -83,10 +83,6 @@ export default class extends Controller {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows = this.selectedNumTarget.value
 
-    if (display === 'chart') {
-      numberOfRows = 3000
-    }
-
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
@@ -171,7 +167,7 @@ export default class extends Controller {
 
     const extra = {
       includeZero: true,
-      colors: ['#2971FF', '#FF8C00'],
+      // colors: ['#2971FF', '#FF8C00'],
       labelsDiv: this.labelsTarget,
       ylabel: dataTypeLabel,
       labelsKMB: true,
