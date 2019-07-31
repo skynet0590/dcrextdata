@@ -34,7 +34,7 @@
                 </div>
             </div>
             <div class="d-flex flex-row">
-                <div class="control-div p-0">
+                <div class="control-div p-0" data-target="pow.vspFilterWrapper">
                     <div class="control-label">Pool:</div>
                     <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
                         class="form-control" style="width: 110px;">
@@ -47,28 +47,23 @@
                 </div>
 
                 <div class="chart-control-wrapper control-div p-0 d-none" data-target="pow.chartDataTypeSelector">
-                    <div class="chart-control mempool-control">
-                        <ul class="nav nav-pills">
-                            <li class="nav-item">
-                                <a
-                                data-target="pow.chartDataType"
-                                data-action="click->pow#setHashrateDataType"
-                                class="nav-link active"
-                                href="javascript:void(0);"
-                                data-option="table"
-                                >Hashrate</a>
-                            </li>
-                            <li class="nav-item">
-                                <a
-                                data-target="pow.chartDataType"
-                                data-action="click->pow#setWorkersDataType"
-                                class="nav-link"
-                                href="javascript:void(0);"
-                                data-option="table"
-                                >Workers</a>
-                            </li>
-                        </ul>
-                    </div>
+                    <div class="control-label">Pool:</div>
+                    <select data-target="pow.chartDataType" data-action="change->pow#selectedChartDataTypeChanged"
+                            class="form-control" style="width: 110px;">
+                        <option value="hashrate" selected>Hashrate</option>
+                        <option value="workers" selected>Workers</option>
+                    </select>
+                </div>
+
+                <div class="control-div p-0 d-none" data-target="pow.chartSourceWrapper">
+                    {{ range $index, $filter := .powSource}}
+                        <div class="form-check form-check-inline">
+                            <input name="chartSource" data-target="pow.chartSource" data-action="click->pow#chartSourceCheckChanged"
+                                   class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Source}}"
+                                   value="{{$filter.Source}}" checked>
+                            <label class="form-check-label" for="inlineCheckbox-{{$filter.Source}}">{{$filter.Source}}</label>
+                        </div>
+                    {{ end }}
                 </div>
 
                 <div data-target="pow.numPageWrapper" class="control-div p-0 ml-auto">
