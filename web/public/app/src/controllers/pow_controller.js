@@ -7,10 +7,10 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 export default class extends Controller {
   static get targets () {
     return [
-      'selectedFilter', 'powTable', 'numPageWrapper',
+      'vspFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
-      'chartWrapper', 'chartDataTypeSelector', 'chartDataType', 'labels',
+      'chartSourceWrapper', 'chartSource', 'chartWrapper', 'chartDataTypeSelector', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
     ]
   }
@@ -31,101 +31,83 @@ export default class extends Controller {
     this.viewOption = 'table'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
+    hide(this.chartSourceWrapperTarget)
+    show(this.vspFilterWrapperTarget)
     show(this.powTableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = 1
-    this.fetchExchange('table')
+    this.fetchData()
   }
 
   setChart () {
     this.viewOption = 'chart'
     this.setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.numPageWrapperTarget)
+    hide(this.vspFilterWrapperTarget)
     hide(this.powTableWrapperTarget)
+    show(this.chartSourceWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     show(this.chartDataTypeSelectorTarget)
-    // hide(this.numPageWrapperTarget)
     this.nextPage = 1
-    this.fetchExchange('chart')
+    this.fetchDataAndPlotGraph()
   }
 
-  setHashrateDataType (event) {
-    this.dataType = 'hashrate'
-    this.chartDataTypeTargets.forEach(el => {
-      el.classList.remove('active')
-    })
-    event.currentTarget.classList.add('active')
-    this.fetchExchange('chart')
-  }
-
-  setWorkersDataType (event) {
-    this.dataType = 'workers'
-    this.chartDataTypeTargets.forEach(el => {
-      el.classList.remove('active')
-    })
-    event.currentTarget.classList.add('active')
-    this.fetchExchange('chart')
+  selectedChartDataTypeChanged (event) {
+    this.dataType = event.currentTarget.value
+    this.fetchDataAndPlotGraph()
   }
 
   loadPreviousPage () {
     this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(this.viewOption)
+    this.fetchData(this.viewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.fetchExchange(this.viewOption)
+    this.fetchData(this.viewOption)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
-    this.fetchExchange(this.viewOption)
+    this.fetchData(this.viewOption)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchExchange(this.viewOption)
+    this.fetchData(this.viewOption)
   }
 
-  fetchExchange (display) {
+  fetchData () {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows = this.selectedNumTarget.value
-
-    if (display === 'chart') {
-      numberOfRows = 3000
-    }
 
     const _this = this
     axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
       .then(function (response) {
         let result = response.data
 
-        if (display === 'table') {
-          _this.currentPage = result.currentPage
-          if (_this.currentPage <= 1) {
-            hide(_this.previousPageButtonTarget)
-          } else {
-            show(_this.previousPageButtonTarget)
-          }
-
-          if (_this.currentPage >= result.totalPages) {
-            hide(_this.nextPageButtonTarget)
-          } else {
-            show(_this.nextPageButtonTarget)
-          }
-
-          _this.totalPageCountTarget.textContent = result.totalPages
-          _this.currentPageTarget.textContent = result.currentPage
-          _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-          _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
-
-          _this.displayPoW(result.powData)
+        _this.currentPage = result.currentPage
+        if (_this.currentPage <= 1) {
+          hide(_this.previousPageButtonTarget)
         } else {
-          _this.plotGraph(result.powData)
+          show(_this.previousPageButtonTarget)
         }
+
+        if (_this.currentPage >= result.totalPages) {
+          hide(_this.nextPageButtonTarget)
+        } else {
+          show(_this.nextPageButtonTarget)
+        }
+
+        _this.totalPageCountTarget.textContent = result.totalPages
+        _this.currentPageTarget.textContent = result.currentPage
+        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
+        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
+
+        _this.displayPoW(result.powData)
       }).catch(function (e) {
         console.log(e)
       })
@@ -148,7 +130,10 @@ export default class extends Controller {
     })
   }
 
-  // pow chart 
+  fetchDataAndPlotGraph () {
+
+  }
+
   plotGraph (pows) {
     const _this = this
 
