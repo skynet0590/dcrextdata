@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	defaultViewOption = "chart"
-	maxPageSize = 250
+	defaultViewOption     = "chart"
+	maxPageSize           = 250
 	recordsPerPage        = 20
 	defaultInterval       = 1440 // All
 	exchangeTickIntervals = map[int]string{
@@ -64,7 +64,7 @@ func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Req
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-				s.renderErrorJSON(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -86,7 +86,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -127,19 +127,19 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 
 	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-			"chartView": true,
-			"selectedViewOption": defaultViewOption,
+			"chartView":            true,
+			"selectedViewOption":   defaultViewOption,
 			"currencyPairs":        currencyPairs,
-		"allExData":            allExhangeSlice,
-		"intervals":            exchangeTickIntervals,
-		"pageSizeSelector":     pageSizeSelector,
-		"selectedCurrencyPair": selectedCurrencyPair,
-		"selectedNum":          pageSize,
-		"selectedInterval":     filterInterval,
-		"selectedExchange":       selectedExchange,
-		"currentPage":      pageToLoad,
-		"previousPage":     pageToLoad,
-		"totalPages":       pageToLoad,
+			"allExData":            allExhangeSlice,
+			"intervals":            exchangeTickIntervals,
+			"pageSizeSelector":     pageSizeSelector,
+			"selectedCurrencyPair": selectedCurrencyPair,
+			"selectedNum":          pageSize,
+			"selectedInterval":     filterInterval,
+			"selectedExchange":     selectedExchange,
+			"currentPage":          pageToLoad,
+			"previousPage":         pageToLoad,
+			"totalPages":           pageToLoad,
 		}
 		return data, nil
 	}
@@ -163,11 +163,11 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		"intervals":            exchangeTickIntervals,
 		"pageSizeSelector":     pageSizeSelector,
 		"currentPage":          pageToLoad,
-		"chartView": false,
-		"selectedViewOption": "table",
+		"chartView":            false,
+		"selectedViewOption":   "table",
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           int(math.Ceil(float64(totalCount) / float64(pageSize))),
-		"selectedExchange":       selectedExchange,
+		"selectedExchange":     selectedExchange,
 		"selectedCurrencyPair": selectedCurrencyPair,
 		"selectedNum":          pageSize,
 		"selectedInterval":     filterInterval,
@@ -254,7 +254,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -279,15 +279,15 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 
 	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-			"chartView": true,
+			"chartView":          true,
 			"selectedViewOption": defaultViewOption,
-					"allVspData":       allVspData,
-		"selectedFilter":   selectedVsp,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedNum":      pageSize,
-		"currentPage":      pageToLoad,
-		"previousPage":     pageToLoad,
-		"totalPages":       pageToLoad,
+			"allVspData":         allVspData,
+			"selectedFilter":     selectedVsp,
+			"pageSizeSelector":   pageSizeSelector,
+			"selectedNum":        pageSize,
+			"currentPage":        pageToLoad,
+			"previousPage":       pageToLoad,
+			"totalPages":         pageToLoad,
 		}
 		return data, nil
 	}
@@ -461,7 +461,7 @@ func (s *Server) getFilteredPowData(res http.ResponseWriter, req *http.Request) 
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-				s.renderErrorJSON(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -478,7 +478,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -503,15 +503,15 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 
 	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-		"chartView": true,
-		"selectedViewOption": defaultViewOption,
-		"selectedFilter":   selectedPow,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedNum":      pageSize,
-		"powSource":        powSource,
-		"currentPage":      pageToLoad,
-		"previousPage":     pageToLoad,
-		"totalPages":       pageToLoad,
+			"chartView":          true,
+			"selectedViewOption": defaultViewOption,
+			"selectedFilter":     selectedPow,
+			"pageSizeSelector":   pageSizeSelector,
+			"selectedNum":        pageSize,
+			"powSource":          powSource,
+			"currentPage":        pageToLoad,
+			"previousPage":       pageToLoad,
+			"totalPages":         pageToLoad,
 		}
 		return data, nil
 	}
@@ -704,7 +704,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -718,15 +718,15 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 
 	ctx := req.Context()
 
-if viewOption == "" || viewOption == "chart" {
+	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-		"chartView": true,
-		"selectedViewOption": defaultViewOption,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedNumberOfRows":      pageSize,
-		"currentPage":      pageToLoad,
-		"previousPage":     pageToLoad,
-		"totalPages":       pageToLoad,
+			"chartView":            true,
+			"selectedViewOption":   defaultViewOption,
+			"pageSizeSelector":     pageSizeSelector,
+			"selectedNumberOfRows": pageSize,
+			"currentPage":          pageToLoad,
+			"previousPage":         pageToLoad,
+			"totalPages":           pageToLoad,
 		}
 		return data, nil
 	}
@@ -742,12 +742,12 @@ if viewOption == "" || viewOption == "chart" {
 	}
 
 	data := map[string]interface{}{
-		"mempoolData":      mempoolSlice,
-		"pageSizeSelector": pageSizeSelector,
-		"selectedNumberOfRows":      pageSize,
-		"currentPage":      pageToLoad,
-		"previousPage":     pageToLoad - 1,
-		"totalPages":       int(math.Ceil(float64(totalCount) / float64(pageSize))),
+		"mempoolData":          mempoolSlice,
+		"pageSizeSelector":     pageSizeSelector,
+		"selectedNumberOfRows": pageSize,
+		"currentPage":          pageToLoad,
+		"previousPage":         pageToLoad - 1,
+		"totalPages":           int(math.Ceil(float64(totalCount) / float64(pageSize))),
 	}
 
 	totalTxLoaded := int(offset) + len(mempoolSlice)
@@ -767,7 +767,7 @@ func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request)
 		s.mempoolPage(res, req)
 		return
 	}
-	
+
 	ctx := req.Context()
 
 	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
@@ -838,7 +838,7 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	var heightArr []int64
 	for _, record := range data {
 		if existingTime, found := avgTimeForHeight[record.BlockHeight]; found {
-			avgTimeForHeight[record.BlockHeight] = (record.TimeDifference + existingTime)/2
+			avgTimeForHeight[record.BlockHeight] = (record.TimeDifference + existingTime) / 2
 		} else {
 			avgTimeForHeight[record.BlockHeight] = record.TimeDifference
 			heightArr = append(heightArr, record.BlockHeight)
@@ -870,7 +870,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -884,19 +884,19 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	ctx := req.Context()
 
-if viewOption == "" || viewOption == "chart" {
+	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-		"chartView": true,
-		"selectedViewOption": defaultViewOption,
-		"currentPage":       pageToLoad,
-		"propagationFilter": propagationFilter,
-		"pageSizeSelector":  pageSizeSelector,
-		"selectedFilter":    "both",
-		"both": true,
-		"selectedNum":       pageSize,
-		"url":               "/propagation",
-		"previousPage":      pageToLoad,
-		"totalPages":       pageToLoad,
+			"chartView":          true,
+			"selectedViewOption": defaultViewOption,
+			"currentPage":        pageToLoad,
+			"propagationFilter":  propagationFilter,
+			"pageSizeSelector":   pageSizeSelector,
+			"selectedFilter":     "both",
+			"both":               true,
+			"selectedNum":        pageSize,
+			"url":                "/propagation",
+			"previousPage":       pageToLoad,
+			"totalPages":         pageToLoad,
 		}
 		return data, nil
 	}
@@ -917,7 +917,7 @@ if viewOption == "" || viewOption == "chart" {
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "both",
-		"both": true,
+		"both":              true,
 		"selectedNum":       pageSize,
 		"url":               "/propagation",
 		"previousPage":      pageToLoad - 1,
@@ -938,7 +938,7 @@ func (s *Server) getBlocks(res http.ResponseWriter, req *http.Request) {
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-				s.renderErrorJSON(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -967,7 +967,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -983,17 +983,17 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 
 	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-		"chartView": true,
-		"selectedViewOption": defaultViewOption,
-		"currentPage":       pageToLoad,
-		"propagationFilter": propagationFilter,
-		"pageSizeSelector":  pageSizeSelector,
-		"selectedFilter":    "blocks",
-				"blocks": true,
-		"selectedNum":       pageSize,
-		"url":               "/blockdata",
-		"previousPage":      pageToLoad,
-		"totalPages":       pageToLoad,
+			"chartView":          true,
+			"selectedViewOption": defaultViewOption,
+			"currentPage":        pageToLoad,
+			"propagationFilter":  propagationFilter,
+			"pageSizeSelector":   pageSizeSelector,
+			"selectedFilter":     "blocks",
+			"blocks":             true,
+			"selectedNum":        pageSize,
+			"url":                "/blockdata",
+			"previousPage":       pageToLoad,
+			"totalPages":         pageToLoad,
 		}
 		return data, nil
 	}
@@ -1014,7 +1014,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "blocks",
-		"blocks": true,
+		"blocks":            true,
 		"selectedNum":       pageSize,
 		"url":               "/blockdata",
 		"previousPage":      int(pageToLoad - 1),
@@ -1035,7 +1035,7 @@ func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 	defer s.renderJSON(data, res)
 
 	if err != nil {
-				s.renderErrorJSON(err.Error(), res)
+		s.renderErrorJSON(err.Error(), res)
 		return
 	}
 }
@@ -1064,7 +1064,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	if err != nil || numRows <= 0 {
 		pageSize = recordsPerPage
 	} else if numRows > maxPageSize {
-	    pageSize = maxPageSize
+		pageSize = maxPageSize
 	} else {
 		pageSize = numRows
 	}
@@ -1078,19 +1078,19 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 
 	ctx := req.Context()
 
-if viewOption == "" || viewOption == "chart" {
+	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
-		"chartView": true,
-		"selectedViewOption": defaultViewOption,
-		"currentPage":       pageToLoad,
-		"propagationFilter": propagationFilter,
-		"pageSizeSelector":  pageSizeSelector,
-		"selectedFilter":    "votes",
-				"votes": true,
-		"selectedNum":       pageSize,
-		"url":               "/votesdata",
-		"previousPage":      pageToLoad,
-		"totalPages":       pageToLoad,
+			"chartView":          true,
+			"selectedViewOption": defaultViewOption,
+			"currentPage":        pageToLoad,
+			"propagationFilter":  propagationFilter,
+			"pageSizeSelector":   pageSizeSelector,
+			"selectedFilter":     "votes",
+			"votes":              true,
+			"selectedNum":        pageSize,
+			"url":                "/votesdata",
+			"previousPage":       pageToLoad,
+			"totalPages":         pageToLoad,
 		}
 		return data, nil
 	}
@@ -1111,7 +1111,7 @@ if viewOption == "" || viewOption == "chart" {
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "votes",
-		"votes": true,
+		"votes":             true,
 		"selectedNum":       pageSize,
 		"url":               "/votesdata",
 		"previousPage":      int(pageToLoad - 1),

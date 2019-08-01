@@ -171,7 +171,7 @@ func (pg *PgDb) FetchPowChartData(ctx context.Context, source string, dataType s
 	return
 }
 
-func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType string) ([]pow.PowChartData, error)  {
+func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType string) ([]pow.PowChartData, error) {
 	powDatum, err := models.PowData(qm.Select(models.PowDatumColumns.Time, dataType),
 		models.PowDatumWhere.Source.EQ(source), qm.OrderBy(models.PowDatumColumns.Time)).All(ctx, pg.db)
 	if err != nil {
@@ -183,7 +183,7 @@ func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType 
 		var record string
 		if dataType == models.PowDatumColumns.Workers {
 			record = strconv.FormatInt(int64(item.Workers.Int), 10)
-		}else if dataType == models.PowDatumColumns.PoolHashrate {
+		} else if dataType == models.PowDatumColumns.PoolHashrate {
 			record = item.PoolHashrate.String
 		} else {
 			return nil, fmt.Errorf("unsupported data type: %s", dataType)
