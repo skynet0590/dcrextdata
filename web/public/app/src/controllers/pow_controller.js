@@ -7,8 +7,8 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 export default class extends Controller {
   static get targets () {
     return [
-      'vspFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton',
+      'powFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'viewOptionControl',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
       'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'dataType', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
@@ -16,42 +16,45 @@ export default class extends Controller {
   }
 
   initialize () {
+    this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
+    if (this.currentPage < 1) {
+      this.currentPage = 1
+    }
     this.dataType = 'pool_hashrate'
-    this.setChart()
-  }
 
-  connect () {
-    var filter = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    this.selectedFilterTarget.value = filter[0].text
-    this.selectedNumTarget.value = num[0].text
+    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    console.log(this.selectedViewOption)
+    if (this.selectedViewOption === 'chart') {
+      this.setChart()
+    } else {
+      this.setTable()
+    }
   }
 
   setTable () {
-    this.viewOption = 'table'
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'table'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartSourceWrapperTarget)
-    show(this.vspFilterWrapperTarget)
+    show(this.powFilterWrapperTarget)
     show(this.powTableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
     hide(this.chartDataTypeSelectorTarget)
-    this.nextPage = 1
+    this.nextPage = this.currentPage
     this.fetchData()
   }
 
   setChart () {
-    this.viewOption = 'chart'
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'chart'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.numPageWrapperTarget)
-    hide(this.vspFilterWrapperTarget)
+    hide(this.powFilterWrapperTarget)
     hide(this.powTableWrapperTarget)
     show(this.chartSourceWrapperTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     show(this.chartDataTypeSelectorTarget)
-    this.nextPage = 1
     this.fetchDataAndPlotGraph()
   }
 
@@ -59,24 +62,24 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
+  selectedFilterChanged () {
+    this.nextPage = 1
+    this.fetchData()
+  }
+
   loadPreviousPage () {
-    this.nextPage = this.previousPageButtonTarget.getAttribute('data-next-page')
-    this.fetchData(this.viewOption)
+    this.nextPage = this.currentPage - 1
+    this.fetchData()
   }
 
   loadNextPage () {
-    this.nextPage = this.nextPageButtonTarget.getAttribute('data-next-page')
-    this.fetchData(this.viewOption)
-  }
-
-  selectedFilterChanged () {
-    this.nextPage = 1
-    this.fetchData(this.viewOption)
+    this.nextPage = this.currentPage + 1
+    this.fetchData()
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchData(this.viewOption)
+    this.fetchData()
   }
 
   fetchData () {
@@ -84,9 +87,10 @@ export default class extends Controller {
     var numberOfRows = this.selectedNumTarget.value
 
     const _this = this
-    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
+    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`)
       .then(function (response) {
         let result = response.data
+        window.history.pushState(window.history.state, _this.addr, `pow?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
@@ -103,8 +107,6 @@ export default class extends Controller {
 
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        _this.previousPageButtonTarget.setAttribute('data-next-page', `${result.previousPage}`)
-        _this.nextPageButtonTarget.setAttribute('data-next-page', `${result.nextPage}`)
 
         _this.displayPoW(result.powData)
       }).catch(function (e) {
@@ -144,7 +146,9 @@ export default class extends Controller {
     })
 
     const _this = this
-    axios.get(`/powchartdata?pools=${selectedPools.join('|')}&datatype=${this.dataType}`).then(function (response) {
+    const url = `/powchart?pools=${selectedPools.join('|')}&datatype=${this.dataType}&viewOption=${_this.selectedViewOption}`
+    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
+    axios.get(url).then(function (response) {
       let result = response.data
       if (result.error) {
         console.log(result.error) // todo show error page fron front page
@@ -169,7 +173,6 @@ export default class extends Controller {
       legend: 'always',
       includeZero: true,
       legendFormatter: legendFormatter,
-      // plotter: barChartPlotter,
       labelsDiv: _this.labelsTarget,
       ylabel: dataTypeLabel,
       xlabel: 'Date',
