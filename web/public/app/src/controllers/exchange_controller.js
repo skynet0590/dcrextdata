@@ -63,6 +63,7 @@ export default class extends Controller {
     hide(this.pageSizeWrapperTarget)
     show(this.tickWapperTarget)
     hide(this.hideOptionTarget)
+    hide(intervals[0])
     hide(this.currencyPairHideOptionTarget)
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)

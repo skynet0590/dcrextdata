@@ -48,7 +48,7 @@ export default class extends Controller {
     show(this.pageSizeWrapperTarget)
     show(this.vspSelectorWrapperTarget)
     this.vspTicksTableTarget.innerHTML = ''
-    this.nextPage = 1
+    this.nextPage = this.currentPage
     this.fetchExchange('table')
   }
 
@@ -62,7 +62,6 @@ export default class extends Controller {
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    this.nextPage = 1
     this.fetchExchange('chart')
   }
 

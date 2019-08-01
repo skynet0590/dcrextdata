@@ -9,27 +9,32 @@ export default class extends Controller {
     return [
       'nextPageButton', 'previousPageButton',
       'bothRecordSetOption', 'selectedRecordSet', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
-      'tablesWrapper', 'table', 'blocksTbody', 'votesTbody',
+      'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
-      'totalPageCount', 'currentPage',
-      'chartSelector', 'viewOption',
-      'chartWrapper', 'chartsView', 'labels'
+      'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption'
     ]
   }
 
   initialize () {
-    this.setChart()
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+
+    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    if (this.selectedViewOption === 'chart') {
+      this.setChart()
+    } else {
+      this.setTable()
+    }
   }
 
   setTable () {
-    this.viewOption = 'table'
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
-    show(this.selectedRecordSetTarget.options[0])
+    this.selectedViewOption = 'table'
     this.selectedRecordSet = this.selectedRecordSetTarget.value = this.selectedRecordSetTarget.options[0].value
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    show(this.selectedRecordSetTarget.options[0])
+    this.selectedRecordSet = this.selectedRecordSetTarget.value
     hide(this.chartWrapperTarget)
     show(this.bothRecordSetOptionTarget)
     show(this.paginationButtonsWrapperTarget)
@@ -40,8 +45,8 @@ export default class extends Controller {
   }
 
   setChart () {
-    this.viewOption = 'chart'
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'chart'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.selectedRecordSetTarget.options[0])
     hide(this.numPageWrapperTarget)
     hide(this.paginationButtonsWrapperTarget)
@@ -56,7 +61,7 @@ export default class extends Controller {
     this.currentPage = 1
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     this.selectedRecordSet = this.selectedRecordSetTarget.value
-    if (this.viewOption === 'table') {
+    if (this.selectedViewOption === 'table') {
       this.fetchData(1)
     } else {
       this.fetchChartDataAndPlot()
@@ -93,12 +98,12 @@ export default class extends Controller {
         url = 'getpropagationdata'
         break
     }
-    axios.get(`/${url}?page=${page}&recordsPerPage=${numberOfRows}`).then(function (response) {
+    axios.get(`/${url}?page=${page}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`).then(function (response) {
       let result = response.data
       console.log(result)
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      window.history.pushState(window.history.state, _this.addr, `${result.url}?page=${result.currentPage}&recordsPerPage=${result.selectedNum}`)
+      window.history.pushState(window.history.state, _this.addr, `${result.url}?page=${result.currentPage}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
 
       _this.currentPage = result.currentPage
       if (_this.currentPage <= 1) {
@@ -241,7 +246,7 @@ export default class extends Controller {
 
   fetchChartDataAndPlot () {
     const _this = this
-    const url = '/propagationchartdata?recordset=' + this.selectedRecordSet
+    const url = '/propagationchartdata?recordset=' + this.selectedRecordSet + `&viewOption=${_this.selectedViewOption}`
     window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
 
     axios.get(url).then(function (response) {

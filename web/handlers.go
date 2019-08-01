@@ -730,7 +730,7 @@ if viewOption == "" || viewOption == "chart" {
 		}
 		return data, nil
 	}
-	
+
 	mempoolSlice, err := s.db.Mempools(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -863,6 +863,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	req.ParseForm()
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -883,6 +884,23 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	ctx := req.Context()
 
+if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+		"chartView": true,
+		"selectedViewOption": defaultViewOption,
+		"currentPage":       pageToLoad,
+		"propagationFilter": propagationFilter,
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "both",
+		"both": true,
+		"selectedNum":       pageSize,
+		"url":               "/propagation",
+		"previousPage":      pageToLoad,
+		"totalPages":       pageToLoad,
+		}
+		return data, nil
+	}
+
 	blockSlice, err := s.db.Blocks(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -899,6 +917,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "both",
+		"both": true,
 		"selectedNum":       pageSize,
 		"url":               "/propagation",
 		"previousPage":      pageToLoad - 1,
@@ -941,6 +960,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	req.ParseForm()
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -961,6 +981,23 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 
 	ctx := req.Context()
 
+	if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+		"chartView": true,
+		"selectedViewOption": defaultViewOption,
+		"currentPage":       pageToLoad,
+		"propagationFilter": propagationFilter,
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "blocks",
+				"blocks": true,
+		"selectedNum":       pageSize,
+		"url":               "/blockdata",
+		"previousPage":      pageToLoad,
+		"totalPages":       pageToLoad,
+		}
+		return data, nil
+	}
+
 	voteSlice, err := s.db.BlocksWithoutVotes(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -977,6 +1014,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "blocks",
+		"blocks": true,
 		"selectedNum":       pageSize,
 		"url":               "/blockdata",
 		"previousPage":      int(pageToLoad - 1),
@@ -1019,6 +1057,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	req.ParseForm()
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -1039,6 +1078,23 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 
 	ctx := req.Context()
 
+if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+		"chartView": true,
+		"selectedViewOption": defaultViewOption,
+		"currentPage":       pageToLoad,
+		"propagationFilter": propagationFilter,
+		"pageSizeSelector":  pageSizeSelector,
+		"selectedFilter":    "votes",
+				"votes": true,
+		"selectedNum":       pageSize,
+		"url":               "/votesdata",
+		"previousPage":      pageToLoad,
+		"totalPages":       pageToLoad,
+		}
+		return data, nil
+	}
+
 	voteSlice, err := s.db.Votes(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -1055,6 +1111,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 		"propagationFilter": propagationFilter,
 		"pageSizeSelector":  pageSizeSelector,
 		"selectedFilter":    "votes",
+		"votes": true,
 		"selectedNum":       pageSize,
 		"url":               "/votesdata",
 		"previousPage":      int(pageToLoad - 1),

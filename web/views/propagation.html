@@ -10,9 +10,8 @@
                 <div class="control-div p-0">
                     <div class="d-flex flex-row mb-3 mt-1">
                         <div class="mx-auto d-flex">
-                            
                             <div class="chart-control-wrapper mr-3" data-target="propagation.chartSelector">
-                                <div class="chart-control ">
+                                <div class="chart-control " data-target="propagation.viewOptionControl" data-initial-value="{{ .propagation.selectedViewOption }}">
                                     <ul class="nav nav-pills">
                                         <li class="nav-item">
                                             <a
@@ -46,7 +45,7 @@
                                 </select>
                             </div>
 
-                            <div data-target="propagation.numPageWrapper" class="control-div ml-auto p-0">
+                            <div data-target="propagation.numPageWrapper" class="control-div ml-auto p-0 {{ if .propagation.chartView }}d-none{{ end }}" >
                                 <div class="control-label">Page Size:</div>
                                 <select data-target="propagation.selectedNum" data-action="change->propagation#numberOfRowsChanged" class="form-control" style="width: 70px;">
                                     {{$selectedNum := .propagation.selectedNum}}
@@ -55,7 +54,7 @@
                                     {{ end }}
                                 </select>
                             </div>
-                            <div class="d-flex" data-target="propagation.paginationButtonsWrapper">
+                            <div class="d-flex {{ if .propagation.chartView }}d-none{{ end }}" data-target="propagation.paginationButtonsWrapper">
                                <a href="javascript:void(0)" data-target="propagation.previousPageButton" data-action="click->propagation#loadPreviousPage" class="mr-2 {{ if lt .propagation.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                                 <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="propagation.currentPage" data-current-page="{{ .propagation.currentPage }}" class="text-muted"> {{ .propagation.currentPage }}</span> of <span data-target="propagation.totalPageCount" class="text-muted">{{ .propagation.totalPages }}</span>
@@ -66,9 +65,9 @@
                         </div>
                     </div>
 
-                <div class="d-none" data-target="propagation.tablesWrapper">
+                <div class="{{ if not .propagation.nextPage }}d-none{{ end }}" data-target="propagation.tablesWrapper">
                     {{/*combine view*/}}
-                    <table class="table collapsible mx-auto" data-target="propagation.table">
+                    <table class="table collapsible mx-auto {{ if not .propagation.both }}d-none{{ end }}" data-target="propagation.table">
                         {{range $index, $block := .propagation.records}}
                             <tbody data-target="propagation.blocksTbody" data-block-hash="{{$block.BlockHash}}">
                                 <tr>
@@ -119,7 +118,7 @@
                     </table>
 
                     {{/*blocks only*/}}
-                    <table class="table d-none mx-auto" data-target="propagation.blocksTable">
+                    <table class="table d-none mx-auto {{ if not .propagation.blocks }}d-none{{ end }}" data-target="propagation.blocksTable">
                         <thead>
                         <tr style="white-space: nowrap;">
                             <th>Height</th>
@@ -144,7 +143,7 @@
                     </template>
 
                     {{/*votes only*/}}
-                    <table data-target="propagation.votesTable" class="table d-none mx-auto">
+                    <table data-target="propagation.votesTable" class="table d-none mx-auto {{ if not .propagation.votes }}d-none{{ end }}">
                         <thead>
                         <tr style="white-space: nowrap;">
                             <th>Voting On</th>

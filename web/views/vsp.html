@@ -131,7 +131,7 @@
                             <div class="col-sm-3 side-vsp-panel">
                                 <div class="p-0 d-none" data-target="vsp.chartSourceWrapper">
                                     {{ range $index, $filter := .allVspData}}
-                                    <div class="form-check form-check-inline">
+                                    <div class="form-check">
                                         <input name="chartSource" data-target="vsp.chartSource" data-action="click->vsp#chartSourceCheckChanged"
                                         class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Name}}"
                                         value="{{$filter.Name}}" {{ if eq $index 0 }} checked {{ end }}>
