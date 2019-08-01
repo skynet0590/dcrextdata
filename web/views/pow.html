@@ -9,21 +9,21 @@
             <div class="container-fluid">
                 <div class="control-wrapper">
                     <div class="d-flex flex-row">
-                        <div class="chart-control ml-auto mr-3">
+                        <div class="chart-control ml-auto mr-3" data-target="pow.viewOptionControl" data-initial-value="{{ .pow.selectedViewOption }}">
                             <ul class="nav nav-pills"> 
                                 <li class="nav-item">
-                                    <a class="nav-link" href="javascript:void(0);" data-target="pow.viewOption"
+                                    <a class="nav-link active" href="javascript:void(0);" data-target="pow.viewOption"
                                     data-action="click->pow#setChart" data-option="chart">Chart</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link active" href="javascript:void(0);" data-target="pow.viewOption"
+                                    <a class="nav-link" href="javascript:void(0);" data-target="pow.viewOption"
                                     data-action="click->pow#setTable" data-option="table">Table</a>
                                 </li>
 
                             </ul>
                         </div>
                         <div class="d-flex mr-auto">
-                            <div class="control-div p-0" data-target="pow.powFilterWrapper">
+                            <div class="control-div p-0 {{ if .pow.chartView }}d-none{{ end }}" data-target="pow.powFilterWrapper">
                                 <div class="control-label">Pool:</div>
                                 <select data-target="pow.selectedFilter" data-action="change->pow#selectedFilterChanged"
                                     class="form-control" style="width: 110px;">
@@ -58,8 +58,8 @@
                                 </div>
                                 {{ end}}
                             </div>
-                            
-                            <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1">
+
+                            <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1" {{ if .pow.chartView }}d-none{{ end }}>
                                 <div class=" mb-2 float-md-right">
 
                                     <div class="control-label">Page Size:</div>
@@ -71,7 +71,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div data-target="pow.pageSizeWrapper" class="d-flex">
+                            <div data-target="pow.pageSizeWrapper" class="d-flex {{ if .pow.chartView }}d-none{{ end }}">
                                 <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" class="mr-2 {{ if lt .pow.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                                 <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="pow.currentPage" class="text-muted" data-current-page="{{ .pow.currentPage }}"> {{ .pow.currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .pow.totalPages }}</span>
@@ -83,7 +83,7 @@
                     </div>
                 </div>
 
-                <div class="row d-hide" data-target="pow.powTableWrapper">
+                <div class="row {{ if .pow.chartView }}d-none{{ end }}" data-target="pow.powTableWrapper">
                     <div class="col-md-12">
                         <div class="">
                             <table class="table mx-auto">

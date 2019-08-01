@@ -8,7 +8,7 @@ export default class extends Controller {
   static get targets () {
     return [
       'powFilterWrapper', 'selectedFilter', 'powTable', 'numPageWrapper',
-      'previousPageButton', 'totalPageCount', 'nextPageButton',
+      'previousPageButton', 'totalPageCount', 'nextPageButton', 'viewOptionControl',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
       'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'dataType', 'labels',
       'chartsView', 'viewOption', 'pageSizeWrapper'
@@ -21,16 +21,19 @@ export default class extends Controller {
       this.currentPage = 1
     }
     this.dataType = 'pool_hashrate'
-    this.setChart()
+
+    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    console.log(this.selectedViewOption)
+    if (this.selectedViewOption === 'chart') {
+      this.setChart()
+    } else {
+      this.setTable()
+    }
   }
 
   setTable () {
-    this.viewOption = 'table'
-    var filter = this.selectedFilterTarget.options
-    var num = this.selectedNumTarget.options
-    this.selectedFilterTarget.value = filter[0].text
-    this.selectedNumTarget.value = num[0].text
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'table'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.chartSourceWrapperTarget)
     show(this.powFilterWrapperTarget)
@@ -43,8 +46,8 @@ export default class extends Controller {
   }
 
   setChart () {
-    this.viewOption = 'chart'
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'chart'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.numPageWrapperTarget)
     hide(this.powFilterWrapperTarget)
     hide(this.powTableWrapperTarget)
@@ -84,10 +87,10 @@ export default class extends Controller {
     var numberOfRows = this.selectedNumTarget.value
 
     const _this = this
-    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
+    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`)
       .then(function (response) {
         let result = response.data
-        window.history.pushState(window.history.state, _this.addr, `pow?page=${result.previousPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
+        window.history.pushState(window.history.state, _this.addr, `pow?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
@@ -143,7 +146,7 @@ export default class extends Controller {
     })
 
     const _this = this
-    const url = `/powchart?pools=${selectedPools.join('|')}&datatype=${this.dataType}`
+    const url = `/powchart?pools=${selectedPools.join('|')}&datatype=${this.dataType}&viewOption=${_this.selectedViewOption}`
     window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
     axios.get(url).then(function (response) {
       let result = response.data

@@ -469,6 +469,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	page := req.FormValue("page")
 	selectedPow := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -493,6 +494,26 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 
 	ctx := req.Context()
 
+	powSource, err := s.db.FetchPowSourceData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+		"chartView": true,
+		"selectedViewOption": defaultViewOption,
+		"selectedFilter":   selectedPow,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum":      pageSize,
+		"powSource":        powSource,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad,
+		"totalPages":       pageToLoad,
+		}
+		return data, nil
+	}
+
 	var totalCount int64
 	var allPowDataSlice []pow.PowDataDto
 	if selectedPow == "All" || selectedPow == "" {
@@ -505,11 +526,6 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	powSource, err := s.db.FetchPowSourceData(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	data := map[string]interface{}{
