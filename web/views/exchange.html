@@ -10,7 +10,7 @@
             <div class="container-fluid">
                 <div class="control-wrapper">
                     <div class="d-flex flex-row bottom-ctl">
-                        <div class="chart-control ml-auto mr-2 my-2">
+                        <div class="chart-control ml-auto mr-2 my-2" data-target="exchange.viewOptionControl" data-initial-value="{{ .selectedViewOption }}">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
                                     <a class="nav-link active" href="javascript:void(0);" data-target="exchange.viewOption"
@@ -29,9 +29,9 @@
                                 <div class="control-label">Currency Pair:</div>
                                 <select data-target="exchange.selectedCurrencyPair" data-action="change->exchange#selectedCurrencyPairChanged"
                                     class="form-control" style="width: 105px;">
-                                    {{$selectedCurrencyPair := .exchanges.selectedCurrencyPair}}
-                                    <option data-target="exchange.currencyPairHideOption" value="All">All</option>
-                                    {{ range $index, $cpair := .exchanges.currencyPairs}}
+                                    {{$selectedCurrencyPair := .selectedCurrencyPair}}
+                                    <option data-target="exchange.currencyPairHideOption" class="{{ if .chartView }}d-none{{ end }}" value="All">All</option>
+                                    {{ range $index, $cpair := .currencyPairs}}
                                     <option value="{{$cpair.CurrencyPair}}" {{ if eq $cpair.CurrencyPair $selectedCurrencyPair}} selected {{ end }}>{{$cpair.CurrencyPair}}</option>
                                     {{ end }}
                                 </select>
@@ -40,9 +40,9 @@
                                 <div class="control-label">Exchanges:</div>
                                 <select data-target="exchange.selectedFilter" data-action="change->exchange#selectedFilterChanged"
                                     class="form-control" style="width: 100px;">
-                                    {{$selectedExchange := .exchanges.selectedExchange}}
-                                    <option data-target="exchange.hideOption" value="All">All</option>
-                                    {{ range $index, $filter := .exchanges.allExData}}
+                                    {{$selectedExchange := .selectedExchange}}
+                                    <option data-target="exchange.hideOption" class="{{ if .chartView }}d-none{{ end }}" value="All">All</option>
+                                    {{ range $index, $filter := .allExData}}
                                     <option value="{{$filter.Name}}"  {{ if eq $filter.Name $selectedExchange}} selected {{ end }}>{{$filter.Name}}</option>
                                     {{ end }}
                                 </select>
@@ -51,8 +51,8 @@
                                 <div class="control-label">Interval:</div>
                                 <select data-target="exchange.selectedInterval" data-action="change->exchange#selectedIntervalChanged"
                                     class="form-control" style="width: 60px;">
-                                    {{$selectedInterval := .exchanges.selectedInterval}}
-                                    {{ range $index, $filter := .exchanges.intervals}}
+                                    {{$selectedInterval := .selectedInterval}}
+                                    {{ range $index, $filter := .intervals}}
                                     <option value="{{$index}}" {{ if eq $index $selectedInterval}} selected {{ end }}>{{$filter}}</option>
                                     {{ end }}
                                 </select>
@@ -70,27 +70,27 @@
                             </select>
                         </div>
 
-                        <div data-target="exchange.numPageWrapper" class="control-div p-0 ml-2">
+                        <div data-target="exchange.numPageWrapper" class="control-div p-0 ml-2 {{ if .chartView }}d-none{{ end }}">
                             <div class="control-label">Page Size:</div>
                             <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
-                                {{$selectedNum := .exchanges.selectedNum}}
-                                {{ range $index, $filter := .exchanges.pageSizeSelector}}
+                                {{$selectedNum := .selectedNum}}
+                                {{ range $index, $filter := .pageSizeSelector}}
                                 <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>
                                 {{ end }}
                             </select>
                         </div>
 
-                        <div data-target="exchange.pageSizeWrapper" class="d-flex">
-                            <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" class="mr-2 {{ if lt .exchanges.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
+                        <div data-target="exchange.pageSizeWrapper" class="d-flex {{ if .chartView }}d-none{{ end }}">
+                            <a href="javascript:void(0)" data-target="exchange.previousPageButton" data-action="click->exchange#loadPreviousPage" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted" data-current-page="{{ .exchanges.currentPage }}"> {{ .exchanges.currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .exchanges.totalPages }}</span>
+                            <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="exchange.currentPage" class="text-muted" data-current-page="{{ .currentPage }}"> {{ .currentPage }}</span> of <span data-target="exchange.totalPageCount" class="text-muted">{{ .totalPages }}</span>
                             </p>
 
-                            <a href="javascript:void(0)"  data-target="exchange.nextPageButton"  data-action="click->exchange#loadNextPage" class="ml-2 {{ if not .exchanges.nextPage }}d-none{{ end }}"> Next&gt;</a>
+                            <a href="javascript:void(0)"  data-target="exchange.nextPageButton"  data-action="click->exchange#loadNextPage" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
                    </div>
                </div>
-               <div class="" data-target="exchange.exchangeTableWrapper">
+               <div class="{{ if .chartView }}d-none{{ end }}" data-target="exchange.exchangeTableWrapper">
                 <table class="table mx-auto">
                     <thead>
                         <tr style="white-space: nowrap;">
@@ -106,7 +106,7 @@
                         </tr>
                     </thead>
                     <tbody data-target="exchange.exchangeTable">
-                        {{range $index, $exchange := .exchanges.exData}}
+                        {{range $index, $exchange := .exData}}
                         <tr>
                             <td>{{$exchange.Time}}</td>
                             <td>{{$exchange.ExchangeName}}</td>
@@ -123,7 +123,7 @@
                 </table>
 
                 <template data-target="exchange.exRowTemplate">
-                    <tr>
+                    <tr style="white-space: nowrap;">
                         <td></td>
                         <td></td>
                         <td></td>

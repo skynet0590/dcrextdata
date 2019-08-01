@@ -15,9 +15,10 @@ import (
 )
 
 var (
+	defaultViewOption = "chart"
 	maxPageSize = 250
 	recordsPerPage        = 20
-	defaultInterval       = -1 // All
+	defaultInterval       = 1440 // All
 	exchangeTickIntervals = map[int]string{
 		-1:   "All",
 		5:    "5m",
@@ -48,16 +49,17 @@ func (s *Server) homePage(res http.ResponseWriter, req *http.Request) {
 
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
+		fmt.Println(req)
 
 	exchanges, err := s.fetchExchangeData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
+	fmt.Println(exchanges)
 
-	data["exchanges"] = exchanges
-	defer s.render("exchange.html", data, res)
+	s.render("exchange.html", exchanges, res)
+
 }
 
 func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -78,6 +80,9 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	selectedCurrencyPair := req.FormValue("selectedCurrencyPair")
 	interval := req.FormValue("selectedInterval")
 	refresh := req.FormValue("refresh")
+	viewOption := req.FormValue("viewOption")
+
+	ctx := req.Context()
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -113,8 +118,37 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 
 	offset := (pageToLoad - 1) * pageSize
 
-	ctx := req.Context()
+	allExhangeSlice, err := s.db.AllExchange(ctx)
+	if err != nil {
+		return nil, err
+	}
 
+	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(viewOption)
+	fmt.Println("2")
+
+	if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+			"chartView": true,
+			"selectedViewOption": defaultViewOption,
+			"currencyPairs":        currencyPairs,
+		"allExData":            allExhangeSlice,
+		"intervals":            exchangeTickIntervals,
+		"pageSizeSelector":     pageSizeSelector,
+		"selectedCurrencyPair": selectedCurrencyPair,
+		"selectedNum":          pageSize,
+		"selectedInterval":     filterInterval,
+		"selectedExchange":       selectedExchange,
+		"previousPage":         0,
+		}
+		return data, nil
+	}
+
+	fmt.Println(viewOption)
+	fmt.Println("3")
 	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -126,16 +160,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		}
 		return data, nil
 	}
-
-	allExhangeSlice, err := s.db.AllExchange(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
-	if err != nil {
-		return nil, err
-	}
+	fmt.Println(allExhangeTicksSlice)
 
 	data := map[string]interface{}{
 		"exData":               allExhangeTicksSlice,
@@ -144,6 +169,8 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		"intervals":            exchangeTickIntervals,
 		"pageSizeSelector":     pageSizeSelector,
 		"currentPage":          pageToLoad,
+		"chartView": false,
+		"selectedViewOption": "table",
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           int(math.Ceil(float64(totalCount) / float64(pageSize))),
 		"selectedExchange":       selectedExchange,
@@ -156,6 +183,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = pageToLoad + 1
 	}
+	fmt.Println(data)
 
 	return data, nil
 }
