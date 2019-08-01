@@ -21,16 +21,16 @@ export default class extends Controller {
     this.numberOfRows = this.selectedNumTarget.value
     this.selectedInterval = this.selectedIntervalTarget.value
 
+    this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
+    if (this.currentPage < 1) {
+      this.currentPage = 1
+    }
+
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
     if (this.selectedViewOption === 'chart') {
       this.setChart()
     } else {
       this.setTable()
-    }
-
-    this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
-    if (this.currentPage < 1) {
-      this.currentPage = 1
     }
   }
 

@@ -9,7 +9,7 @@
             <div class="container-fluid">
                 <div class="control-wrapper">
                     <div class="d-flex flex-row">
-                        <div class="chart-control ml-auto mr-3">
+                        <div class="chart-control ml-auto mr-3" data-target="mempool.viewOptionControl" data-initial-value="{{ .mempool.selectedViewOption }}">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
                                     <a class="nav-link active" href="javascript:void(0);" data-target="mempool.viewOption"
@@ -60,7 +60,7 @@
                                 </div>
                             </div>
 
-                            <div data-target="mempool.numPageWrapper" class="control-div p-0">
+                            <div data-target="mempool.numPageWrapper" class="control-div p-0 {{ if .mempool.chartView }}d-none{{ end }}">
                                 <div class="control-label">Page Size:</div>
                             <select data-target="mempool.selectedNumberOfRows" data-action="change->mempool#numberOfRowsChanged" class="form-control" style="width: 70px;">
                                 {{$selectedNumberOfRows := .mempool.selectedNumberOfRows}}
@@ -69,7 +69,7 @@
                                 {{ end }}
                             </select>
                         </div>
-                        <div data-target="mempool.btnWrapper" class="d-flex">
+                        <div data-target="mempool.btnWrapper" class="d-flex {{ if .mempool.chartView }}d-none{{ end }}">
                             <a href="javascript:void(0)" data-target="mempool.previousPageButton" data-action="click->mempool#loadPreviousPage" class="mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                             <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="mempool.currentPage" class="text-muted" data-current-page="{{ .mempool.currentPage }}"> {{ .mempool.currentPage }}</span> of <span data-target="mempool.totalPageCount" class="text-muted">{{ .mempool.totalPages }}</span>

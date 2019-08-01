@@ -137,7 +137,9 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		"selectedNum":          pageSize,
 		"selectedInterval":     filterInterval,
 		"selectedExchange":       selectedExchange,
-		"previousPage":         0,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad,
+		"totalPages":       pageToLoad,
 		}
 		return data, nil
 	}
@@ -283,9 +285,9 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 		"selectedFilter":   selectedVsp,
 		"pageSizeSelector": pageSizeSelector,
 		"selectedNum":      pageSize,
-		"currentPage":      0,
-		"previousPage":     0,
-		"totalPages":       0,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad,
+		"totalPages":       pageToLoad,
 		}
 		return data, nil
 	}
@@ -695,6 +697,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	page := req.FormValue("page")
 	numberOfRows := req.FormValue("recordsPerPage")
 	refresh := req.FormValue("refresh")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -715,6 +718,19 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 
 	ctx := req.Context()
 
+if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+		"chartView": true,
+		"selectedViewOption": defaultViewOption,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNumberOfRows":      pageSize,
+		"currentPage":      pageToLoad,
+		"previousPage":     pageToLoad,
+		"totalPages":       pageToLoad,
+		}
+		return data, nil
+	}
+	
 	mempoolSlice, err := s.db.Mempools(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
