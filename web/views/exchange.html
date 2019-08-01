@@ -88,72 +88,72 @@
 
                             <a href="javascript:void(0)"  data-target="exchange.nextPageButton"  data-action="click->exchange#loadNextPage" class="ml-2 {{ if not .nextPage }}d-none{{ end }}"> Next&gt;</a>
                         </div>
-                   </div>
-               </div>
-               <div class="{{ if .chartView }}d-none{{ end }}" data-target="exchange.exchangeTableWrapper">
-                <table class="table mx-auto">
-                    <thead>
-                        <tr style="white-space: nowrap;">
-                            <th>Time(UTC)</th>
-                            <th>Exchange</th>
-                            <th>High</th>
-                            <th>Low</th>
-                            <th>Open</th>
-                            <th>Close</th>
-                            <th>Volume</th>
-                            <th>Interval</th>
-                            <th>Currency Pair</th>
-                        </tr>
-                    </thead>
-                    <tbody data-target="exchange.exchangeTable">
-                        {{range $index, $exchange := .exData}}
-                        <tr>
-                            <td>{{$exchange.Time}}</td>
-                            <td>{{$exchange.ExchangeName}}</td>
-                            <td>{{$exchange.High}}</td>
-                            <td>{{$exchange.Low}}</td>
-                            <td>{{$exchange.Open}}</td>
-                            <td>{{$exchange.Close}}</td>
-                            <td>{{$exchange.Volume}}</td>
-                            <td>{{$exchange.Interval}}</td>
-                            <td>{{$exchange.CurrencyPair}}</td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
-
-                <template data-target="exchange.exRowTemplate">
-                    <tr style="white-space: nowrap;">
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </template>
-            </div>
-            <div data-target="exchange.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5">
-                <div id="chart" data-target="exchange.chartsView" style="width:100%; height:73vh; margin:0 auto;">
-                </div>
-                <div class="spinner-wrapper">
-                    <div class="spinner-centerer d-flex align-items-center justify-content-center">
-                        <div class="spinner">
-                            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-                        </div>
                     </div>
                 </div>
-                <div class="d-flex justify-content-center legend-wrapper">
-                    <div class="legend d-flex" data-target="exchange.labels"></div>
+                <div class="{{ if .chartView }}d-none{{ end }}" data-target="exchange.exchangeTableWrapper">
+                    <table class="table mx-auto">
+                        <thead>
+                            <tr style="white-space: nowrap;">
+                                <th>Time(UTC)</th>
+                                <th>Exchange</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Open</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                                <th>Interval</th>
+                                <th>Currency Pair</th>
+                            </tr>
+                        </thead>
+                        <tbody data-target="exchange.exchangeTable">
+                            {{range $index, $exchange := .exData}}
+                            <tr>
+                                <td>{{$exchange.Time}}</td>
+                                <td>{{$exchange.ExchangeName}}</td>
+                                <td>{{$exchange.High}}</td>
+                                <td>{{$exchange.Low}}</td>
+                                <td>{{$exchange.Open}}</td>
+                                <td>{{$exchange.Close}}</td>
+                                <td>{{$exchange.Volume}}</td>
+                                <td>{{$exchange.Interval}}</td>
+                                <td>{{$exchange.CurrencyPair}}</td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+
+                    <template data-target="exchange.exRowTemplate">
+                        <tr style="white-space: nowrap;">
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </template>
+                </div>
+                <div data-target="exchange.chartWrapper" class="chart-wrapper pl-2 pr-2 mb-5">
+                    <div id="chart" data-target="exchange.chartsView" style="width:100%; height:73vh; margin:0 auto;">
+                    </div>
+                    <div class="spinner-wrapper">
+                        <div class="spinner-centerer d-flex align-items-center justify-content-center">
+                            <div class="spinner">
+                                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-center legend-wrapper">
+                        <div class="legend d-flex" data-target="exchange.labels"></div>
+                    </div>
+                </div>
+                <div data-target="exchange.messageView" class="d-hide">
                 </div>
             </div>
-            <div data-target="exchange.messageView" class="d-hide">
-            </div>
         </div>
-    </div>
-    {{ template "footer" }}
-</body>
-</html>
+        {{ template "footer" }}
+    </body>
+    </html>

@@ -49,8 +49,6 @@ func (s *Server) homePage(res http.ResponseWriter, req *http.Request) {
 
 // /exchange
 func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
-		fmt.Println(req)
-
 	exchanges, err := s.fetchExchangeData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
@@ -59,7 +57,6 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 	fmt.Println(exchanges)
 
 	s.render("exchange.html", exchanges, res)
-
 }
 
 func (s *Server) getFilteredExchangeTicks(res http.ResponseWriter, req *http.Request) {
@@ -127,8 +124,6 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(viewOption)
-	fmt.Println("2")
 
 	if viewOption == "" || viewOption == "chart" {
 		data := map[string]interface{}{
@@ -147,8 +142,6 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		return data, nil
 	}
 
-	fmt.Println(viewOption)
-	fmt.Println("3")
 	allExhangeTicksSlice, totalCount, err := s.db.FetchExchangeTicks(ctx, selectedCurrencyPair, selectedExchange, filterInterval, offset, pageSize)
 	if err != nil {
 		return nil, err
@@ -160,7 +153,6 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		}
 		return data, nil
 	}
-	fmt.Println(allExhangeTicksSlice)
 
 	data := map[string]interface{}{
 		"exData":               allExhangeTicksSlice,
@@ -228,16 +220,13 @@ func (s *Server) getChartData(res http.ResponseWriter, req *http.Request) {
 
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
-
 	vsps, err := s.fetchVSPData(req)
 	if err != nil {
 		s.renderError(err.Error(), res)
 		return
 	}
 
-	data["vsp"] = vsps
-	defer s.render("vsp.html", data, res)
+	defer s.render("vsp.html", vsps, res)
 }
 
 func (s *Server) getFilteredVspTicks(res http.ResponseWriter, req *http.Request) {
@@ -256,6 +245,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	selectedVsp := req.FormValue("filter")
 	numberOfRows := req.FormValue("recordsPerPage")
 	refresh := req.FormValue("refresh")
+	viewOption := req.FormValue("viewOption")
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
@@ -280,6 +270,26 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 
 	ctx := req.Context()
 
+	allVspData, err := s.db.FetchVSPs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if viewOption == "" || viewOption == "chart" {
+		data := map[string]interface{}{
+			"chartView": true,
+			"selectedViewOption": defaultViewOption,
+					"allVspData":       allVspData,
+		"selectedFilter":   selectedVsp,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum":      pageSize,
+		"currentPage":      0,
+		"previousPage":     0,
+		"totalPages":       0,
+		}
+		return data, nil
+	}
+
 	var allVSPSlice []vsp.VSPTickDto
 	var totalCount int64
 	if selectedVsp == "All" || selectedVsp == "" {
@@ -292,11 +302,6 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	allVspData, err := s.db.FetchVSPs(ctx)
-	if err != nil {
-		return nil, err
 	}
 
 	data := map[string]interface{}{

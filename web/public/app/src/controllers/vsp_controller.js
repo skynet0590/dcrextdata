@@ -10,15 +10,10 @@ export default class extends Controller {
       'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'graphTypeWrapper', 'graphType', 'pageSizeWrapper',
+      'graphTypeWrapper', 'graphType', 'pageSizeWrapper', 'viewOptionControl',
       'vspSelectorWrapper', 'chartSourceWrapper', 'chartSource',
       'chartWrapper', 'labels', 'chartsView', 'viewOption'
     ]
-  }
-
-  connect () {
-    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
-    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
   }
 
   initialize () {
@@ -33,14 +28,18 @@ export default class extends Controller {
         this.vsps.push(chartSource.value)
       }
     })
-    this.setChart()
+
+    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    if (this.selectedViewOption === 'chart') {
+      this.setChart()
+    } else {
+      this.setTable()
+    }
   }
 
   setTable () {
-    this.viewOption = 'table'
-    this.selectedFilterTarget.value = this.selectedFilterTarget.options[0].text
-    this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    this.selectedViewOption = 'table'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
     hide(this.chartSourceWrapperTarget)
@@ -54,7 +53,7 @@ export default class extends Controller {
   }
 
   setChart () {
-    this.viewOption = 'chart'
+    this.selectedViewOption = 'chart'
     hide(this.numPageWrapperTarget)
     hide(this.vspTableWrapperTarget)
     hide(this.vspSelectorWrapperTarget)
@@ -62,18 +61,15 @@ export default class extends Controller {
     show(this.chartWrapperTarget)
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
-    setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.nextPage = 1
-    if (this.selectedFilterTarget.selectedIndex === 0) {
-      this.selectedFilterTarget.selectedIndex = 1
-    }
     this.fetchExchange('chart')
   }
 
   selectedFilterChanged () {
-    if (this.viewOption === 'table') {
+    if (this.selectedViewOption === 'table') {
       this.nextPage = 1
-      this.fetchExchange(this.viewOption)
+      this.fetchExchange(this.selectedViewOption)
     } else {
       if (this.selectedFilterTarget.selectedIndex === 0) {
         this.selectedFilterTarget.selectedIndex = 1
@@ -84,17 +80,17 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
-    this.fetchExchange(this.viewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
-    this.fetchExchange(this.viewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchExchange(this.viewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
   fetchExchange (display) {
@@ -108,12 +104,12 @@ export default class extends Controller {
     }
 
     const _this = this
-    axios.get(`/vsps?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}`)
+    axios.get(`/vsps?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`)
       .then(function (response) {
         let result = response.data
 
         if (display === 'table') {
-          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}`)
+          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -186,7 +182,7 @@ export default class extends Controller {
       return
     }
     let _this = this
-    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}`
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}&viewOption=${_this.selectedViewOption}`
     window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
