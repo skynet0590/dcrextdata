@@ -11,7 +11,7 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'viewOptionControl',
       'powRowTemplate', 'currentPage', 'selectedNum', 'powTableWrapper',
       'chartSourceWrapper', 'pool', 'chartWrapper', 'chartDataTypeSelector', 'dataType', 'labels',
-      'chartsView', 'viewOption', 'pageSizeWrapper'
+      'chartsView', 'viewOption', 'pageSizeWrapper', 'poolDiv'
     ]
   }
 
@@ -23,7 +23,6 @@ export default class extends Controller {
     this.dataType = 'pool_hashrate'
 
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
-    console.log(this.selectedViewOption)
     if (this.selectedViewOption === 'chart') {
       this.setChart()
     } else {
@@ -134,6 +133,17 @@ export default class extends Controller {
   setDataType (event) {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
+
+    if (this.dataType === 'workers') {
+      this.btcIndex = this.poolTargets.findIndex(el => el.value === 'btc')
+      this.f2poolIndex = this.poolTargets.findIndex(el => el.value === 'f2pool')
+      hide(this.poolDivTargets[this.btcIndex])
+      hide(this.poolDivTargets[this.f2poolIndex])
+    } else {
+      show(this.poolDivTargets[this.btcIndex])
+      show(this.poolDivTargets[this.f2poolIndex])
+    }
+
     this.fetchDataAndPlotGraph()
   }
 

@@ -50,7 +50,7 @@
 
                            <div class="control-div pt-2" data-target="pow.chartSourceWrapper">
                                 {{ range $index, $filter := .pow.powSource}}
-                                <div class="form-check form-check-inline">
+                                <div class="form-check form-check-inline" data-target="pow.poolDiv">
                                     <input data-target="pow.pool" data-action="click->pow#poolCheckChanged"
                                            class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Source}}"
                                            value="{{$filter.Source}}" {{ if eq $index 0 }} checked {{ end }}>

@@ -54,7 +54,6 @@ func (s *Server) getExchangeTicks(res http.ResponseWriter, req *http.Request) {
 		s.renderError(err.Error(), res)
 		return
 	}
-	fmt.Println(exchanges)
 
 	s.render("exchange.html", exchanges, res)
 }
@@ -177,7 +176,6 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	if int64(totalTxLoaded) < totalCount {
 		data["nextPage"] = pageToLoad + 1
 	}
-	fmt.Println(data)
 
 	return data, nil
 }
