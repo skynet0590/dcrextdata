@@ -170,21 +170,27 @@ export default class extends Controller {
     let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${vsps.join('|')}&viewOption=${_this.selectedViewOption}`
     window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
     axios.get(url).then(function (response) {
-      _this.plotGraph(response.data)
+      let result = response.data
+      if (result.error) {
+        _this.drawInitialGraph()
+        return
+      }
+
+      _this.plotGraph(result)
     }).catch(function (e) {
-      console.log(e)
+      _this.drawInitialGraph()
     })
   }
 
   // vsp chart
   plotGraph (dataSet) {
     const _this = this
-    let yLabel = this.graphTypeTarget.value.split('_').join(' ')
-    if ((yLabel.toLowerCase() === 'proportion live' || yLabel.toLowerCase() === 'proportion missed')) {
-      yLabel += ' (%)'
+    _this.yLabel = this.graphTypeTarget.value.split('_').join(' ')
+    if ((_this.yLabel.toLowerCase() === 'proportion live' || _this.yLabel.toLowerCase() === 'proportion missed')) {
+      _this.yLabel += ' (%)'
     }
-    if (yLabel === '') {
-      yLabel = 'n/a'
+    if (_this.yLabel === '') {
+      _this.yLabel = 'n/a'
     }
 
     let options = {
@@ -192,7 +198,7 @@ export default class extends Controller {
       includeZero: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
-      ylabel: yLabel,
+      ylabel: _this.yLabel,
       xlabel: 'Date',
       labelsUTC: true,
       labelsKMB: true,
@@ -209,9 +215,36 @@ export default class extends Controller {
 
         break
     }
+
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
       dataSet.csv,
+      options
+    )
+  }
+
+  drawInitialGraph () {
+    var options = {
+      legend: 'always',
+      includeZero: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: this.yLabel,
+      xlabel: 'Date',
+      labelsUTC: true,
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      showRangeSelector: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      [[0, 0]],
       options
     )
   }

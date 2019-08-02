@@ -185,7 +185,7 @@ export default class extends Controller {
         }
       }
     }
-    console.log(dataSet.csv)
+
     _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
   }
 }
