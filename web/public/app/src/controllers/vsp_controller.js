@@ -22,13 +22,6 @@ export default class extends Controller {
       this.currentPage = 1
     }
 
-    this.vsps = []
-    this.chartSourceTargets.forEach(chartSource => {
-      if (chartSource.checked) {
-        this.vsps.push(chartSource.value)
-      }
-    })
-
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
     if (this.selectedViewOption === 'chart') {
       this.setChart()
@@ -158,17 +151,6 @@ export default class extends Controller {
   }
 
   chartSourceCheckChanged (event) {
-    this.vsps = []
-    this.chartSourceTargets.forEach(chartSource => {
-      if (chartSource.checked) {
-        this.vsps.push(chartSource.value)
-      }
-    })
-    const element = event.currentTarget
-    if (this.vsps.length === 0 && !element.checked) {
-      element.checked = true
-      this.vsps.push(element.value)
-    }
     this.fetchDataAndPlotGraph()
   }
 
@@ -177,14 +159,20 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
-    if (this.vsps.length === 0) {
-      return
-    }
+    let vsps = []
+    this.chartSourceTargets.forEach(chartSource => {
+      if (chartSource.checked) {
+        vsps.push(chartSource.value)
+      }
+    })
+
     let _this = this
-    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${this.vsps.join('|')}&viewOption=${_this.selectedViewOption}`
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${vsps.join('|')}&viewOption=${_this.selectedViewOption}`
     window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
     axios.get(url).then(function (response) {
       _this.plotGraph(response.data)
+    }).catch(function (e) {
+      console.log(e)
     })
   }
 
@@ -194,6 +182,9 @@ export default class extends Controller {
     let yLabel = this.graphTypeTarget.value.split('_').join(' ')
     if ((yLabel.toLowerCase() === 'proportion live' || yLabel.toLowerCase() === 'proportion missed')) {
       yLabel += ' (%)'
+    }
+    if (yLabel === '') {
+      yLabel = 'n/a'
     }
 
     let options = {

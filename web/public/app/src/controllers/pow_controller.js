@@ -23,7 +23,6 @@ export default class extends Controller {
     this.dataType = 'pool_hashrate'
 
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
-    console.log(this.selectedViewOption)
     if (this.selectedViewOption === 'chart') {
       this.setChart()
     } else {
@@ -186,7 +185,7 @@ export default class extends Controller {
         }
       }
     }
-
+    console.log(dataSet.csv)
     _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
   }
 }
