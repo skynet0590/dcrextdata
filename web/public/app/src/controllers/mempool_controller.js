@@ -220,6 +220,7 @@ export default class extends Controller {
         dateWindow: [minDate, maxDate],
         legendFormatter: legendFormatter,
         plotter: barChartPlotter,
+        digitsAfterDecimal: 8,
         labelsDiv: _this.labelsTarget,
         ylabel: title,
         xlabel: 'Date',

@@ -148,3 +148,13 @@ export function setActiveOptionBtn (opt, optTargets) {
     }
   })
 }
+
+export function displayPillBtnOption (opt, optTargets) {
+  optTargets.forEach(li => {
+    if (opt === 'chart' && li.dataset.option === 'both') {
+      li.classList.add('d-hide')
+    } else {
+      li.classList.remove('d-hide')
+    }
+  })
+}
