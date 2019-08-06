@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, setActiveOptionBtn, legendFormatter, showLoading, hideLoading, displayPillBtnOption } from '../utils'
+import { hide, show, setActiveOptionBtn, legendFormatter, showLoading, hideLoading, displayPillBtnOption, setActiveRecordSetBtn } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -38,39 +38,27 @@ export default class extends Controller {
 
   setTable () {
     this.selectedViewOption = 'table'
-    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    this.selectedRecordSetTargets.forEach(li => {
-      if (li.dataset.option === 'both') {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
     this.selectedRecordSet = 'both'
     hide(this.chartWrapperTarget)
     show(this.paginationButtonsWrapperTarget)
     show(this.numPageWrapperTarget)
     hide(this.chartWrapperTarget)
     show(this.tablesWrapperTarget)
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchTableData(this.currentPage)
   }
 
   setChart () {
     this.selectedViewOption = 'chart'
-    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    this.selectedRecordSet = 'blocks'
     hide(this.numPageWrapperTarget)
     hide(this.paginationButtonsWrapperTarget)
     hide(this.tablesWrapperTarget)
     show(this.chartWrapperTarget)
-    this.selectedRecordSetTargets.forEach(li => {
-      if (li.dataset.option === 'blocks') {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
-    this.selectedRecordSet = 'blocks'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchChartDataAndPlot()
   }
