@@ -132,6 +132,14 @@ func _main(ctx context.Context) error {
 		return nil
 	}
 
+	if cfg.HttpMode {
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
+	}
+
+	if err = createTablesAndIndex(db); err != nil {
+		return err
+	}
+
 	var dcrClient *rpcclient.Client
 	var collector *mempool.Collector
 
@@ -164,6 +172,7 @@ func _main(ctx context.Context) error {
 			return nil
 		}
 	}
+
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
@@ -184,47 +193,10 @@ func _main(ctx context.Context) error {
 
 		collector.SetClient(dcrClient)
 
-		if !db.MempoolDataTableExits() {
-			if err := db.CreateMempoolDataTable(); err != nil {
-				log.Error("Error creating mempool table: ", err)
-			}
-		}
-
-		if !db.BlockTableExits() {
-			if err := db.CreateBlockTable(); err != nil {
-				log.Error("Error creating block table: ", err)
-			}
-		}
-
-		if !db.VoteTableExits() {
-			if err := db.CreateVoteTable(); err != nil {
-				log.Error("Error creating vote table: ", err)
-			}
-		}
-
 		go collector.StartMonitoring(ctx)
 	}
 
 	if !cfg.DisableVSP {
-		if exists := db.VSPInfoTableExits(); !exists {
-			if err := db.CreateVSPInfoTables(); err != nil {
-				log.Error("Error creating vsp info table: ", err)
-				return err
-			}
-		}
-
-		if exists := db.VSPTickTableExits(); !exists {
-			if err := db.CreateVSPTickTables(); err != nil {
-				log.Error("Error creating vsp data table: ", err)
-				return err
-			}
-
-			if err := db.CreateVSPTickIndex(); err != nil {
-				log.Error("Error creating vsp data index: ", err)
-				return err
-			}
-		}
-
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
 			go vspCollector.Run(ctx)
@@ -232,27 +204,7 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
-
 	if !cfg.DisableExchangeTicks {
-		if exists := db.ExchangeTableExits(); !exists {
-			if err := db.CreateExchangeTable(); err != nil {
-				log.Error("Error creating exchange table: ", err)
-				return err
-			}
-		}
-
-		if exists := db.ExchangeTickTableExits(); !exists {
-			if err := db.CreateExchangeTickTable(); err != nil {
-				log.Error("Error creating exchange tick table: ", err)
-				return err
-			}
-
-			if err := db.CreateExchangeTickIndex(); err != nil {
-				log.Error("Error creating exchange tick index: ", err)
-				return err
-			}
-		}
-
 		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
 			go ticksHub.Run(ctx)
@@ -260,15 +212,7 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
-
 	if !cfg.DisablePow {
-		if exists := db.PowDataTableExits(); !exists {
-			if err := db.CreatePowDataTable(); err != nil {
-				log.Error("Error creating PoW data table: ", err)
-				return err
-			}
-		}
-
 		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 		if err == nil {
 			go powCollector.Run(ctx)
@@ -276,10 +220,6 @@ func _main(ctx context.Context) error {
 		} else {
 			log.Error(err)
 		}
-	}
-
-	if cfg.HttpMode {
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 
 	// wait for shutdown signal
@@ -316,4 +256,82 @@ func executeHelpCommand() (err error) {
 	}
 
 	return fmt.Errorf(config.Hint)
+}
+
+func createTablesAndIndex(db *postgres.PgDb) error {
+	if !db.MempoolDataTableExits() {
+		if err := db.CreateMempoolDataTable(); err != nil {
+			log.Error("Error creating mempool table: ", err)
+			return err
+		}
+		fmt.Println("Mempool table created sucessfully.")
+	}
+	if !db.BlockTableExits() {
+		if err := db.CreateBlockTable(); err != nil {
+			log.Error("Error creating block table: ", err)
+			return err
+		}
+		fmt.Println("Blocks table created sucessfully.")
+
+	}
+	if !db.VoteTableExits() {
+		if err := db.CreateVoteTable(); err != nil {
+			log.Error("Error creating vote table: ", err)
+			return err
+		}
+		fmt.Println("Votes table created sucessfully.")
+	}
+
+	if exists := db.VSPInfoTableExits(); !exists {
+		if err := db.CreateVSPInfoTables(); err != nil {
+			log.Error("Error creating vsp info table: ", err)
+			return err
+		}
+
+		fmt.Println("VSP table created sucessfully.")
+	}
+
+	if exists := db.VSPTickTableExits(); !exists {
+		if err := db.CreateVSPTickTables(); err != nil {
+			log.Error("Error creating vsp data table: ", err)
+			return err
+		}
+		fmt.Println("VSPTicks table created sucessfully.")
+
+		if err := db.CreateVSPTickIndex(); err != nil {
+			log.Error("Error creating vsp data index: ", err)
+			return err
+		}
+	}
+
+	if exists := db.ExchangeTableExits(); !exists {
+		if err := db.CreateExchangeTable(); err != nil {
+			log.Error("Error creating exchange table: ", err)
+			return err
+		}
+		fmt.Println("Exchange table created sucessfully.")
+	}
+
+	if exists := db.ExchangeTickTableExits(); !exists {
+		if err := db.CreateExchangeTickTable(); err != nil {
+			log.Error("Error creating exchange tick table: ", err)
+			return err
+		}
+		fmt.Println("ExchangeTicks table created sucessfully.")
+
+		if err := db.CreateExchangeTickIndex(); err != nil {
+			log.Error("Error creating exchange tick index: ", err)
+			return err
+		}
+	}
+
+	if exists := db.PowDataTableExits(); !exists {
+		if err := db.CreatePowDataTable(); err != nil {
+			log.Error("Error creating PoW data table: ", err)
+			return err
+		}
+		fmt.Println("Pow table created sucessfully.")
+	}
+
+	return nil
 }
