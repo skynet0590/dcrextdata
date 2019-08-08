@@ -882,7 +882,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	ctx := req.Context()
 
-	if viewOption == "" || viewOption == "chart" {
+	if viewOption == "chart" {
 		data := map[string]interface{}{
 			"chartView":          true,
 			"selectedViewOption": defaultViewOption,

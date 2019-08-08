@@ -148,3 +148,23 @@ export function setActiveOptionBtn (opt, optTargets) {
     }
   })
 }
+
+export function setActiveRecordSetBtn (opt, optTargets) {
+  optTargets.forEach(li => {
+    if (li.dataset.option === opt) {
+      li.classList.add('active')
+    } else {
+      li.classList.remove('active')
+    }
+  })
+}
+
+export function displayPillBtnOption (opt, optTargets) {
+  optTargets.forEach(li => {
+    if (opt === 'chart' && li.dataset.option === 'both') {
+      li.classList.add('d-hide')
+    } else {
+      li.classList.remove('d-hide')
+    }
+  })
+}
