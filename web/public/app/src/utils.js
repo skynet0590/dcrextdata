@@ -2,8 +2,6 @@ import dompurify from 'dompurify'
 
 const Dygraph = require('../../dist/js/dygraphs.min.js')
 
-export const appName = 'dcrextdata'
-
 export const hide = (el) => {
   el.classList.add('d-none')
   el.classList.add('d-hide')
@@ -32,6 +30,10 @@ export const hideLoading = (loadingTarget, elementsToShow) => {
 
 export const isHidden = (el) => {
   return el.classList.contains('d-none')
+}
+
+export const isLoading = (el) => {
+  return el.classList.add('loading')
 }
 
 export function legendFormatter (data) {

@@ -10,8 +10,8 @@ export default class extends Controller {
       'selectedFilter', 'vspTicksTable', 'numPageWrapper',
       'previousPageButton', 'totalPageCount', 'nextPageButton',
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
-      'graphTypeWrapper', 'dataType', 'pageSizeWrapper', 'viewOptionControl',
-      'vspSelectorWrapper', 'chartSourceWrapper', 'allChartSource', 'chartSource',
+      'graphTypeWrapper', 'graphType', 'pageSizeWrapper', 'viewOptionControl',
+      'vspSelectorWrapper', 'chartSourceWrapper', 'chartSource',
       'chartWrapper', 'labels', 'chartsView', 'viewOption', 'loadingData'
     ]
   }
@@ -21,31 +21,6 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
-
-    this.vsps = []
-    this.chartSourceTargets.forEach(chartSource => {
-      if (chartSource.checked) {
-        this.vsps.push(chartSource.value)
-      }
-    })
-
-    this.dataType = this.dataTypeTarget.value = this.dataTypeTarget.getAttribute('data-initial-value')
-
-    // if no vsp is selected, select the first one
-    let noVspSelected = true
-    let allVspSelected = true
-    this.chartSourceTargets.forEach(el => {
-      if (el.checked) {
-        noVspSelected = false
-      } else {
-        allVspSelected = false
-      }
-    })
-    if (noVspSelected) {
-      this.chartSourceTarget.checked = true
-    }
-
-    this.allChartSourceTarget.checked = allVspSelected
 
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
     if (this.selectedViewOption === 'chart') {
@@ -65,8 +40,9 @@ export default class extends Controller {
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
     show(this.vspSelectorWrapperTarget)
+    this.vspTicksTableTarget.innerHTML = ''
     this.nextPage = this.currentPage
-    this.fetchData('table')
+    this.fetchExchange('table')
   }
 
   setChart () {
@@ -79,13 +55,13 @@ export default class extends Controller {
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    this.fetchDataAndPlotGraph()
+    this.fetchExchange('chart')
   }
 
   selectedFilterChanged () {
     if (this.selectedViewOption === 'table') {
       this.nextPage = 1
-      this.fetchData(this.selectedViewOption)
+      this.fetchExchange(this.selectedViewOption)
     } else {
       if (this.selectedFilterTarget.selectedIndex === 0) {
         this.selectedFilterTarget.selectedIndex = 1
@@ -96,20 +72,20 @@ export default class extends Controller {
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
-    this.fetchData(this.selectedViewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
-    this.fetchData(this.selectedViewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
-    this.fetchData(this.selectedViewOption)
+    this.fetchExchange(this.selectedViewOption)
   }
 
-  fetchData (display) {
+  fetchExchange (display) {
     const selectedFilter = this.selectedFilterTarget.value
     var numberOfRows
 
@@ -124,13 +100,13 @@ export default class extends Controller {
     }
 
     const _this = this
-    axios.get(`/vsps?page=${this.nextPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
+    axios.get(`/vsps?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
 
         if (display === 'table') {
-          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&records-per-page=${result.selectedNum}&view-option=${_this.selectedViewOption}`)
+          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -180,10 +156,6 @@ export default class extends Controller {
     })
   }
 
-  chartSourceCheckChanged () {
-    this.fetchDataAndPlotGraph()
-  }
-
   vspCheckboxCheckChanged (event) {
     const checked = event.currentTarget.checked
     this.chartSourceTargets.forEach(el => {
@@ -192,8 +164,11 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
-  dataTypeChanged () {
-    this.dataType = this.dataTypeTarget.value
+  chartSourceCheckChanged (event) {
+    this.fetchDataAndPlotGraph()
+  }
+
+  graphTypeChanged () {
     this.fetchDataAndPlotGraph()
   }
 
@@ -209,9 +184,9 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     let _this = this
-    const queryString = `data-type=${this.dataType}&vsps=${vsps.join('|')}&view-option=${_this.selectedViewOption}`
-    window.history.pushState(window.history.state, _this.addr, `/vsp?${queryString}`)
-    axios.get(`/vspchartdata?${queryString}`).then(function (response) {
+    let url = `/vspchartdata?selectedAttribute=${this.graphTypeTarget.value}&vsps=${vsps.join('|')}&viewOption=${_this.selectedViewOption}`
+    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
+    axios.get(url).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (result.error) {
@@ -228,7 +203,7 @@ export default class extends Controller {
   // vsp chart
   plotGraph (dataSet) {
     const _this = this
-    _this.yLabel = this.dataType.split('_').join(' ')
+    _this.yLabel = this.graphTypeTarget.value.split('_').join(' ')
     if ((_this.yLabel.toLowerCase() === 'proportion live' || _this.yLabel.toLowerCase() === 'proportion missed')) {
       _this.yLabel += ' (%)'
     }
@@ -253,6 +228,12 @@ export default class extends Controller {
         }
       }
     }
+    switch (this.graphTypeTarget.value) {
+      case 'Immature':
+
+        break
+    }
+
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
       dataSet.csv,

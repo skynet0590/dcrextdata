@@ -20,8 +20,7 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
-
-    this.dataType = this.chartDataTypeTarget.getAttribute('data-initial-value')
+    this.dataType = 'size'
 
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
     if (this.selectedViewOption === 'chart') {
@@ -49,21 +48,41 @@ export default class extends Controller {
     hide(this.tableWrapperTarget)
     this.chartFilter = this.selectedMempoolOptTarget.value = this.selectedMempoolOptTarget.options[0].value
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     show(this.chartDataTypeSelectorTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.fetchData(this.selectedViewOption)
   }
 
-  mempoolOptionChanged () {
+  MempoolOptionChanged () {
     this.chartFilter = this.selectedMempoolOptTarget.value
     this.fetchData(this.selectedViewOption)
   }
 
-  setDataType (event) {
-    this.dataType = event.currentTarget.getAttribute('data-option')
-    setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
+  setSizeDataType (event) {
+    this.dataType = 'size'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchData('chart')
+  }
+
+  setFeesDataType (event) {
+    this.dataType = 'total_fee'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
+    this.fetchData('chart')
+  }
+
+  setTransactionsDataType (event) {
+    this.dataType = 'number_of_transactions'
+    this.chartDataTypeTargets.forEach(el => {
+      el.classList.remove('active')
+    })
+    event.currentTarget.classList.add('active')
     this.fetchData('chart')
   }
 
@@ -83,29 +102,30 @@ export default class extends Controller {
   }
 
   fetchData (display) {
-    let url
+    var url
+    if (display === 'table') {
+      var numberOfRows = this.selectedNumberOfRowsTarget.value
+      url = `/getmempool?page=${this.nextPage}&recordsPerPage=${numberOfRows}&viewOption=${this.selectedViewOption}`
+    } else {
+      url = `/mempoolcharts?chartFilter=${this.dataType}&viewOption=${this.selectedViewOption}`
+      window.history.pushState(window.history.state, this.addr, url + `&refresh=${1}`)
+    }
     let elementsToToggle = [this.tableWrapperTarget, this.chartWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
 
-    if (display === 'table') {
-      const numberOfRows = this.selectedNumberOfRowsTarget.value
-      url = `/getmempool?page=${this.nextPage}&records-per-page=${numberOfRows}&view-option=${this.selectedViewOption}`
-    } else {
-      url = `/mempoolcharts?chart-data-type=${this.dataType}&view-option=${this.selectedViewOption}`
-    }
-
     const _this = this
     axios.get(url).then(function (response) {
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
 
       if (display === 'table') {
-        hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
+        hide(_this.chartWrapperTarget)
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        let url = `/mempool?page=${result.currentPage}&records-per-page=${result.selectedNumberOfRows}&view-option=${_this.selectedViewOption}`
-        window.history.pushState(window.history.state, _this.addr, url)
-
-        _this.currentPage = result.currentPage
+        window.history.pushState(
+          window.history.state, _this.addr,
+          `/mempool?page=${result.currentPage}&recordsPerPage=${result.selectedNumberOfRows}&viewOption=${_this.selectedViewOption}`
+        )
         if (_this.currentPage <= 1) {
           _this.currentPage = result.currentPage
           hide(_this.previousPageButtonTarget)
@@ -121,9 +141,7 @@ export default class extends Controller {
 
         _this.displayMempool(result.mempoolData)
       } else {
-        hideLoading(_this.loadingDataTarget, [_this.chartWrapperTarget])
-        let url = `/mempool?chart-data-type=${_this.dataType}&view-option=${_this.selectedViewOption}`
-        window.history.pushState(window.history.state, _this.addr, url)
+        hide(_this.tableWrapperTarget)
         _this.plotGraph(result)
       }
     }).catch(function (e) {

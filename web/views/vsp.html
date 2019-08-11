@@ -37,12 +37,17 @@
 
                             <div data-target="vsp.graphTypeWrapper" class="control-div p-0 d-none ">
                                 <div class="control-label">Data:</div>
-                                {{ $selectedDataType := .dataType }}
-                                <select data-target="vsp.dataType" data-action="change->vsp#dataTypeChanged" data-initial-value="{{ $selectedDataType }}"
+                                <select data-target="vsp.graphType" data-action="change->vsp#graphTypeChanged"
                                     class="form-control" style="width: 150px;">
-                                    {{ range $index, $dataType := .allDataTypes}}
-                                    <option value="{{$dataType}}" {{ if eq $dataType $selectedDataType}}selected{{ end }}>{{ stringsReplace $dataType "_" " " }}</option>
-                                    {{ end }}
+                                    <option value="Immature">Immature</option>
+                                    <option value="Live">Live</option>
+                                    <option value="Voted">Voted</option>
+                                    <option value="Missed">Missed</option>
+                                    <option value="Pool_Fees">Pool Fees</option>
+                                    <option value="Proportion_Live">Proportion Live</option>
+                                    <option value="Proportion_Missed">Proportion Missed</option>
+                                    <option value="User_Count">User Count</option>
+                                    <option value="Users_Active">Users Active</option>
                                 </select>
                             </div>
                             <div data-target="vsp.numPageWrapper" class="control-div p-0 ml-1 {{ if .chartView }}d-none{{ end }}">
@@ -74,7 +79,7 @@
                 <div class="{{ if .chartView }}d-none{{ end }}" data-target="vsp.vspTableWrapper">
                     <table class="table mx-auto">
                         <thead>
-                            <tr style="white-space: nowrap;">
+                            <tr>
                                 <th>VSP</th>
                                 <th>Immature</th>
                                 <th>Live</th>
@@ -90,7 +95,7 @@
                         </thead>
                         <tbody data-target="vsp.vspTicksTable">
                             {{range $index, $vspticks := .vspData}}
-                            <tr style="white-space: nowrap;">
+                            <tr>
                                 <td>{{$vspticks.VSP}}</td>
                                 <td>{{$vspticks.Immature}}</td>
                                 <td>{{$vspticks.Live}}</td>
@@ -108,7 +113,7 @@
                     </table>
 
                     <template data-target="vsp.vspRowTemplate">
-                            <tr style="white-space: nowrap;">
+                        <tr>
                             <td></td>
                             <td></td>
                             <td></td>
@@ -127,18 +132,11 @@
                     <div class="row">
                         <div class="col-xs-10 col-xs-offset-1 col-md-2 col-md-offset-0 side-vsp-panel">
                             <div class="p-0 d-none" data-target="vsp.chartSourceWrapper">
-                                {{ $selectedVsps := .selectedVsps}}
-                                <div class="form-check">
-                                        <input data-target="vsp.allChartSource" name="vspCheckbox-all" data-action="click->vsp#vspCheckboxCheckChanged"
-                                               class="form-check-input" type="checkbox" id="vspCheckbox-all">
-                                        <label class="form-check-label" for="vspCheckbox-all">Select All</label>
-                                    </div>
                                 {{ range $index, $filter := .allVspData}}
                                 <div class="form-check">
                                     <input name="chartSource" data-target="vsp.chartSource" data-action="click->vsp#chartSourceCheckChanged"
                                     class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Name}}"
-                                    
-                                        value="{{$filter.Name}}" {{ if strListContains $selectedVsps $filter.Name }} checked {{ end }}>
+                                    value="{{$filter.Name}}" {{ if eq $index 0 }} checked {{ end }}>
                                     <label class="form-check-label" for="inlineCheckbox-{{$filter.Name}}">{{$filter.Host}} ({{$filter.Name}})</label>
                                 </div>
                                 {{ end }}

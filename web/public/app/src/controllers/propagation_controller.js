@@ -39,12 +39,12 @@ export default class extends Controller {
   setTable () {
     this.selectedViewOption = 'table'
     this.selectedRecordSet = 'both'
-    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     show(this.paginationButtonsWrapperTarget)
     show(this.numPageWrapperTarget)
     hide(this.chartWrapperTarget)
     show(this.tablesWrapperTarget)
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchTableData(this.currentPage)
@@ -131,13 +131,12 @@ export default class extends Controller {
         url = 'getpropagationdata'
         break
     }
-    axios.get(`/${url}?page=${page}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`).then(function (response) {
+    axios.get(`/${url}?page=${page}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, _this.addr, pageUrl)
+      window.history.pushState(window.history.state, _this.addr, `${result.url}?page=${result.currentPage}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
 
       _this.currentPage = result.currentPage
       if (_this.currentPage <= 1) {
@@ -268,7 +267,7 @@ export default class extends Controller {
                         ${votesHtml}
                         </tbody>
                           <tr>
-                              <td colspan="7" height="15" style="border: none !important;"></td>
+                              <td colspan="7" height="50" style="border: none !important;"></td>
                           </tr>`
     })
 
@@ -284,11 +283,12 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get('/propagationchartdata?record-set=' + this.selectedRecordSet).then(function (response) {
+    const url = '/propagationchartdata?recordset=' + this.selectedRecordSet + `&viewOption=${_this.selectedViewOption}`
+    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
+
+    axios.get(url).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       console.log(e) // todo: handle error
