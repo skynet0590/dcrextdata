@@ -37,28 +37,33 @@
                             <div class="chart-control ml-auto mr-3" data-target="pow.chartDataTypeSelector">
                                 <ul class="nav nav-pills">
                                     <li class="nav-item">
-                                        <a class="nav-link active" href="javascript:void(0);" data-target="pow.dataType" data-option="pool_hashrate"
+                                        <a class="nav-link {{ if eq .pow.selectedDataType "pool_hashrate" }}active{{ end }}" href="javascript:void(0);"
+                                           data-target="pow.dataType"
+                                           data-option="pool_hashrate" data-initial-value="{{ .pow.selectedDataType }}"
                                         data-action="click->pow#setDataType">Hashrate</a>
                                     </li>
                                     <li class="nav-item">
-                                        <a class="nav-link" href="javascript:void(0);" data-target="pow.dataType" data-option="workers"
+                                        <a class="nav-link {{ if eq .pow.selectedDataType "workers" }}active{{ end }}" href="javascript:void(0);"
+                                           data-target="pow.dataType"
+                                           data-option="workers" data-initial-value="{{ .pow.selectedDataType }}"
                                         data-action="click->pow#setDataType">Workers</a>
                                     </li>
                                 </ul>
                             </div>
 
                            <div class="control-div pt-2" data-target="pow.chartSourceWrapper">
+                               {{ $selectedPools := .pow.selectedPools }}
                                 {{ range $index, $filter := .pow.powSource}}
                                 <div class="form-check form-check-inline" data-target="pow.poolDiv">
                                     <input data-target="pow.pool" data-action="click->pow#poolCheckChanged"
                                            class="form-check-input" type="checkbox" id="inlineCheckbox-{{$filter.Source}}"
-                                           value="{{$filter.Source}}" {{ if eq $index 0 }} checked {{ end }}>
+                                           value="{{$filter.Source}}" {{ if strListContains $selectedPools $filter.Source }} checked {{ end }}>
                                     <label class="form-check-label" for="inlineCheckbox-{{$filter.Source}}">{{$filter.Source}}</label>
                                 </div>
                                 {{ end}}
                             </div>
 
-                            <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1" {{ if .pow.chartView }}d-none{{ end }}>
+                            <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1 {{ if .pow.chartView }}d-none{{ end }}">
                                 <div class=" mb-2 float-md-right">
 
                                     <div class="control-label">Page Size:</div>

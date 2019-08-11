@@ -20,7 +20,19 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
-    this.dataType = 'pool_hashrate'
+
+    this.dataType = this.dataTypeTarget.getAttribute('data-initial-value')
+
+    // if no pool is selected, select the first on
+    let noPoolSelected = true
+    this.poolTargets.forEach(el => {
+      if (el.checked) {
+        noPoolSelected = false
+      }
+    })
+    if (noPoolSelected) {
+      this.poolTarget.checked = true
+    }
 
     this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
     if (this.selectedViewOption === 'chart') {
@@ -89,11 +101,12 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&recordsPerPage=${numberOfRows}&viewOption=${_this.selectedViewOption}`)
+    axios.get(`/filteredpow?page=${this.nextPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
-        window.history.pushState(window.history.state, _this.addr, `pow?page=${result.currentPage}&filter=${selectedFilter}&recordsPerPage=${result.selectedNum}&viewOption=${_this.selectedViewOption}`)
+        const pageUrl = `/pow?page=${result.currentPage}&filter=${selectedFilter}&records-per-page=${result.selectedNum}&view-option=${_this.selectedViewOption}`
+        window.history.pushState(window.history.state, _this.addr, pageUrl)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
@@ -139,9 +152,9 @@ export default class extends Controller {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
 
+    this.btcIndex = this.poolTargets.findIndex(el => el.value === 'btc')
+    this.f2poolIndex = this.poolTargets.findIndex(el => el.value === 'f2pool')
     if (this.dataType === 'workers') {
-      this.btcIndex = this.poolTargets.findIndex(el => el.value === 'btc')
-      this.f2poolIndex = this.poolTargets.findIndex(el => el.value === 'f2pool')
       hide(this.poolDivTargets[this.btcIndex])
       hide(this.poolDivTargets[this.f2poolIndex])
     } else {
@@ -164,13 +177,14 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    const url = `/powchart?pools=${selectedPools.join('|')}&datatype=${this.dataType}&viewOption=${_this.selectedViewOption}`
-    window.history.pushState(window.history.state, _this.addr, url + `&refresh=${1}`)
-    axios.get(url).then(function (response) {
+    const queryString = `data-type=${this.dataType}&pools=${selectedPools.join('|')}&view-option=${_this.selectedViewOption}`
+    window.history.pushState(window.history.state, _this.addr, `/pow?${queryString}`)
+
+    axios.get(`/powchart?${queryString}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       if (result.error) {
-        console.log(result.error) // todo show error page fron front page
+        console.log(result.error) // todo show error page from front page
         return
       }
 

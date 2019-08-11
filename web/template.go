@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -46,6 +47,17 @@ func templateFuncMap() template.FuncMap {
 		},
 		"timestamp": func() int64 {
 			return time.Now().Unix()
+		},
+		"strListContains": func(stringList []string, needle string) bool {
+			for _, value := range stringList {
+				if value == needle {
+					return true
+				}
+			}
+			return false
+		},
+		"stringsReplace": func(input string, old string, new string) string {
+			return strings.Replace(input, old, new, -1)
 		},
 	}
 }

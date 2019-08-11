@@ -28,14 +28,14 @@
                     <div data-target="mempool.chartOptions" class="control-div p-0 d-hide">
                         <div class="control-label ">Mempool Charts:</div>
 
-                        <select data-target="mempool.selectedMempoolOpt"
-                        data-action="change->mempool#MempoolOptionChanged" class="form-control mr-5 "
-                        style="width: 200px;">
-                        <option value="size">Size Chart</option>
-                        <option value="total_fee">Total fees Chart</option>
-                        <option value="number_of_transactions">Number of Transactions</option>
-                    </select>
-                </div>
+                                <select data-target="mempool.selectedMempoolOpt"
+                                    data-action="change->mempool#mempoolOptionChanged" class="form-control mr-5 "
+                                    style="width: 200px;">
+                                    <option value="size">Size Chart</option>
+                                    <option value="total_fee">Total fees Chart</option>
+                                    <option value="number_of_transactions">Number of Transactions</option>
+                                </select>
+                            </div>
 
                 <div class="chart-control-wrapper control-div p-0 d-none"
                 data-target="mempool.chartDataTypeSelector">
@@ -43,18 +43,18 @@
                     <ul class="nav nav-pills">
                         <li class="nav-item">
                             <a data-target="mempool.chartDataType"
-                            data-action="click->mempool#setSizeDataType" class="nav-link active"
-                            href="javascript:void(0);" data-option="table">Size</a>
+                            data-action="click->mempool#setDataType" class="nav-link active"
+                            href="javascript:void(0);" data-option="size" data-initial-value="{{ .mempool.chartDataType }}">Size</a>
                         </li>
                         <li class="nav-item">
                             <a data-target="mempool.chartDataType"
-                            data-action="click->mempool#setFeesDataType" class="nav-link"
-                            href="javascript:void(0);" data-option="table">Fees</a>
+                            data-action="click->mempool#setDataType" class="nav-link"
+                            href="javascript:void(0);" data-option="total_fee" data-initial-value="{{ .mempool.chartDataType }}">Fees</a>
                         </li>
                         <li class="nav-item">
                             <a data-target="mempool.chartDataType"
-                            data-action="click->mempool#setTransactionsDataType" class="nav-link"
-                            href="javascript:void(0);" data-option="table">Transactions</a>
+                            data-action="click->mempool#setDataType" class="nav-link"
+                            href="javascript:void(0);" data-option="number_of_transactions" data-initial-value="{{ .mempool.chartDataType }}">Transactions</a>
                         </li>
                     </ul>
                 </div>
