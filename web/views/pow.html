@@ -10,7 +10,7 @@
                 <div class="control-wrapper">
                     <div class="d-flex flex-row">
                         <div class="chart-control ml-auto mr-3" data-target="pow.viewOptionControl" data-initial-value="{{ .pow.selectedViewOption }}">
-                            <ul class="nav nav-pills"> 
+                            <ul class="nav nav-pills">
                                 <li class="nav-item">
                                     <a class="nav-link active" href="javascript:void(0);" data-target="pow.viewOption"
                                     data-action="click->pow#setChart" data-option="chart">Chart</a>
@@ -30,7 +30,7 @@
                                     <option value="All" selected>All</option>
                                     {{ range $index, $filter := .pow.powSource}}
                                     <option value="{{$filter.Source}}" {{ if eq $filter.Source $selectedFilter}} selected {{ end }}>{{$filter.Source}}</option>
-                                    {{ end }} 
+                                    {{ end }}
                                 </select>
                             </div>
 
@@ -62,6 +62,60 @@
                             </div>
                             {{ end}}
                         </div>
+
+                            <div class="chart-control-wrapper mr-2 mb-1" data-target="pow.zoomSelector">
+                                <div class="chart-control">
+                                    <ul
+                                            class="nav nav-pills"
+                                    >
+                                        <li class="nav-item">
+                                            <a
+                                                    class="nav-link active"
+                                                    href="javascript:void(0);"
+                                                    data-target="pow.zoomOption"
+                                                    data-action="click->pow#setZoom"
+                                                    data-option="all"
+                                            >All</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a
+                                                    class="nav-link"
+                                                    href="javascript:void(0);"
+                                                    data-target="pow.zoomOption"
+                                                    data-action="click->pow#setZoom"
+                                                    data-option="year"
+                                            >Year</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a
+                                                    class="nav-link"
+                                                    href="javascript:void(0);"
+                                                    data-target="pow.zoomOption"
+                                                    data-action="click->pow#setZoom"
+                                                    data-option="month"
+                                            >Month</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a
+                                                    class="nav-link"
+                                                    href="javascript:void(0);"
+                                                    data-target="pow.zoomOption"
+                                                    data-action="click->pow#setZoom"
+                                                    data-option="week"
+                                            >Week</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a
+                                                    class="nav-link"
+                                                    href="javascript:void(0);"
+                                                    data-target="pow.zoomOption"
+                                                    data-action="click->pow#setZoom"
+                                                    data-option="day"
+                                            >Day</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
 
                         <div data-target="pow.numPageWrapper" class="control-div p-0 ml-1 {{ if .pow.chartView }}d-none{{ end }}">
                             <div class=" mb-2 float-md-right">
