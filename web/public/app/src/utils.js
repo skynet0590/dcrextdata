@@ -35,7 +35,6 @@ export const isHidden = (el) => {
 }
 
 export function legendFormatter (data) {
-  console.log(data)
   let html = ''
   if (data.x == null) {
     let dashLabels = data.series.reduce((nodes, series) => {
@@ -166,4 +165,12 @@ export function displayPillBtnOption (opt, optTargets) {
       li.classList.remove('d-hide')
     }
   })
+}
+
+export function selectedOption (optTargets) {
+  var key = false
+  optTargets.forEach((el) => {
+    if (el.classList.contains('active')) key = el.dataset.option
+  })
+  return key
 }
