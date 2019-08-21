@@ -47,21 +47,17 @@ export function legendFormatter (data) {
   } else {
     data.series.sort((a, b) => a.y > b.y ? -1 : 1)
     let extraHTML = ''
-    // The circulation chart has an additional legend entry showing percent
-    // difference.
-    if (data.series.length === 2 && data.series[1].label.toLowerCase() === 'coin supply') {
-      let predicted = data.series[0].y
-      let actual = data.series[1].y
-      let change = (((actual - predicted) / predicted) * 100).toFixed(2)
-      extraHTML = `<div class="pr-2">&nbsp;&nbsp;Change: ${change} %</div>`
-    }
 
     let yVals = data.series.reduce((nodes, series) => {
       if (!series.isVisible) return nodes
       let yVal = series.yHTML
-      yVal = series.y
+      if (series.y === undefined) {
+        yVal = 'N/A'
+      } else {
+        yVal = series.y
+      }
       // propotion missed/live has % sign
-      if ((series.label.toLowerCase() === 'proportion live (%)' || series.label.toLowerCase() === 'proportion missed (%)')) {
+      if (series.y !== undefined && (series.label.toLowerCase() === 'proportion live (%)' || series.label.toLowerCase() === 'proportion missed (%)')) {
         yVal += '%'
       }
 
