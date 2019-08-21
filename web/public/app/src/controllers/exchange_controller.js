@@ -1,6 +1,19 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, options, appName, showLoading, hideLoading } from '../utils'
+import {
+  hide,
+  show,
+  legendFormatter,
+  setActiveOptionBtn,
+  options,
+  appName,
+  showLoading,
+  hideLoading,
+  selectedOption
+} from '../utils'
+import Zoom from '../helpers/zoom_helper'
+import { animationFrame } from '../helpers/animation_helper'
+import TurboQuery from '../helpers/turbolinks_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -11,11 +24,15 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval', 'loadingData',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper', 'viewOptionControl',
       'chartWrapper', 'labels', 'chartsView', 'selectedViewOption', 'hideOption', 'sourceWrapper', 'chartSelector',
-      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView', 'hideIntervalOption', 'viewOption'
+      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView', 'hideIntervalOption', 'viewOption',
+      'zoomSelector', 'zoomOption'
     ]
   }
 
   initialize () {
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType'])
+
     this.selectedFilter = this.selectedFilterTarget.value
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.numberOfRows = this.selectedNumTarget.value
@@ -25,6 +42,13 @@ export default class extends Controller {
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType', 'page', 'view-option'])
+    this.settings.chart = this.settings.chart || 'mempool'
+
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
 
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = this.selectedCurrencyPairTarget.getAttribute('data-initial-value')
     this.selectedInterval = this.selectedIntervalTarget.value = this.selectedIntervalTarget.getAttribute('data-initial-value')
@@ -46,6 +70,7 @@ export default class extends Controller {
     show(this.hideOptionTarget)
     show(this.pageSizeWrapperTarget)
     hide(this.chartWrapperTarget)
+    hide(this.zoomSelectorTarget)
     show(this.selectedIntervalTarget.options[0])
     show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
@@ -67,6 +92,7 @@ export default class extends Controller {
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     show(this.tickWapperTarget)
+    show(this.zoomSelectorTarget)
     hide(this.hideOptionTarget)
     hide(this.messageViewTarget)
     hide(intervals[0])
@@ -234,6 +260,69 @@ export default class extends Controller {
     })
   }
 
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    // this.query.replace(this.settings)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    /* var axesData = axesToRestoreYRange(this.settings.chart,
+        this.supportedYRange, this.chartsView.yAxisRanges())
+    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
+  }
+
   // exchange chart
   plotGraph (exs) {
     var data = []
@@ -265,6 +354,8 @@ export default class extends Controller {
       _this.chartsViewTarget,
       dataSet, { ...options, ...extra }
     )
+
+    _this.validateZoom()
   }
 
   drawInitialGraph () {

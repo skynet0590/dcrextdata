@@ -1,6 +1,18 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, options } from '../utils'
+import {
+  hide,
+  show,
+  legendFormatter,
+  setActiveOptionBtn,
+  showLoading,
+  hideLoading,
+  options,
+  selectedOption
+} from '../utils'
+import TurboQuery from '../helpers/turbolinks_helper'
+import Zoom from '../helpers/zoom_helper'
+import { animationFrame } from '../helpers/animation_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -12,15 +24,26 @@ export default class extends Controller {
       'vspRowTemplate', 'currentPage', 'selectedNum', 'vspTableWrapper',
       'graphTypeWrapper', 'dataType', 'pageSizeWrapper', 'viewOptionControl',
       'vspSelectorWrapper', 'chartSourceWrapper', 'allChartSource', 'chartSource',
-      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'loadingData'
+      'chartWrapper', 'labels', 'chartsView', 'viewOption', 'loadingData',
+      'zoomSelector', 'zoomOption'
     ]
   }
 
   initialize () {
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType'])
+
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType', 'page', 'view-option'])
+    this.settings.chart = this.settings.chart || 'mempool'
+
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
 
     this.vsps = []
     this.chartSourceTargets.forEach(chartSource => {
@@ -61,6 +84,7 @@ export default class extends Controller {
     hide(this.chartWrapperTarget)
     hide(this.graphTypeWrapperTarget)
     hide(this.chartSourceWrapperTarget)
+    hide(this.zoomSelectorTarget)
     show(this.vspTableWrapperTarget)
     hide(this.messageViewTarget)
     show(this.numPageWrapperTarget)
@@ -77,6 +101,7 @@ export default class extends Controller {
     hide(this.messageViewTarget)
     hide(this.vspSelectorWrapperTarget)
     show(this.graphTypeWrapperTarget)
+    show(this.zoomSelectorTarget)
     show(this.chartWrapperTarget)
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
@@ -228,6 +253,69 @@ export default class extends Controller {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.drawInitialGraph()
     })
+  }
+
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    // this.query.replace(this.settings)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    /* var axesData = axesToRestoreYRange(this.settings.chart,
+        this.supportedYRange, this.chartsView.yAxisRanges())
+    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
   }
 
   // vsp chart
