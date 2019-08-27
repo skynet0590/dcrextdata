@@ -1,6 +1,7 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, setActiveOptionBtn, legendFormatter, showLoading, hideLoading, displayPillBtnOption, setActiveRecordSetBtn } from '../utils'
+import { hide, show, setActiveOptionBtn, showLoading, hideLoading, displayPillBtnOption, setActiveRecordSetBtn } from '../utils'
+import dompurify from 'dompurify'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -347,7 +348,7 @@ export default class extends Controller {
     let options = {
       legend: 'always',
       includeZero: true,
-      legendFormatter: legendFormatter,
+      legendFormatter: _this.legendFormatter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
       xlabel: 'Height',
@@ -358,5 +359,39 @@ export default class extends Controller {
     }
 
     _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
+  }
+
+  legendFormatter (data) {
+    let html = ''
+    const votesDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Measured as the difference between the blocks timestamp and the time the block was received by this node.'
+    const blocksDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Showing the difference in time between the block and the votes.'
+    let descriptionText = this.selectedRecordSet === 'votes' ? votesDescription : blocksDescription
+    if (data.x == null) {
+      let dashLabels = data.series.reduce((nodes, series) => {
+        return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML} ${descriptionText}</div>`
+      }, '')
+      html = `<div class="d-flex flex-wrap justify-content-center align-items-center">
+              <div class="pr-3">${this.getLabels()[0]}: N/A</div>
+              <div class="d-flex flex-wrap">${dashLabels}</div>
+            </div>`
+    } else {
+      data.series.sort((a, b) => a.y > b.y ? -1 : 1)
+
+      let yVals = data.series.reduce((nodes, series) => {
+        if (!series.isVisible) return nodes
+        let yVal = series.yHTML
+        yVal = series.y
+
+        return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML}: ${yVal} ${descriptionText}</div>`
+      }, '')
+
+      html = `<div class="d-flex flex-wrap justify-content-center align-items-center">
+                <div class="pr-3">${this.getLabels()[0]}: ${data.xHTML}</div>
+                <div class="d-flex flex-wrap"> ${yVals}</div>
+            </div>`
+    }
+
+    dompurify.sanitize(html)
+    return html
   }
 }
