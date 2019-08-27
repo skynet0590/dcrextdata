@@ -363,8 +363,8 @@ export default class extends Controller {
 
   legendFormatter (data) {
     let html = ''
-    const votesDescription = 'Measured as the difference between the blocks timestamp and the time the block was received by this node.'
-    const blocksDescription = 'Showing the difference in time between the block and the votes.'
+    const votesDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Measured as the difference between the blocks timestamp and the time the block was received by this node.'
+    const blocksDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Showing the difference in time between the block and the votes.'
     let descriptionText = this.selectedRecordSet === 'votes' ? votesDescription : blocksDescription
     if (data.x == null) {
       let dashLabels = data.series.reduce((nodes, series) => {
