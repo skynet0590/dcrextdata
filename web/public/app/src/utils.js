@@ -60,7 +60,9 @@ export function legendFormatter (data) {
       if (series.y !== undefined && (series.label.toLowerCase() === 'proportion live (%)' || series.label.toLowerCase() === 'proportion missed (%)')) {
         yVal += '%'
       }
-
+      if (yVal === undefined) {
+        yVal = 'N/A'
+      }
       return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML}: ${yVal}</div>`
     }, '')
 
