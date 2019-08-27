@@ -382,6 +382,9 @@ export default class extends Controller {
         let yVal = series.yHTML
         yVal = series.y
 
+        if (yVal === undefined) {
+          yVal = 'N/A'
+        }
         return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML}: ${yVal} ${descriptionText}</div>`
       }, '')
 
