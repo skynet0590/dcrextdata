@@ -60,6 +60,60 @@
             </div>
           </div>
 
+              <div class="chart-control-wrapper mr-2 mb-1" data-target="mempool.zoomSelector">
+                <div class="chart-control">
+                  <ul
+                          class="nav nav-pills"
+                  >
+                    <li class="nav-item">
+                      <a
+                              class="nav-link active"
+                              href="javascript:void(0);"
+                              data-target="mempool.zoomOption"
+                              data-action="click->mempool#setZoom"
+                              data-option="all"
+                      >All</a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                              class="nav-link"
+                              href="javascript:void(0);"
+                              data-target="mempool.zoomOption"
+                              data-action="click->mempool#setZoom"
+                              data-option="year"
+                      >Year</a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                              class="nav-link"
+                              href="javascript:void(0);"
+                              data-target="mempool.zoomOption"
+                              data-action="click->mempool#setZoom"
+                              data-option="month"
+                      >Month</a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                              class="nav-link"
+                              href="javascript:void(0);"
+                              data-target="mempool.zoomOption"
+                              data-action="click->mempool#setZoom"
+                              data-option="week"
+                      >Week</a>
+                    </li>
+                    <li class="nav-item">
+                      <a
+                              class="nav-link"
+                              href="javascript:void(0);"
+                              data-target="mempool.zoomOption"
+                              data-action="click->mempool#setZoom"
+                              data-option="day"
+                      >Day</a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
           <div data-target="mempool.numPageWrapper" class="control-div p-0 {{ if .mempool.chartView }}d-none{{ end }}">
             <div class="control-label">Page Size:</div>
             <select data-target="mempool.selectedNumberOfRows" data-action="change->mempool#numberOfRowsChanged" class="form-control" style="width: 70px;">
@@ -73,7 +127,7 @@
             <a href="javascript:void(0)" data-target="mempool.previousPageButton" data-action="click->mempool#loadPreviousPage" class="mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
             <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="mempool.currentPage" class="text-muted" data-current-page="{{ .mempool.currentPage }}"> {{ .mempool.currentPage }}</span> of <span data-target="mempool.totalPageCount" class="text-muted">{{ .mempool.totalPages }}</span>
-            </p>    
+            </p>
             <a href="javascript:void(0)" data-target="mempool.nextPageButton" data-action="click->mempool#loadNextPage" class="ml-2 {{ if not .mempool.nextPage }}d-none{{ end }}"> Next&gt;</a>
           </div>
 

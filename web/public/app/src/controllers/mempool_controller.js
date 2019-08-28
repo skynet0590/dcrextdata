@@ -1,6 +1,19 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { legendFormatter, barChartPlotter, hide, show, setActiveOptionBtn, options, showLoading, hideLoading } from '../utils'
+import {
+  legendFormatter,
+  barChartPlotter,
+  hide,
+  show,
+  setActiveOptionBtn,
+  options,
+  showLoading,
+  hideLoading,
+  selectedOption
+} from '../utils'
+import TurboQuery from '../helpers/turbolinks_helper'
+import Zoom from '../helpers/zoom_helper'
+import { animationFrame } from '../helpers/animation_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -11,15 +24,26 @@ export default class extends Controller {
       'totalPageCount', 'currentPage', 'btnWrapper', 'tableWrapper', 'chartsView',
       'chartWrapper', 'viewOption', 'labels', 'viewOptionControl', 'messageView',
       'chartDataTypeSelector', 'chartDataType', 'chartOptions', 'labels', 'selectedMempoolOpt',
-      'selectedNumberOfRows', 'numPageWrapper', 'loadingData'
+      'selectedNumberOfRows', 'numPageWrapper', 'loadingData',
+      'zoomSelector', 'zoomOption'
     ]
   }
 
   initialize () {
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType'])
+
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
     }
+
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType', 'page', 'view-option'])
+    this.settings.chart = this.settings.chart || 'mempool'
+
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
 
     this.dataType = this.chartDataTypeTarget.getAttribute('data-initial-value')
 
@@ -37,6 +61,7 @@ export default class extends Controller {
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
     hide(this.chartDataTypeSelectorTarget)
+    hide(this.zoomSelectorTarget)
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.btnWrapperTarget)
@@ -53,6 +78,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     show(this.chartDataTypeSelectorTarget)
+    show(this.zoomSelectorTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.fetchData(this.selectedViewOption)
@@ -99,7 +125,6 @@ export default class extends Controller {
     const _this = this
     axios.get(url).then(function (response) {
       let result = response.data
-      console.log(result)
       if (display === 'table' && result.message) {
         hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
         let messageHTML = ''
@@ -166,10 +191,72 @@ export default class extends Controller {
     })
   }
 
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    // this.query.replace(this.settings)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    /* var axesData = axesToRestoreYRange(this.settings.chart,
+        this.supportedYRange, this.chartsView.yAxisRanges())
+    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
+  }
+
   // exchange chart
   plotGraph (exs) {
     const _this = this
-    console.log(exs)
     if (exs.error) {
       this.drawInitialGraph()
     } else {
@@ -239,6 +326,8 @@ export default class extends Controller {
           }
         }
       )
+
+      _this.validateZoom()
     }
   }
 
