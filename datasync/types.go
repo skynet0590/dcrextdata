@@ -6,12 +6,17 @@ import (
 )
 
 type SyncCoordinator struct {
+	sources []string{}
 	store Store
 	syncers map[string]Syncer
 }
 
 type Syncer interface {
+	// Sync fetches infomation from the given source and stores it for its table
+	FetchSyncData(ctx context.Context, url string) (SyncResult, error)
 
+	// Store save data gotten from the sync operation
+	StoreSynceData(ctx context.Context, record interface{}) (error)
 }
 
 type Store interface {
