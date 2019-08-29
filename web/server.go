@@ -126,4 +126,6 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/votesdata", s.getVoteData)
+
+	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }
