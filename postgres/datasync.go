@@ -21,7 +21,7 @@ func (pg *PgDb) SaveSyncHistory(ctx context.Context, history datasync.History) e
 		}
 	}
 	historyModel := models.SyncHistory{
-		Date:history.Date, Source:history.Source, TableName:history.Table,
+		Date: history.Date, Source: history.Source, TableName: history.Table,
 	}
 	if err := historyModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		return err
@@ -37,7 +37,7 @@ func (pg *PgDb) FetchSyncHistory(ctx context.Context, tableName string, source s
 	if err != nil {
 		return datasync.History{}, err
 	}
-	return datasync.History{Date:history.Date, Table:history.TableName, Source:history.Source}, nil
+	return datasync.History{Date: history.Date, Table: history.TableName, Source: history.Source}, nil
 }
 
 func (pg *PgDb) TableNames() []string {

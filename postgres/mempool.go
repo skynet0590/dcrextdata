@@ -14,6 +14,18 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+func (pg PgDb) MempoolTableName() string {
+	return models.TableNames.Mempool
+}
+
+func (pg PgDb) BlockTableName() string {
+	return models.TableNames.Block
+}
+
+func (pg PgDb) VoteTableName() string {
+	return models.TableNames.Vote
+}
+
 func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) error {
 	mempoolModel := mempoolDtoToModel(mempoolDto)
 	err := mempoolModel.Insert(ctx, pg.db, boil.Infer())
@@ -25,6 +37,17 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 	//  tx count 76, total size 54205 B, fees 0.00367100
 	log.Infof("Added mempool entry at %s, tx count %2d, total size: %6d B, Total Fee: %010.8f",
 		mempoolDto.Time.Format(dateTemplate), mempoolDto.NumberOfTransactions, mempoolDto.Size, mempoolDto.TotalFee)
+	return nil
+}
+
+func (pg PgDb) StoreMempoolFromSync(ctx context.Context, mempoolDto mempool.Mempool) error {
+	mempoolModel := mempoolDtoToModel(mempoolDto)
+	err := mempoolModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return err
+		}
+	}
 	return nil
 }
 
@@ -83,6 +106,32 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 	return result, nil
 }
 
+func (pg *PgDb) FetchMempoolForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Mempool, int64, error) {
+	mempoolSlice, err := models.Mempools(
+		models.MempoolWhere.Time.GTE(date),
+		qm.OrderBy("time DESC"), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+	var result []mempool.Mempool
+	for _, m := range mempoolSlice {
+		result = append(result, mempool.Mempool{
+			TotalFee:             m.TotalFee.Float64,
+			FirstSeenTime:        m.FirstSeenTime.Time,
+			Total:                m.Total.Float64,
+			Voters:               m.Voters.Int,
+			Tickets:              m.Tickets.Int,
+			Revocations:          m.Revocations.Int,
+			Time:                 m.Time,
+			Size:                 int32(m.Size.Int),
+			NumberOfTransactions: m.NumberOfTransactions.Int,
+		})
+	}
+	totalCount, err := models.Mempools(models.MempoolWhere.Time.GTE(date)).Count(ctx, pg.db)
+
+	return result, totalCount, nil
+}
+
 func (pg *PgDb) MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error) {
 	mempoolChartSlice, err := models.Mempools(qm.Select(fmt.Sprintf("%s, time", chartFilter)), qm.OrderBy("time")).All(ctx, pg.db)
 	if err != nil {
@@ -119,6 +168,17 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
 
 	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
 		block.BlockReceiveTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash)-23:])
+	return nil
+}
+
+func (pg *PgDb) SaveBlockFromSync(ctx context.Context, block mempool.Block) error {
+	blockModel := blockDtoToModel(block)
+	err := blockModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return err
+		}
+	}
 	return nil
 }
 
@@ -196,10 +256,32 @@ func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error)
 	return block, nil
 }
 
+func (pg *PgDb) FetchBlockForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Block, int64, error) {
+	blockSlice, err := models.Blocks(
+		models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date)),
+		qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)),
+		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+	var result []mempool.Block
+	for _, block := range blockSlice {
+		result = append(result, mempool.Block{
+			BlockHash:         block.Hash.String,
+			BlockHeight:       uint32(block.Height),
+			BlockInternalTime: block.InternalTimestamp.Time,
+			BlockReceiveTime:  block.ReceiveTime.Time,
+		})
+	}
+	totalCount, err := models.Blocks(models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date))).Count(ctx, pg.db)
+
+	return result, totalCount, nil
+}
+
 func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	voteModel := models.Vote{
 		Hash:              vote.Hash,
-		VotingOn:          null.Int64From(int64(vote.VotingOn)),
+		VotingOn:          null.Int64From(vote.VotingOn),
 		BlockHash:         null.StringFrom(vote.BlockHash),
 		ReceiveTime:       null.TimeFrom(vote.ReceiveTime),
 		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
@@ -224,6 +306,27 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	log.Infof("New vote received at %s for %d, Validator Id %d, Hash ...%s",
 		vote.ReceiveTime.Format(dateMiliTemplate), vote.VotingOn, vote.ValidatorId, vote.Hash[len(vote.Hash)-23:])
 	return nil
+}
+
+func (pg *PgDb) SaveVoteFromSync(ctx context.Context, vote mempool.Vote) error {
+	voteModel := models.Vote{
+		Hash:              vote.Hash,
+		VotingOn:          null.Int64From(vote.VotingOn),
+		BlockHash:         null.StringFrom(vote.BlockHash),
+		ReceiveTime:       null.TimeFrom(vote.ReceiveTime),
+		BlockReceiveTime:  null.TimeFrom(vote.BlockReceiveTime),
+		TargetedBlockTime: null.TimeFrom(vote.TargetedBlockTime),
+		ValidatorID:       null.IntFrom(vote.ValidatorId),
+		Validity:          null.StringFrom(vote.Validity),
+	}
+
+	err := voteModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return nil
+		}
+	}
+	return err
 }
 
 func (pg *PgDb) Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error) {
@@ -278,6 +381,32 @@ func (pg *PgDb) voteModelToDto(vote *models.Vote) mempool.VoteDto {
 
 func (pg *PgDb) VotesCount(ctx context.Context) (int64, error) {
 	return models.Votes().Count(ctx, pg.db)
+}
+
+func (pg *PgDb) FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Vote, int64, error) {
+	voteSlices, err := models.Votes(
+		models.VoteWhere.ReceiveTime.GTE(null.TimeFrom(date)),
+		qm.OrderBy(fmt.Sprintf("%s DESC", models.VoteColumns.ReceiveTime)),
+		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+	var result []mempool.Vote
+	for _, vote := range voteSlices {
+		result = append(result, mempool.Vote{
+			Hash:              vote.Hash,
+			ReceiveTime:       vote.ReceiveTime.Time,
+			TargetedBlockTime: vote.TargetedBlockTime.Time,
+			BlockReceiveTime:  vote.BlockReceiveTime.Time,
+			VotingOn:          vote.VotingOn.Int64,
+			BlockHash:         vote.BlockHash.String,
+			ValidatorId:       vote.ValidatorID.Int,
+			Validity:          vote.Validity.String,
+		})
+	}
+	totalCount, err := models.Votes(models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date))).Count(ctx, pg.db)
+
+	return result, totalCount, nil
 }
 
 func (pg *PgDb) PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error) {

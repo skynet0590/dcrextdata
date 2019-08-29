@@ -11,11 +11,11 @@ type SyncCoordinator struct {
 	sources      []string
 }
 
-type Syncer interface {
-	Collect(ctx context.Context, urs string) (*Result, error)
-	Retrieve(ctx context.Context, date time.Time, skip, take int) (*Result, error)
-	Append(ctx context.Context, result Result) error
-} 
+type Syncer struct {
+	Collect  func(ctx context.Context, url string) (*Result, error)
+	Retrieve func(ctx context.Context, date time.Time, skip, take int) (*Result, error)
+	Append   func(ctx context.Context, data interface{})
+}
 
 type HistoryStore interface {
 	TableNames() []string
@@ -40,5 +40,5 @@ type Result struct {
 	Success    bool
 	Message    string
 	Record     interface{}
-	TotalCount int
+	TotalCount int64
 }

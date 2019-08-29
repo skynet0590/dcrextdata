@@ -12,7 +12,7 @@ var coordinator *SyncCoordinator
 
 func NewCoordinator(store HistoryStore, sources []string) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
-		sources:sources, historyStore:store, syncers: map[string]Syncer{},
+		sources: sources, historyStore: store, syncers: map[string]Syncer{},
 	}
 	return coordinator
 }
@@ -21,7 +21,7 @@ func (s *SyncCoordinator) AddSyncer(tableName string, syncer Syncer) {
 	s.syncers[tableName] = syncer
 }
 
-func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool)  {
+func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 	syncer, found := s.syncers[tableName]
 	return syncer, found
 }
@@ -40,12 +40,12 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName string, syncer Syncer) error {
 	syncHistory, err := s.historyStore.FetchSyncHistory(ctx, tableName, source)
 	if err != nil {
-		return fmt.Errorf("Error in fetching sync history, %s", err.Error())
+		return fmt.Errorf("error in fetching sync history, %s", err.Error())
 
 	}
 	startTime := time.Now()
 	skip := 0
-	take :=  100
+	take := 100
 	for {
 		url := fmt.Sprint("%s?date=%s&skip=%d&take=%d", source, syncHistory.Date.Format(time.RFC3339Nano), 0, 10)
 		result, err := syncer.Collect(ctx, url)
@@ -57,13 +57,10 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 			return fmt.Errorf("sync error, %s", result.Message)
 		}
 
-		err = syncer.Append(ctx, *result)
-		if err != nil {
-			return err
-		}
+		syncer.Append(ctx, result.Record)
 
 		skip += take
-		if result.TotalCount <= skip {
+		if result.TotalCount <= int64(skip) {
 			duration := time.Now().Sub(startTime).Seconds()
 			log.Infof("Synced %d %s records from %s in %d seconds", result.TotalCount, tableName, source, math.Abs(duration))
 			return nil

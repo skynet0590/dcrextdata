@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"math"
+	"net/http"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
 func NewCollector(interval float64, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
@@ -253,4 +255,100 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (c *Collector) RegisterMempoolSyncer(syncCoordinator datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(c.dataStore.MempoolTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Record = []Mempool{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			mempoolDtos, totalCount, err := c.dataStore.FetchMempoolForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Record = mempoolDtos
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			mempoolDtos := data.([]Mempool)
+			for _, mempoolDto := range mempoolDtos {
+				err := c.dataStore.StoreMempoolFromSync(ctx, mempoolDto)
+				if err != nil {
+					log.Errorf("Error while appending mempool synced data, %s", err.Error())
+				}
+			}
+		},
+	})
+}
+
+func (c *Collector) RegisterBlockSyncer(syncCoordinator datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(c.dataStore.BlockTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Record = []Block{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			blocks, totalCount, err := c.dataStore.FetchBlockForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Record = blocks
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			blocks := data.([]Block)
+			for _, block := range blocks {
+				err := c.dataStore.SaveBlockFromSync(ctx, block)
+				if err != nil {
+					log.Errorf("Error while appending block synced data, %s", err.Error())
+				}
+			}
+		},
+	})
+}
+
+func (c *Collector) RegisterVoteSyncer(syncCoordinator datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(c.dataStore.VoteTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Record = []Vote{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			votes, totalCount, err := c.dataStore.FetchVoteForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Record = votes
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			votes := data.([]Vote)
+			for _, vote := range votes {
+				err := c.dataStore.SaveVoteFromSync(ctx, vote)
+				if err != nil {
+					log.Errorf("Error while appending vote synced data, %s", err.Error())
+				}
+			}
+		},
+	})
 }

@@ -47,7 +47,7 @@ var (
 	powLog     = backendLog.Logger("POWL")
 	mempoolLog = backendLog.Logger("MEMP")
 	webLog     = backendLog.Logger("WEBL")
-	syncLog     = backendLog.Logger("SYNC")
+	syncLog    = backendLog.Logger("SYNC")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
