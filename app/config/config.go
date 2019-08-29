@@ -96,6 +96,10 @@ type ConfigFileOptions struct {
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
 	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
+
+	// sync
+	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`
+	SyncSources []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu

@@ -2,13 +2,19 @@ package datasync
 
 import (
 	"context"
+	"errors"
 	"time"
+)
+
+var (
+	ErrSyncDisabled = errors.New("data sharing is disabled on this instance")
 )
 
 type SyncCoordinator struct {
 	syncers      map[string]Syncer
 	historyStore HistoryStore
 	sources      []string
+	isEnabled	 bool
 }
 
 type Syncer struct {

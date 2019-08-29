@@ -21,6 +21,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
@@ -134,13 +135,14 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
+	if err = createTablesAndIndex(db); err != nil {
+		return err
+	}
+
+	syncCoordinator := datasync.NewCoordinator(db, cfg.SyncSources, !cfg.DisableSync)
 	// http server method
 	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
-	}
-
-	if err = createTablesAndIndex(db); err != nil {
-		return err
 	}
 
 	var dcrClient *rpcclient.Client
@@ -163,7 +165,7 @@ func _main(ctx context.Context) error {
 		}
 
 		collector = mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
-
+		collector.RegisterSyncer(syncCoordinator)
 		dcrClient, err = rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
@@ -221,6 +223,8 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
+
+	go syncCoordinator.StartSyncing(ctx)
 
 	// wait for shutdown signal
 	<-ctx.Done()

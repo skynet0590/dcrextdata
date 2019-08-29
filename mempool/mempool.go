@@ -257,7 +257,13 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 	}
 }
 
-func (c *Collector) RegisterMempoolSyncer(syncCoordinator datasync.SyncCoordinator) {
+func (c *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator){
+	c.registerBlockSyncer(syncCoordinator)
+	c.registerMempoolSyncer(syncCoordinator)
+	c.registerVoteSyncer(syncCoordinator)
+}
+
+func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.MempoolTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
@@ -289,7 +295,7 @@ func (c *Collector) RegisterMempoolSyncer(syncCoordinator datasync.SyncCoordinat
 	})
 }
 
-func (c *Collector) RegisterBlockSyncer(syncCoordinator datasync.SyncCoordinator) {
+func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.BlockTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
@@ -321,7 +327,7 @@ func (c *Collector) RegisterBlockSyncer(syncCoordinator datasync.SyncCoordinator
 	})
 }
 
-func (c *Collector) RegisterVoteSyncer(syncCoordinator datasync.SyncCoordinator) {
+func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.VoteTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)

@@ -10,9 +10,9 @@ import (
 
 var coordinator *SyncCoordinator
 
-func NewCoordinator(store HistoryStore, sources []string) *SyncCoordinator {
+func NewCoordinator(store HistoryStore, sources []string, isEnabled bool) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
-		sources: sources, historyStore: store, syncers: map[string]Syncer{},
+		sources: sources, historyStore: store, syncers: map[string]Syncer{}, isEnabled: isEnabled,
 	}
 	return coordinator
 }
@@ -50,6 +50,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 		url := fmt.Sprint("%s?date=%s&skip=%d&take=%d", source, syncHistory.Date.Format(time.RFC3339Nano), 0, 10)
 		result, err := syncer.Collect(ctx, url)
 		if err != nil {
+			// todo: check if this is a sync disable error before stopping
 			return err
 		}
 
@@ -72,6 +73,11 @@ func Retrieve(ctx context.Context, tableName string, date time.Time, skip, take 
 	if coordinator == nil {
 		return nil, errors.New("syncer not initialized")
 	}
+
+	if !coordinator.isEnabled {
+		return nil, ErrSyncDisabled
+	}
+
 	syncer, found := coordinator.syncers[tableName]
 	if !found {
 		return nil, errors.New("syncer not found for " + tableName)
