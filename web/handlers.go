@@ -1202,16 +1202,16 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err = datasync.Retrieve(req.Context(), dataType, date, skip, take)
+	response, err := datasync.Retrieve(req.Context(), dataType, date, skip, take)
 
 	if err != nil {
-		result = &datasync.Result{
-			Success:    false,
-			Message:    err.Error(),
-			Record:     nil,
-			TotalCount: 0,
-		}
+		result.Message = err.Error()
+		return
 	}
+
+	result.Success = response.Success
+	result.Records = response.Records
+	result.TotalCount = response.TotalCount
 
 	return
 }

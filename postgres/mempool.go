@@ -404,7 +404,7 @@ func (pg *PgDb) FetchVoteForSync(ctx context.Context, date time.Time, offtset in
 			Validity:          vote.Validity.String,
 		})
 	}
-	totalCount, err := models.Votes(models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date))).Count(ctx, pg.db)
+	totalCount, err := models.Votes(models.VoteWhere.ReceiveTime.GTE(null.TimeFrom(date))).Count(ctx, pg.db)
 
 	return result, totalCount, nil
 }

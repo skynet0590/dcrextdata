@@ -27,6 +27,7 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 }
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
+	log.Info("Starting al registered sync collectors")
 	for _, source := range s.sources {
 		for tableName, syncer := range s.syncers {
 			err := s.sync(ctx, source, tableName, syncer)
@@ -58,7 +59,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 			return fmt.Errorf("sync error, %s", result.Message)
 		}
 
-		syncer.Append(ctx, result.Record)
+		syncer.Append(ctx, result.Records)
 
 		skip += take
 		if result.TotalCount <= int64(skip) {

@@ -43,8 +43,8 @@ type Request struct {
 }
 
 type Result struct {
-	Success    bool
-	Message    string
-	Record     interface{}
-	TotalCount int64
+	Success    bool        `json:"success"`
+	Message    string      `json:"message,omitempty"`
+	Records    interface{} `json:"records,omitempty"`
+	TotalCount int64       `json:"total_count,omitempty"`
 }

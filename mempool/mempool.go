@@ -7,6 +7,7 @@ package mempool
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"math"
 	"net/http"
 	"sync"
@@ -267,7 +268,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 	syncCoordinator.AddSyncer(c.dataStore.MempoolTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			result.Record = []Mempool{}
+			result.Records = []Mempool{}
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
@@ -278,7 +279,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 				result.Message = err.Error()
 				return
 			}
-			result.Record = mempoolDtos
+			result.Records = mempoolDtos
 			result.TotalCount = totalCount
 			result.Success = true
 			return
@@ -299,7 +300,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 	syncCoordinator.AddSyncer(c.dataStore.BlockTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			result.Record = []Block{}
+			result.Records = []Block{}
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
@@ -310,7 +311,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 				result.Message = err.Error()
 				return
 			}
-			result.Record = blocks
+			result.Records = blocks
 			result.TotalCount = totalCount
 			result.Success = true
 			return
@@ -331,7 +332,7 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 	syncCoordinator.AddSyncer(c.dataStore.VoteTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			result.Record = []Vote{}
+			result.Records = []Vote{}
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
@@ -342,7 +343,8 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 				result.Message = err.Error()
 				return
 			}
-			result.Record = votes
+			fmt.Println("Total count", totalCount)
+			result.Records = votes
 			result.TotalCount = totalCount
 			result.Success = true
 			return
