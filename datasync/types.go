@@ -6,43 +6,39 @@ import (
 )
 
 type SyncCoordinator struct {
-	sources []string{}
-	store Store
-	syncers map[string]Syncer
+	syncers      map[string]Syncer
+	historyStore HistoryStore
+	sources      []string
 }
 
 type Syncer interface {
-	// Sync fetches infomation from the given source and stores it for its table
-	FetchSyncData(ctx context.Context, url string) (SyncResult, error)
+	Collect(ctx context.Context, urs string) (*Result, error)
+	Retrieve(ctx context.Context, date time.Time, skip, take int) (*Result, error)
+	Append(ctx context.Context, result Result) error
+} 
 
-	// Store save data gotten from the sync operation
-	StoreSynceData(ctx context.Context, record interface{}) (error)
-}
-
-type Store interface {
+type HistoryStore interface {
 	TableNames() []string
-	SaveSyncHistory(ctx context.Context, history SyncHistory) error
-	FetchSyncHistory(ctx context.Context, tableName string) (SyncHistory, error)
-
-	StoreSyncResult(ctx context.Context, result SyncResult) error
-	FetchSyncResult(ctx context.Context, request SyncRequest) (SyncResult, error)
+	SaveSyncHistory(ctx context.Context, history History) error
+	FetchSyncHistory(ctx context.Context, tableName string, source string) (History, error)
 }
 
-type SyncHistory struct {
+type History struct {
 	Source string
 	Table  string
 	Date   time.Time
 }
 
-type SyncRequest struct {
+type Request struct {
 	Table        string
 	Date         time.Time
 	MaxSkipCount int
 	MaxTakeCount int
 }
 
-type SyncResult struct {
-	Success bool
-	Record interface{}
+type Result struct {
+	Success    bool
+	Message    string
+	Record     interface{}
 	TotalCount int
 }
