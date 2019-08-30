@@ -42,6 +42,15 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 			if err != nil {
 				log.Error(err)
 			}
+			err = s.historyStore.SaveSyncHistory(ctx, History{
+				Source: source,
+				Table:  tableName,
+				Date:   time.Now(),
+			})
+
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 }
@@ -65,6 +74,10 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 
 		if !result.Success {
 			return fmt.Errorf("sync error, %s", result.Message)
+		}
+
+		if result.Records == nil {
+			return nil
 		}
 
 		syncer.Append(ctx, result.Records)
