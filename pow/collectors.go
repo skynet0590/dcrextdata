@@ -11,6 +11,7 @@ import (
 
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
 var (
@@ -23,8 +24,11 @@ var (
 )
 
 type PowDataStore interface {
+	PowTableName() string
 	AddPowData(context.Context, []PowData) error
+	AddPowDataFromSync(ctx context.Context, data PowData) error
 	LastPowEntryTime(source string) (time int64)
+	FetchPowDataForSync(ctx context.Context, date time.Time, skip, take int) ([]PowData, int64, error)
 }
 
 type Collector struct {
@@ -137,4 +141,36 @@ func (pc *Collector) Collect(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(pc.store.PowTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []PowData{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = powDatum
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			powDatum := data.([]PowData)
+			for _, powData := range powDatum {
+				err := pc.store.AddPowDataFromSync(ctx, powData)
+				if err != nil {
+					log.Errorf("Error while appending PoW synced data, %s", err.Error())
+				}
+			}
+		},
+	})
 }

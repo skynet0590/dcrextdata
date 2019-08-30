@@ -15,6 +15,10 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
+func (pg *PgDb) PowTableName() string {
+	return models.TableNames.PowData
+}
+
 func (pg *PgDb) LastPowEntryTime(source string) (time int64) {
 	var rows *sql.Row
 
@@ -65,6 +69,22 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 	return nil
 }
 
+func (pg *PgDb) AddPowDataFromSync(ctx context.Context, data pow.PowData) error {
+	powModel, err := responseToPowModel(data)
+	if err != nil {
+		return err
+	}
+
+	err = powModel.Insert(ctx, pg.db, boil.Infer())
+	if err != nil {
+		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return err
+		}
+	}
+
+	return err
+}
+
 func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	return models.PowDatum{
 		BTCPrice:     null.StringFrom(fmt.Sprint(data.BtcPrice)),
@@ -76,7 +96,6 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	}, nil
 }
 
-// todo impliment sorting for PoW data as it is currently been sorted by time
 func (pg *PgDb) FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error) {
 	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	if err != nil {
@@ -91,6 +110,34 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowD
 	var result []pow.PowDataDto
 	for _, item := range powDatum {
 		dto, err := pg.powDataModelToDto(item)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		result = append(result, dto)
+	}
+
+	return result, powCount, nil
+}
+
+// FetchPowDataForSync returns PoW data for the sync operation
+func (pg *PgDb) FetchPowDataForSync(ctx context.Context, date time.Time, skip, take int) ([]pow.PowData, int64, error) {
+	powDatum, err := models.PowData(
+		models.PowDatumWhere.Time.GTE(int(date.Unix())),
+		qm.Offset(skip), qm.Limit(take),
+		qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	powCount, err := models.PowData().Count(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var result []pow.PowData
+	for _, item := range powDatum {
+		dto, err := pg.powDataModelToDomainObj(item)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -217,6 +264,32 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 	return pow.PowDataDto{
 		Time:           time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
 		PoolHashrateTh: fmt.Sprintf("%.0f", poolHashRate),
+		Workers:        int64(item.Workers.Int),
+		Source:         item.Source,
+		CoinPrice:      coinPrice,
+		BtcPrice:       bTCPrice,
+	}, nil
+}
+
+func (pg *PgDb) powDataModelToDomainObj(item *models.PowDatum) (dto pow.PowData, err error) {
+	poolHashRate, err := strconv.ParseFloat(item.PoolHashrate.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	coinPrice, err := strconv.ParseFloat(item.CoinPrice.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	bTCPrice, err := strconv.ParseFloat(item.BTCPrice.String, 64)
+	if err != nil {
+		return dto, err
+	}
+
+	return pow.PowData{
+		Time:           int64(item.Time),
+		PoolHashrate: poolHashRate,
 		Workers:        int64(item.Workers.Int),
 		Source:         item.Source,
 		CoinPrice:      coinPrice,

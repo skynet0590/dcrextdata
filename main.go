@@ -220,6 +220,7 @@ func _main(ctx context.Context) error {
 	if !cfg.DisablePow {
 		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 		if err == nil {
+			powCollector.RegisterSyncer(syncCoordinator)
 			go powCollector.Run(ctx)
 
 		} else {

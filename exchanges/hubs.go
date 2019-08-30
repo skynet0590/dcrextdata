@@ -255,7 +255,7 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			for _, exchange := range exchangeData {
 				err := hub.store.SaveExchangeFromSync(ctx, exchange)
 				if err != nil {
-					log.Errorf("Error while appending mempool synced data, %s", err.Error())
+					log.Errorf("Error while appending exchange synced data, %s", err.Error())
 				}
 			}
 		},
