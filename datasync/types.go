@@ -12,6 +12,7 @@ var (
 
 type SyncCoordinator struct {
 	syncers      map[string]Syncer
+	syncersKeys map[int]string
 	historyStore HistoryStore
 	sources      []string
 	isEnabled    bool

@@ -1186,11 +1186,13 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	dataType = strings.Replace(dataType, "-", "_", -1)
 
 	req.ParseForm()
-	date, err := time.Parse(time.RFC3339Nano, req.FormValue("date"))
+	dateUnix, err := strconv.ParseInt(req.FormValue("date"), 10, 64)
 	if err != nil {
 		result.Message = "Invalid date"
 		return
 	}
+
+	date := time.Unix(dateUnix, 0)
 
 	skip, err := strconv.Atoi(req.FormValue("skip"))
 	if err != nil {

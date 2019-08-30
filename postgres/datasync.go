@@ -42,11 +42,15 @@ func (pg *PgDb) FetchSyncHistory(ctx context.Context, tableName string, source s
 			return datasync.History{}, err
 		}
 
+		firstDate, err := time.Parse(time.RFC3339Nano, "2019-01-30T13:11:56.6772751+01:00")
+		if err != nil {
+			return datasync.History{}, err
+		}
 		history = &models.SyncHistory{
 			ID:        0,
 			TableName: tableName,
 			Source:    source,
-			Date:      time.Date(2019, 2, 1, 0, 0, 0, 0, nil),
+			Date:      firstDate,
 		}
 	}
 	return datasync.History{Date: history.Date, Table: history.TableName, Source: history.Source}, nil

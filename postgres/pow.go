@@ -77,8 +77,8 @@ func (pg *PgDb) AddPowDataFromSync(ctx context.Context, data pow.PowData) error 
 
 	err = powModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
-		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-			return err
+		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
+			return nil
 		}
 	}
 

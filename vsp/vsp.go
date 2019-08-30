@@ -170,8 +170,19 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			vspSources := data.([]VSPDto)
-			for _, vspSource := range vspSources {
+			mappedData := data.([]interface{})
+			var vspDtos []VSPDto
+			for _, item := range mappedData {
+				var vspDto VSPDto
+				err := datasync.DecodeSyncObj(item, &vspDto)
+				if err != nil {
+					log.Errorf("Error in decoding the received VSP sources, %s", err.Error())
+					return
+				}
+				vspDtos = append(vspDtos, vspDto)
+			}
+
+			for _, vspSource := range vspDtos {
 				err := vsp.dataStore.AddVspSourceFromSync(ctx, vspSource)
 				if err != nil {
 					log.Errorf("Error while appending vsp source synced data, %s", err.Error())
@@ -201,7 +212,18 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			vspTicks := data.([]VSPTickSyncDto)
+			mappedData := data.([]interface{})
+			var vspTicks []VSPTickSyncDto
+			for _, item := range mappedData {
+				var tickSyncDto VSPTickSyncDto
+				err := datasync.DecodeSyncObj(item, &tickSyncDto)
+				if err != nil {
+					log.Errorf("Error in decoding the received VSP tick, %s", err.Error())
+					return
+				}
+				vspTicks = append(vspTicks, tickSyncDto)
+			}
+
 			for _, tick := range vspTicks {
 				err := vsp.dataStore.AddVspTicksFromSync(ctx, tick)
 				if err != nil {

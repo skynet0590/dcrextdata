@@ -251,7 +251,18 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			exchangeData := data.([]ticks.ExchangeData)
+			mappedData := data.([]interface{})
+			var exchangeData []ticks.ExchangeData
+			for _, item := range mappedData {
+				var exchane ticks.ExchangeData
+				err := datasync.DecodeSyncObj(item, &exchane)
+				if err != nil {
+					log.Errorf("Error in decoding the received exchange data, %s", err.Error())
+					return
+				}
+				exchangeData = append(exchangeData, exchane)
+			}
+
 			for _, exchange := range exchangeData {
 				err := hub.store.SaveExchangeFromSync(ctx, exchange)
 				if err != nil {
@@ -283,7 +294,18 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			tickDtos := data.([]ticks.TickSyncDto)
+			mappedData := data.([]interface{})
+			var tickDtos []ticks.TickSyncDto
+			for _, item := range mappedData {
+				var tickDto ticks.TickSyncDto
+				err := datasync.DecodeSyncObj(item, &tickDto)
+				if err != nil {
+					log.Errorf("Error in decoding the received exchange tick, %s", err.Error())
+					return
+				}
+				tickDtos = append(tickDtos, tickDto)
+			}
+
 			for _, tickDto := range tickDtos {
 				err := hub.store.SaveExchangeTickFromSync(ctx, tickDto)
 				if err != nil {

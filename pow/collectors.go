@@ -164,8 +164,19 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			powDatum := data.([]PowData)
-			for _, powData := range powDatum {
+			mappedData := data.([]interface{})
+			var powDataSlice []PowData
+			for _, item := range mappedData {
+				var powData PowData
+				err := datasync.DecodeSyncObj(item, &powData)
+				if err != nil {
+					log.Errorf("Error in decoding the received PoW data, %s", err.Error())
+					return
+				}
+				powDataSlice = append(powDataSlice, powData)
+			}
+
+			for _, powData := range powDataSlice {
 				err := pc.store.AddPowDataFromSync(ctx, powData)
 				if err != nil {
 					log.Errorf("Error while appending PoW synced data, %s", err.Error())

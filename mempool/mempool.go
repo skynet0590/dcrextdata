@@ -285,7 +285,18 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			mempoolDtos := data.([]Mempool)
+			mappedData := data.([]interface{})
+			var mempoolDtos []Mempool
+			for _, item := range mappedData {
+				var mempoolData Mempool
+				err := datasync.DecodeSyncObj(item, &mempoolData)
+				if err != nil {
+					log.Errorf("Error in decoding the received mempool data, %s", err.Error())
+					return
+				}
+				mempoolDtos = append(mempoolDtos, mempoolData)
+			}
+
 			for _, mempoolDto := range mempoolDtos {
 				err := c.dataStore.StoreMempoolFromSync(ctx, mempoolDto)
 				if err != nil {
@@ -317,7 +328,18 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 			return
 		},
 		Append: func(ctx context.Context, data interface{}) {
-			blocks := data.([]Block)
+			mappedData := data.([]interface{})
+			var blocks []Block
+			for _, item := range mappedData {
+				var block Block
+				err := datasync.DecodeSyncObj(item, &block)
+				if err != nil {
+					log.Errorf("Error in decoding the received block data, %s", err.Error())
+					return
+				}
+				blocks = append(blocks, block)
+			}
+
 			for _, block := range blocks {
 				err := c.dataStore.SaveBlockFromSync(ctx, block)
 				if err != nil {
@@ -349,8 +371,19 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
-			votes := data.([]Vote)
+		Append: func(ctx context.Context, data interface{}) {//todo: should return an error
+			mappedData := data.([]interface{})
+			var votes []Vote
+			for _, item := range mappedData {
+				var vote Vote
+				err := datasync.DecodeSyncObj(item, &vote)
+				if err != nil {
+					log.Errorf("Error in decoding the received vote data, %s", err.Error())
+					return
+				}
+				votes = append(votes, vote)
+			}
+
 			for _, vote := range votes {
 				err := c.dataStore.SaveVoteFromSync(ctx, vote)
 				if err != nil {

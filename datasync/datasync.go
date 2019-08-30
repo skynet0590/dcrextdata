@@ -2,6 +2,7 @@ package datasync
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -12,13 +13,14 @@ var coordinator *SyncCoordinator
 
 func NewCoordinator(store HistoryStore, sources []string, isEnabled bool) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
-		sources: sources, historyStore: store, syncers: map[string]Syncer{}, isEnabled: isEnabled,
+		sources: sources, historyStore: store, syncers: map[string]Syncer{}, isEnabled: isEnabled, syncersKeys: map[int]string{},
 	}
 	return coordinator
 }
 
 func (s *SyncCoordinator) AddSyncer(tableName string, syncer Syncer) {
 	s.syncers[tableName] = syncer
+	s.syncersKeys[len(s.syncersKeys)] = tableName
 }
 
 func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
@@ -27,9 +29,15 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 }
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
-	log.Info("Starting al registered sync collectors")
+	log.Info("Starting all registered sync collectors")
 	for _, source := range s.sources {
-		for tableName, syncer := range s.syncers {
+		for i := 0; i <= len(s.syncersKeys); i++ {
+			tableName := s.syncersKeys[i]
+			syncer, found := s.syncers[tableName]
+			if !found {
+				return
+			}
+
 			err := s.sync(ctx, source, tableName, syncer)
 			if err != nil {
 				log.Error(err)
@@ -48,11 +56,11 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 	skip := 0
 	take := 100
 	for {
-		url := fmt.Sprint("%s?date=%s&skip=%d&take=%d", source, syncHistory.Date.Format(time.RFC3339Nano), 0, 10)
+		url := fmt.Sprintf("%s/api/sync/%s?date=%d&skip=%d&take=%d", source, tableName, syncHistory.Date.Unix(), skip, take)
 		result, err := syncer.Collect(ctx, url)
 		if err != nil {
 			// todo: check if this is a sync disable error before stopping
-			return err
+			return fmt.Errorf("error in fetching data for %s, %s", url, err.Error())
 		}
 
 		if !result.Success {
@@ -64,7 +72,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 		skip += take
 		if result.TotalCount <= int64(skip) {
 			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s in %d seconds", result.TotalCount, tableName, source, math.Abs(duration))
+			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source, math.Abs(duration))
 			return nil
 		}
 	}
@@ -85,4 +93,13 @@ func Retrieve(ctx context.Context, tableName string, date time.Time, skip, take 
 	}
 
 	return syncer.Retrieve(ctx, date, skip, take)
+}
+
+func DecodeSyncObj(obj interface{}, receiver interface{}) (error) {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(b, receiver)
+	return  err
 }
