@@ -288,12 +288,12 @@ func (pg *PgDb) powDataModelToDomainObj(item *models.PowDatum) (dto pow.PowData,
 	}
 
 	return pow.PowData{
-		Time:           int64(item.Time),
+		Time:         int64(item.Time),
 		PoolHashrate: poolHashRate,
-		Workers:        int64(item.Workers.Int),
-		Source:         item.Source,
-		CoinPrice:      coinPrice,
-		BtcPrice:       bTCPrice,
+		Workers:      int64(item.Workers.Int),
+		Source:       item.Source,
+		CoinPrice:    coinPrice,
+		BtcPrice:     bTCPrice,
 	}, nil
 }
 

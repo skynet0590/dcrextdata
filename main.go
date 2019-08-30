@@ -201,6 +201,7 @@ func _main(ctx context.Context) error {
 	if !cfg.DisableVSP {
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
+			vspCollector.RegisterSyncer(syncCoordinator)
 			go vspCollector.Run(ctx)
 		} else {
 			log.Error(err)

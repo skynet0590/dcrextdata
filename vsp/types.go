@@ -38,6 +38,20 @@ type VSPTickDto struct {
 	Time             string  `json:"time"`
 }
 
+type VSPTickSyncDto struct {
+	VSP              string    `json:"vsp"`
+	Immature         int       `json:"immature"`
+	Live             int       `json:"live"`
+	Voted            int       `json:"voted"`
+	Missed           int       `json:"missed"`
+	PoolFees         float64   `json:"pool_fees"`
+	ProportionLive   float64   `json:"proportion_live"`
+	ProportionMissed float64   `json:"proportion_missed"`
+	UserCount        int       `json:"user_count"`
+	UsersActive      int       `json:"users_active"`
+	Time             time.Time `json:"time"`
+}
+
 type ResposeData struct {
 	APIEnabled           bool    `json:"APIEnabled"`
 	APIVersionsSupported []int64 `json:"APIVersionsSupported"`
@@ -57,8 +71,16 @@ type ResposeData struct {
 }
 
 type DataStore interface {
+	VspTableName() string
+	VspTickTableName() string
 	StoreVSPs(context.Context, Response) (int, []error)
 	LastVspTickEntryTime() (time time.Time)
+
+	AddVspSourceFromSync(ctx context.Context, vspDto VSPDto) error
+	FetchVspSourcesForSync(ctx context.Context, date time.Time, skip, take int) ([]VSPDto, int64, error)
+
+	AddVspTicksFromSync(ctx context.Context, tick VSPTickSyncDto) error
+	FetchVspTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]VSPTickSyncDto, int64, error)
 }
 
 type Collector struct {

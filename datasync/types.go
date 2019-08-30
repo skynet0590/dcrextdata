@@ -14,7 +14,7 @@ type SyncCoordinator struct {
 	syncers      map[string]Syncer
 	historyStore HistoryStore
 	sources      []string
-	isEnabled	 bool
+	isEnabled    bool
 }
 
 type Syncer struct {

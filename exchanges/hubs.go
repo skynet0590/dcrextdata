@@ -225,7 +225,7 @@ func (hub *TickHub) Run(ctx context.Context) {
 	}()
 }
 
-func (hub *TickHub) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator){
+func (hub *TickHub) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	hub.registerExchangeSyncer(syncCoordinator)
 	hub.registerExchangeTickSyncer(syncCoordinator)
 }

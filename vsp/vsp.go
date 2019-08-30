@@ -13,6 +13,7 @@ import (
 
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
 const (
@@ -141,4 +142,72 @@ func (vsp *Collector) collectAndStore(ctx context.Context) error {
 
 	log.Infof("Saved ticks for %d VSPs from %s", numberStored, requestURL)
 	return nil
+}
+
+func (vsp *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	vsp.registerVspSyncer(syncCoordinator)
+	vsp.registerVspTickSyncer(syncCoordinator)
+}
+
+func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(vsp.dataStore.VspTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []VSPDto{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			vspSources, totalCount, err := vsp.dataStore.FetchVspSourcesForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = vspSources
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			vspSources := data.([]VSPDto)
+			for _, vspSource := range vspSources {
+				err := vsp.dataStore.AddVspSourceFromSync(ctx, vspSource)
+				if err != nil {
+					log.Errorf("Error while appending vsp source synced data, %s", err.Error())
+				}
+			}
+		},
+	})
+}
+func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(vsp.dataStore.VspTickTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []VSPTickSyncDto{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			vspTicks, totalCount, err := vsp.dataStore.FetchVspTicksForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = vspTicks
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			vspTicks := data.([]VSPTickSyncDto)
+			for _, tick := range vspTicks {
+				err := vsp.dataStore.AddVspTicksFromSync(ctx, tick)
+				if err != nil {
+					log.Errorf("Error while appending vsp tick synced data, %s", err.Error())
+				}
+			}
+		},
+	})
 }

@@ -258,7 +258,7 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 	}
 }
 
-func (c *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator){
+func (c *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	c.registerBlockSyncer(syncCoordinator)
 	c.registerMempoolSyncer(syncCoordinator)
 	c.registerVoteSyncer(syncCoordinator)

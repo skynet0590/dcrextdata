@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -33,9 +36,18 @@ func (pg *PgDb) FetchSyncHistory(ctx context.Context, tableName string, source s
 	history, err := models.SyncHistories(
 		models.SyncHistoryWhere.TableName.EQ(tableName),
 		models.SyncHistoryWhere.Source.EQ(source),
-		qm.OrderBy(fmt.Sprint("%s desc", models.SyncHistoryColumns.Date))).One(ctx, pg.db)
+		qm.OrderBy(fmt.Sprintf("%s desc", models.SyncHistoryColumns.Date))).One(ctx, pg.db)
 	if err != nil {
-		return datasync.History{}, err
+		if err != sql.ErrNoRows {
+			return datasync.History{}, err
+		}
+
+		history = &models.SyncHistory{
+			ID:        0,
+			TableName: tableName,
+			Source:    source,
+			Date:      time.Date(2019, 2, 1, 0, 0, 0, 0, nil),
+		}
 	}
 	return datasync.History{Date: history.Date, Table: history.TableName, Source: history.Source}, nil
 }

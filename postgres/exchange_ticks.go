@@ -147,6 +147,7 @@ func (pg *PgDb) SaveExchangeFromSync(ctx context.Context, exchange ticks.Exchang
 	}
 	return err
 }
+
 // AllExchange fetches a slice of all exchange from the db
 func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 	exchangeSlice, err := models.Exchanges().All(ctx, pg.db)
@@ -161,8 +162,8 @@ func (pg *PgDb) FetchExchangeForSync(ctx context.Context, date time.Time, skip, 
 	var exchanges []ticks.ExchangeData
 	for _, exchange := range exchangeSlice {
 		exchanges = append(exchanges, ticks.ExchangeData{
-			Name:             exchange.Name,
-			WebsiteURL:       exchange.URL,
+			Name:       exchange.Name,
+			WebsiteURL: exchange.URL,
 		})
 	}
 
@@ -170,6 +171,7 @@ func (pg *PgDb) FetchExchangeForSync(ctx context.Context, date time.Time, skip, 
 
 	return exchanges, totalCount, nil
 }
+
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, interval, offset, limit int) ([]ticks.TickDto, int64, error) {
 	query := []qm.QueryMod{
