@@ -1183,6 +1183,8 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	dataType = strings.Replace(dataType, "-", "_", -1)
+
 	req.ParseForm()
 	date, err := time.Parse(time.RFC3339Nano, req.FormValue("date"))
 	if err != nil {

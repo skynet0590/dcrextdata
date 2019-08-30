@@ -13,6 +13,7 @@ import (
 
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 )
 
@@ -222,4 +223,73 @@ func (hub *TickHub) Run(ctx context.Context) {
 			}
 		}
 	}()
+}
+
+func (hub *TickHub) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator){
+	hub.registerExchangeSyncer(syncCoordinator)
+	hub.registerExchangeTickSyncer(syncCoordinator)
+}
+
+func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(hub.store.ExchangeTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []ticks.ExchangeData{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			exchanges, totalCount, err := hub.store.FetchExchangeForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = exchanges
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			exchangeData := data.([]ticks.ExchangeData)
+			for _, exchange := range exchangeData {
+				err := hub.store.SaveExchangeFromSync(ctx, exchange)
+				if err != nil {
+					log.Errorf("Error while appending mempool synced data, %s", err.Error())
+				}
+			}
+		},
+	})
+}
+
+func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(hub.store.ExchangeTickTableName(), datasync.Syncer{
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []ticks.TickDto{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, date, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = exchangeTicks
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, data interface{}) {
+			tickDtos := data.([]ticks.TickSyncDto)
+			for _, tickDto := range tickDtos {
+				err := hub.store.SaveExchangeTickFromSync(ctx, tickDto)
+				if err != nil {
+					log.Errorf("Error while appending exchange tick synced data, %s", err.Error())
+				}
+			}
+		},
+	})
 }

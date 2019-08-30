@@ -206,14 +206,17 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
+
 	if !cfg.DisableExchangeTicks {
 		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
+			ticksHub.RegisterSyncer(syncCoordinator)
 			go ticksHub.Run(ctx)
 		} else {
 			log.Error(err)
 		}
 	}
+
 	if !cfg.DisablePow {
 		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 		if err == nil {
