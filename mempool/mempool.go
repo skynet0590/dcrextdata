@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -272,9 +273,13 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			dateUnix, err := strconv.ParseInt(last, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid date, %s", err)
+			}
 			result = new(datasync.Result)
-			mempoolDtos, totalCount, err := c.dataStore.FetchMempoolForSync(ctx, date, skip, take)
+			mempoolDtos, totalCount, err := c.dataStore.FetchMempoolForSync(ctx, time.Unix(dateUnix, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -284,7 +289,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var mempoolDtos []Mempool
 			for _, item := range mappedData {
@@ -298,7 +303,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 			}
 
 			for _, mempoolDto := range mempoolDtos {
-				err := c.dataStore.StoreMempoolFromSync(ctx, mempoolDto)
+				err := store.StoreMempoolFromSync(ctx, mempoolDto)
 				if err != nil {
 					log.Errorf("Error while appending mempool synced data, %s", err.Error())
 				}
@@ -315,9 +320,10 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			unixDate,err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			blocks, totalCount, err := c.dataStore.FetchBlockForSync(ctx, date, skip, take)
+			blocks, totalCount, err := c.dataStore.FetchBlockForSync(ctx, time.Unix(unixDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -327,7 +333,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var blocks []Block
 			for _, item := range mappedData {
@@ -341,7 +347,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 			}
 
 			for _, block := range blocks {
-				err := c.dataStore.SaveBlockFromSync(ctx, block)
+				err := store.SaveBlockFromSync(ctx, block)
 				if err != nil {
 					log.Errorf("Error while appending block synced data, %s", err.Error())
 				}
@@ -358,9 +364,10 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			unixDate, err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			votes, totalCount, err := c.dataStore.FetchVoteForSync(ctx, date, skip, take)
+			votes, totalCount, err := c.dataStore.FetchVoteForSync(ctx, time.Unix(unixDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -371,7 +378,7 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) { //todo: should return an error
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) { //todo: should return an error
 			mappedData := data.([]interface{})
 			var votes []Vote
 			for _, item := range mappedData {
@@ -385,7 +392,7 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 			}
 
 			for _, vote := range votes {
-				err := c.dataStore.SaveVoteFromSync(ctx, vote)
+				err := store.SaveVoteFromSync(ctx, vote)
 				if err != nil {
 					log.Errorf("Error while appending vote synced data, %s", err.Error())
 				}

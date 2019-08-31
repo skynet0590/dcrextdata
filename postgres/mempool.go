@@ -40,15 +40,13 @@ func (pg PgDb) StoreMempool(ctx context.Context, mempoolDto mempool.Mempool) err
 	return nil
 }
 
-func (pg PgDb) StoreMempoolFromSync(ctx context.Context, mempoolDto mempool.Mempool) error {
-	mempoolModel := mempoolDtoToModel(mempoolDto)
+func (pg PgDb) StoreMempoolFromSync(ctx context.Context, mempoolDto interface{}) error {
+	mempoolModel := mempoolDtoToModel(mempoolDto.(mempool.Mempool))
 	err := mempoolModel.Insert(ctx, pg.db, boil.Infer())
-	if err != nil {
-		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-			return err
-		}
+	if isUniqueConstraint(err) {
+		return nil
 	}
-	return nil
+	return err
 }
 
 func mempoolDtoToModel(mempoolDto mempool.Mempool) models.Mempool {
@@ -171,8 +169,8 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
 	return nil
 }
 
-func (pg *PgDb) SaveBlockFromSync(ctx context.Context, block mempool.Block) error {
-	blockModel := blockDtoToModel(block)
+func (pg *PgDb) SaveBlockFromSync(ctx context.Context, block interface{}) error {
+	blockModel := blockDtoToModel(block.(mempool.Block))
 	err := blockModel.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
@@ -308,7 +306,8 @@ func (pg *PgDb) SaveVote(ctx context.Context, vote mempool.Vote) error {
 	return nil
 }
 
-func (pg *PgDb) SaveVoteFromSync(ctx context.Context, vote mempool.Vote) error {
+func (pg *PgDb) SaveVoteFromSync(ctx context.Context, voteData interface{}) error {
+	vote := voteData.(mempool.Vote)
 	voteModel := models.Vote{
 		Hash:              vote.Hash,
 		VotingOn:          null.Int64From(vote.VotingOn),

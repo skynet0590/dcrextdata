@@ -58,7 +58,8 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 }
 
 func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName string, syncer Syncer) error {
-	lastEntry, err := s.current.db.LastEntry(ctx, tableName)
+	var lastEntry interface{}
+	err := s.current.db.LastEntry(ctx, tableName, &lastEntry)
 	if err != nil {
 		return fmt.Errorf("error in fetching sync history, %s", err.Error())
 

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/volatiletech/null"
@@ -150,7 +151,8 @@ func (pg *PgDb) FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error) {
 	return result, nil
 }
 
-func (pg *PgDb) AddVspSourceFromSync(ctx context.Context, vspDto vsp.VSPDto) error {
+func (pg *PgDb) AddVspSourceFromSync(ctx context.Context, vspData interface{}) error {
+	vspDto := vspData.(vsp.VSPDto)
 	count, _ := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspDto.Name))).Count(ctx, pg.db)
 	if count > 0 {
 		return nil
@@ -199,7 +201,7 @@ func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, date time.Time, skip
 }
 
 // VSPTicks
-func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]vsp.VSPTickSyncDto, int64, error) {
+func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]datasync.VSPTickSyncDto, int64, error) {
 
 	vspIdQuery := models.VSPTickWhere.Time.GTE(date)
 	vspTickSlice, err := models.VSPTicks(
@@ -212,7 +214,7 @@ func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, 
 
 	vspTickCount, err := models.VSPTicks(qm.Load(models.VSPTickRels.VSP), vspIdQuery).Count(ctx, pg.db)
 
-	vspTicks := []vsp.VSPTickSyncDto{}
+	vspTicks := []datasync.VSPTickSyncDto{}
 	for _, tick := range vspTickSlice {
 		vspTicks = append(vspTicks, pg.vspTickModelToSyncDto(tick))
 	}
@@ -220,7 +222,7 @@ func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, 
 	return vspTicks, vspTickCount, nil
 }
 
-func (pg *PgDb) AddVspTicksFromSync(ctx context.Context, tick vsp.VSPTickSyncDto) error {
+func (pg *PgDb) AddVspTicksFromSync(ctx context.Context, tick datasync.VSPTickSyncDto) error {
 	vspModel, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(tick.VSP))).One(ctx, pg.db)
 	if err != nil {
 		return err
@@ -307,8 +309,8 @@ func (pg *PgDb) vspTickModelToDto(tick *models.VSPTick) vsp.VSPTickDto {
 	}
 }
 
-func (pg *PgDb) vspTickModelToSyncDto(tick *models.VSPTick) vsp.VSPTickSyncDto {
-	return vsp.VSPTickSyncDto{
+func (pg *PgDb) vspTickModelToSyncDto(tick *models.VSPTick) datasync.VSPTickSyncDto {
+	return datasync.VSPTickSyncDto{
 		VSP:              tick.R.VSP.Name.String,
 		Time:             tick.Time,
 		Immature:         tick.Immature,

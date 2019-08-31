@@ -31,15 +31,32 @@ type Syncer struct {
 
 type Store interface {
 	TableNames() []string
-	LastEntry(ctx context.Context, tableName string) (string, error)
+	LastEntry(ctx context.Context, tableName string, receiver interface{}) error
 	SaveExchangeFromSync(ctx context.Context, exchange interface{}) error
 	SaveExchangeTickFromSync(ctx context.Context, tick interface{}) error
+
+	StoreMempoolFromSync(ctx context.Context, mempoolDto interface{}) error
+	SaveBlockFromSync(ctx context.Context, block interface{}) error
+	SaveVoteFromSync(ctx context.Context, vote interface{}) error
+
+	AddPowDataFromSync(ctx context.Context, data interface{}) error
+
+	AddVspSourceFromSync(ctx context.Context, vspDto interface{}) error
+	AddVspTicksFromSync(ctx context.Context, tick VSPTickSyncDto) error
 }
 
-type History struct {
-	Source string
-	Table  string
-	Date   time.Time
+type VSPTickSyncDto struct {
+	VSP              string    `json:"vsp"`
+	Immature         int       `json:"immature"`
+	Live             int       `json:"live"`
+	Voted            int       `json:"voted"`
+	Missed           int       `json:"missed"`
+	PoolFees         float64   `json:"pool_fees"`
+	ProportionLive   float64   `json:"proportion_live"`
+	ProportionMissed float64   `json:"proportion_missed"`
+	UserCount        int       `json:"user_count"`
+	UsersActive      int       `json:"users_active"`
+	Time             time.Time `json:"time"`
 }
 
 type Request struct {

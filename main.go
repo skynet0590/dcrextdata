@@ -139,7 +139,18 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	syncCoordinator := datasync.NewCoordinator(db, cfg.SyncSources, !cfg.DisableSync)
+	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync)
+	//register instances
+	for i := 0; i < len(cfg.SyncSources); i++ {
+		source := cfg.SyncSources[i]
+		databaseName := cfg.SyncDatabases[i]
+		db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, databaseName)
+		if err != nil {
+			log.Errorf("Error in open database connection for the sync instance, %s, %s", source, err.Error())
+			continue
+		}
+		syncCoordinator.AddSource(source, db)
+	}
 	// http server method
 	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)

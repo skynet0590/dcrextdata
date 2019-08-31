@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
@@ -157,9 +158,13 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			unixDate, err := strconv.ParseInt(last, 10, 64)
+			if err != nil {
+				return  nil, fmt.Errorf("invalid date, %s", err)
+			}
 			result = new(datasync.Result)
-			vspSources, totalCount, err := vsp.dataStore.FetchVspSourcesForSync(ctx, date, skip, take)
+			vspSources, totalCount, err := vsp.dataStore.FetchVspSourcesForSync(ctx, time.Unix(unixDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -169,7 +174,7 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var vspDtos []VSPDto
 			for _, item := range mappedData {
@@ -183,7 +188,7 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 			}
 
 			for _, vspSource := range vspDtos {
-				err := vsp.dataStore.AddVspSourceFromSync(ctx, vspSource)
+				err := store.AddVspSourceFromSync(ctx, vspSource)
 				if err != nil {
 					log.Errorf("Error while appending vsp source synced data, %s", err.Error())
 				}
@@ -195,13 +200,18 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 	syncCoordinator.AddSyncer(vsp.dataStore.VspTickTableName(), datasync.Syncer{
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			result.Records = []VSPTickSyncDto{}
+			result.Records = []datasync.VSPTickSyncDto{}
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			unixDate, err := strconv.ParseInt(last, 10, 64)
+			if err != nil {
+				return  nil, fmt.Errorf("invalid date, %s", err)
+			}
+
 			result = new(datasync.Result)
-			vspTicks, totalCount, err := vsp.dataStore.FetchVspTicksForSync(ctx, date, skip, take)
+			vspTicks, totalCount, err := vsp.dataStore.FetchVspTicksForSync(ctx, time.Unix(unixDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -211,11 +221,11 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
-			var vspTicks []VSPTickSyncDto
+			var vspTicks []datasync.VSPTickSyncDto
 			for _, item := range mappedData {
-				var tickSyncDto VSPTickSyncDto
+				var tickSyncDto datasync.VSPTickSyncDto
 				err := datasync.DecodeSyncObj(item, &tickSyncDto)
 				if err != nil {
 					log.Errorf("Error in decoding the received VSP tick, %s", err.Error())
@@ -225,7 +235,7 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 			}
 
 			for _, tick := range vspTicks {
-				err := vsp.dataStore.AddVspTicksFromSync(ctx, tick)
+				err := store.AddVspTicksFromSync(ctx, tick)
 				if err != nil {
 					log.Errorf("Error while appending vsp tick synced data, %s", err.Error())
 				}

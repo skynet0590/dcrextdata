@@ -86,14 +86,11 @@ type DataStore interface {
 	BlockTableName() string
 	VoteTableName() string
 	StoreMempool(context.Context, Mempool) error
-	StoreMempoolFromSync(ctx context.Context, mempoolDto Mempool) error
 	LastMempoolTime() (entryTime time.Time, err error)
 	FetchMempoolForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Mempool, int64, error)
 	SaveBlock(context.Context, Block) error
-	SaveBlockFromSync(ctx context.Context, block Block) error
 	FetchBlockForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Block, int64, error)
 	SaveVote(ctx context.Context, vote Vote) error
-	SaveVoteFromSync(ctx context.Context, vote Vote) error
 	FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Vote, int64, error)
 
 	datasync.Store

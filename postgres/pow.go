@@ -69,17 +69,15 @@ func (pg *PgDb) AddPowData(ctx context.Context, data []pow.PowData) error {
 	return nil
 }
 
-func (pg *PgDb) AddPowDataFromSync(ctx context.Context, data pow.PowData) error {
-	powModel, err := responseToPowModel(data)
+func (pg *PgDb) AddPowDataFromSync(ctx context.Context, data interface{}) error {
+	powModel, err := responseToPowModel(data.(pow.PowData))
 	if err != nil {
 		return err
 	}
 
 	err = powModel.Insert(ctx, pg.db, boil.Infer())
-	if err != nil {
-		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-			return nil
-		}
+	if isUniqueConstraint(err) {
+		return nil
 	}
 
 	return err

@@ -7,6 +7,7 @@ package pow
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
@@ -26,7 +27,6 @@ var (
 type PowDataStore interface {
 	PowTableName() string
 	AddPowData(context.Context, []PowData) error
-	AddPowDataFromSync(ctx context.Context, data PowData) error
 	LastPowEntryTime(source string) (time int64)
 	FetchPowDataForSync(ctx context.Context, date time.Time, skip, take int) ([]PowData, int64, error)
 }
@@ -151,9 +151,10 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			dateUnix, err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, date, skip, take)
+			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, time.Unix(dateUnix, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -163,7 +164,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var powDataSlice []PowData
 			for _, item := range mappedData {
@@ -177,7 +178,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 			}
 
 			for _, powData := range powDataSlice {
-				err := pc.store.AddPowDataFromSync(ctx, powData)
+				err := store.AddPowDataFromSync(ctx, powData)
 				if err != nil {
 					log.Errorf("Error while appending PoW synced data, %s", err.Error())
 				}
