@@ -96,7 +96,7 @@ type DataStore interface {
 	SaveVoteFromSync(ctx context.Context, vote Vote) error
 	FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Vote, int64, error)
 
-	datasync.HistoryStore
+	datasync.Store
 }
 
 type Collector struct {

@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -238,9 +239,13 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			exchanges, totalCount, err := hub.store.FetchExchangeForSync(ctx, date, skip, take)
+			unitDate, err := strconv.ParseInt(last, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid date, %s", err.Error())
+			}
+			exchanges, totalCount, err := hub.store.FetchExchangeForSync(ctx, time.Unix(unitDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -250,7 +255,7 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var exchangeData []ticks.ExchangeData
 			for _, item := range mappedData {
@@ -264,7 +269,7 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			}
 
 			for _, exchange := range exchangeData {
-				err := hub.store.SaveExchangeFromSync(ctx, exchange)
+				err := store.SaveExchangeFromSync(ctx, exchange)
 				if err != nil {
 					log.Errorf("Error while appending exchange synced data, %s", err.Error())
 				}
@@ -281,9 +286,13 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
 			return
 		},
-		Retrieve: func(ctx context.Context, date time.Time, skip, take int) (result *datasync.Result, err error) {
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, date, skip, take)
+			unitDate, err := strconv.ParseInt(last, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("invalid date, %s", err.Error())
+			}
+			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, time.Unix(unitDate, 0), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -293,7 +302,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
 			mappedData := data.([]interface{})
 			var tickDtos []ticks.TickSyncDto
 			for _, item := range mappedData {
@@ -307,7 +316,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			}
 
 			for _, tickDto := range tickDtos {
-				err := hub.store.SaveExchangeTickFromSync(ctx, tickDto)
+				err := store.SaveExchangeTickFromSync(ctx, tickDto)
 				if err != nil {
 					log.Errorf("Error while appending exchange tick synced data, %s", err.Error())
 				}

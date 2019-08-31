@@ -133,11 +133,13 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 	return lastTime, nil
 }
 
-func (pg *PgDb) SaveExchangeFromSync(ctx context.Context, exchange ticks.ExchangeData) error {
+func (pg *PgDb) SaveExchangeFromSync(ctx context.Context, exchangeData interface{}) error {
+	exchange := exchangeData.(ticks.ExchangeData)
 	_, err := models.Exchanges(models.ExchangeWhere.Name.EQ(exchange.Name)).One(ctx, pg.db)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			newXch := models.Exchange{
+				ID:   exchange.ID,
 				Name: exchange.Name,
 				URL:  exchange.WebsiteURL,
 			}
@@ -162,6 +164,7 @@ func (pg *PgDb) FetchExchangeForSync(ctx context.Context, date time.Time, skip, 
 	var exchanges []ticks.ExchangeData
 	for _, exchange := range exchangeSlice {
 		exchanges = append(exchanges, ticks.ExchangeData{
+			ID:         exchange.ID,
 			Name:       exchange.Name,
 			WebsiteURL: exchange.URL,
 		})
@@ -384,6 +387,8 @@ func (pg *PgDb) FetchExchangeTicksForSync(ctx context.Context, date time.Time, s
 	var tickDtos []ticks.TickSyncDto
 	for _, tick := range exchangeTickSlice {
 		tickDtos = append(tickDtos, ticks.TickSyncDto{
+			ID:           tick.ID,
+			ExchangeID:   tick.ExchangeID,
 			Interval:     tick.Interval,
 			CurrencyPair: tick.CurrencyPair,
 			Time:         tick.Time,
@@ -399,23 +404,12 @@ func (pg *PgDb) FetchExchangeTicksForSync(ctx context.Context, date time.Time, s
 	return tickDtos, exchangeTickSliceCount, err
 }
 
-func (pg *PgDb) SaveExchangeTickFromSync(ctx context.Context, tick ticks.TickSyncDto) error {
-	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(tick.ExchangeName)).One(ctx, pg.db)
-	if err != nil {
-		return err
-	}
-
-	_, err = models.ExchangeTicks(models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
-		models.ExchangeTickWhere.Interval.EQ(tick.Interval),
-		models.ExchangeTickWhere.CurrencyPair.EQ(tick.CurrencyPair),
-		models.ExchangeTickWhere.Time.EQ(tick.Time)).One(ctx, pg.db)
-
-	if err != sql.ErrNoRows {
-		return nil
-	}
+func (pg *PgDb) SaveExchangeTickFromSync(ctx context.Context, tickData interface{}) error {
+	tick := tickData.(ticks.TickSyncDto)
 
 	tickModel := models.ExchangeTick{
-		ExchangeID:   exchange.ID,
+		ID:           tick.ID,
+		ExchangeID:   tick.ExchangeID,
 		Interval:     tick.Interval,
 		High:         tick.High,
 		Low:          tick.Low,
@@ -426,7 +420,11 @@ func (pg *PgDb) SaveExchangeTickFromSync(ctx context.Context, tick ticks.TickSyn
 		Time:         tick.Time,
 	}
 
-	err = tickModel.Insert(ctx, pg.db, boil.Infer())
+	err := tickModel.Insert(ctx, pg.db, boil.Infer())
+	if isUniqueConstraint(err) {
+		return nil
+	}
+
 	return err
 }
 

@@ -11,9 +11,9 @@ import (
 
 var coordinator *SyncCoordinator
 
-func NewCoordinator(store HistoryStore, sources []string, isEnabled bool) *SyncCoordinator {
+func NewCoordinator(isEnabled bool) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
-		sources: sources, historyStore: store, syncers: map[string]Syncer{}, isEnabled: isEnabled, syncersKeys: map[int]string{},
+		instances: []instance{}, syncers: map[string]Syncer{}, isEnabled: isEnabled, syncersKeys: map[int]string{},
 	}
 	return coordinator
 }
@@ -23,6 +23,13 @@ func (s *SyncCoordinator) AddSyncer(tableName string, syncer Syncer) {
 	s.syncersKeys[len(s.syncersKeys)] = tableName
 }
 
+func (s *SyncCoordinator) AddSource(url string, db Store) {
+	s.instances = append(s.instances, instance{
+		db:  db,
+		url: url,
+	})
+}
+
 func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 	syncer, found := s.syncers[tableName]
 	return syncer, found
@@ -30,7 +37,7 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 	log.Info("Starting all registered sync collectors")
-	for _, source := range s.sources {
+	for _, source := range s.instances {
 		for i := 0; i <= len(s.syncersKeys); i++ {
 			tableName := s.syncersKeys[i]
 			syncer, found := s.syncers[tableName]
@@ -42,11 +49,6 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 			if err != nil {
 				log.Error(err)
 			}
-			err = s.historyStore.SaveSyncHistory(ctx, History{
-				Source: source,
-				Table:  tableName,
-				Date:   time.Now(),
-			})
 
 			if err != nil {
 				log.Error(err)
@@ -55,8 +57,8 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 	}
 }
 
-func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName string, syncer Syncer) error {
-	syncHistory, err := s.historyStore.FetchSyncHistory(ctx, tableName, source)
+func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName string, syncer Syncer) error {
+	lastEntry, err := s.current.db.LastEntry(ctx, tableName)
 	if err != nil {
 		return fmt.Errorf("error in fetching sync history, %s", err.Error())
 
@@ -65,7 +67,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 	skip := 0
 	take := 100
 	for {
-		url := fmt.Sprintf("%s/api/sync/%s?date=%d&skip=%d&take=%d", source, tableName, syncHistory.Date.Unix(), skip, take)
+		url := fmt.Sprintf("%s/api/sync/%s?last=%d&skip=%d&take=%d", source.url, tableName, lastEntry, skip, take)
 		result, err := syncer.Collect(ctx, url)
 		if err != nil {
 			// todo: check if this is a sync disable error before stopping
@@ -80,7 +82,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 			return nil
 		}
 
-		syncer.Append(ctx, result.Records)
+		syncer.Append(ctx, source.db, result.Records)
 
 		skip += take
 		if result.TotalCount <= int64(skip) {
@@ -91,7 +93,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source string, tableName str
 	}
 }
 
-func Retrieve(ctx context.Context, tableName string, date time.Time, skip, take int) (*Result, error) {
+func Retrieve(ctx context.Context, tableName string, last string, skip, take int) (*Result, error) {
 	if coordinator == nil {
 		return nil, errors.New("syncer not initialized")
 	}
@@ -105,14 +107,14 @@ func Retrieve(ctx context.Context, tableName string, date time.Time, skip, take 
 		return nil, errors.New("syncer not found for " + tableName)
 	}
 
-	return syncer.Retrieve(ctx, date, skip, take)
+	return syncer.Retrieve(ctx, last, skip, take)
 }
 
-func DecodeSyncObj(obj interface{}, receiver interface{}) (error) {
+func DecodeSyncObj(obj interface{}, receiver interface{}) error {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
 	err = json.Unmarshal(b, receiver)
-	return  err
+	return err
 }

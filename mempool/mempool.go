@@ -371,7 +371,7 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 			result.Success = true
 			return
 		},
-		Append: func(ctx context.Context, data interface{}) {//todo: should return an error
+		Append: func(ctx context.Context, data interface{}) { //todo: should return an error
 			mappedData := data.([]interface{})
 			var votes []Vote
 			for _, item := range mappedData {

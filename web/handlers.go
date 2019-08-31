@@ -1186,13 +1186,8 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	dataType = strings.Replace(dataType, "-", "_", -1)
 
 	req.ParseForm()
-	dateUnix, err := strconv.ParseInt(req.FormValue("date"), 10, 64)
-	if err != nil {
-		result.Message = "Invalid date"
-		return
-	}
 
-	date := time.Unix(dateUnix, 0)
+	last := req.FormValue("last")
 
 	skip, err := strconv.Atoi(req.FormValue("skip"))
 	if err != nil {
@@ -1206,7 +1201,7 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	response, err := datasync.Retrieve(req.Context(), dataType, date, skip, take)
+	response, err := datasync.Retrieve(req.Context(), dataType, last, skip, take)
 
 	if err != nil {
 		result.Message = err.Error()

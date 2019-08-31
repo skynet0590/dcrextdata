@@ -76,3 +76,7 @@ func (pg *PgDb) tryUpsert(ctx context.Context, txr boil.Transactor, data upserta
 	}
 	return nil
 }
+
+func isUniqueConstraint(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "unique constraint")
+}

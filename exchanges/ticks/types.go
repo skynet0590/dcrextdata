@@ -20,18 +20,16 @@ type Store interface {
 	ExchangeTickTableName() string
 	ExchangeTableName() string
 	RegisterExchange(ctx context.Context, exchange ExchangeData) (lastShort, lastLong, lastHistoric time.Time, err error)
-	SaveExchangeFromSync(ctx context.Context, exchange ExchangeData) error
 	FetchExchangeForSync(ctx context.Context, date time.Time, skip, take int) ([]ExchangeData, int64, error)
 	StoreExchangeTicks(ctx context.Context, exchange string, interval int, pair string, data []Tick) (time.Time, error)
 	LastExchangeTickEntryTime() (time time.Time)
-
-	SaveExchangeTickFromSync(ctx context.Context, tick TickSyncDto) error
 	FetchExchangeTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]TickSyncDto, int64, error)
 }
 
 type urlRequester func(time.Time, time.Duration, string) (string, error)
 
 type ExchangeData struct {
+	ID               int
 	Name             string
 	WebsiteURL       string
 	apiLimited       bool
@@ -58,6 +56,8 @@ type Tick struct {
 
 // TickSyncDto represents an exchange data, structured for sharing
 type TickSyncDto struct {
+	ExchangeID   int       `json:"exchange_id"`
+	ID           int       `json:"id"`
 	ExchangeName string    `json:"exchange_name"`
 	High         float64   `json:"high"`
 	Low          float64   `json:"low"`

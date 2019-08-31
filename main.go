@@ -101,7 +101,7 @@ func _main(ctx context.Context) error {
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 
 	if err != nil {
-		return fmt.Errorf("Error in establishing database connection: %s", err.Error())
+		return fmt.Errorf("error in establishing database connection: %s", err.Error())
 	}
 
 	defer func(db *postgres.PgDb) {
