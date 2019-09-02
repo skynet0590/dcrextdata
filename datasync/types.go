@@ -14,7 +14,6 @@ type SyncCoordinator struct {
 	syncers     map[string]Syncer
 	syncersKeys map[int]string
 	instances   []instance
-	current     instance
 	isEnabled   bool
 }
 
@@ -24,6 +23,7 @@ type instance struct {
 }
 
 type Syncer struct {
+	LastEntry func(ctx context.Context, db Store) (string, error)
 	Collect  func(ctx context.Context, url string) (*Result, error)
 	Retrieve func(ctx context.Context, last string, skip, take int) (*Result, error)
 	Append   func(ctx context.Context, db Store, data interface{})
@@ -32,7 +32,10 @@ type Syncer struct {
 type Store interface {
 	TableNames() []string
 	LastEntry(ctx context.Context, tableName string, receiver interface{}) error
+
+	LastExchangeEntryID() (id int64)
 	SaveExchangeFromSync(ctx context.Context, exchange interface{}) error
+	LastExchangeTickEntryTime() (time time.Time)
 	SaveExchangeTickFromSync(ctx context.Context, tick interface{}) error
 
 	StoreMempoolFromSync(ctx context.Context, mempoolDto interface{}) error

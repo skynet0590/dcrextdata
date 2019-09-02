@@ -267,6 +267,14 @@ func (c *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 
 func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.MempoolTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			var lastDate time.Time
+			err := db.LastEntry(ctx, c.dataStore.MempoolTableName(), &lastDate)
+			if err != nil  && err != sql.ErrNoRows{
+				return "0", fmt.Errorf("error in fetching last mempool time, %s", err.Error())
+			}
+			return strconv.FormatInt(lastDate.Unix(), 10), nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Mempool{}
@@ -314,6 +322,14 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 
 func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.BlockTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			var lastHeight int64
+			err := db.LastEntry(ctx, c.dataStore.BlockTableName(), &lastHeight)
+			if err != nil && err != sql.ErrNoRows{
+				return "0", fmt.Errorf("error in fetching last block height, %s", err.Error())
+			}
+			return strconv.FormatInt(lastHeight, 10), nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Block{}
@@ -321,9 +337,9 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
-			unixDate,err := strconv.ParseInt(last, 10, 64)
+			blockHeight,err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			blocks, totalCount, err := c.dataStore.FetchBlockForSync(ctx, time.Unix(unixDate, 0), skip, take)
+			blocks, totalCount, err := c.dataStore.FetchBlockForSync(ctx, blockHeight, skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -358,6 +374,14 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 
 func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(c.dataStore.VoteTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			var receiveTime time.Time
+			err := db.LastEntry(ctx, c.dataStore.VoteTableName(), &receiveTime)
+			if err != nil  && err != sql.ErrNoRows{
+				return "0", fmt.Errorf("error in fetching last vote receive time, %s", err.Error())
+			}
+			return strconv.FormatInt(receiveTime.Unix(), 10), nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Vote{}

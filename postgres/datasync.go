@@ -49,8 +49,11 @@ func (pg *PgDb) LastEntry(ctx context.Context, tableName string, receiver interf
 		break
 	}
 
-	rows := pg.db.QueryRow(fmt.Sprintf("SELECT MAX(%s) FROM %s", columnName, tableName))
+	rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s DESC LIMIT 1", columnName, tableName, columnName))
 	err := rows.Scan(receiver)
+	if err != nil || receiver == nil {
+		receiver = 0
+	}
 	return err
 
 }

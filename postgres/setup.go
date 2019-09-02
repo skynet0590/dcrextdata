@@ -25,6 +25,8 @@ const (
 
 	lastExchangeTickEntryTime = `SELECT time FROM exchange_tick ORDER BY time DESC LIMIT 1`
 
+	lastExchangeEntryID = `SELECT id FROM exchange ORDER BY id DESC LIMIT 1`
+
 	createVSPInfoTable = `CREATE TABLE IF NOT EXISTS vsp (
 		id SERIAL PRIMARY KEY,
 		name TEXT,

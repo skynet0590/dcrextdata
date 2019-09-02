@@ -254,9 +254,9 @@ func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error)
 	return block, nil
 }
 
-func (pg *PgDb) FetchBlockForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Block, int64, error) {
+func (pg *PgDb) FetchBlockForSync(ctx context.Context, blockHeight int64, offtset int, limit int) ([]mempool.Block, int64, error) {
 	blockSlice, err := models.Blocks(
-		models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date)),
+		models.BlockWhere.Height.GTE(int(blockHeight)),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
@@ -271,7 +271,7 @@ func (pg *PgDb) FetchBlockForSync(ctx context.Context, date time.Time, offtset i
 			BlockReceiveTime:  block.ReceiveTime.Time,
 		})
 	}
-	totalCount, err := models.Blocks(models.BlockWhere.ReceiveTime.GTE(null.TimeFrom(date))).Count(ctx, pg.db)
+	totalCount, err := models.Blocks(models.BlockWhere.Height.GTE(int(blockHeight))).Count(ctx, pg.db)
 
 	return result, totalCount, nil
 }

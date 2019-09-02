@@ -170,8 +170,9 @@ func (pg *PgDb) AddVspSourceFromSync(ctx context.Context, vspData interface{}) e
 	return err
 }
 
-func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, date time.Time, skip, take int) ([]vsp.VSPDto, int64, error) {
+func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, take int) ([]vsp.VSPDto, int64, error) {
 	vspData, err := models.VSPS(
+		models.VSPWhere.ID.GT(int(lastID)),
 		qm.OrderBy(models.VSPColumns.URL),
 		qm.OrderBy(models.VSPColumns.Name)).All(ctx, pg.db)
 	if err != nil {
@@ -195,15 +196,15 @@ func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, date time.Time, skip
 		})
 	}
 
-	totalCount, err := models.VSPS().Count(ctx, pg.db)
+	totalCount, err := models.VSPS(models.VSPWhere.ID.GT(int(lastID))).Count(ctx, pg.db)
 
 	return result, totalCount, err
 }
 
 // VSPTicks
-func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]datasync.VSPTickSyncDto, int64, error) {
+func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, lastID int64, skip, take int) ([]datasync.VSPTickSyncDto, int64, error) {
+	vspIdQuery := models.VSPTickWhere.ID.GT(int(lastID))
 
-	vspIdQuery := models.VSPTickWhere.Time.GTE(date)
 	vspTickSlice, err := models.VSPTicks(
 		qm.Load(models.VSPTickRels.VSP), vspIdQuery,
 		qm.Limit(take), qm.Offset(skip),
@@ -212,9 +213,9 @@ func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, date time.Time, skip, 
 		return nil, 0, err
 	}
 
-	vspTickCount, err := models.VSPTicks(qm.Load(models.VSPTickRels.VSP), vspIdQuery).Count(ctx, pg.db)
+	vspTickCount, err := models.VSPTicks(vspIdQuery).Count(ctx, pg.db)
 
-	vspTicks := []datasync.VSPTickSyncDto{}
+	var vspTicks []datasync.VSPTickSyncDto
 	for _, tick := range vspTickSlice {
 		vspTicks = append(vspTicks, pg.vspTickModelToSyncDto(tick))
 	}

@@ -64,9 +64,9 @@ type DataStore interface {
 	StoreVSPs(context.Context, Response) (int, []error)
 	LastVspTickEntryTime() (time time.Time)
 
-	FetchVspSourcesForSync(ctx context.Context, date time.Time, skip, take int) ([]VSPDto, int64, error)
+	FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, take int) ([]VSPDto, int64, error)
 
-	FetchVspTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]datasync.VSPTickSyncDto, int64, error)
+	FetchVspTicksForSync(ctx context.Context, lastID int64, skip, take int) ([]datasync.VSPTickSyncDto, int64, error)
 }
 
 type Collector struct {

@@ -58,17 +58,16 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 }
 
 func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName string, syncer Syncer) error {
-	var lastEntry interface{}
-	err := s.current.db.LastEntry(ctx, tableName, &lastEntry)
-	if err != nil {
-		return fmt.Errorf("error in fetching sync history, %s", err.Error())
-
-	}
 	startTime := time.Now()
 	skip := 0
 	take := 100
 	for {
-		url := fmt.Sprintf("%s/api/sync/%s?last=%d&skip=%d&take=%d", source.url, tableName, lastEntry, skip, take)
+		lastEntry, err := syncer.LastEntry(ctx, source.db)
+		if err != nil {
+			return fmt.Errorf("error in fetching sync history, %s", err.Error())
+
+		}
+		url := fmt.Sprintf("%s/api/sync/%s?last=%s&skip=%d&take=%d", source.url, tableName, lastEntry, skip, take)
 		result, err := syncer.Collect(ctx, url)
 		if err != nil {
 			// todo: check if this is a sync disable error before stopping
@@ -88,7 +87,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 		skip += take
 		if result.TotalCount <= int64(skip) {
 			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source, math.Abs(duration))
+			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source.url, math.Abs(duration))
 			return nil
 		}
 	}

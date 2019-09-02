@@ -149,6 +149,10 @@ func _main(ctx context.Context) error {
 			log.Errorf("Error in open database connection for the sync instance, %s, %s", source, err.Error())
 			continue
 		}
+		if err = createTablesAndIndex(db); err != nil {
+			log.Errorf("can not create tables for sync data, %s", err.Error())
+			continue
+		}
 		syncCoordinator.AddSource(source, db)
 	}
 	// http server method

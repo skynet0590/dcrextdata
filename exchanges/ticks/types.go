@@ -20,7 +20,7 @@ type Store interface {
 	ExchangeTickTableName() string
 	ExchangeTableName() string
 	RegisterExchange(ctx context.Context, exchange ExchangeData) (lastShort, lastLong, lastHistoric time.Time, err error)
-	FetchExchangeForSync(ctx context.Context, date time.Time, skip, take int) ([]ExchangeData, int64, error)
+	FetchExchangeForSync(ctx context.Context, lastID int, skip, take int) ([]ExchangeData, int64, error)
 	StoreExchangeTicks(ctx context.Context, exchange string, interval int, pair string, data []Tick) (time.Time, error)
 	LastExchangeTickEntryTime() (time time.Time)
 	FetchExchangeTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]TickSyncDto, int64, error)

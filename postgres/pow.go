@@ -119,9 +119,9 @@ func (pg *PgDb) FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowD
 }
 
 // FetchPowDataForSync returns PoW data for the sync operation
-func (pg *PgDb) FetchPowDataForSync(ctx context.Context, date time.Time, skip, take int) ([]pow.PowData, int64, error) {
+func (pg *PgDb) FetchPowDataForSync(ctx context.Context, date int64, skip, take int) ([]pow.PowData, int64, error) {
 	powDatum, err := models.PowData(
-		models.PowDatumWhere.Time.GTE(int(date.Unix())),
+		models.PowDatumWhere.Time.GTE(int(date)),
 		qm.Offset(skip), qm.Limit(take),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	if err != nil {

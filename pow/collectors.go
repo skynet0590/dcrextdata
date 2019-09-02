@@ -6,6 +6,8 @@ package pow
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -28,7 +30,7 @@ type PowDataStore interface {
 	PowTableName() string
 	AddPowData(context.Context, []PowData) error
 	LastPowEntryTime(source string) (time int64)
-	FetchPowDataForSync(ctx context.Context, date time.Time, skip, take int) ([]PowData, int64, error)
+	FetchPowDataForSync(ctx context.Context, date int64, skip, take int) ([]PowData, int64, error)
 }
 
 type Collector struct {
@@ -145,6 +147,14 @@ func (pc *Collector) Collect(ctx context.Context) {
 
 func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(pc.store.PowTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			var lastTime int64
+			err := db.LastEntry(ctx, pc.store.PowTableName(), &lastTime)
+			if err != nil  && err != sql.ErrNoRows{
+				return "0", fmt.Errorf("error in fetching last PoW time, %s", err.Error())
+			}
+			return strconv.FormatInt(lastTime, 10), nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []PowData{}
@@ -154,7 +164,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			dateUnix, err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, time.Unix(dateUnix, 0), skip, take)
+			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, dateUnix, skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return

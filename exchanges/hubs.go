@@ -233,6 +233,9 @@ func (hub *TickHub) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 
 func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(hub.store.ExchangeTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			return strconv.FormatInt(db.LastExchangeEntryID(), 10), nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.ExchangeData{}
@@ -241,11 +244,11 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
-			unitDate, err := strconv.ParseInt(last, 10, 64)
+			lastID, err := strconv.ParseInt(last, 10, 64)
 			if err != nil {
 				return nil, fmt.Errorf("invalid date, %s", err.Error())
 			}
-			exchanges, totalCount, err := hub.store.FetchExchangeForSync(ctx, time.Unix(unitDate, 0), skip, take)
+			exchanges, totalCount, err := hub.store.FetchExchangeForSync(ctx, int(lastID), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -259,13 +262,13 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 			mappedData := data.([]interface{})
 			var exchangeData []ticks.ExchangeData
 			for _, item := range mappedData {
-				var exchane ticks.ExchangeData
-				err := datasync.DecodeSyncObj(item, &exchane)
+				var exchange ticks.ExchangeData
+				err := datasync.DecodeSyncObj(item, &exchange)
 				if err != nil {
 					log.Errorf("Error in decoding the received exchange data, %s", err.Error())
 					return
 				}
-				exchangeData = append(exchangeData, exchane)
+				exchangeData = append(exchangeData, exchange)
 			}
 
 			for _, exchange := range exchangeData {
@@ -280,6 +283,10 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 
 func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoordinator) {
 	syncCoordinator.AddSyncer(hub.store.ExchangeTickTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			entry := strconv.FormatInt(db.LastExchangeTickEntryTime().Unix(), 10)
+			return entry, nil
+		},
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.TickDto{}
