@@ -37,22 +37,46 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 	log.Info("Starting all registered sync collectors")
-	for _, source := range s.instances {
-		for i := 0; i <= len(s.syncersKeys); i++ {
-			tableName := s.syncersKeys[i]
-			syncer, found := s.syncers[tableName]
-			if !found {
-				return
-			}
+	var syncing bool
 
-			err := s.sync(ctx, source, tableName, syncer)
-			if err != nil {
-				log.Error(err)
-			}
+	runSyncers := func() {
+		if syncing {
+			return
+		}
+		syncing = true
+		defer func() {syncing = false}()
+		for _, source := range s.instances {
+			for i := 0; i <= len(s.syncersKeys); i++ {
+				tableName := s.syncersKeys[i]
+				syncer, found := s.syncers[tableName]
+				if !found {
+					return
+				}
 
-			if err != nil {
-				log.Error(err)
+				err := s.sync(ctx, source, tableName, syncer)
+				if err != nil {
+					log.Error(err)
+				}
+
+				if err != nil {
+					log.Error(err)
+				}
 			}
+		}
+	}
+
+	runSyncers()
+
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Infof("Stopping sync coordinators")
+			return
+		case <-ticker.C:
+			runSyncers()
 		}
 	}
 }
