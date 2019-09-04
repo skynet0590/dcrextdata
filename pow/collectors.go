@@ -69,7 +69,13 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 }
 
 func (pc *Collector) Run(ctx context.Context) {
+	for {
+		if app.MarkBusyIfFree() {
+			break
+		}
+	}
 	log.Info("Triggering PoW collectors.")
+	app.ReleaseForNewModule()
 
 	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
 	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)

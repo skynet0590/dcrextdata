@@ -114,7 +114,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 				return nil
 			}
 			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s into %s in %v seconds", result.TotalCount, tableName,
+			log.Infof("Synced %d %s records from %s into %s in %.4f seconds", result.TotalCount, tableName,
 				source.url, source.database, math.Abs(duration))
 			return nil
 		}
