@@ -30,6 +30,7 @@ const (
 	defaultMempoolInterval = 60
 	defaultVSPInterval     = 300
 	defaultPowInterval     = 300
+	defaultSyncInterval    = 60
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -51,6 +52,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DcrdRpcPassword: defaultDcrdPassword,
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
+		SyncInterval: 	 defaultSyncInterval,
 	}
 }
 
@@ -99,6 +101,7 @@ type ConfigFileOptions struct {
 
 	// sync
 	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`
+	SyncInterval  int      `long:"syncinterval" description:"The number of minuets between sync operations"`
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 }

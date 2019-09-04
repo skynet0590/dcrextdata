@@ -13,8 +13,9 @@ import (
 
 var coordinator *SyncCoordinator
 
-func NewCoordinator(isEnabled bool) *SyncCoordinator {
+func NewCoordinator(isEnabled bool, period int) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
+		period: period,
 		instances: []instance{}, syncers: map[string]Syncer{}, isEnabled: isEnabled, syncersKeys: map[int]string{},
 	}
 	return coordinator
@@ -39,8 +40,6 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 }
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
-	log.Info("Starting all registered sync collectors")
-
 	runSyncers := func() {
 		for {
 			if app.MarkBusyIfFree() {
@@ -58,7 +57,9 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 					return
 				}
 
-				log.Infof("Starting sync operation for %s on %s", tableName, source.url)
+				format := "Syncing external %s for %s on %s"
+				url := fmt.Sprintf("%s/api/sync/%s", source.url, tableName)
+				log.Infof(format, source.database, tableName, url)
 
 				err := s.sync(ctx, source, tableName, syncer)
 				if err != nil {
@@ -74,7 +75,7 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 
 	runSyncers()
 
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(1 * time.Hour)
 	defer ticker.Stop()
 
 	for {
@@ -114,8 +115,8 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 				return nil
 			}
 			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s into %s in %.4f seconds", result.TotalCount, tableName,
-				source.url, source.database, math.Abs(duration))
+			log.Infof("Synced %d %s records from %s in %.3f seconds", result.TotalCount, tableName,
+				source.url, math.Abs(duration))
 			return nil
 		}
 

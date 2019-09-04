@@ -139,7 +139,7 @@ func _main(ctx context.Context) error {
 		return err
 	}
 
-	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync)
+	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync, cfg.SyncInterval)
 	//register instances
 	for i := 0; i < len(cfg.SyncSources); i++ {
 		source := cfg.SyncSources[i]

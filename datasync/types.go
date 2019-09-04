@@ -11,6 +11,7 @@ var (
 )
 
 type SyncCoordinator struct {
+	period		int
 	syncers     map[string]Syncer
 	syncersKeys map[int]string
 	instances   []instance

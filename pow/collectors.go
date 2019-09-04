@@ -75,7 +75,6 @@ func (pc *Collector) Run(ctx context.Context) {
 		}
 	}
 	log.Info("Triggering PoW collectors.")
-	app.ReleaseForNewModule()
 
 	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
 	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
@@ -87,12 +86,16 @@ func (pc *Collector) Run(ctx context.Context) {
 		log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", pc.period/60,
 			helpers.DurationToString(secondsPassed), helpers.DurationToString(timeLeft))
 
+		app.ReleaseForNewModule()
 		time.Sleep(timeLeft)
 	}
-	// continually check the state of the app until its free to run this module
-	for {
-		if app.MarkBusyIfFree() {
-			break
+
+	if lastCollectionDateUnix > 0 && secondsPassed < period {
+		// continually check the state of the app until its free to run this module
+		for {
+			if app.MarkBusyIfFree() {
+				break
+			}
 		}
 	}
 	pc.Collect(ctx)
