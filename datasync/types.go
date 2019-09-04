@@ -18,8 +18,9 @@ type SyncCoordinator struct {
 }
 
 type instance struct {
-	db  Store
-	url string
+	database string
+	store    Store
+	url      string
 }
 
 type Syncer struct {

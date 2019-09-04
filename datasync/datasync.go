@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app"
 )
 
 var coordinator *SyncCoordinator
@@ -23,10 +25,11 @@ func (s *SyncCoordinator) AddSyncer(tableName string, syncer Syncer) {
 	s.syncersKeys[len(s.syncersKeys)] = tableName
 }
 
-func (s *SyncCoordinator) AddSource(url string, db Store) {
+func (s *SyncCoordinator) AddSource(url string, store Store, database string) {
 	s.instances = append(s.instances, instance{
-		db:  db,
-		url: url,
+		store: store,
+		url:   url,
+		database: database,
 	})
 }
 
@@ -37,14 +40,16 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 	log.Info("Starting all registered sync collectors")
-	var syncing bool
 
 	runSyncers := func() {
-		if syncing {
-			return
+		for {
+			if app.MarkBusyIfFree() {
+				break
+			}
 		}
-		syncing = true
-		defer func() { syncing = false }()
+
+		defer app.ReleaseForNewModule()
+
 		for _, source := range s.instances {
 			for i := 0; i <= len(s.syncersKeys); i++ {
 				tableName := s.syncersKeys[i]
@@ -87,7 +92,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 	startTime := time.Now()
 	skip := 0
 	take := 1000
-	lastEntry, err := syncer.LastEntry(ctx, source.db)
+	lastEntry, err := syncer.LastEntry(ctx, source.store)
 	for {
 		if err != nil {
 			return fmt.Errorf("error in fetching sync history, %s", err.Error())
@@ -109,11 +114,12 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 				return nil
 			}
 			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source.url, math.Abs(duration))
+			log.Infof("Synced %d %s records from %s into %s in %v seconds", result.TotalCount, tableName,
+				source.url, source.database, math.Abs(duration))
 			return nil
 		}
 
-		syncer.Append(ctx, source.db, result.Records)
+		syncer.Append(ctx, source.store, result.Records)
 
 		skip += take
 	}

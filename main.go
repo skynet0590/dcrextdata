@@ -153,7 +153,7 @@ func _main(ctx context.Context) error {
 			log.Errorf("can not create tables for sync data, %s", err.Error())
 			continue
 		}
-		syncCoordinator.AddSource(source, db)
+		syncCoordinator.AddSource(source, db, databaseName)
 	}
 	// http server method
 	if cfg.HttpMode {
