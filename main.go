@@ -357,13 +357,5 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		log.Info("Pow table created successfully.")
 	}
 
-	if exits := db.SyncHistoryTableExists(); !exits {
-		if err := db.CreateSyncHistoryTable(); err != nil {
-			log.Error("Error in create sync history table")
-			return err
-		}
-		log.Info("Sync history table created successfully")
-	}
-
 	return nil
 }

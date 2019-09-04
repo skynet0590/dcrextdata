@@ -158,7 +158,7 @@ func (pg *PgDb) AddVspSourceFromSync(ctx context.Context, vspData interface{}) e
 		return nil
 	}
 	vspModel := models.VSP{
-		ID:                   0,
+		ID:                   vspDto.ID,
 		Name:                 null.StringFrom(vspDto.Name),
 		APIEnabled:           null.BoolFrom(vspDto.APIEnabled),
 		APIVersionsSupported: vspDto.APIVersionsSupported,
@@ -173,8 +173,7 @@ func (pg *PgDb) AddVspSourceFromSync(ctx context.Context, vspData interface{}) e
 func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, take int) ([]vsp.VSPDto, int64, error) {
 	vspData, err := models.VSPS(
 		models.VSPWhere.ID.GT(int(lastID)),
-		qm.OrderBy(models.VSPColumns.URL),
-		qm.OrderBy(models.VSPColumns.Name)).All(ctx, pg.db)
+		qm.Offset(skip), qm.Limit(take)).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -186,6 +185,7 @@ func (pg *PgDb) FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, 
 			return nil, 0, err
 		}
 		result = append(result, vsp.VSPDto{
+			ID:                   item.ID,
 			Name:                 item.Name.String,
 			APIEnabled:           item.APIEnabled.Bool,
 			APIVersionsSupported: item.APIVersionsSupported,
@@ -206,9 +206,9 @@ func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, lastID int64, skip, ta
 	vspIdQuery := models.VSPTickWhere.ID.GT(int(lastID))
 
 	vspTickSlice, err := models.VSPTicks(
-		qm.Load(models.VSPTickRels.VSP), vspIdQuery,
-		qm.Limit(take), qm.Offset(skip),
-		qm.OrderBy(fmt.Sprintf("%s DESC", models.VSPTickColumns.Time))).All(ctx, pg.db)
+		vspIdQuery,
+		qm.OrderBy(models.VSPTickColumns.ID),
+		qm.Limit(take), qm.Offset(skip)).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -224,17 +224,13 @@ func (pg *PgDb) FetchVspTicksForSync(ctx context.Context, lastID int64, skip, ta
 }
 
 func (pg *PgDb) AddVspTicksFromSync(ctx context.Context, tick datasync.VSPTickSyncDto) error {
-	vspModel, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(tick.VSP))).One(ctx, pg.db)
-	if err != nil {
-		return err
-	}
-
-	if _, err = models.VSPTicks(models.VSPTickWhere.VSPID.EQ(vspModel.ID),
+	if _, err := models.VSPTicks(models.VSPTickWhere.VSPID.EQ(tick.VSPID),
 		models.VSPTickWhere.Time.EQ(tick.Time)).One(ctx, pg.db); err == nil {
 		return nil // record exists
 	}
 	tickModel := models.VSPTick{
-		VSPID:            vspModel.ID,
+		ID:               tick.ID,
+		VSPID:            tick.VSPID,
 		Immature:         tick.Immature,
 		Live:             tick.Live,
 		Voted:            tick.Voted,
@@ -312,7 +308,8 @@ func (pg *PgDb) vspTickModelToDto(tick *models.VSPTick) vsp.VSPTickDto {
 
 func (pg *PgDb) vspTickModelToSyncDto(tick *models.VSPTick) datasync.VSPTickSyncDto {
 	return datasync.VSPTickSyncDto{
-		VSP:              tick.R.VSP.Name.String,
+		ID:               tick.ID,
+		VSPID:            tick.VSPID,
 		Time:             tick.Time,
 		Immature:         tick.Immature,
 		Live:             tick.Live,

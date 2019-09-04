@@ -44,7 +44,7 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 			return
 		}
 		syncing = true
-		defer func() {syncing = false}()
+		defer func() { syncing = false }()
 		for _, source := range s.instances {
 			for i := 0; i <= len(s.syncersKeys); i++ {
 				tableName := s.syncersKeys[i]
@@ -52,6 +52,8 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 				if !found {
 					return
 				}
+
+				log.Infof("Starting sync operation for %s on %s", tableName, source.url)
 
 				err := s.sync(ctx, source, tableName, syncer)
 				if err != nil {
@@ -84,9 +86,9 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName string, syncer Syncer) error {
 	startTime := time.Now()
 	skip := 0
-	take := 100
+	take := 1000
+	lastEntry, err := syncer.LastEntry(ctx, source.db)
 	for {
-		lastEntry, err := syncer.LastEntry(ctx, source.db)
 		if err != nil {
 			return fmt.Errorf("error in fetching sync history, %s", err.Error())
 
@@ -103,17 +105,17 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 		}
 
 		if result.Records == nil {
+			if result.TotalCount == 0 {
+				return nil
+			}
+			duration := time.Now().Sub(startTime).Seconds()
+			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source.url, math.Abs(duration))
 			return nil
 		}
 
 		syncer.Append(ctx, source.db, result.Records)
 
 		skip += take
-		if result.TotalCount <= int64(skip) {
-			duration := time.Now().Sub(startTime).Seconds()
-			log.Infof("Synced %d %s records from %s in %v seconds", result.TotalCount, tableName, source.url, math.Abs(duration))
-			return nil
-		}
 	}
 }
 

@@ -156,7 +156,7 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
 			var lastID int64
 			err := db.LastEntry(ctx, vsp.dataStore.VspTableName(), &lastID)
-			if err != nil  && err != sql.ErrNoRows{
+			if err != nil && err != sql.ErrNoRows {
 				return "0", fmt.Errorf("error in fetching last VSP ID, %s", err.Error())
 			}
 			return strconv.FormatInt(lastID, 10), nil
@@ -170,7 +170,7 @@ func (vsp *Collector) registerVspSyncer(syncCoordinator *datasync.SyncCoordinato
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			lastID, err := strconv.ParseInt(last, 10, 64)
 			if err != nil {
-				return  nil, fmt.Errorf("invalid ID, %s", err)
+				return nil, fmt.Errorf("invalid ID, %s", err)
 			}
 			result = new(datasync.Result)
 			vspSources, totalCount, err := vsp.dataStore.FetchVspSourcesForSync(ctx, lastID, skip, take)
@@ -211,7 +211,7 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
 			var lastID int64
 			err := db.LastEntry(ctx, vsp.dataStore.VspTickTableName(), &lastID)
-			if err != nil  && err != sql.ErrNoRows{
+			if err != nil && err != sql.ErrNoRows {
 				return "0", fmt.Errorf("error in fetching last VSP ID, %s", err.Error())
 			}
 			return strconv.FormatInt(lastID, 10), nil
@@ -225,7 +225,7 @@ func (vsp *Collector) registerVspTickSyncer(syncCoordinator *datasync.SyncCoordi
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			lastID, err := strconv.ParseInt(last, 10, 64)
 			if err != nil {
-				return  nil, fmt.Errorf("invalid id, %s", err)
+				return nil, fmt.Errorf("invalid id, %s", err)
 			}
 
 			result = new(datasync.Result)

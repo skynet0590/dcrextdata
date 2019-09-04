@@ -24,9 +24,9 @@ type instance struct {
 
 type Syncer struct {
 	LastEntry func(ctx context.Context, db Store) (string, error)
-	Collect  func(ctx context.Context, url string) (*Result, error)
-	Retrieve func(ctx context.Context, last string, skip, take int) (*Result, error)
-	Append   func(ctx context.Context, db Store, data interface{})
+	Collect   func(ctx context.Context, url string) (*Result, error)
+	Retrieve  func(ctx context.Context, last string, skip, take int) (*Result, error)
+	Append    func(ctx context.Context, db Store, data interface{})
 }
 
 type Store interface {
@@ -49,6 +49,8 @@ type Store interface {
 }
 
 type VSPTickSyncDto struct {
+	ID               int       `json:"id"`
+	VSPID            int       `json:"vspid"`
 	VSP              string    `json:"vsp"`
 	Immature         int       `json:"immature"`
 	Live             int       `json:"live"`

@@ -106,8 +106,8 @@ func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool
 
 func (pg *PgDb) FetchMempoolForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Mempool, int64, error) {
 	mempoolSlice, err := models.Mempools(
-		models.MempoolWhere.Time.GTE(date),
-		qm.OrderBy("time DESC"), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
+		models.MempoolWhere.Time.GT(date),
+		qm.OrderBy(models.MempoolColumns.Time), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -256,8 +256,8 @@ func (pg *PgDb) getBlock(ctx context.Context, height int) (*models.Block, error)
 
 func (pg *PgDb) FetchBlockForSync(ctx context.Context, blockHeight int64, offtset int, limit int) ([]mempool.Block, int64, error) {
 	blockSlice, err := models.Blocks(
-		models.BlockWhere.Height.GTE(int(blockHeight)),
-		qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)),
+		models.BlockWhere.Height.GT(int(blockHeight)),
+		qm.OrderBy(models.BlockColumns.ReceiveTime),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
@@ -271,7 +271,7 @@ func (pg *PgDb) FetchBlockForSync(ctx context.Context, blockHeight int64, offtse
 			BlockReceiveTime:  block.ReceiveTime.Time,
 		})
 	}
-	totalCount, err := models.Blocks(models.BlockWhere.Height.GTE(int(blockHeight))).Count(ctx, pg.db)
+	totalCount, err := models.Blocks(models.BlockWhere.Height.GT(int(blockHeight))).Count(ctx, pg.db)
 
 	return result, totalCount, nil
 }
@@ -385,7 +385,7 @@ func (pg *PgDb) VotesCount(ctx context.Context) (int64, error) {
 func (pg *PgDb) FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]mempool.Vote, int64, error) {
 	voteSlices, err := models.Votes(
 		models.VoteWhere.ReceiveTime.GTE(null.TimeFrom(date)),
-		qm.OrderBy(fmt.Sprintf("%s DESC", models.VoteColumns.ReceiveTime)),
+		qm.OrderBy(models.VoteColumns.ReceiveTime),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err

@@ -23,6 +23,7 @@ type VSPDto struct {
 	URL                  string    `json:"missed"`
 	Host                 string    `json:"host"`
 	Launched             time.Time `json:"pool_fees"`
+	ID                   int       `json:"id"`
 }
 
 type VSPTickDto struct {

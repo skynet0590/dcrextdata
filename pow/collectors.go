@@ -150,7 +150,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
 			var lastTime int64
 			err := db.LastEntry(ctx, pc.store.PowTableName(), &lastTime)
-			if err != nil  && err != sql.ErrNoRows{
+			if err != nil && err != sql.ErrNoRows {
 				return "0", fmt.Errorf("error in fetching last PoW time, %s", err.Error())
 			}
 			return strconv.FormatInt(lastTime, 10), nil

@@ -105,13 +105,6 @@ const (
 		validity VARCHAR(128),
 		PRIMARY KEY (hash)
 	);`
-
-	createSyncHistoryTable = `CREATE TABLE IF NOT EXISTS sync_history (
-		id SERIAL PRIMARY KEY,
-		table_name VARCHAR(128) NOT NULL,
-		source VARCHAR(256) NOT NULL,
-		date timestamp NOT NULL
-	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -209,12 +202,6 @@ func (pg *PgDb) VoteTableExits() bool {
 	return exists
 }
 
-// sync history table
-func (pg *PgDb) CreateSyncHistoryTable() error {
-	_, err := pg.db.Exec(createSyncHistoryTable)
-	return err
-}
-
 func (pg *PgDb) SyncHistoryTableExists() bool {
 	exists, _ := pg.tableExists("sync_history")
 	return exists
@@ -279,11 +266,6 @@ func (pg *PgDb) DropAllTables() error {
 
 	// vote
 	if err := pg.dropTable("vote"); err != nil {
-		return err
-	}
-
-	// sync history
-	if err := pg.dropTable("sync_history"); err != nil {
 		return err
 	}
 

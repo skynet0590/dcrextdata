@@ -157,7 +157,10 @@ func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
 }
 
 func (pg *PgDb) FetchExchangeForSync(ctx context.Context, lastID int, skip, take int) ([]ticks.ExchangeData, int64, error) {
-	exchangeSlice, err := models.Exchanges(models.ExchangeWhere.ID.GT(lastID)).All(ctx, pg.db)
+	exchangeSlice, err := models.Exchanges(
+		models.ExchangeWhere.ID.GT(lastID),
+		qm.Offset(skip), qm.Limit(take),
+	).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -170,7 +173,7 @@ func (pg *PgDb) FetchExchangeForSync(ctx context.Context, lastID int, skip, take
 		})
 	}
 
-	totalCount, err := models.Exchanges().Count(ctx, pg.db)
+	totalCount, err := models.Exchanges(models.ExchangeWhere.ID.GT(lastID)).Count(ctx, pg.db)
 
 	return exchanges, totalCount, nil
 }
@@ -448,6 +451,7 @@ func (pg *PgDb) LastExchangeTickEntryTime() (time time.Time) {
 	_ = rows.Scan(&time)
 	return
 }
+
 // LastExchangeTickEntryTime
 func (pg *PgDb) LastExchangeEntryID() (id int64) {
 	rows := pg.db.QueryRow(lastExchangeEntryID)
