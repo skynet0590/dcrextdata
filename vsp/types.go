@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
 type Response map[string]*ResposeData
@@ -21,6 +23,7 @@ type VSPDto struct {
 	URL                  string    `json:"missed"`
 	Host                 string    `json:"host"`
 	Launched             time.Time `json:"pool_fees"`
+	ID                   int       `json:"id"`
 }
 
 type VSPTickDto struct {
@@ -57,8 +60,14 @@ type ResposeData struct {
 }
 
 type DataStore interface {
+	VspTableName() string
+	VspTickTableName() string
 	StoreVSPs(context.Context, Response) (int, []error)
 	LastVspTickEntryTime() (time time.Time)
+
+	FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, take int) ([]VSPDto, int64, error)
+
+	FetchVspTicksForSync(ctx context.Context, lastID int64, skip, take int) ([]datasync.VSPTickSyncDto, int64, error)
 }
 
 type Collector struct {

@@ -6,6 +6,7 @@ package mempool
 
 import (
 	"context"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
@@ -81,10 +82,18 @@ type PropagationChartData struct {
 }
 
 type DataStore interface {
+	MempoolTableName() string
+	BlockTableName() string
+	VoteTableName() string
 	StoreMempool(context.Context, Mempool) error
 	LastMempoolTime() (entryTime time.Time, err error)
+	FetchMempoolForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Mempool, int64, error)
 	SaveBlock(context.Context, Block) error
+	FetchBlockForSync(ctx context.Context, blockHeight int64, offtset int, limit int) ([]Block, int64, error)
 	SaveVote(ctx context.Context, vote Vote) error
+	FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Vote, int64, error)
+
+	datasync.Store
 }
 
 type Collector struct {

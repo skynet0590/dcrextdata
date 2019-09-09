@@ -10,4 +10,5 @@
             "vsp_tick",
             "pow_data",
             "mempool",
-            "block"]
+            "block",
+            "sync_history"]

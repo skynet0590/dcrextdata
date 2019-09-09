@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -1170,4 +1171,46 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	return data, nil
+}
+
+// api/sync/{dataType}
+func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
+	dataType := getSyncDataTypeCtx(req)
+	result := new(datasync.Result)
+	defer s.renderJSON(result, res)
+	if dataType == "" {
+		result.Message = "Invalid data type"
+		return
+	}
+
+	dataType = strings.Replace(dataType, "-", "_", -1)
+
+	req.ParseForm()
+
+	last := req.FormValue("last")
+
+	skip, err := strconv.Atoi(req.FormValue("skip"))
+	if err != nil {
+		result.Message = "Invalid skip value"
+		return
+	}
+
+	take, err := strconv.Atoi(req.FormValue("take"))
+	if err != nil {
+		result.Message = "Invalid take value"
+		return
+	}
+
+	response, err := datasync.Retrieve(req.Context(), dataType, last, skip, take)
+
+	if err != nil {
+		result.Message = err.Error()
+		return
+	}
+
+	result.Success = response.Success
+	result.Records = response.Records
+	result.TotalCount = response.TotalCount
+
+	return
 }

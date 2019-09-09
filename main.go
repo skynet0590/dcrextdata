@@ -21,6 +21,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
@@ -100,7 +101,7 @@ func _main(ctx context.Context) error {
 	db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, cfg.DBName)
 
 	if err != nil {
-		return fmt.Errorf("Error in establishing database connection: %s", err.Error())
+		return fmt.Errorf("error in establishing database connection: %s", err.Error())
 	}
 
 	defer func(db *postgres.PgDb) {
@@ -134,13 +135,29 @@ func _main(ctx context.Context) error {
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
+	if err = createTablesAndIndex(db); err != nil {
+		return err
+	}
+
+	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync, cfg.SyncInterval)
+	//register instances
+	for i := 0; i < len(cfg.SyncSources); i++ {
+		source := cfg.SyncSources[i]
+		databaseName := cfg.SyncDatabases[i]
+		db, err := postgres.NewPgDb(cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPass, databaseName)
+		if err != nil {
+			log.Errorf("Error in open database connection for the sync instance, %s, %s", source, err.Error())
+			continue
+		}
+		if err = createTablesAndIndex(db); err != nil {
+			log.Errorf("can not create tables for sync data, %s", err.Error())
+			continue
+		}
+		syncCoordinator.AddSource(source, db, databaseName)
+	}
 	// http server method
 	if cfg.HttpMode {
 		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
-	}
-
-	if err = createTablesAndIndex(db); err != nil {
-		return err
 	}
 
 	var dcrClient *rpcclient.Client
@@ -163,7 +180,7 @@ func _main(ctx context.Context) error {
 		}
 
 		collector = mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
-
+		collector.RegisterSyncer(syncCoordinator)
 		dcrClient, err = rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
@@ -199,28 +216,35 @@ func _main(ctx context.Context) error {
 	if !cfg.DisableVSP {
 		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
+			vspCollector.RegisterSyncer(syncCoordinator)
 			go vspCollector.Run(ctx)
 		} else {
 			log.Error(err)
 		}
 	}
+
 	if !cfg.DisableExchangeTicks {
 		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 		if err == nil {
+			ticksHub.RegisterSyncer(syncCoordinator)
 			go ticksHub.Run(ctx)
 		} else {
 			log.Error(err)
 		}
 	}
+
 	if !cfg.DisablePow {
 		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 		if err == nil {
+			powCollector.RegisterSyncer(syncCoordinator)
 			go powCollector.Run(ctx)
 
 		} else {
 			log.Error(err)
 		}
 	}
+
+	go syncCoordinator.StartSyncing(ctx)
 
 	// wait for shutdown signal
 	<-ctx.Done()
@@ -264,14 +288,14 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating mempool table: ", err)
 			return err
 		}
-		log.Info("Mempool table created sucessfully.")
+		log.Info("Mempool table created successfully.")
 	}
 	if !db.BlockTableExits() {
 		if err := db.CreateBlockTable(); err != nil {
 			log.Error("Error creating block table: ", err)
 			return err
 		}
-		log.Info("Blocks table created sucessfully.")
+		log.Info("Blocks table created successfully.")
 
 	}
 	if !db.VoteTableExits() {
@@ -279,7 +303,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating vote table: ", err)
 			return err
 		}
-		log.Info("Votes table created sucessfully.")
+		log.Info("Votes table created successfully.")
 	}
 
 	if exists := db.VSPInfoTableExits(); !exists {
@@ -288,7 +312,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			return err
 		}
 
-		log.Info("VSP table created sucessfully.")
+		log.Info("VSP table created successfully.")
 	}
 
 	if exists := db.VSPTickTableExits(); !exists {
@@ -296,7 +320,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating vsp data table: ", err)
 			return err
 		}
-		log.Info("VSPTicks table created sucessfully.")
+		log.Info("VSPTicks table created successfully.")
 
 		if err := db.CreateVSPTickIndex(); err != nil {
 			log.Error("Error creating vsp data index: ", err)
@@ -309,7 +333,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating exchange table: ", err)
 			return err
 		}
-		log.Info("Exchange table created sucessfully.")
+		log.Info("Exchange table created successfully.")
 	}
 
 	if exists := db.ExchangeTickTableExits(); !exists {
@@ -317,7 +341,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating exchange tick table: ", err)
 			return err
 		}
-		log.Info("ExchangeTicks table created sucessfully.")
+		log.Info("ExchangeTicks table created successfully.")
 
 		if err := db.CreateExchangeTickIndex(); err != nil {
 			log.Error("Error creating exchange tick index: ", err)
@@ -330,7 +354,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating PoW data table: ", err)
 			return err
 		}
-		log.Info("Pow table created sucessfully.")
+		log.Info("Pow table created successfully.")
 	}
 
 	return nil

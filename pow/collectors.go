@@ -6,11 +6,15 @@ package pow
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
 var (
@@ -23,8 +27,10 @@ var (
 )
 
 type PowDataStore interface {
+	PowTableName() string
 	AddPowData(context.Context, []PowData) error
 	LastPowEntryTime(source string) (time int64)
+	FetchPowDataForSync(ctx context.Context, date int64, skip, take int) ([]PowData, int64, error)
 }
 
 type Collector struct {
@@ -63,6 +69,11 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 }
 
 func (pc *Collector) Run(ctx context.Context) {
+	for {
+		if app.MarkBusyIfFree() {
+			break
+		}
+	}
 	log.Info("Triggering PoW collectors.")
 
 	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
@@ -75,12 +86,16 @@ func (pc *Collector) Run(ctx context.Context) {
 		log.Infof("Fetching PoW data every %dm, collected %s ago, will fetch in %s.", pc.period/60,
 			helpers.DurationToString(secondsPassed), helpers.DurationToString(timeLeft))
 
+		app.ReleaseForNewModule()
 		time.Sleep(timeLeft)
 	}
-	// continually check the state of the app until its free to run this module
-	for {
-		if app.MarkBusyIfFree() {
-			break
+
+	if lastCollectionDateUnix > 0 && secondsPassed < period {
+		// continually check the state of the app until its free to run this module
+		for {
+			if app.MarkBusyIfFree() {
+				break
+			}
 		}
 	}
 	pc.Collect(ctx)
@@ -137,4 +152,56 @@ func (pc *Collector) Collect(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
+	syncCoordinator.AddSyncer(pc.store.PowTableName(), datasync.Syncer{
+		LastEntry: func(ctx context.Context, db datasync.Store) (string, error) {
+			var lastTime int64
+			err := db.LastEntry(ctx, pc.store.PowTableName(), &lastTime)
+			if err != nil && err != sql.ErrNoRows {
+				return "0", fmt.Errorf("error in fetching last PoW time, %s", err.Error())
+			}
+			return strconv.FormatInt(lastTime, 10), nil
+		},
+		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
+			result = new(datasync.Result)
+			result.Records = []PowData{}
+			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			return
+		},
+		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
+			dateUnix, err := strconv.ParseInt(last, 10, 64)
+			result = new(datasync.Result)
+			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, dateUnix, skip, take)
+			if err != nil {
+				result.Message = err.Error()
+				return
+			}
+			result.Records = powDatum
+			result.TotalCount = totalCount
+			result.Success = true
+			return
+		},
+		Append: func(ctx context.Context, store datasync.Store, data interface{}) {
+			mappedData := data.([]interface{})
+			var powDataSlice []PowData
+			for _, item := range mappedData {
+				var powData PowData
+				err := datasync.DecodeSyncObj(item, &powData)
+				if err != nil {
+					log.Errorf("Error in decoding the received PoW data, %s", err.Error())
+					return
+				}
+				powDataSlice = append(powDataSlice, powData)
+			}
+
+			for _, powData := range powDataSlice {
+				err := store.AddPowDataFromSync(ctx, powData)
+				if err != nil {
+					log.Errorf("Error while appending PoW synced data, %s", err.Error())
+				}
+			}
+		},
+	})
 }

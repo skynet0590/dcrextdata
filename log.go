@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"os"
 	"sort"
 	"strings"
@@ -46,6 +47,7 @@ var (
 	powLog     = backendLog.Logger("POWL")
 	mempoolLog = backendLog.Logger("MEMP")
 	webLog     = backendLog.Logger("WEBL")
+	syncLog    = backendLog.Logger("SYNC")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -57,6 +59,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"POWL": powLog,
 	"MEMP": mempoolLog,
 	"WEBL": webLog,
+	"SYNC": syncLog,
 }
 
 func init() {
@@ -66,6 +69,7 @@ func init() {
 	vsp.UseLogger(vspLog)
 	mempool.UseLogger(mempoolLog)
 	web.UseLogger(webLog)
+	datasync.UseLogger(syncLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and

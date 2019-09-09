@@ -30,6 +30,7 @@ const (
 	defaultMempoolInterval = 60
 	defaultVSPInterval     = 300
 	defaultPowInterval     = 300
+	defaultSyncInterval    = 60
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -51,6 +52,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DcrdRpcPassword: defaultDcrdPassword,
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
+		SyncInterval: 	 defaultSyncInterval,
 	}
 }
 
@@ -96,6 +98,12 @@ type ConfigFileOptions struct {
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
 	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
+
+	// sync
+	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`
+	SyncInterval  int      `long:"syncinterval" description:"The number of minuets between sync operations"`
+	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
+	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu

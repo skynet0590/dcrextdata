@@ -17,14 +17,19 @@ type Collector interface {
 }
 
 type Store interface {
+	ExchangeTickTableName() string
+	ExchangeTableName() string
 	RegisterExchange(ctx context.Context, exchange ExchangeData) (lastShort, lastLong, lastHistoric time.Time, err error)
+	FetchExchangeForSync(ctx context.Context, lastID int, skip, take int) ([]ExchangeData, int64, error)
 	StoreExchangeTicks(ctx context.Context, exchange string, interval int, pair string, data []Tick) (time.Time, error)
 	LastExchangeTickEntryTime() (time time.Time)
+	FetchExchangeTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]TickSyncDto, int64, error)
 }
 
 type urlRequester func(time.Time, time.Duration, string) (string, error)
 
 type ExchangeData struct {
+	ID               int
 	Name             string
 	WebsiteURL       string
 	apiLimited       bool
@@ -47,6 +52,21 @@ type Tick struct {
 	Close  float64
 	Volume float64
 	Time   time.Time
+}
+
+// TickSyncDto represents an exchange data, structured for sharing
+type TickSyncDto struct {
+	ExchangeID   int       `json:"exchange_id"`
+	ID           int       `json:"id"`
+	ExchangeName string    `json:"exchange_name"`
+	High         float64   `json:"high"`
+	Low          float64   `json:"low"`
+	Open         float64   `json:"open"`
+	Close        float64   `json:"close"`
+	Volume       float64   `json:"volume"`
+	Time         time.Time `json:"time"`
+	Interval     int       `json:"interval"`
+	CurrencyPair string    `json:"currency_pair"`
 }
 
 // TickDto represents an exchange data, formatted for presentation
