@@ -126,6 +126,19 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 	}
 }
 
+func RegisteredSources() ([]string, error) {
+	if coordinator == nil {
+		return nil, errors.New("syncer not initialized")
+	}
+
+	var sources []string
+	for _, s := range coordinator.instances {
+		sources = append(sources, s.database)
+	}
+
+	return sources, nil
+}
+
 func Retrieve(ctx context.Context, tableName string, last string, skip, take int) (*Result, error) {
 	if coordinator == nil {
 		return nil, errors.New("syncer not initialized")

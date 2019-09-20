@@ -1,6 +1,15 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, setActiveOptionBtn, showLoading, hideLoading, displayPillBtnOption, setActiveRecordSetBtn } from '../utils'
+import {
+  hide,
+  show,
+  setActiveOptionBtn,
+  showLoading,
+  hideLoading,
+  displayPillBtnOption,
+  setActiveRecordSetBtn,
+  legendFormatter
+} from '../utils'
 import dompurify from 'dompurify'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
@@ -64,6 +73,20 @@ export default class extends Controller {
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchChartDataAndPlot()
+  }
+
+  setExdataChart () {
+    this.selectedViewOption = 'extchart'
+    this.selectedRecordSet = 'blocks'
+    hide(this.numPageWrapperTarget)
+    hide(this.messageViewTarget)
+    hide(this.paginationButtonsWrapperTarget)
+    hide(this.tablesWrapperTarget)
+    show(this.chartWrapperTarget)
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
+    displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
+    this.fetchChartExtDataAndPlot()
   }
 
   setBothRecordSet () {
@@ -341,6 +364,22 @@ export default class extends Controller {
     })
   }
 
+  fetchChartExtDataAndPlot () {
+    let elementsToToggle = [this.chartWrapperTarget]
+    showLoading(this.loadingDataTarget, elementsToToggle)
+
+    const _this = this
+    axios.get('/propagationchartextdata?record-set=' + this.selectedRecordSet).then(function (response) {
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
+      _this.plotExtDataGraph(response.data)
+      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&view-option=${_this.selectedViewOption}`
+      window.history.pushState(window.history.state, _this.addr, url)
+    }).catch(function (e) {
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
+      console.log(e) // todo: handle error
+    })
+  }
+
   plotGraph (csv) {
     const _this = this
 
@@ -361,7 +400,32 @@ export default class extends Controller {
     _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
   }
 
-  legendFormatter (data) {
+  plotExtDataGraph (chartData) {
+    const _this = this
+
+    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (s)' : 'Delay (s)'
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: yLabel,
+      xlabel: 'Height',
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      drawPoints: true,
+      showRangeSelector: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData.csv, options)
+  }
+
+  propagationLegendFormatter (data) {
     let html = ''
     const votesDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Measured as the difference between the blocks timestamp and the time the block was received by this node.'
     const blocksDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Showing the difference in time between the block and the votes.'
@@ -370,7 +434,7 @@ export default class extends Controller {
       let dashLabels = data.series.reduce((nodes, series) => {
         return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML} ${descriptionText}</div>`
       }, '')
-      html = `<div class="d-flex flex-wrap justify-content-center align-items-center">
+      html = `<div class="d-flex flex-wrap justify-content-center align-items-center" style="text-align: center !important;">
               <div class="pr-3">${this.getLabels()[0]}: N/A</div>
               <div class="d-flex flex-wrap">${dashLabels}</div>
             </div>`

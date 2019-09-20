@@ -58,12 +58,14 @@ type Server struct {
 	templates map[string]*template.Template
 	lock      sync.RWMutex
 	db        DataQuery
+	extDbFactory func(name string) (DataQuery, error)
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery) {
+func StartHttpServer(httpHost, httpPort string, db DataQuery, extDbFactory func(name string) (DataQuery, error)) {
 	server := &Server{
-		templates: map[string]*template.Template{},
-		db:        db,
+		templates:    map[string]*template.Template{},
+		db:           db,
+		extDbFactory: extDbFactory,
 	}
 
 	router := chi.NewRouter()
@@ -122,6 +124,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
 	r.Get("/propagationchartdata", s.propagationChartData)
+	r.Get("/propagationchartextdata", s.propagationChartExtData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
