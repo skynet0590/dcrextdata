@@ -17,7 +17,8 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 export default class extends Controller {
   static get targets () {
     return [
-      'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption', 'selectedRecordSet', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption',
+      'selectedRecordSet', 'bothRecordWrapper', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption', 'loadingData'
@@ -50,6 +51,7 @@ export default class extends Controller {
     this.selectedViewOption = 'table'
     this.selectedRecordSet = 'both'
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    show(this.bothRecordWrapperTarget)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
     show(this.paginationButtonsWrapperTarget)
@@ -64,6 +66,7 @@ export default class extends Controller {
   setChart () {
     this.selectedViewOption = 'chart'
     this.selectedRecordSet = 'blocks'
+    hide(this.bothRecordWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
     hide(this.paginationButtonsWrapperTarget)
@@ -78,6 +81,7 @@ export default class extends Controller {
   setExdataChart () {
     this.selectedViewOption = 'extchart'
     this.selectedRecordSet = 'blocks'
+    hide(this.bothRecordWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
     hide(this.paginationButtonsWrapperTarget)
@@ -96,8 +100,10 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
   }
 
@@ -108,8 +114,10 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
   }
 
@@ -120,8 +128,10 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
   }
 
