@@ -26,15 +26,41 @@ import (
 )
 
 func NewCollector(interval float64, activeChain *chaincfg.Params, dataStore DataStore) *Collector {
-	return &Collector{
+	c := &Collector{
 		collectionInterval: interval,
 		dataStore:          dataStore,
 		activeChain:        activeChain,
 	}
+	return c
 }
 
 func (c *Collector) SetClient(client *rpcclient.Client) {
 	c.dcrClient = client
+}
+
+func (c *Collector) SetExplorerBestBlock(ctx context.Context) (error) {
+	var explorerUrl string
+	switch c.activeChain.Name {
+	case chaincfg.MainNetParams.Name:
+		explorerUrl = "https://explorer.dcrdata.org/api/block/best"
+		break
+	case chaincfg.TestNet3Params.Name:
+		explorerUrl = "https://testnet.dcrdata.org/api/block/best"
+		break
+	}
+
+	var bestBlock = struct {
+		Height uint32 `json:"height"`
+	}{}
+
+	err := helpers.GetResponse(ctx, &http.Client{}, explorerUrl, &bestBlock)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Current best block height: %d", bestBlock.Height)
+	c.bestBlockHeight = bestBlock.Height
+	return nil
 }
 
 func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHandlers {
@@ -123,10 +149,6 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 		},
 
 		OnBlockConnected: func(blockHeaderSerialized []byte, transactions [][]byte) {
-			if !c.syncIsDone {
-				return
-			}
-
 			if ctx.Err() != nil {
 				return
 			}
@@ -135,6 +157,15 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 			err := blockHeader.FromBytes(blockHeaderSerialized)
 			if err != nil {
 				log.Error("Failed to deserialize blockHeader in new block notification: %v", err)
+				return
+			}
+
+			if blockHeader.Height > c.bestBlockHeight {
+				c.syncIsDone = true
+			}
+
+			if !c.syncIsDone {
+				log.Infof("Received a stale block height %d, block dropped", blockHeader.Height)
 				return
 			}
 
@@ -155,6 +186,10 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 	var mu sync.Mutex
 
 	collectMempool := func() {
+		if !c.syncIsDone {
+			return
+		}
+
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -167,9 +202,6 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 		if len(mempoolTransactionMap) == 0 {
 			return
 		}
-
-		// there wont be transactions in the mempool while sync is going on
-		c.syncIsDone = true // todo: we need a better way to determine the sync status of dcrd
 
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),

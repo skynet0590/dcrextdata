@@ -52,6 +52,7 @@ type DataQuery interface {
 	VotesCount(ctx context.Context) (int64, error)
 	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
+	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 }
 
 type Server struct {

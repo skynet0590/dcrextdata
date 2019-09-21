@@ -413,18 +413,18 @@ export default class extends Controller {
   plotExtDataGraph (chartData) {
     const _this = this
 
-    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (s)' : 'Delay (s)'
     let options = {
       legend: 'always',
       includeZero: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
-      ylabel: yLabel,
+      ylabel: chartData.yLabel,
       xlabel: 'Height',
       labelsKMB: true,
-      connectSeparatedPoints: true,
       drawPoints: true,
+      strokeWidth: 0.0,
       showRangeSelector: true,
+      fillGraph: true,
       axes: {
         x: {
           drawGrid: false

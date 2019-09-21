@@ -201,6 +201,11 @@ func _main(ctx context.Context) error {
 			fmt.Println(fmt.Sprintf("Error in opening a dcrd connection: %s", err.Error()))
 			return nil
 		}
+
+		err = collector.SetExplorerBestBlock(ctx)
+		if err != nil {
+			log.Errorf("Unable to retrieve explorer best block height. Dcrextdata will not be able to filter out staled blocks, %s", err.Error())
+		}
 	}
 
 	if !cfg.DisableMempool {

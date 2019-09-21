@@ -441,3 +441,20 @@ func (pg *PgDb) PropagationBlockChartData(ctx context.Context) ([]mempool.Propag
 
 	return chartData, nil
 }
+
+func (pg *PgDb) FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error) {
+	blockSlice, err := models.Blocks(qm.Select(models.BlockColumns.Height, models.BlockColumns.ReceiveTime),
+		qm.OrderBy(models.BlockColumns.Height)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var chartData []mempool.BlockReceiveTime
+	for _, block := range blockSlice {
+		chartData = append(chartData, mempool.BlockReceiveTime{
+			BlockHeight: int64(block.Height), ReceiveTime: block.ReceiveTime.Time,
+		})
+	}
+
+	return chartData, nil
+}
