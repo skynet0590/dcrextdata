@@ -51,6 +51,7 @@ export default class extends Controller {
     this.selectedViewOption = 'table'
     this.selectedRecordSet = 'both'
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    show(this.recordSetSelectorTarget)
     show(this.bothRecordWrapperTarget)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
@@ -66,6 +67,7 @@ export default class extends Controller {
   setChart () {
     this.selectedViewOption = 'chart'
     this.selectedRecordSet = 'blocks'
+    show(this.recordSetSelectorTarget)
     hide(this.bothRecordWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
@@ -81,6 +83,7 @@ export default class extends Controller {
   setExdataChart () {
     this.selectedViewOption = 'extchart'
     this.selectedRecordSet = 'blocks'
+    hide(this.recordSetSelectorTarget)
     hide(this.bothRecordWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
@@ -424,7 +427,6 @@ export default class extends Controller {
       drawPoints: true,
       strokeWidth: 0.0,
       showRangeSelector: true,
-      fillGraph: true,
       axes: {
         x: {
           drawGrid: false
