@@ -17,7 +17,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
-	"github.com/raedahgroup/dcrextdata/reddit"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -71,7 +71,7 @@ func init() {
 	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)
 	mempool.UseLogger(mempoolLog)
-	reddit.UseLogger(redditLog)
+	commstats.UseLogger(redditLog)
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
 }

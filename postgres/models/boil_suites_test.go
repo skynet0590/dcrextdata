@@ -13,12 +13,11 @@ import "testing"
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
 	t.Run("Blocks", testBlocks)
+	t.Run("CommStats", testCommStats)
 	t.Run("Exchanges", testExchanges)
 	t.Run("ExchangeTicks", testExchangeTicks)
 	t.Run("Mempools", testMempools)
 	t.Run("PowData", testPowData)
-	t.Run("RedditInfos", testRedditInfos)
-	t.Run("SyncHistories", testSyncHistories)
 	t.Run("Votes", testVotes)
 	t.Run("VSPS", testVSPS)
 	t.Run("VSPTicks", testVSPTicks)
@@ -26,12 +25,11 @@ func TestParent(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	t.Run("Blocks", testBlocksDelete)
+	t.Run("CommStats", testCommStatsDelete)
 	t.Run("Exchanges", testExchangesDelete)
 	t.Run("ExchangeTicks", testExchangeTicksDelete)
 	t.Run("Mempools", testMempoolsDelete)
 	t.Run("PowData", testPowDataDelete)
-	t.Run("RedditInfos", testRedditInfosDelete)
-	t.Run("SyncHistories", testSyncHistoriesDelete)
 	t.Run("Votes", testVotesDelete)
 	t.Run("VSPS", testVSPSDelete)
 	t.Run("VSPTicks", testVSPTicksDelete)
@@ -39,12 +37,11 @@ func TestDelete(t *testing.T) {
 
 func TestQueryDeleteAll(t *testing.T) {
 	t.Run("Blocks", testBlocksQueryDeleteAll)
+	t.Run("CommStats", testCommStatsQueryDeleteAll)
 	t.Run("Exchanges", testExchangesQueryDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksQueryDeleteAll)
 	t.Run("Mempools", testMempoolsQueryDeleteAll)
 	t.Run("PowData", testPowDataQueryDeleteAll)
-	t.Run("RedditInfos", testRedditInfosQueryDeleteAll)
-	t.Run("SyncHistories", testSyncHistoriesQueryDeleteAll)
 	t.Run("Votes", testVotesQueryDeleteAll)
 	t.Run("VSPS", testVSPSQueryDeleteAll)
 	t.Run("VSPTicks", testVSPTicksQueryDeleteAll)
@@ -52,12 +49,11 @@ func TestQueryDeleteAll(t *testing.T) {
 
 func TestSliceDeleteAll(t *testing.T) {
 	t.Run("Blocks", testBlocksSliceDeleteAll)
+	t.Run("CommStats", testCommStatsSliceDeleteAll)
 	t.Run("Exchanges", testExchangesSliceDeleteAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceDeleteAll)
 	t.Run("Mempools", testMempoolsSliceDeleteAll)
 	t.Run("PowData", testPowDataSliceDeleteAll)
-	t.Run("RedditInfos", testRedditInfosSliceDeleteAll)
-	t.Run("SyncHistories", testSyncHistoriesSliceDeleteAll)
 	t.Run("Votes", testVotesSliceDeleteAll)
 	t.Run("VSPS", testVSPSSliceDeleteAll)
 	t.Run("VSPTicks", testVSPTicksSliceDeleteAll)
@@ -65,12 +61,11 @@ func TestSliceDeleteAll(t *testing.T) {
 
 func TestExists(t *testing.T) {
 	t.Run("Blocks", testBlocksExists)
+	t.Run("CommStats", testCommStatsExists)
 	t.Run("Exchanges", testExchangesExists)
 	t.Run("ExchangeTicks", testExchangeTicksExists)
 	t.Run("Mempools", testMempoolsExists)
 	t.Run("PowData", testPowDataExists)
-	t.Run("RedditInfos", testRedditInfosExists)
-	t.Run("SyncHistories", testSyncHistoriesExists)
 	t.Run("Votes", testVotesExists)
 	t.Run("VSPS", testVSPSExists)
 	t.Run("VSPTicks", testVSPTicksExists)
@@ -78,12 +73,11 @@ func TestExists(t *testing.T) {
 
 func TestFind(t *testing.T) {
 	t.Run("Blocks", testBlocksFind)
+	t.Run("CommStats", testCommStatsFind)
 	t.Run("Exchanges", testExchangesFind)
 	t.Run("ExchangeTicks", testExchangeTicksFind)
 	t.Run("Mempools", testMempoolsFind)
 	t.Run("PowData", testPowDataFind)
-	t.Run("RedditInfos", testRedditInfosFind)
-	t.Run("SyncHistories", testSyncHistoriesFind)
 	t.Run("Votes", testVotesFind)
 	t.Run("VSPS", testVSPSFind)
 	t.Run("VSPTicks", testVSPTicksFind)
@@ -91,12 +85,11 @@ func TestFind(t *testing.T) {
 
 func TestBind(t *testing.T) {
 	t.Run("Blocks", testBlocksBind)
+	t.Run("CommStats", testCommStatsBind)
 	t.Run("Exchanges", testExchangesBind)
 	t.Run("ExchangeTicks", testExchangeTicksBind)
 	t.Run("Mempools", testMempoolsBind)
 	t.Run("PowData", testPowDataBind)
-	t.Run("RedditInfos", testRedditInfosBind)
-	t.Run("SyncHistories", testSyncHistoriesBind)
 	t.Run("Votes", testVotesBind)
 	t.Run("VSPS", testVSPSBind)
 	t.Run("VSPTicks", testVSPTicksBind)
@@ -104,12 +97,11 @@ func TestBind(t *testing.T) {
 
 func TestOne(t *testing.T) {
 	t.Run("Blocks", testBlocksOne)
+	t.Run("CommStats", testCommStatsOne)
 	t.Run("Exchanges", testExchangesOne)
 	t.Run("ExchangeTicks", testExchangeTicksOne)
 	t.Run("Mempools", testMempoolsOne)
 	t.Run("PowData", testPowDataOne)
-	t.Run("RedditInfos", testRedditInfosOne)
-	t.Run("SyncHistories", testSyncHistoriesOne)
 	t.Run("Votes", testVotesOne)
 	t.Run("VSPS", testVSPSOne)
 	t.Run("VSPTicks", testVSPTicksOne)
@@ -117,12 +109,11 @@ func TestOne(t *testing.T) {
 
 func TestAll(t *testing.T) {
 	t.Run("Blocks", testBlocksAll)
+	t.Run("CommStats", testCommStatsAll)
 	t.Run("Exchanges", testExchangesAll)
 	t.Run("ExchangeTicks", testExchangeTicksAll)
 	t.Run("Mempools", testMempoolsAll)
 	t.Run("PowData", testPowDataAll)
-	t.Run("RedditInfos", testRedditInfosAll)
-	t.Run("SyncHistories", testSyncHistoriesAll)
 	t.Run("Votes", testVotesAll)
 	t.Run("VSPS", testVSPSAll)
 	t.Run("VSPTicks", testVSPTicksAll)
@@ -130,12 +121,11 @@ func TestAll(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	t.Run("Blocks", testBlocksCount)
+	t.Run("CommStats", testCommStatsCount)
 	t.Run("Exchanges", testExchangesCount)
 	t.Run("ExchangeTicks", testExchangeTicksCount)
 	t.Run("Mempools", testMempoolsCount)
 	t.Run("PowData", testPowDataCount)
-	t.Run("RedditInfos", testRedditInfosCount)
-	t.Run("SyncHistories", testSyncHistoriesCount)
 	t.Run("Votes", testVotesCount)
 	t.Run("VSPS", testVSPSCount)
 	t.Run("VSPTicks", testVSPTicksCount)
@@ -144,6 +134,8 @@ func TestCount(t *testing.T) {
 func TestInsert(t *testing.T) {
 	t.Run("Blocks", testBlocksInsert)
 	t.Run("Blocks", testBlocksInsertWhitelist)
+	t.Run("CommStats", testCommStatsInsert)
+	t.Run("CommStats", testCommStatsInsertWhitelist)
 	t.Run("Exchanges", testExchangesInsert)
 	t.Run("Exchanges", testExchangesInsertWhitelist)
 	t.Run("ExchangeTicks", testExchangeTicksInsert)
@@ -152,10 +144,6 @@ func TestInsert(t *testing.T) {
 	t.Run("Mempools", testMempoolsInsertWhitelist)
 	t.Run("PowData", testPowDataInsert)
 	t.Run("PowData", testPowDataInsertWhitelist)
-	t.Run("RedditInfos", testRedditInfosInsert)
-	t.Run("RedditInfos", testRedditInfosInsertWhitelist)
-	t.Run("SyncHistories", testSyncHistoriesInsert)
-	t.Run("SyncHistories", testSyncHistoriesInsertWhitelist)
 	t.Run("Votes", testVotesInsert)
 	t.Run("Votes", testVotesInsertWhitelist)
 	t.Run("VSPS", testVSPSInsert)
@@ -218,12 +206,11 @@ func TestToManyRemove(t *testing.T) {}
 
 func TestReload(t *testing.T) {
 	t.Run("Blocks", testBlocksReload)
+	t.Run("CommStats", testCommStatsReload)
 	t.Run("Exchanges", testExchangesReload)
 	t.Run("ExchangeTicks", testExchangeTicksReload)
 	t.Run("Mempools", testMempoolsReload)
 	t.Run("PowData", testPowDataReload)
-	t.Run("RedditInfos", testRedditInfosReload)
-	t.Run("SyncHistories", testSyncHistoriesReload)
 	t.Run("Votes", testVotesReload)
 	t.Run("VSPS", testVSPSReload)
 	t.Run("VSPTicks", testVSPTicksReload)
@@ -231,12 +218,11 @@ func TestReload(t *testing.T) {
 
 func TestReloadAll(t *testing.T) {
 	t.Run("Blocks", testBlocksReloadAll)
+	t.Run("CommStats", testCommStatsReloadAll)
 	t.Run("Exchanges", testExchangesReloadAll)
 	t.Run("ExchangeTicks", testExchangeTicksReloadAll)
 	t.Run("Mempools", testMempoolsReloadAll)
 	t.Run("PowData", testPowDataReloadAll)
-	t.Run("RedditInfos", testRedditInfosReloadAll)
-	t.Run("SyncHistories", testSyncHistoriesReloadAll)
 	t.Run("Votes", testVotesReloadAll)
 	t.Run("VSPS", testVSPSReloadAll)
 	t.Run("VSPTicks", testVSPTicksReloadAll)
@@ -244,12 +230,11 @@ func TestReloadAll(t *testing.T) {
 
 func TestSelect(t *testing.T) {
 	t.Run("Blocks", testBlocksSelect)
+	t.Run("CommStats", testCommStatsSelect)
 	t.Run("Exchanges", testExchangesSelect)
 	t.Run("ExchangeTicks", testExchangeTicksSelect)
 	t.Run("Mempools", testMempoolsSelect)
 	t.Run("PowData", testPowDataSelect)
-	t.Run("RedditInfos", testRedditInfosSelect)
-	t.Run("SyncHistories", testSyncHistoriesSelect)
 	t.Run("Votes", testVotesSelect)
 	t.Run("VSPS", testVSPSSelect)
 	t.Run("VSPTicks", testVSPTicksSelect)
@@ -257,12 +242,11 @@ func TestSelect(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("Blocks", testBlocksUpdate)
+	t.Run("CommStats", testCommStatsUpdate)
 	t.Run("Exchanges", testExchangesUpdate)
 	t.Run("ExchangeTicks", testExchangeTicksUpdate)
 	t.Run("Mempools", testMempoolsUpdate)
 	t.Run("PowData", testPowDataUpdate)
-	t.Run("RedditInfos", testRedditInfosUpdate)
-	t.Run("SyncHistories", testSyncHistoriesUpdate)
 	t.Run("Votes", testVotesUpdate)
 	t.Run("VSPS", testVSPSUpdate)
 	t.Run("VSPTicks", testVSPTicksUpdate)
@@ -270,12 +254,11 @@ func TestUpdate(t *testing.T) {
 
 func TestSliceUpdateAll(t *testing.T) {
 	t.Run("Blocks", testBlocksSliceUpdateAll)
+	t.Run("CommStats", testCommStatsSliceUpdateAll)
 	t.Run("Exchanges", testExchangesSliceUpdateAll)
 	t.Run("ExchangeTicks", testExchangeTicksSliceUpdateAll)
 	t.Run("Mempools", testMempoolsSliceUpdateAll)
 	t.Run("PowData", testPowDataSliceUpdateAll)
-	t.Run("RedditInfos", testRedditInfosSliceUpdateAll)
-	t.Run("SyncHistories", testSyncHistoriesSliceUpdateAll)
 	t.Run("Votes", testVotesSliceUpdateAll)
 	t.Run("VSPS", testVSPSSliceUpdateAll)
 	t.Run("VSPTicks", testVSPTicksSliceUpdateAll)

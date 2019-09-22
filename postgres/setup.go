@@ -106,13 +106,13 @@ const (
 		PRIMARY KEY (hash)
 	);`
 
-	createRedditTable = `CREATE TABLE IF NOT EXISTS reddit_info (
+	createCommStatTable = `CREATE TABLE IF NOT EXISTS comm_stat (
 		date timestamp,
-		subscribers INT NOT NULL,
-		accounts_active INT NOT NULL,
+		reddit_subscribers INT NOT NULL,
+		reddit_accounts_active INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
-	lastRedditEntryTime   = `SELECT date FROM reddit_info ORDER BY date DESC LIMIT 1`
+	lastCommStatEntryTime = `SELECT date FROM comm_stat ORDER BY date DESC LIMIT 1`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -211,19 +211,13 @@ func (pg *PgDb) VoteTableExits() bool {
 }
 
 // reddit table
-func (pg *PgDb) CreateRedditTable() error {
-	_, err := pg.db.Exec(createRedditTable)
+func (pg *PgDb) CreateCommStatTable() error {
+	_, err := pg.db.Exec(createCommStatTable)
 	return err
 }
 
-func (pg *PgDb) RedditTableExits() bool {
-	exists, _ := pg.tableExists("reddit_info")
-	return exists
-}
-
-
-func (pg *PgDb) SyncHistoryTableExists() bool {
-	exists, _ := pg.tableExists("sync_history")
+func (pg *PgDb) CommStatTableExits() bool {
+	exists, _ := pg.tableExists("comm_stat")
 	return exists
 }
 

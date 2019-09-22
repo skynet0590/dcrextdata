@@ -8,6 +8,8 @@ import "testing"
 func TestUpsert(t *testing.T) {
 	t.Run("Blocks", testBlocksUpsert)
 
+	t.Run("CommStats", testCommStatsUpsert)
+
 	t.Run("Exchanges", testExchangesUpsert)
 
 	t.Run("ExchangeTicks", testExchangeTicksUpsert)
@@ -15,10 +17,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("Mempools", testMempoolsUpsert)
 
 	t.Run("PowData", testPowDataUpsert)
-
-	t.Run("RedditInfos", testRedditInfosUpsert)
-
-	t.Run("SyncHistories", testSyncHistoriesUpsert)
 
 	t.Run("Votes", testVotesUpsert)
 

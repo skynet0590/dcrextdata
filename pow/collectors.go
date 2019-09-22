@@ -167,7 +167,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []PowData{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout:3*time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {

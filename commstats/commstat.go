@@ -2,7 +2,7 @@
 // Use of this source code is governed by an ISC
 // license that can be found in the LICENSE file.
 
-package reddit
+package commstats
 
 import (
 	"context"
@@ -16,44 +16,44 @@ import (
 )
 
 const (
-	requestURL = "https://www.reddit.com/r/decred/about.json"
-	retryLimit = 3
+	redditRequestURL = "https://www.reddit.com/r/decred/about.json"
+	retryLimit       = 3
 )
 
-func NewRedditCollector(period int64, store DataStore) (*Collector, error) {
+func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
 	if period < 300 {
-		log.Info("The minimum value for reddit interval is 300s(5m), setting reddit interval to 300")
+		log.Info("The minimum value for community stat collector interval is 300s(5m), setting interval to 300")
 		period = 300
 	}
 
 	if period > 1800{
-		log.Info("The minimum value for reddit interval is 1800s(30m), setting reddit interval to 1800")
+		log.Info("The minimum value for community stat collector interval is 1800s(30m), setting interval to 1800")
 		period = 1800
 	}
 
-	request, err := http.NewRequest(http.MethodGet, requestURL, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// reddit returns too many request http status if user agent is not set
-	request.Header.Set("user-agent",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
-
 	return &Collector{
-		client:    http.Client{Timeout: 10 * time.Second},
-		period:    time.Duration(period),
-		request:   request,
-		dataStore: store,
+		client:        http.Client{Timeout: 10 * time.Second},
+		period:        time.Duration(period),
+		dataStore:     store,
 	}, nil
 }
 
-func (c *Collector) fetch(ctx context.Context, response *Response) error {
+func (c *Collector) fetchRedditStat(ctx context.Context, response *RedditResponse) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	// log.Tracef("GET %v", requestURL)
-	resp, err := c.client.Do(c.request.WithContext(ctx))
+
+	request, err := http.NewRequest(http.MethodGet, redditRequestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	// reddit returns too many redditRequest http status if user agent is not set
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+
+	// log.Tracef("GET %v", redditRequestURL)
+	resp, err := c.client.Do(request.WithContext(ctx))
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (c *Collector) fetch(ctx context.Context, response *Response) error {
 			return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
 		}
 	} else {
-		log.Infof("Unable to fetch data from reddit: %s", resp.Status)
+		log.Infof("Unable to fetchRedditStat data from reddit: %s", resp.Status)
 	}
 
 	return nil
@@ -75,16 +75,16 @@ func (c *Collector) Run(ctx context.Context) {
 		return
 	}
 
-	lastCollectionDate := c.dataStore.LastRedditEntryTime()
-	lastCollectionDate = lastCollectionDate.Add(-1 * time.Hour) // todo: this need justification
+	lastCollectionDate := c.dataStore.LastCommStatEntry()
+	lastCollectionDate = lastCollectionDate.Add(time.Hour) // todo: this need justification
 	secondsPassed := time.Since(lastCollectionDate)
 	period := c.period * time.Second
 
-	log.Info("Starting Reddit data collection cycle.")
+	log.Info("Starting community stats collection cycle.")
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		log.Infof("Fetching reddit data every %dm, collected %s ago, will fetch in %s.", c.period/60,
+		log.Infof("Fetching community stats every %dm, collected %s ago, will fetch in %s.", c.period/60,
 			helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
@@ -98,7 +98,7 @@ func (c *Collector) Run(ctx context.Context) {
 		}
 	}
 
-	log.Info("Fetching RedditInfo data...")
+	log.Info("Fetching community stats...")
 
 	err := c.collectAndStore(ctx)
 	app.ReleaseForNewModule()
@@ -113,7 +113,7 @@ func (c *Collector) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("Shutting down reddit data collector")
+			log.Infof("Shutting down community stats collector")
 			return
 		case <-ticker.C:
 			// continually check the state of the app until its free to run this module
@@ -122,7 +122,7 @@ func (c *Collector) Run(ctx context.Context) {
 					break
 				}
 			}
-			log.Info("Fetching RedditInfo data...")
+			log.Info("Fetching community stats...")
 			err := c.collectAndStore(ctx)
 			app.ReleaseForNewModule()
 			if err != nil {
@@ -137,20 +137,20 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		return ctx.Err()
 	}
 
-	resp := new(Response)
-	err := c.fetch(ctx, resp)
+	resp := new(RedditResponse)
+	err := c.fetchRedditStat(ctx, resp)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
 		}
 		log.Warn(err)
-		err = c.fetch(ctx, resp)
+		err = c.fetchRedditStat(ctx, resp)
 	}
 
-	redditData := RedditInfo{
-		Date: time.Now(),
-		Subscribers: resp.Data.Subscribers,
-		AccountsActive: resp.Data.AccountsActive,
+	redditData := CommStat{
+		Date:                 time.Now().UTC(),
+		RedditSubscribers:    resp.Data.Subscribers,
+		RedditAccountsActive: resp.Data.AccountsActive,
 	}
-	return c.dataStore.StoreRedditData(ctx, redditData)
+	return c.dataStore.StoreCommStat(ctx, redditData)
 }

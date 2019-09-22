@@ -5,23 +5,21 @@ package models
 
 var TableNames = struct {
 	Block        string
+	CommStat     string
 	Exchange     string
 	ExchangeTick string
 	Mempool      string
 	PowData      string
-	RedditInfo   string
-	SyncHistory  string
 	Vote         string
 	VSP          string
 	VSPTick      string
 }{
 	Block:        "block",
+	CommStat:     "comm_stat",
 	Exchange:     "exchange",
 	ExchangeTick: "exchange_tick",
 	Mempool:      "mempool",
 	PowData:      "pow_data",
-	RedditInfo:   "reddit_info",
-	SyncHistory:  "sync_history",
 	Vote:         "vote",
 	VSP:          "vsp",
 	VSPTick:      "vsp_tick",

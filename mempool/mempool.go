@@ -312,7 +312,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Mempool{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout:3*time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -367,7 +367,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Block{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout:3*time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -419,7 +419,7 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Vote{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout:3*time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {

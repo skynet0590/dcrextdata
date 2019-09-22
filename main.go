@@ -26,7 +26,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
-	"github.com/raedahgroup/dcrextdata/reddit"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -159,6 +159,7 @@ func _main(ctx context.Context) error {
 		syncDbs[databaseName] = db
 		syncCoordinator.AddSource(source, db, databaseName)
 	}
+
 	// http server method
 	if cfg.HttpMode {
 		extDbFactory := func(name string) (query web.DataQuery, e error) {
@@ -261,23 +262,19 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableReddit {
-		if exists := db.RedditTableExits(); !exists {
-			if err := db.CreateRedditTable(); err != nil {
+		if exists := db.CommStatTableExits(); !exists {
+			if err := db.CreateCommStatTable(); err != nil {
 				log.Error("Error creating reddit data table: ", err)
 				return err
 			}
 		}
 
-		redditCollector, err := reddit.NewRedditCollector(cfg.RedditInterval, db)
+		redditCollector, err := commstats.NewCommStatCollector(cfg.RedditInterval, db)
 		if err == nil {
 			go redditCollector.Run(ctx)
 		} else {
 			log.Error(err)
 		}
-	}
-
-	if cfg.HttpMode {
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
 	}
 	
 	go syncCoordinator.StartSyncing(ctx)
