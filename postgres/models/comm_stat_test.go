@@ -427,7 +427,7 @@ func testCommStatsSelect(t *testing.T) {
 }
 
 var (
-	commStatDBTypes = map[string]string{`Date`: `timestamp without time zone`, `RedditSubscribers`: `integer`, `RedditAccountsActive`: `integer`}
+	commStatDBTypes = map[string]string{`Date`: `timestamp without time zone`, `RedditSubscribers`: `integer`, `RedditAccountsActive`: `integer`, `TwitterFollowers`: `integer`}
 	_               = bytes.MinRead
 )
 

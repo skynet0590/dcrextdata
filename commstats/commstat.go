@@ -7,6 +7,7 @@ package commstats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,6 +18,7 @@ import (
 
 const (
 	redditRequestURL = "https://www.reddit.com/r/decred/about.json"
+	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
 	retryLimit       = 3
 )
 
@@ -38,45 +40,12 @@ func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
 	}, nil
 }
 
-func (c *Collector) fetchRedditStat(ctx context.Context, response *RedditResponse) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	request, err := http.NewRequest(http.MethodGet, redditRequestURL, nil)
-	if err != nil {
-		return err
-	}
-
-	// reddit returns too many redditRequest http status if user agent is not set
-	request.Header.Set("user-agent",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
-
-	// log.Tracef("GET %v", redditRequestURL)
-	resp, err := c.client.Do(request.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		err = json.NewDecoder(resp.Body).Decode(response)
-		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
-		}
-	} else {
-		log.Infof("Unable to fetchRedditStat data from reddit: %s", resp.Status)
-	}
-
-	return nil
-}
-
 func (c *Collector) Run(ctx context.Context) {
 	if ctx.Err() != nil {
 		return
 	}
 
 	lastCollectionDate := c.dataStore.LastCommStatEntry()
-	lastCollectionDate = lastCollectionDate.Add(time.Hour) // todo: this need justification
 	secondsPassed := time.Since(lastCollectionDate)
 	period := c.period * time.Second
 
@@ -137,6 +106,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		return ctx.Err()
 	}
 
+	// reddit
 	resp := new(RedditResponse)
 	err := c.fetchRedditStat(ctx, resp)
 	for retry := 0; err != nil; retry++ {
@@ -147,10 +117,91 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		err = c.fetchRedditStat(ctx, resp)
 	}
 
-	redditData := CommStat{
+	stat := CommStat{
 		Date:                 time.Now().UTC(),
 		RedditSubscribers:    resp.Data.Subscribers,
 		RedditAccountsActive: resp.Data.AccountsActive,
 	}
-	return c.dataStore.StoreCommStat(ctx, redditData)
+
+	// twitter
+	stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
+	for retry := 0; err != nil; retry++ {
+		if retry == retryLimit {
+			return err
+		}
+		log.Warn(err)
+		stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
+	}
+	return c.dataStore.StoreCommStat(ctx, stat)
+}
+
+func (c *Collector) fetchRedditStat(ctx context.Context, response *RedditResponse) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
+	request, err := http.NewRequest(http.MethodGet, redditRequestURL, nil)
+	if err != nil {
+		return err
+	}
+
+	// reddit returns too many redditRequest http status if user agent is not set
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+
+	// log.Tracef("GET %v", redditRequestURL)
+	resp, err := c.client.Do(request.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(response)
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+		}
+	} else {
+		log.Infof("Unable to fetchRedditStat data from reddit: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {
+	if ctx.Err() != nil {
+		return 0, ctx.Err()
+	}
+
+	request, err := http.NewRequest(http.MethodGet, twitterRequestURL, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	// reddit returns too many redditRequest http status if user agent is not set
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+
+	// log.Tracef("GET %v", redditRequestURL)
+	resp, err := c.client.Do(request.WithContext(ctx))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	var response []struct{
+		Followers int `json:"followers_count"`
+	}
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+		}
+	} else {
+		return 0, fmt.Errorf("unable to fetch twitter followers: %s", resp.Status)
+	}
+
+	if len(response) < 1 {
+		return 0, errors.New("unable to fetch twitter followers, no response")
+	}
+
+	return response[0].Followers, nil
 }

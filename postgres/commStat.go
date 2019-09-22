@@ -12,11 +12,12 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func (pg *PgDb) StoreCommStat(ctx context.Context, redditInfo commstats.CommStat) error {
+func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) error {
 	commStat := models.CommStat{
-		Date:              redditInfo.Date,
-		RedditSubscribers:          redditInfo.RedditSubscribers,
-		RedditAccountsActive:      redditInfo.RedditAccountsActive,
+		Date:                 stat.Date,
+		RedditSubscribers:    stat.RedditSubscribers,
+		RedditAccountsActive: stat.RedditAccountsActive,
+		TwitterFollowers:     stat.TwitterFollowers,
 	}
 	err := commStat.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -25,8 +26,11 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, redditInfo commstats.CommStat
 		}
 		return err
 	}
-	log.Infof("Added a new Community stat entry received at %s, Reddit Subscribers %d, Reddit Active Users %d",
-		redditInfo.Date.Format(dateMiliTemplate), redditInfo.RedditSubscribers, redditInfo.RedditAccountsActive)
+	log.Infof("Added a new Community stat entry received at %s, " +
+		"\nReddit Subscribers  %d, " +
+		"\nReddit Active Users %d, " +
+		"\nTwitter Followers   %d",
+		stat.Date.Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive, stat.TwitterFollowers)
 	return nil
 }
 

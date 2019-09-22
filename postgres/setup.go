@@ -110,6 +110,7 @@ const (
 		date timestamp,
 		reddit_subscribers INT NOT NULL,
 		reddit_accounts_active INT NOT NULL,
+		twitter_followers INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
 	lastCommStatEntryTime = `SELECT date FROM comm_stat ORDER BY date DESC LIMIT 1`
@@ -285,6 +286,11 @@ func (pg *PgDb) DropAllTables() error {
 
 	// reddit
 	if err := pg.dropTable("reddit_info"); err != nil {
+		return err
+	}
+
+	// comm_stat
+	if err := pg.dropTable("comm_stat"); err != nil {
 		return err
 	}
 
