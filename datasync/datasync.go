@@ -15,7 +15,7 @@ var coordinator *SyncCoordinator
 
 func NewCoordinator(isEnabled bool, period int) *SyncCoordinator {
 	coordinator = &SyncCoordinator{
-		period: period,
+		period:    period,
 		instances: []instance{}, syncers: map[string]Syncer{}, isEnabled: isEnabled, syncersKeys: map[int]string{},
 	}
 	return coordinator
@@ -28,8 +28,8 @@ func (s *SyncCoordinator) AddSyncer(tableName string, syncer Syncer) {
 
 func (s *SyncCoordinator) AddSource(url string, store Store, database string) {
 	s.instances = append(s.instances, instance{
-		store: store,
-		url:   url,
+		store:    store,
+		url:      url,
 		database: database,
 	})
 }

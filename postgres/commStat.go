@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/commstats"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -26,9 +26,9 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) erro
 		}
 		return err
 	}
-	log.Infof("Added a new Community stat entry received at %s, " +
-		"\nReddit Subscribers  %d, " +
-		"\nReddit Active Users %d, " +
+	log.Infof("Added a new Community stat entry received at %s, "+
+		"\nReddit Subscribers  %d, "+
+		"\nReddit Active Users %d, "+
 		"\nTwitter Followers   %d",
 		stat.Date.Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive, stat.TwitterFollowers)
 	return nil

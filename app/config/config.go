@@ -30,7 +30,7 @@ const (
 	defaultMempoolInterval = 60
 	defaultVSPInterval     = 300
 	defaultPowInterval     = 300
-	defaultRedditInterval = 300
+	defaultRedditInterval  = 300
 	defaultSyncInterval    = 60
 )
 
@@ -45,7 +45,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DBName:          defaultDbName,
 		DebugLevel:      defaultLogLevel,
 		VSPInterval:     defaultVSPInterval,
-		RedditInterval: defaultRedditInterval,
+		RedditInterval:  defaultRedditInterval,
 		PowInterval:     defaultPowInterval,
 		MempoolInterval: defaultMempoolInterval,
 		DcrdNetworkType: defaultDcrdNetworkType,
@@ -54,7 +54,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DcrdRpcPassword: defaultDcrdPassword,
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
-		SyncInterval: 	 defaultSyncInterval,
+		SyncInterval:    defaultSyncInterval,
 	}
 }
 

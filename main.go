@@ -21,12 +21,12 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
-	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -276,7 +276,7 @@ func _main(ctx context.Context) error {
 			log.Error(err)
 		}
 	}
-	
+
 	go syncCoordinator.StartSyncing(ctx)
 
 	// wait for shutdown signal

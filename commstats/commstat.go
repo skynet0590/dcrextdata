@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	redditRequestURL = "https://www.reddit.com/r/decred/about.json"
+	redditRequestURL  = "https://www.reddit.com/r/decred/about.json"
 	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
-	retryLimit       = 3
+	retryLimit        = 3
 )
 
 func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
@@ -28,15 +28,15 @@ func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
 		period = 300
 	}
 
-	if period > 1800{
+	if period > 1800 {
 		log.Info("The minimum value for community stat collector interval is 1800s(30m), setting interval to 1800")
 		period = 1800
 	}
 
 	return &Collector{
-		client:        http.Client{Timeout: 10 * time.Second},
-		period:        time.Duration(period),
-		dataStore:     store,
+		client:    http.Client{Timeout: 10 * time.Second},
+		period:    time.Duration(period),
+		dataStore: store,
 	}, nil
 }
 
@@ -187,7 +187,7 @@ func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	defer resp.Body.Close()
-	var response []struct{
+	var response []struct {
 		Followers int `json:"followers_count"`
 	}
 	if resp.StatusCode == http.StatusOK {

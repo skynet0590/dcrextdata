@@ -19,7 +19,7 @@ type CommStat struct {
 
 type RedditResponse struct {
 	Kind string `json:"kind"`
-	Data struct{
+	Data struct {
 		Subscribers    int `json:"subscribers"`
 		AccountsActive int `json:"active_user_count"`
 	} `json:"data"`
@@ -31,7 +31,7 @@ type DataStore interface {
 }
 
 type Collector struct {
-	client        http.Client
-	period        time.Duration
-	dataStore     DataStore
+	client    http.Client
+	period    time.Duration
+	dataStore DataStore
 }

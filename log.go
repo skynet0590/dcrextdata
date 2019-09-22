@@ -13,11 +13,11 @@ import (
 
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
-	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/vsp"
 	"github.com/raedahgroup/dcrextdata/web"
 )
@@ -47,7 +47,7 @@ var (
 	vspLog     = backendLog.Logger("VSPC")
 	powLog     = backendLog.Logger("POWL")
 	mempoolLog = backendLog.Logger("MEMP")
-	redditLog = backendLog.Logger("REDD")
+	redditLog  = backendLog.Logger("REDD")
 	webLog     = backendLog.Logger("WEBL")
 	syncLog    = backendLog.Logger("SYNC")
 )
