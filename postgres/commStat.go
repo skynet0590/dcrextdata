@@ -19,6 +19,8 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) erro
 		RedditAccountsActive: stat.RedditAccountsActive,
 		TwitterFollowers:     stat.TwitterFollowers,
 		YoutubeSubscribers:   stat.YoutubeSubscribers,
+		GithubStars:          stat.GithubStars,
+		GithubFolks:          stat.GithubFolks,
 	}
 	err := commStat.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -60,6 +62,10 @@ func (pg *PgDb) CommStats(ctx context.Context, offtset int, limit int) ([]commst
 			Date:                 record.Date,
 			RedditSubscribers:    record.RedditSubscribers,
 			RedditAccountsActive: record.RedditAccountsActive,
+			TwitterFollowers:     record.TwitterFollowers,
+			YoutubeSubscribers:   record.YoutubeSubscribers,
+			GithubStars:          record.GithubStars,
+			GithubFolks:          record.GithubFolks,
 		})
 	}
 	return result, nil

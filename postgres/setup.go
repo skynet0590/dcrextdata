@@ -112,6 +112,8 @@ const (
 		reddit_accounts_active INT NOT NULL,
 		twitter_followers INT NOT NULL,
 		youtube_subscribers INT NOT NULL,
+		github_stars INT NOT NULL,
+		github_folks INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
 	lastCommStatEntryTime = `SELECT date FROM comm_stat ORDER BY date DESC LIMIT 1`

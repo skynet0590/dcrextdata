@@ -28,6 +28,8 @@ type CommStat struct {
 	RedditAccountsActive int       `boil:"reddit_accounts_active" json:"reddit_accounts_active" toml:"reddit_accounts_active" yaml:"reddit_accounts_active"`
 	TwitterFollowers     int       `boil:"twitter_followers" json:"twitter_followers" toml:"twitter_followers" yaml:"twitter_followers"`
 	YoutubeSubscribers   int       `boil:"youtube_subscribers" json:"youtube_subscribers" toml:"youtube_subscribers" yaml:"youtube_subscribers"`
+	GithubStars          int       `boil:"github_stars" json:"github_stars" toml:"github_stars" yaml:"github_stars"`
+	GithubFolks          int       `boil:"github_folks" json:"github_folks" toml:"github_folks" yaml:"github_folks"`
 
 	R *commStatR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L commStatL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,12 +41,16 @@ var CommStatColumns = struct {
 	RedditAccountsActive string
 	TwitterFollowers     string
 	YoutubeSubscribers   string
+	GithubStars          string
+	GithubFolks          string
 }{
 	Date:                 "date",
 	RedditSubscribers:    "reddit_subscribers",
 	RedditAccountsActive: "reddit_accounts_active",
 	TwitterFollowers:     "twitter_followers",
 	YoutubeSubscribers:   "youtube_subscribers",
+	GithubStars:          "github_stars",
+	GithubFolks:          "github_folks",
 }
 
 // Generated where
@@ -76,12 +82,16 @@ var CommStatWhere = struct {
 	RedditAccountsActive whereHelperint
 	TwitterFollowers     whereHelperint
 	YoutubeSubscribers   whereHelperint
+	GithubStars          whereHelperint
+	GithubFolks          whereHelperint
 }{
 	Date:                 whereHelpertime_Time{field: "\"comm_stat\".\"date\""},
 	RedditSubscribers:    whereHelperint{field: "\"comm_stat\".\"reddit_subscribers\""},
 	RedditAccountsActive: whereHelperint{field: "\"comm_stat\".\"reddit_accounts_active\""},
 	TwitterFollowers:     whereHelperint{field: "\"comm_stat\".\"twitter_followers\""},
 	YoutubeSubscribers:   whereHelperint{field: "\"comm_stat\".\"youtube_subscribers\""},
+	GithubStars:          whereHelperint{field: "\"comm_stat\".\"github_stars\""},
+	GithubFolks:          whereHelperint{field: "\"comm_stat\".\"github_folks\""},
 }
 
 // CommStatRels is where relationship names are stored.
@@ -101,8 +111,8 @@ func (*commStatR) NewStruct() *commStatR {
 type commStatL struct{}
 
 var (
-	commStatAllColumns            = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers"}
-	commStatColumnsWithoutDefault = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers"}
+	commStatAllColumns            = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
+	commStatColumnsWithoutDefault = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
 	commStatColumnsWithDefault    = []string{}
 	commStatPrimaryKeyColumns     = []string{"date"}
 )

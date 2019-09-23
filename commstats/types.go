@@ -16,6 +16,8 @@ type CommStat struct {
 	RedditAccountsActive int       `json:"reddit_accounts_active"`
 	TwitterFollowers     int       `json:"twitter_followers"`
 	YoutubeSubscribers   int       `json:"youtube_subscribers"`
+	GithubStars          int       `json:"github_stars"`
+	GithubFolks          int       `json:"github_folks"`
 }
 
 type RedditResponse struct {

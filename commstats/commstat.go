@@ -145,6 +145,15 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
 	}
 
+	// github
+	stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
+	for retry := 0; err != nil; retry++ {
+		if retry == retryLimit {
+			return err
+		}
+		log.Warn(err)
+		stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
+	}
 
 	return c.dataStore.StoreCommStat(ctx, stat)
 }
@@ -267,4 +276,38 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 	}
 
 	return subscribers, nil
+}
+
+func (c *Collector) getGithubData(ctx context.Context) (int, int, error) {
+	if ctx.Err() != nil {
+		return 0, 0, ctx.Err()
+	}
+
+	request, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/decred/dcrd", nil)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+
+	resp, err := c.client.Do(request.WithContext(ctx))
+	if err != nil {
+		return 0, 0, err
+	}
+	defer resp.Body.Close()
+	var response struct {
+		Stars int `json:"stargazers_count"`
+		Folks int `json:"forks_count"`
+	}
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return 0, 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+		}
+	} else {
+		return 0, 0, fmt.Errorf("unable to fetch youtube subscribers: %s", resp.Status)
+	}
+
+	return response.Stars, response.Folks, nil
 }
