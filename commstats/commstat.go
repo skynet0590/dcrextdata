@@ -19,6 +19,8 @@ import (
 const (
 	redditRequestURL  = "https://www.reddit.com/r/decred/about.json"
 	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
+	youtubeChannelId  = "UCJ2bYDaPYHpSmJPh_M5dNSg"
+	youtubeKey		  = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
 	retryLimit        = 3
 )
 
@@ -132,6 +134,18 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		log.Warn(err)
 		stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
 	}
+
+	// youtube
+	stat.TwitterFollowers, err = c.getYoutubeSubscriberCount(ctx)
+	for retry := 0; err != nil; retry++ {
+		if retry == retryLimit {
+			return err
+		}
+		log.Warn(err)
+		stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
+	}
+
+
 	return c.dataStore.StoreCommStat(ctx, stat)
 }
 
@@ -204,4 +218,48 @@ func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {
 	}
 
 	return response[0].Followers, nil
+}
+
+func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) {
+	if ctx.Err() != nil {
+		return 0, ctx.Err()
+	}
+
+	youtubeUrl := fmt.Sprintf("https://content.googleapis.com/youtube/v3/channels?key=%s&part=statistics&id=%s",
+		youtubeKey, youtubeChannelId)
+
+	request, err := http.NewRequest(http.MethodGet, youtubeUrl, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	request.Header.Set("user-agent",
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+
+	resp, err := c.client.Do(request.WithContext(ctx))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	var response struct {
+		Items []struct{
+			Statistics struct{
+				SubscriberCount int `json:"subscriberCount"`
+			} `json:"statistics"`
+		} `json:"items"`
+	}
+	if resp.StatusCode == http.StatusOK {
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
+		}
+	} else {
+		return 0, fmt.Errorf("unable to fetch youtube subscribers: %s", resp.Status)
+	}
+
+	if len(response.Items) < 1 {
+		return 0, errors.New("unable to fetch youtube subscribers, no response")
+	}
+
+	return response.Items[0].Statistics.SubscriberCount, nil
 }
