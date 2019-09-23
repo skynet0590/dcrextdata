@@ -27,6 +27,7 @@ type CommStat struct {
 	RedditSubscribers    int       `boil:"reddit_subscribers" json:"reddit_subscribers" toml:"reddit_subscribers" yaml:"reddit_subscribers"`
 	RedditAccountsActive int       `boil:"reddit_accounts_active" json:"reddit_accounts_active" toml:"reddit_accounts_active" yaml:"reddit_accounts_active"`
 	TwitterFollowers     int       `boil:"twitter_followers" json:"twitter_followers" toml:"twitter_followers" yaml:"twitter_followers"`
+	YoutubeSubscribers   int       `boil:"youtube_subscribers" json:"youtube_subscribers" toml:"youtube_subscribers" yaml:"youtube_subscribers"`
 
 	R *commStatR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L commStatL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +38,13 @@ var CommStatColumns = struct {
 	RedditSubscribers    string
 	RedditAccountsActive string
 	TwitterFollowers     string
+	YoutubeSubscribers   string
 }{
 	Date:                 "date",
 	RedditSubscribers:    "reddit_subscribers",
 	RedditAccountsActive: "reddit_accounts_active",
 	TwitterFollowers:     "twitter_followers",
+	YoutubeSubscribers:   "youtube_subscribers",
 }
 
 // Generated where
@@ -72,11 +75,13 @@ var CommStatWhere = struct {
 	RedditSubscribers    whereHelperint
 	RedditAccountsActive whereHelperint
 	TwitterFollowers     whereHelperint
+	YoutubeSubscribers   whereHelperint
 }{
 	Date:                 whereHelpertime_Time{field: "\"comm_stat\".\"date\""},
 	RedditSubscribers:    whereHelperint{field: "\"comm_stat\".\"reddit_subscribers\""},
 	RedditAccountsActive: whereHelperint{field: "\"comm_stat\".\"reddit_accounts_active\""},
 	TwitterFollowers:     whereHelperint{field: "\"comm_stat\".\"twitter_followers\""},
+	YoutubeSubscribers:   whereHelperint{field: "\"comm_stat\".\"youtube_subscribers\""},
 }
 
 // CommStatRels is where relationship names are stored.
@@ -96,8 +101,8 @@ func (*commStatR) NewStruct() *commStatR {
 type commStatL struct{}
 
 var (
-	commStatAllColumns            = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers"}
-	commStatColumnsWithoutDefault = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers"}
+	commStatAllColumns            = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers"}
+	commStatColumnsWithoutDefault = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers"}
 	commStatColumnsWithDefault    = []string{}
 	commStatPrimaryKeyColumns     = []string{"date"}
 )

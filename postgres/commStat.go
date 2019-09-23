@@ -18,6 +18,7 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) erro
 		RedditSubscribers:    stat.RedditSubscribers,
 		RedditAccountsActive: stat.RedditAccountsActive,
 		TwitterFollowers:     stat.TwitterFollowers,
+		YoutubeSubscribers:   stat.YoutubeSubscribers,
 	}
 	err := commStat.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
@@ -29,8 +30,10 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) erro
 	log.Infof("Added a new Community stat entry received at %s, \n"+
 		"\t\t  Reddit Subscribers  %d\n"+
 		"\t\t  Reddit Active Users %d\n"+
-		"\t\t  Twitter Followers   %d",
-		stat.Date.Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive, stat.TwitterFollowers)
+		"\t\t  Twitter Followers   %d\n"+
+		"\t\t  Youtube Subscribers   %d",
+		stat.Date.Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive, stat.TwitterFollowers,
+		stat.YoutubeSubscribers)
 	return nil
 }
 

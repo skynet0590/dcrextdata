@@ -10,10 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
-	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 const (
@@ -47,7 +47,7 @@ func (c *Collector) Run(ctx context.Context) {
 		return
 	}
 
-	lastCollectionDate := c.dataStore.LastCommStatEntry()
+	/*lastCollectionDate := c.dataStore.LastCommStatEntry()
 	secondsPassed := time.Since(lastCollectionDate)
 	period := c.period * time.Second
 
@@ -60,7 +60,7 @@ func (c *Collector) Run(ctx context.Context) {
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)
-	}
+	}*/
 
 	// continually check the state of the app until its free to run this module
 	for {
@@ -136,7 +136,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 	}
 
 	// youtube
-	stat.TwitterFollowers, err = c.getYoutubeSubscriberCount(ctx)
+	stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
@@ -244,7 +244,7 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 	var response struct {
 		Items []struct{
 			Statistics struct{
-				SubscriberCount int `json:"subscriberCount"`
+				SubscriberCount string `json:"subscriberCount"`
 			} `json:"statistics"`
 		} `json:"items"`
 	}
@@ -261,5 +261,10 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 		return 0, errors.New("unable to fetch youtube subscribers, no response")
 	}
 
-	return response.Items[0].Statistics.SubscriberCount, nil
+	subscribers, err := strconv.Atoi(response.Items[0].Statistics.SubscriberCount)
+	if err != nil {
+		return 0, errors.New("unable to fetch youtube subscribers, no response")
+	}
+
+	return subscribers, nil
 }
