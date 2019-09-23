@@ -50,14 +50,14 @@ func (pg *PgDb) CommStatCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) CommStats(ctx context.Context, offtset int, limit int) ([]commstats.CommStat, error) {
-	redditInfoSlice, err := models.CommStats(qm.OrderBy(fmt.Sprintf("%s DESC", models.CommStatColumns.Date)),
+	commStatSlices, err := models.CommStats(qm.OrderBy(fmt.Sprintf("%s DESC", models.CommStatColumns.Date)),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []commstats.CommStat
-	for _, record := range redditInfoSlice {
+	for _, record := range commStatSlices {
 		result = append(result, commstats.CommStat{
 			Date:                 record.Date,
 			RedditSubscribers:    record.RedditSubscribers,

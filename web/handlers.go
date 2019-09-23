@@ -1299,6 +1299,18 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	return data, nil
 }
 
+//communitystat
+func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	page := req.FormValue("page")
+
+	data := map[string]interface{}{
+		"page": page,
+	}
+
+	s.render("communityStat.html", data, res)
+}
+
 // api/sync/{dataType}
 func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	dataType := getSyncDataTypeCtx(req)
