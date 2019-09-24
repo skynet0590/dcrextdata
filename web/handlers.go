@@ -1302,15 +1302,48 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 //communitystat
 func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	page := req.FormValue("page")
+	pageStr := req.FormValue("page")
+	viewOption := req.FormValue("view-option")
+	selectedNumStr := req.FormValue("records-per-page")
+
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+
+	if viewOption == "" {
+		viewOption = "table"
+	}
+
+	selectedNum, _ := strconv.Atoi(selectedNumStr)
+	if selectedNum == 0 {
+		selectedNum = 20
+	}
+
+	var previousPage, nextPage int
+	if page > 1 {
+		previousPage = page - 1
+	} else {
+		previousPage = 1
+	}
+
+	nextPage = page + 1
 
 	data := map[string]interface{}{
 		"page": page,
+		"viewOption": viewOption,
+		"selectedViewOption":   viewOption,
+		"currentPage":          page,
+		"pageSizeSelector":     pageSizeSelector,
+		"selectedNum":			selectedNum,
+		"previousPage":			previousPage,
+		"nextPage":				nextPage,
 	}
 
 	s.render("communityStat.html", data, res)
 }
 
+// getCommunityStat
 func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	pageStr := req.FormValue("page")
@@ -1334,7 +1367,17 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	s.renderJSON(map[string]interface{}{"stats": stats, "total": totalCount}, resp)
+	totalPages := totalCount/int64(pageSize)
+	if totalCount > totalPages * int64(pageSize) {
+		totalPages += 1
+	}
+
+	s.renderJSON(map[string]interface{}{
+		"stats": stats,
+		"total": totalCount,
+		"totalPages": totalPages,
+		"currentPage": page,
+	}, resp)
 }
 
 // api/sync/{dataType}
