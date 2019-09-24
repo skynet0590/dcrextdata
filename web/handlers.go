@@ -984,7 +984,7 @@ func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
 		receiveTimeRecordsForHeight[record.BlockHeight] = append(receiveTimeRecordsForHeight[record.BlockHeight], record.TimeDifference)
 	}
 
-	var yLabel = "Time Difference (s)"
+	var yLabel = "Time Difference (Milliseconds)"
 	var csv = fmt.Sprintf("Height,%s\n", yLabel)
 
 	avg := func(records []float64) float64 {
@@ -1000,7 +1000,7 @@ func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
 	}
 
 	for _, height := range heightArr {
-		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height]))
+		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height]) * 1000)
 		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
 	}
 

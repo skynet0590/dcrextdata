@@ -406,7 +406,7 @@ export default class extends Controller {
   plotGraph (csv) {
     const _this = this
 
-    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (s)' : 'Delay (s)'
+    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (Milliseconds)' : 'Delay (s)'
     let options = {
       legend: 'always',
       includeZero: true,
