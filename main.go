@@ -261,7 +261,7 @@ func _main(ctx context.Context) error {
 		}
 	}
 
-	if !cfg.DisableReddit {
+	if !cfg.DisableCommunityStat {
 		if exists := db.CommStatTableExits(); !exists {
 			if err := db.CreateCommStatTable(); err != nil {
 				log.Error("Error creating reddit data table: ", err)
@@ -269,7 +269,7 @@ func _main(ctx context.Context) error {
 			}
 		}
 
-		redditCollector, err := commstats.NewCommStatCollector(cfg.RedditInterval, db)
+		redditCollector, err := commstats.NewCommStatCollector(cfg.CommunityStatInterval, db, &cfg.CommunityStatOptions)
 		if err == nil {
 			go redditCollector.Run(ctx)
 		} else {

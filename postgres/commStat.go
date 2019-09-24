@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,16 +14,20 @@ import (
 )
 
 func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) error {
-	commStat := models.CommStat{
-		Date:                 stat.Date,
-		RedditSubscribers:    stat.RedditSubscribers,
-		RedditAccountsActive: stat.RedditAccountsActive,
-		TwitterFollowers:     stat.TwitterFollowers,
-		YoutubeSubscribers:   stat.YoutubeSubscribers,
-		GithubStars:          stat.GithubStars,
-		GithubFolks:          stat.GithubFolks,
+	redditJson, err := json.Marshal(stat.RedditStats)
+	if err != nil {
+		return fmt.Errorf("error in saving stat, cannot decode reddit stat, %s", err.Error())
 	}
-	err := commStat.Insert(ctx, pg.db, boil.Infer())
+	commStat := models.CommStat{
+		Date:               stat.Date,
+		RedditStat:         string(redditJson),
+		TwitterFollowers:   stat.TwitterFollowers,
+		YoutubeSubscribers: stat.YoutubeSubscribers,
+		GithubStars:        stat.GithubStars,
+		GithubFolks:        stat.GithubFolks,
+	}
+
+	err = commStat.Insert(ctx, pg.db, boil.Infer())
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return nil
@@ -51,15 +56,23 @@ func (pg *PgDb) CommStats(ctx context.Context, offtset int, limit int) ([]commst
 
 	var result []commstats.CommStat
 	for _, record := range commStatSlices {
-		result = append(result, commstats.CommStat{
+		stat := commstats.CommStat{
 			Date:                 record.Date,
-			RedditSubscribers:    record.RedditSubscribers,
-			RedditAccountsActive: record.RedditAccountsActive,
 			TwitterFollowers:     record.TwitterFollowers,
 			YoutubeSubscribers:   record.YoutubeSubscribers,
 			GithubStars:          record.GithubStars,
 			GithubFolks:          record.GithubFolks,
-		})
+		}
+		if record.RedditStat != "" {
+			var redditStat map[string]commstats.RedditStat
+			err := json.Unmarshal([]byte(record.RedditStat), &redditStat)
+			if err != nil {
+				return nil, fmt.Errorf("cannot decode reddit data, %s", err.Error())
+			}
+			stat.RedditStats = redditStat
+		}
+
+		result = append(result, stat)
 	}
 	return result, nil
 }

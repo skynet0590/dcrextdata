@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/app/config"
 	"net/http"
 	"strconv"
 	"time"
@@ -19,14 +20,13 @@ import (
 const (
 	dateTemplate = "2006-01-02 15:04"
 	dateMiliTemplate = "2006-01-02 15:04:05.99"
-	redditRequestURL  = "https://www.reddit.com/r/decred/about.json"
 	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
 	youtubeChannelId  = "UCJ2bYDaPYHpSmJPh_M5dNSg"
 	youtubeKey		  = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
 	retryLimit        = 3
 )
 
-func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
+func NewCommStatCollector(period int64, store DataStore, options *config.CommunityStatOptions) (*Collector, error) {
 	if period < 300 {
 		log.Info("The minimum value for community stat collector interval is 300s(5m), setting interval to 300")
 		period = 300
@@ -37,10 +37,15 @@ func NewCommStatCollector(period int64, store DataStore) (*Collector, error) {
 		period = 1800
 	}
 
+	if len(options.Subreddit) == 0 {
+		options.Subreddit = append(options.Subreddit, "decred")
+	}
+
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
 		period:    time.Duration(period),
 		dataStore: store,
+		options: options,
 	}, nil
 }
 
@@ -110,26 +115,29 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		return ctx.Err()
 	}
 
+	var err error
 
 	stat := CommStat{
-		Date: time.Now().UTC(),
+		Date:        time.Now().UTC(),
+		RedditStats: map[string]RedditStat{},
 	}
 
-	// reddit
-	resp := new(RedditResponse)
-	err := c.fetchRedditStat(ctx, resp)
-	for retry := 0; err != nil; retry++ {
-		if retry == retryLimit {
-			return err
+	for _, subreddit := range c.options.Subreddit {
+		// reddit
+		resp := new(RedditResponse)
+		resp, err := c.fetchRedditStat(ctx, subreddit)
+		for retry := 0; err != nil; retry++ {
+			if retry == retryLimit {
+				return err
+			}
+			log.Warn(err)
+			resp, err = c.fetchRedditStat(ctx, subreddit)
 		}
-		log.Warn(err)
-		err = c.fetchRedditStat(ctx, resp)
-	}
 
-	stat.RedditAccountsActive = resp.Data.AccountsActive
-	stat.RedditSubscribers = resp.Data.Subscribers
-	log.Infof("New Reddit stat collected at %s, Subscribers  %d, Active Users %d",
-		time.Now().Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive)
+		stat.RedditStats[subreddit] = resp.Data
+		log.Infof("New Reddit stat collected for %s at %s, Subscribers  %d, Active Users %d", subreddit,
+			time.Now().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
+	}
 
 	// twitter
 	stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
@@ -171,38 +179,6 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		time.Now().Format(dateMiliTemplate), stat.GithubStars, stat.GithubFolks)
 
 	return c.dataStore.StoreCommStat(ctx, stat)
-}
-
-func (c *Collector) fetchRedditStat(ctx context.Context, response *RedditResponse) error {
-	if ctx.Err() != nil {
-		return ctx.Err()
-	}
-
-	request, err := http.NewRequest(http.MethodGet, redditRequestURL, nil)
-	if err != nil {
-		return err
-	}
-
-	// reddit returns too many redditRequest http status if user agent is not set
-	request.Header.Set("user-agent",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
-
-	// log.Tracef("GET %v", redditRequestURL)
-	resp, err := c.client.Do(request.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		err = json.NewDecoder(resp.Body).Decode(response)
-		if err != nil {
-			return fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
-		}
-	} else {
-		log.Infof("Unable to fetchRedditStat data from reddit: %s", resp.Status)
-	}
-
-	return nil
 }
 
 func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {

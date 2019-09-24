@@ -23,34 +23,31 @@ import (
 
 // CommStat is an object representing the database table.
 type CommStat struct {
-	Date                 time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
-	RedditSubscribers    int       `boil:"reddit_subscribers" json:"reddit_subscribers" toml:"reddit_subscribers" yaml:"reddit_subscribers"`
-	RedditAccountsActive int       `boil:"reddit_accounts_active" json:"reddit_accounts_active" toml:"reddit_accounts_active" yaml:"reddit_accounts_active"`
-	TwitterFollowers     int       `boil:"twitter_followers" json:"twitter_followers" toml:"twitter_followers" yaml:"twitter_followers"`
-	YoutubeSubscribers   int       `boil:"youtube_subscribers" json:"youtube_subscribers" toml:"youtube_subscribers" yaml:"youtube_subscribers"`
-	GithubStars          int       `boil:"github_stars" json:"github_stars" toml:"github_stars" yaml:"github_stars"`
-	GithubFolks          int       `boil:"github_folks" json:"github_folks" toml:"github_folks" yaml:"github_folks"`
+	Date               time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
+	RedditStat         string    `boil:"reddit_stat" json:"reddit_stat" toml:"reddit_stat" yaml:"reddit_stat"`
+	TwitterFollowers   int       `boil:"twitter_followers" json:"twitter_followers" toml:"twitter_followers" yaml:"twitter_followers"`
+	YoutubeSubscribers int       `boil:"youtube_subscribers" json:"youtube_subscribers" toml:"youtube_subscribers" yaml:"youtube_subscribers"`
+	GithubStars        int       `boil:"github_stars" json:"github_stars" toml:"github_stars" yaml:"github_stars"`
+	GithubFolks        int       `boil:"github_folks" json:"github_folks" toml:"github_folks" yaml:"github_folks"`
 
 	R *commStatR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L commStatL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CommStatColumns = struct {
-	Date                 string
-	RedditSubscribers    string
-	RedditAccountsActive string
-	TwitterFollowers     string
-	YoutubeSubscribers   string
-	GithubStars          string
-	GithubFolks          string
+	Date               string
+	RedditStat         string
+	TwitterFollowers   string
+	YoutubeSubscribers string
+	GithubStars        string
+	GithubFolks        string
 }{
-	Date:                 "date",
-	RedditSubscribers:    "reddit_subscribers",
-	RedditAccountsActive: "reddit_accounts_active",
-	TwitterFollowers:     "twitter_followers",
-	YoutubeSubscribers:   "youtube_subscribers",
-	GithubStars:          "github_stars",
-	GithubFolks:          "github_folks",
+	Date:               "date",
+	RedditStat:         "reddit_stat",
+	TwitterFollowers:   "twitter_followers",
+	YoutubeSubscribers: "youtube_subscribers",
+	GithubStars:        "github_stars",
+	GithubFolks:        "github_folks",
 }
 
 // Generated where
@@ -76,22 +73,36 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperstring struct{ field string }
+
+func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperstring) IN(slice []string) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+
 var CommStatWhere = struct {
-	Date                 whereHelpertime_Time
-	RedditSubscribers    whereHelperint
-	RedditAccountsActive whereHelperint
-	TwitterFollowers     whereHelperint
-	YoutubeSubscribers   whereHelperint
-	GithubStars          whereHelperint
-	GithubFolks          whereHelperint
+	Date               whereHelpertime_Time
+	RedditStat         whereHelperstring
+	TwitterFollowers   whereHelperint
+	YoutubeSubscribers whereHelperint
+	GithubStars        whereHelperint
+	GithubFolks        whereHelperint
 }{
-	Date:                 whereHelpertime_Time{field: "\"comm_stat\".\"date\""},
-	RedditSubscribers:    whereHelperint{field: "\"comm_stat\".\"reddit_subscribers\""},
-	RedditAccountsActive: whereHelperint{field: "\"comm_stat\".\"reddit_accounts_active\""},
-	TwitterFollowers:     whereHelperint{field: "\"comm_stat\".\"twitter_followers\""},
-	YoutubeSubscribers:   whereHelperint{field: "\"comm_stat\".\"youtube_subscribers\""},
-	GithubStars:          whereHelperint{field: "\"comm_stat\".\"github_stars\""},
-	GithubFolks:          whereHelperint{field: "\"comm_stat\".\"github_folks\""},
+	Date:               whereHelpertime_Time{field: "\"comm_stat\".\"date\""},
+	RedditStat:         whereHelperstring{field: "\"comm_stat\".\"reddit_stat\""},
+	TwitterFollowers:   whereHelperint{field: "\"comm_stat\".\"twitter_followers\""},
+	YoutubeSubscribers: whereHelperint{field: "\"comm_stat\".\"youtube_subscribers\""},
+	GithubStars:        whereHelperint{field: "\"comm_stat\".\"github_stars\""},
+	GithubFolks:        whereHelperint{field: "\"comm_stat\".\"github_folks\""},
 }
 
 // CommStatRels is where relationship names are stored.
@@ -111,8 +122,8 @@ func (*commStatR) NewStruct() *commStatR {
 type commStatL struct{}
 
 var (
-	commStatAllColumns            = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
-	commStatColumnsWithoutDefault = []string{"date", "reddit_subscribers", "reddit_accounts_active", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
+	commStatAllColumns            = []string{"date", "reddit_stat", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
+	commStatColumnsWithoutDefault = []string{"date", "reddit_stat", "twitter_followers", "youtube_subscribers", "github_stars", "github_folks"}
 	commStatColumnsWithDefault    = []string{}
 	commStatPrimaryKeyColumns     = []string{"date"}
 )

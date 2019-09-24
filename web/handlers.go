@@ -1311,6 +1311,32 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 	s.render("communityStat.html", data, res)
 }
 
+func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	pageStr := req.FormValue("page")
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize := 20
+	offset := (page -1) * pageSize
+
+	stats, err := s.db.CommStats(req.Context(), offset, pageSize)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("cannot fetch community state, %s", err.Error()), resp)
+		return
+	}
+
+	totalCount, err := s.db.CommStatCount(req.Context())
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("cannot fetch community state, %s", err.Error()), resp)
+		return
+	}
+
+	s.renderJSON(map[string]interface{}{"stats": stats, "total": totalCount}, resp)
+}
+
 // api/sync/{dataType}
 func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	dataType := getSyncDataTypeCtx(req)

@@ -6,26 +6,28 @@ package commstats
 
 import (
 	"context"
+	"github.com/raedahgroup/dcrextdata/app/config"
 	"net/http"
 	"time"
 )
 
 type CommStat struct {
-	Date                 time.Time `json:"date"`
-	RedditSubscribers    int       `json:"reddit_subscribers"`
-	RedditAccountsActive int       `json:"reddit_accounts_active"`
-	TwitterFollowers     int       `json:"twitter_followers"`
-	YoutubeSubscribers   int       `json:"youtube_subscribers"`
-	GithubStars          int       `json:"github_stars"`
-	GithubFolks          int       `json:"github_folks"`
+	Date               time.Time             `json:"date"`
+	RedditStats        map[string]RedditStat `json:"reddit_stats"`
+	TwitterFollowers   int                   `json:"twitter_followers"`
+	YoutubeSubscribers int                   `json:"youtube_subscribers"`
+	GithubStars        int                   `json:"github_stars"`
+	GithubFolks        int                   `json:"github_folks"`
 }
 
 type RedditResponse struct {
 	Kind string `json:"kind"`
-	Data struct {
-		Subscribers    int `json:"subscribers"`
-		AccountsActive int `json:"active_user_count"`
-	} `json:"data"`
+	Data RedditStat `json:"data"`
+}
+
+type RedditStat struct {
+	Subscribers    int `json:"subscribers"`
+	AccountsActive int `json:"active_user_count"`
 }
 
 type DataStore interface {
@@ -37,4 +39,5 @@ type Collector struct {
 	client    http.Client
 	period    time.Duration
 	dataStore DataStore
+	options   *config.CommunityStatOptions
 }

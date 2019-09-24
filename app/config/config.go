@@ -35,27 +35,29 @@ const (
 )
 
 func defaultFileOptions() ConfigFileOptions {
-	return ConfigFileOptions{
-		LogFile:         defaultLogFilename,
-		ConfigFile:      DefaultConfigFilename,
-		DBHost:          defaultDbHost,
-		DBPort:          defaultDbPort,
-		DBUser:          defaultDbUser,
-		DBPass:          defaultDbPass,
-		DBName:          defaultDbName,
-		DebugLevel:      defaultLogLevel,
-		VSPInterval:     defaultVSPInterval,
-		RedditInterval:  defaultRedditInterval,
-		PowInterval:     defaultPowInterval,
-		MempoolInterval: defaultMempoolInterval,
-		DcrdNetworkType: defaultDcrdNetworkType,
-		DcrdRpcServer:   defaultDcrdServer,
-		DcrdRpcUser:     defaultDcrdUser,
-		DcrdRpcPassword: defaultDcrdPassword,
-		HTTPHost:        defaultHttpHost,
-		HTTPPort:        defaultHttpPort,
-		SyncInterval:    defaultSyncInterval,
+	cfg := ConfigFileOptions{
+		LogFile:               defaultLogFilename,
+		ConfigFile:            DefaultConfigFilename,
+		DBHost:                defaultDbHost,
+		DBPort:                defaultDbPort,
+		DBUser:                defaultDbUser,
+		DBPass:                defaultDbPass,
+		DBName:                defaultDbName,
+		DebugLevel:            defaultLogLevel,
+		VSPInterval:           defaultVSPInterval,
+		PowInterval:           defaultPowInterval,
+		MempoolInterval:       defaultMempoolInterval,
+		DcrdNetworkType:       defaultDcrdNetworkType,
+		DcrdRpcServer:         defaultDcrdServer,
+		DcrdRpcUser:           defaultDcrdUser,
+		DcrdRpcPassword:       defaultDcrdPassword,
+		HTTPHost:              defaultHttpHost,
+		HTTPPort:              defaultHttpPort,
+		SyncInterval:          defaultSyncInterval,
 	}
+
+	cfg.CommunityStatInterval = defaultRedditInterval
+	return cfg
 }
 
 type Config struct {
@@ -93,10 +95,6 @@ type ConfigFileOptions struct {
 	DisableVSP  bool  `long:"disablevsp" description:"Disables periodic voting service pool status collection"`
 	VSPInterval int64 `long:"vspinterval" description:"Collection interval for pool status collection"`
 
-	// Reddit
-	DisableReddit  bool  `long:"disablereddit" description:"Disables periodic reddit data collection"`
-	RedditInterval int64 `long:"redditinterval" description:"Collection interval for reddit data collection"`
-
 	// Mempool
 	DisableMempool  bool    `long:"disablemempool" description:"Disable mempool data collection"`
 	MempoolInterval float64 `long:"mempoolinterval" description:"The duration of time between mempool collection"`
@@ -110,12 +108,21 @@ type ConfigFileOptions struct {
 	SyncInterval  int      `long:"syncinterval" description:"The number of minuets between sync operations"`
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
+
+	CommunityStatOptions `group:"Community Stat"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
 	Reset    bool `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	HttpMode bool `long:"http" description:"Launch http server"`
+}
+
+type CommunityStatOptions struct {
+	// Community stat
+	DisableCommunityStat  bool     `long:"disablecommstat" description:"Disables periodic community stat collection"`
+	CommunityStatInterval int64    `long:"commstatinterval" description:"Collection interval for community stat collection"`
+	Subreddit             []string `long:"subreddit" description:"List of subreddit for community stat collection"`
 }
 
 func defaultConfig() Config {

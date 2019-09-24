@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -54,6 +55,9 @@ type DataQuery interface {
 	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
+
+	CommStatCount(ctx context.Context) (int64, error)
+	CommStats(ctx context.Context, offtset int, limit int) ([]commstats.CommStat, error)
 }
 
 type Server struct {
@@ -132,6 +136,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/votesdata", s.getVoteData)
+
+	r.Get("/getCommunityStat", s.getCommunityStat)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }
