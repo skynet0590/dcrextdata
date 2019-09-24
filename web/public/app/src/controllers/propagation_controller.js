@@ -353,7 +353,7 @@ export default class extends Controller {
 
   plotSelectedChart () {
     switch (this.chartType) {
-      case 'propagation':
+      default:
         this.fetchChartExtDataAndPlot()
         break
       case 'blocks':
