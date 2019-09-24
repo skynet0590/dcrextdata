@@ -27,16 +27,9 @@ func (pg *PgDb) StoreCommStat(ctx context.Context, stat commstats.CommStat) erro
 		if strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return nil
 		}
-		return err
 	}
-	log.Infof("Added a new Community stat entry received at %s, \n"+
-		"\t\t  Reddit Subscribers  %d\n"+
-		"\t\t  Reddit Active Users %d\n"+
-		"\t\t  Twitter Followers   %d\n"+
-		"\t\t  Youtube Subscribers   %d",
-		stat.Date.Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive, stat.TwitterFollowers,
-		stat.YoutubeSubscribers)
-	return nil
+
+	return err
 }
 
 func (pg *PgDb) LastCommStatEntry() (entryTime time.Time) {

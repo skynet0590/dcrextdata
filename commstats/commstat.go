@@ -17,6 +17,8 @@ import (
 )
 
 const (
+	dateTemplate = "2006-01-02 15:04"
+	dateMiliTemplate = "2006-01-02 15:04:05.99"
 	redditRequestURL  = "https://www.reddit.com/r/decred/about.json"
 	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
 	youtubeChannelId  = "UCJ2bYDaPYHpSmJPh_M5dNSg"
@@ -108,6 +110,11 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		return ctx.Err()
 	}
 
+
+	stat := CommStat{
+		Date: time.Now().UTC(),
+	}
+
 	// reddit
 	resp := new(RedditResponse)
 	err := c.fetchRedditStat(ctx, resp)
@@ -119,11 +126,10 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		err = c.fetchRedditStat(ctx, resp)
 	}
 
-	stat := CommStat{
-		Date:                 time.Now().UTC(),
-		RedditSubscribers:    resp.Data.Subscribers,
-		RedditAccountsActive: resp.Data.AccountsActive,
-	}
+	stat.RedditAccountsActive = resp.Data.AccountsActive
+	stat.RedditSubscribers = resp.Data.Subscribers
+	log.Infof("New Reddit stat collected at %s, Subscribers  %d, Active Users %d",
+		time.Now().Format(dateMiliTemplate), stat.RedditSubscribers, stat.RedditAccountsActive)
 
 	// twitter
 	stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
@@ -135,6 +141,9 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
 	}
 
+	log.Infof("New Twitter stat collected at %s, Followers %d",
+		time.Now().Format(dateMiliTemplate), stat.TwitterFollowers)
+
 	// youtube
 	stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
 	for retry := 0; err != nil; retry++ {
@@ -145,6 +154,9 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
 	}
 
+	log.Infof("New Youtube stat collected at %s, Subscribers %d",
+		time.Now().Format(dateMiliTemplate), stat.YoutubeSubscribers)
+
 	// github
 	stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
 	for retry := 0; err != nil; retry++ {
@@ -154,6 +166,9 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		log.Warn(err)
 		stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
 	}
+
+	log.Infof("New Github stat collected at %s, Stars %d, Folks %d",
+		time.Now().Format(dateMiliTemplate), stat.GithubStars, stat.GithubFolks)
 
 	return c.dataStore.StoreCommStat(ctx, stat)
 }
