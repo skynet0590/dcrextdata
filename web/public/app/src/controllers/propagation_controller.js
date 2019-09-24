@@ -15,10 +15,13 @@ import dompurify from 'dompurify'
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
+  chartType
+
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption',
-      'selectedRecordSet', 'bothRecordWrapper', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'tableRecordSetOptions', 'selectedRecordSet', 'bothRecordWrapper', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'chartTypesWrapper', 'chartType',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption', 'loadingData'
@@ -31,28 +34,26 @@ export default class extends Controller {
       this.currentPage = 1
     }
 
-    this.selectedRecordSetTargets.forEach(li => {
-      if (this.selectedViewOption === 'table' && li.dataset.option === 'both') {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
+    this.selectedViewOption = this.viewOptionControlTarget.dataset.initialValue
+    this.selectedRecordSet = this.tableRecordSetOptionsTarget.dataset.initialValue
+    this.chartType = this.chartTypesWrapperTarget.dataset.initialValue
 
-    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionControlTargets)
+
     if (this.selectedViewOption === 'chart') {
+      setActiveOptionBtn(this.chartType, this.chartTypeTargets)
       this.setChart()
     } else {
+      setActiveOptionBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
       this.setTable()
     }
   }
 
   setTable () {
     this.selectedViewOption = 'table'
-    this.selectedRecordSet = 'both'
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    show(this.recordSetSelectorTarget)
-    show(this.bothRecordWrapperTarget)
+    show(this.tableRecordSetOptionsTarget)
+    hide(this.chartTypesWrapperTarget)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
     show(this.paginationButtonsWrapperTarget)
@@ -66,9 +67,8 @@ export default class extends Controller {
 
   setChart () {
     this.selectedViewOption = 'chart'
-    this.selectedRecordSet = 'blocks'
-    show(this.recordSetSelectorTarget)
-    hide(this.bothRecordWrapperTarget)
+    hide(this.tableRecordSetOptionsTarget)
+    show(this.chartTypesWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
     hide(this.paginationButtonsWrapperTarget)
@@ -77,23 +77,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
-    this.fetchChartDataAndPlot()
-  }
-
-  setExdataChart () {
-    this.selectedViewOption = 'extchart'
-    this.selectedRecordSet = 'blocks'
-    hide(this.recordSetSelectorTarget)
-    hide(this.bothRecordWrapperTarget)
-    hide(this.numPageWrapperTarget)
-    hide(this.messageViewTarget)
-    hide(this.paginationButtonsWrapperTarget)
-    hide(this.tablesWrapperTarget)
-    show(this.chartWrapperTarget)
-    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
-    setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
-    displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
-    this.fetchChartExtDataAndPlot()
+    this.plotSelectedChart()
   }
 
   setBothRecordSet () {
@@ -138,6 +122,12 @@ export default class extends Controller {
     }
   }
 
+  changeChartType (event) {
+    this.chartType = event.currentTarget.dataset.option
+    setActiveOptionBtn(this.chartType, this.chartTypeTargets)
+    this.plotSelectedChart()
+  }
+
   loadPreviousPage () {
     this.fetchTableData(this.currentPage - 1)
   }
@@ -175,7 +165,7 @@ export default class extends Controller {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&view-option=${_this.selectedViewOption}`
+      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&chart-type=${_this.chartsView}&view-option=${_this.selectedViewOption}`
       window.history.pushState(window.history.state, _this.addr, pageUrl)
 
       _this.currentPage = result.currentPage
@@ -361,15 +351,27 @@ export default class extends Controller {
     hide(this.votesTableTarget)
   }
 
+  plotSelectedChart () {
+    switch (this.chartType) {
+      case 'propagation':
+        this.fetchChartExtDataAndPlot()
+        break
+      case 'blocks':
+      case 'votes':
+        this.fetchChartDataAndPlot()
+        break
+    }
+  }
+
   fetchChartDataAndPlot () {
     let elementsToToggle = [this.chartWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get('/propagationchartdata?record-set=' + this.selectedRecordSet).then(function (response) {
+    axios.get('/propagationchartdata?chart-type=' + this.chartType).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&view-option=${_this.selectedViewOption}`
+      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
       window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -384,8 +386,16 @@ export default class extends Controller {
     const _this = this
     axios.get('/propagationchartextdata?record-set=' + this.selectedRecordSet).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
-      _this.plotExtDataGraph(response.data)
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&view-option=${_this.selectedViewOption}`
+      if (response.data.error !== undefined) {
+        _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${response.data.error}</p>`
+        show(_this.messageViewTarget)
+        hide(_this.chartWrapperTarget)
+      } else {
+        hide(_this.messageViewTarget)
+        show(_this.chartWrapperTarget)
+        _this.plotExtDataGraph(response.data)
+      }
+      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
       window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)

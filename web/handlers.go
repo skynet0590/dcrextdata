@@ -860,17 +860,18 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	numberOfRows := req.FormValue("records-per-page")
 	viewOption := req.FormValue("view-option")
 	recordSet := req.FormValue("record-set")
+	chartType := req.FormValue("chart-type")
 
 	if viewOption == "" {
-		viewOption = "table"
+		viewOption = "chart"
 	}
 
 	if recordSet == "" {
-		if viewOption == chartViewOption {
-			recordSet = "blocks"
-		} else {
-			recordSet = "both"
-		}
+		recordSet = "both"
+	}
+
+	if chartType == "" {
+		chartType = "propagation"
 	}
 
 	var pageSize int
@@ -893,8 +894,9 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	ctx := req.Context()
 
 	data := map[string]interface{}{
-		"chartView":            true,
+		"chartView":            viewOption == "chart",
 		"selectedViewOption":   viewOption,
+		"chartType":			chartType,
 		"currentPage":          pageToLoad,
 		"propagationRecordSet": propagationRecordSet,
 		"pageSizeSelector":     pageSizeSelector,
@@ -938,12 +940,12 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 // /propagationchartdata
 func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
-	requestedRecordSet := req.FormValue("record-set")
+	chartType := req.FormValue("chart-type")
 
 	var data []mempool.PropagationChartData
 	var err error
 
-	if requestedRecordSet == "votes" {
+	if chartType == "votes" {
 		data, err = s.db.PropagationVoteChartData(req.Context())
 	} else {
 		data, err = s.db.PropagationBlockChartData(req.Context())
@@ -966,7 +968,7 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	}
 
 	var yLabel = "Delay (s)"
-	if requestedRecordSet == "votes" {
+	if chartType == "votes" {
 		yLabel = "Time Difference (s)"
 	}
 
@@ -1023,7 +1025,7 @@ func (s *Server) propagationChartExtData(res http.ResponseWriter, req *http.Requ
 			}
 
 			if localTime, found := localBlockReceiveTimes[record.BlockHeight]; found {
-				timeVarianceForHeights[record.BlockHeight] = record.ReceiveTime.Sub(localTime).Seconds() * 1000
+				timeVarianceForHeights[record.BlockHeight] = localTime.Sub(record.ReceiveTime).Seconds()
 			}
 		}
 
@@ -1036,7 +1038,7 @@ func (s *Server) propagationChartExtData(res http.ResponseWriter, req *http.Requ
 
 		for _, h := range localBlockHeights {
 			if timeDiff, found := timeVarianceForHeights[h]; found {
-				pointsMap[h] = append(pointsMap[h], fmt.Sprintf("%f", timeDiff))
+				pointsMap[h] = append(pointsMap[h], fmt.Sprintf("%.4f", timeDiff))
 			}
 		}
 	}
@@ -1053,7 +1055,7 @@ func (s *Server) propagationChartExtData(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
-	var yLabel = "Block Time Variance (milliseconds)"
+	var yLabel = "Block Time Variance (seconds)"
 
 	chartData.YLabel = yLabel
 
@@ -1068,6 +1070,9 @@ func (s *Server) propagationChartExtData(res http.ResponseWriter, req *http.Requ
 
 	chartData.CSV = fmt.Sprintf("%s,%s\n", "Height", strings.Join(syncSources, ","))
 	for _, height := range localBlockHeights {
+		if len(pointsMap[height]) == 0 {
+			continue
+		}
 		chartData.CSV  += fmt.Sprintf("%d, %s\n", height, strings.Join(pointsMap[height], ","))
 	}
 
