@@ -46,6 +46,7 @@ type DataQuery interface {
 
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
+	BlockHeights(ctx context.Context) ([]int64, error)
 	BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
@@ -124,8 +125,9 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
+	r.Get("/blockschartdata", s.blocksChartData)
+	r.Get("/voteschartdata", s.votesChartDate)
 	r.Get("/propagationchartdata", s.propagationChartData)
-	r.Get("/propagationchartextdata", s.propagationChartExtData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)

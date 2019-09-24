@@ -938,18 +938,9 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	return data, nil
 }
 
-// /propagationchartdata
-func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
-	chartType := req.FormValue("chart-type")
-
-	var data []mempool.PropagationChartData
-	var err error
-
-	if chartType == "votes" {
-		data, err = s.db.PropagationVoteChartData(req.Context())
-	} else {
-		data, err = s.db.PropagationBlockChartData(req.Context())
-	}
+// /blocksChartData
+func (s *Server) blocksChartData(res http.ResponseWriter, req *http.Request) {
+	data, err := s.db.PropagationBlockChartData(req.Context())
 
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
@@ -959,18 +950,11 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	var avgTimeForHeight = map[int64]float64{}
 	var heightArr []int64
 	for _, record := range data {
-		if existingTime, found := avgTimeForHeight[record.BlockHeight]; found {
-			avgTimeForHeight[record.BlockHeight] = (record.TimeDifference + existingTime) / 2
-		} else {
-			avgTimeForHeight[record.BlockHeight] = record.TimeDifference
-			heightArr = append(heightArr, record.BlockHeight)
-		}
+		avgTimeForHeight[record.BlockHeight] = record.TimeDifference
+		heightArr = append(heightArr, record.BlockHeight)
 	}
 
 	var yLabel = "Delay (s)"
-	if chartType == "votes" {
-		yLabel = "Time Difference (s)"
-	}
 
 	var csv = fmt.Sprintf("Height,%s\n", yLabel)
 	for _, height := range heightArr {
@@ -981,8 +965,50 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	s.renderJSON(csv, res)
 }
 
-// propagationchartextdata
-func (s *Server) propagationChartExtData(res http.ResponseWriter, req *http.Request) {
+// /votesChartDate
+func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
+	var data []mempool.PropagationChartData
+	var err error
+
+	data, err = s.db.PropagationVoteChartData(req.Context())
+
+	if err != nil {
+		s.renderErrorJSON(err.Error(), res)
+		return
+	}
+
+	var receiveTimeRecordsForHeight = map[int64][]float64{}
+	heightArr, err := s.db.BlockHeights(req.Context())
+
+	for _, record := range data {
+		receiveTimeRecordsForHeight[record.BlockHeight] = append(receiveTimeRecordsForHeight[record.BlockHeight], record.TimeDifference)
+	}
+
+	var yLabel = "Time Difference (s)"
+	var csv = fmt.Sprintf("Height,%s\n", yLabel)
+
+	avg := func(records []float64) float64 {
+		if len(records) == 0 {
+			return 0
+		}
+		var sum float64
+		for _, record := range records {
+			sum += record
+		}
+
+		return sum/float64(len(records))
+	}
+
+	for _, height := range heightArr {
+		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height]))
+		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
+	}
+
+	s.renderJSON(csv, res)
+}
+
+// propagationChartData
+func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 
 	var chartData struct {

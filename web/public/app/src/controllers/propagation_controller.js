@@ -368,7 +368,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get('/propagationchartdata?chart-type=' + this.chartType).then(function (response) {
+    axios.get(`/${this.chartType}chartdata`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
       const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
@@ -384,7 +384,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get('/propagationchartextdata?record-set=' + this.selectedRecordSet).then(function (response) {
+    axios.get('/propagationchartdata?record-set=' + this.selectedRecordSet).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (response.data.error !== undefined) {
         _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${response.data.error}</p>`

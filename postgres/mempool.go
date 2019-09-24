@@ -222,6 +222,22 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	return blocks, nil
 }
 
+func (pg *PgDb) BlockHeights(ctx context.Context) ([]int64, error) {
+	blockSlice, err := models.Blocks(qm.Select(models.BlockColumns.Height), qm.OrderBy(models.BlockColumns.Height)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var blockHeights []int64
+
+	for _, block := range blockSlice {
+
+		blockHeights = append(blockHeights, int64(block.Height))
+	}
+
+	return blockHeights, nil
+}
+
 func (pg *PgDb) BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
 	blockSlice, err := models.Blocks(qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
