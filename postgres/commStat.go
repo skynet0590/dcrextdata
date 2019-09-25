@@ -64,7 +64,7 @@ func (pg *PgDb) CommStats(ctx context.Context, offtset int, limit int) ([]commst
 			GithubFolks:          record.GithubFolks,
 		}
 		if record.RedditStat != "" {
-			var redditStat map[string]commstats.RedditStat
+			var redditStat map[string]commstats.Reddit
 			err := json.Unmarshal([]byte(record.RedditStat), &redditStat)
 			if err != nil {
 				return nil, fmt.Errorf("cannot decode reddit data, %s", err.Error())

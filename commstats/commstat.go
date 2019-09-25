@@ -119,7 +119,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 
 	stat := CommStat{
 		Date:        time.Now().UTC(),
-		RedditStats: map[string]RedditStat{},
+		RedditStats: map[string]Reddit{},
 	}
 
 	for _, subreddit := range c.options.Subreddit {
