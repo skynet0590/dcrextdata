@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"math"
 	"net/http"
 	"sort"
@@ -1307,14 +1308,15 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	return data, nil
 }
 
-//communitystat
-func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
+// /community
+func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	pageStr := req.FormValue("page")
 	viewOption := req.FormValue("view-option")
 	selectedNumStr := req.FormValue("records-per-page")
 	platform := req.FormValue("platform")
 	subreddit := req.FormValue("subreddit")
+	dataType := req.FormValue("data-type")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -1354,7 +1356,7 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 		"platform":           platform,
 		"subreddits":         commstats.Subreddits(),
 		"subreddit":          subreddit,
-		"selectedViewOption": viewOption,
+		"dataType":			  dataType,
 		"currentPage":        page,
 		"pageSizeSelector":   pageSizeSelector,
 		"selectedNum":        selectedNum,
@@ -1362,7 +1364,7 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 		"nextPage":           nextPage,
 	}
 
-	s.render("communityStat.html", data, res)
+	s.render("community.html", data, res)
 }
 
 // getCommunityStat
@@ -1371,9 +1373,15 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	plarform := req.FormValue("platform")
 	subreddit := req.FormValue("subreddit")
 	pageStr := req.FormValue("page")
+	pageSizeStr := req.FormValue("records-per-page")
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
 		page = 1
+	}
+
+	pageSize, _ := strconv.Atoi(pageSizeStr)
+	if pageSize < 1 {
+		pageSize = 20
 	}
 
 	var stats interface{}
@@ -1381,7 +1389,6 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	var totalCount int64
 	var err error
 
-	pageSize := 20
 	offset := (page -1) * pageSize
 
 	switch plarform {
@@ -1459,6 +1466,72 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		"total": totalCount,
 		"totalPages": totalPages,
 		"currentPage": page,
+	}, resp)
+}
+
+// communitychat
+func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	plarform := req.FormValue("platform")
+	subreddit := req.FormValue("subreddit")
+	dataType := req.FormValue("data-type")
+
+	yLabel := ""
+	switch plarform {
+	case githubPlatform:
+		yLabel = strings.ToTitle(dataType)
+		plarform = models.TableNames.Github
+		break
+	case twitterPlatform:
+		yLabel = "Followers"
+		dataType = models.TwitterColumns.Followers
+		plarform = models.TableNames.Twitter
+		break
+	case redditPlatform:
+		if dataType == models.RedditColumns.ActiveAccounts {
+			yLabel = "Active Accounts"
+		} else if dataType == models.RedditColumns.Subscribers {
+			yLabel = "Subscribers"
+		}
+		plarform = models.TableNames.Reddit
+	case youtubePlatform:
+		plarform = models.TableNames.Youtube
+		dataType = models.YoutubeColumns.Subscribers
+		yLabel = "Subscribers"
+		break
+	}
+
+	if dataType == "" {
+		s.renderErrorJSON("Data type cannot be empty", resp)
+		return
+	}
+
+	data, err := s.db.CommunityChart(req.Context(), plarform, subreddit, dataType)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s", err.Error()), resp)
+		return
+	}
+
+	var dates []time.Time
+	var pointsMap = map[time.Time]int64{}
+
+	csv := ""//fmt.Sprintf("Date,%s\n", yLabel)
+	for _, stat := range data {
+		dates = append(dates, stat.Date)
+		pointsMap[stat.Date] = stat.Record
+	}
+
+	sort.Slice(dates, func(i, j int) bool {
+		return dates[i].Before(dates[j])
+	})
+
+	for _, date := range dates {
+		csv += fmt.Sprintf("%s,%d\n", date.Format(time.RFC3339Nano), pointsMap[date])
+	}
+
+	s.renderJSON(map[string]interface{}{
+		"stats": csv,
+		"ylabel": yLabel,
 	}, resp)
 }
 

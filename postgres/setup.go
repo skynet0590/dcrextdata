@@ -112,7 +112,7 @@ const (
 		date timestamp,
 		subreddit VARCHAR(256) NOT NULL,
 		subscribers INT NOT NULL,
-		active_Accounts INT NOT NULL,
+		active_accounts INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
 

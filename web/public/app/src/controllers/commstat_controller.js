@@ -8,15 +8,16 @@ export default class extends Controller {
   viewOption
   platform
   subreddit
+  dataType
 
   static get targets () {
     return [
       'pageSizeWrapper', 'previousPageButton', 'totalPageCount', 'nextPageButton',
       'currentPage', 'numPageWrapper', 'selectedNum', 'messageView',
       'viewOptionControl', 'viewOption',
-      'chartWrapper', 'chartsView', 'tableWrapper', 'loadingData', 'messageView',
+      'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
-      'platform', 'subreddit', 'subredditWrapper'
+      'platform', 'subreddit', 'subredditWrapper', 'dataTypeWrapper', 'dataType'
     ]
   }
 
@@ -42,6 +43,8 @@ export default class extends Controller {
       this.subreddit = this.subredditTarget.value = this.subredditTarget.options[0].innerText
     }
 
+    this.dataType = this.dataTypeTarget.dataset.initialValue
+
     this.viewOption = this.viewOptionControlTarget.dataset.viewOption
     if (this.viewOption === 'chart') {
       this.setChart()
@@ -58,6 +61,7 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
+    this.updateDataTypeControl()
     this.nextPage = this.currentPage
     this.fetchData()
   }
@@ -69,6 +73,7 @@ export default class extends Controller {
     hide(this.messageViewTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
+    this.updateDataTypeControl()
     this.fetchDataAndPlotGraph()
   }
 
@@ -79,14 +84,76 @@ export default class extends Controller {
     } else {
       hide(this.subredditWrapperTarget)
     }
+
+    this.updateDataTypeControl()
     this.currentPage = 1
-    this.fetchData()
+    if (this.viewOption === 'table') {
+      this.fetchData()
+    } else {
+      this.fetchDataAndPlotGraph()
+    }
   }
 
   subredditChanged (event) {
     this.subreddit = event.currentTarget.value
     this.currentPage = 1
-    this.fetchData()
+    if (this.viewOption === 'table') {
+      this.fetchData()
+    } else {
+      this.fetchDataAndPlotGraph()
+    }
+  }
+
+  dataTypeChanged (event) {
+    this.dataType = event.currentTarget.value
+    this.fetchDataAndPlotGraph()
+  }
+
+  updateDataTypeControl () {
+    this.dataTypeTarget.innerHTML = ''
+    hide(this.dataTypeWrapperTarget)
+    if (this.viewOption !== 'chart') {
+      return
+    }
+
+    const _this = this
+    let shouldPreserveCorrentValue = false
+
+    const addDataTypeOption = function (value, label) {
+      let selected = _this.dataType === value ? 'selected' : ''
+      if (selected === '') {
+        shouldPreserveCorrentValue = true
+      }
+      _this.dataTypeTarget.innerHTML += `<option ${selected} value="${value}">${label}</option>`
+    }
+    switch (this.platform) {
+      case 'Reddit':
+        if (this.dataType === '') {
+          this.dataType = 'subscribers'
+        }
+        addDataTypeOption('subscribers', 'Subscribers')
+        addDataTypeOption('active_accounts', 'Active Accounts')
+        show(_this.dataTypeWrapperTarget)
+        break
+      case 'Github':
+        if (this.dataType === '') {
+          this.dataType = 'folks'
+        }
+        addDataTypeOption('folks', 'Folks')
+        addDataTypeOption('stars', 'Stars')
+        show(_this.dataTypeWrapperTarget)
+        break
+    }
+
+    if (!shouldPreserveCorrentValue) {
+      this.dataType = ''
+    }
+
+    if (this.dataType === '' && this.dataTypeTarget.innerHTML !== '') {
+      this.dataType = this.dataTypeTarget.value = this.dataTypeTarget.options[0].innerText
+    }
+
+    this.dataTypeTarget.value = this.dataType
   }
 
   loadPreviousPage () {
@@ -127,12 +194,12 @@ export default class extends Controller {
           hide(_this.pageSizeWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/communityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`)
+          window.history.pushState(window.history.state, _this.addr, `/community?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`)
         } else {
           show(_this.tableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/communityStat?page=${result.currentPage}&records-per-page=${result.selectedNum}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`
+          const pageUrl = `/community?page=${result.currentPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`
           window.history.pushState(window.history.state, _this.addr, pageUrl)
 
           _this.currentPage = result.currentPage
@@ -168,6 +235,7 @@ export default class extends Controller {
     this.tableCol2Target.innerText = columns[1]
     if (columns.length > 2) {
       this.tableCol3Target.innerText = columns[2]
+      show(this.tableCol2Target)
     } else {
       hide(this.tableCol2Target)
     }
@@ -217,21 +285,14 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
-    let selectedPools = []
-    this.poolTargets.forEach(el => {
-      if (el.checked) {
-        selectedPools.push(el.value)
-      }
-    })
-
     let elementsToToggle = [this.chartWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    const queryString = `data-type=${this.dataType}&pools=${selectedPools.join('|')}&view-option=${_this.selectedViewOption}`
-    window.history.pushState(window.history.state, _this.addr, `/pow?${queryString}`)
+    const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}&view-option=${this.viewOption}`
+    window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
 
-    axios.get(`/powchart?${queryString}`).then(function (response) {
+    axios.get(`/communitychat?${queryString}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       if (result.error) {
@@ -249,18 +310,15 @@ export default class extends Controller {
   // vsp chart
   plotGraph (dataSet) {
     const _this = this
-    let dataTypeLabel = 'Pool Hashrate (Th/s)'
-    if (_this.dataType === 'workers') {
-      dataTypeLabel = 'Workers'
-    }
 
     let options = {
       legend: 'always',
       includeZero: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
-      ylabel: dataTypeLabel,
+      ylabel: dataSet.ylabel,
       xlabel: 'Date',
+      labels: ['Date', dataSet.ylabel],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -272,7 +330,6 @@ export default class extends Controller {
       }
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
-    _this.validateZoom()
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.stats, options)
   }
 }

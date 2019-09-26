@@ -31,7 +31,7 @@
                                 <div class="control-label">Platform:</div>
                                 <select data-target="commstat.platform" data-initial-value="{{.platform}}"
                                         data-action="change->commstat#platformChanged" class="form-control mr-5"
-                                        style="width: 70px;">
+                                        style="width: 120px;">
                                     {{$platform := .platform}}
                                     {{ range $filter := .platforms }}
                                         <option value="{{$filter}}" {{ if eq $filter $platform}} selected {{ end }}>{{$filter}}</option>
@@ -44,11 +44,20 @@
                                 <div class="control-label">Subreddit</div>
                                 <select data-target="commstat.subreddit" data-initial-value="{{.subreddit}}"
                                         data-action="change->commstat#subredditChanged" class="form-control mr-5"
-                                        style="width: 70px;">
+                                        style="width: 120px;">
                                     {{$subreddit := .subreddit}}
                                     {{ range $filter := .subreddits}}
                                         <option value="{{$filter}}" {{ if eq $filter $subreddit}} selected {{ end }}>{{$filter}}</option>
                                     {{ end }}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.dataTypeWrapper">
+                            <div class=" mb-2">
+                                <div class="control-label">Data</div>
+                                <select data-target="commstat.dataType" data-initial-value="{{.dataType}}"
+                                        data-action="change->commstat#dataTypeChanged" class="form-control mr-5"
+                                        style="width: 120px;">
                                 </select>
                             </div>
                         </div>
@@ -123,6 +132,7 @@
                     <div class="legend d-flex" data-target="commstat.labels"></div>
                 </div>
             </div>
+
             <div data-target="commstat.messageView" class="d-hide">
             </div>
             <div class="p-5 text-center d-hide loading" data-target="commstat.loadingData">

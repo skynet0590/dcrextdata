@@ -186,3 +186,31 @@ func (pg *PgDb) GithubStat(ctx context.Context, offtset int, limit int) ([]comms
 	}
 	return result, nil
 }
+
+func (pg *PgDb) CommunityChart(ctx context.Context, platform string, subreddit string, dataType string) (stats []commstats.ChartData, err error)  {
+	dataType = strings.ToLower(dataType)
+
+	var templateArgs = []interface{}{dataType, platform}
+	sqlTemplate := "SELECT date, %s as record FROM %s"
+	if platform == models.TableNames.Reddit {
+		sqlTemplate += " where %s = '%s'"
+		templateArgs = append(templateArgs, models.RedditColumns.Subreddit, subreddit)
+	}
+	sqlTemplate += " ORDER BY date"
+	query := fmt.Sprintf(sqlTemplate, templateArgs...)
+
+	fmt.Println(query)
+	rows, err := pg.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var rec commstats.ChartData
+		err = rows.Scan(&rec.Date, &rec.Record)
+		if err != nil {
+			return nil, err
+		}
+		stats = append(stats, rec)
+	}
+	return
+}

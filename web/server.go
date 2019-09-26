@@ -64,6 +64,7 @@ type DataQuery interface {
 	YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error)
 	CountGithubStat(ctx context.Context) (int64, error)
 	GithubStat(ctx context.Context, offtset int, limit int) ([]commstats.Github, error)
+	CommunityChart(ctx context.Context, platform string, subreddit string, dataType string) ([]commstats.ChartData, error)
 }
 
 type Server struct {
@@ -143,8 +144,9 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/votesdata", s.getVoteData)
 
-	r.Get("/communityStat", s.communityStat)
+	r.Get("/community", s.community)
 	r.Get("/getCommunityStat", s.getCommunityStat)
+	r.Get("/communitychat", s.communityChat)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

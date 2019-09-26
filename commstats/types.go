@@ -48,6 +48,11 @@ type Twitter struct {
 	Followers int `json:"followers"`
 }
 
+type ChartData struct {
+	Date   time.Time `json:"date"`
+	Record int64     `json:"record"`
+}
+
 type DataStore interface {
 	StoreRedditStat(context.Context, Reddit) error
 	LastCommStatEntry() (time time.Time)
