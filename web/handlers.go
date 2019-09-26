@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/pow"
@@ -23,6 +24,11 @@ const (
 	recordsPerPage              = 20
 	defaultInterval             = 1440 // All
 	noDataMessage               = "does not have data for the selected query option(s)."
+
+	redditPlatform = "Reddit"
+	twitterPlatform = "Twitter"
+	githubPlatform = "Github"
+	youtubePlatform = "Youtube"
 )
 
 var (
@@ -58,6 +64,8 @@ var (
 		"User_Count",
 		"Users_Active",
 	}
+
+	commStatPlatforms = []string{redditPlatform, twitterPlatform, githubPlatform, youtubePlatform}
 )
 
 // /home
@@ -1305,6 +1313,8 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 	pageStr := req.FormValue("page")
 	viewOption := req.FormValue("view-option")
 	selectedNumStr := req.FormValue("records-per-page")
+	platform := req.FormValue("platform")
+	subreddit := req.FormValue("subreddit")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -1313,6 +1323,14 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 
 	if viewOption == "" {
 		viewOption = "table"
+	}
+
+	if platform == "" {
+		platform  = commStatPlatforms[0]
+	}
+
+	if subreddit == "" {
+		subreddit = commstats.Subreddits()[0]
 	}
 
 	selectedNum, _ := strconv.Atoi(selectedNumStr)
@@ -1330,14 +1348,18 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 	nextPage = page + 1
 
 	data := map[string]interface{}{
-		"page": page,
-		"viewOption": viewOption,
-		"selectedViewOption":   viewOption,
-		"currentPage":          page,
-		"pageSizeSelector":     pageSizeSelector,
-		"selectedNum":			selectedNum,
-		"previousPage":			previousPage,
-		"nextPage":				nextPage,
+		"page":               page,
+		"viewOption":         viewOption,
+		"platforms":          commStatPlatforms,
+		"platform":           platform,
+		"subreddits":         commstats.Subreddits(),
+		"subreddit":          subreddit,
+		"selectedViewOption": viewOption,
+		"currentPage":        page,
+		"pageSizeSelector":   pageSizeSelector,
+		"selectedNum":        selectedNum,
+		"previousPage":       previousPage,
+		"nextPage":           nextPage,
 	}
 
 	s.render("communityStat.html", data, res)
@@ -1346,26 +1368,85 @@ func (s *Server) communityStat(res http.ResponseWriter, req *http.Request) {
 // getCommunityStat
 func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
+	plarform := req.FormValue("platform")
+	subreddit := req.FormValue("subreddit")
 	pageStr := req.FormValue("page")
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
 		page = 1
 	}
 
+	var stats interface{}
+	var columnHeaders []string
+	var totalCount int64
+	var err error
+
 	pageSize := 20
 	offset := (page -1) * pageSize
 
-	stats, err := s.db.CommStats(req.Context(), offset, pageSize)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("cannot fetch community state, %s", err.Error()), resp)
-		return
+	switch plarform {
+	case redditPlatform:
+		stats, err = s.db.RedditStats(req.Context(), subreddit, offset, pageSize)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Reddit stat, %s", err.Error()), resp)
+			return
+		}
+
+		totalCount, err = s.db.CountRedditStat(req.Context(), subreddit)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Reddit stat, %s", err.Error()), resp)
+			return
+		}
+
+		columnHeaders = append(columnHeaders, "Date", "Subscribers", "Accounts Active" )
+		break
+	case twitterPlatform:
+		stats, err = s.db.TwitterStats(req.Context(), offset, pageSize)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Twitter stat, %s", err.Error()), resp)
+			return
+		}
+
+		totalCount, err = s.db.CountTwitterStat(req.Context())
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Twitter stat, %s", err.Error()), resp)
+			return
+		}
+
+		columnHeaders = append(columnHeaders, "Date", "Followers")
+		break
+	case githubPlatform:
+		stats, err = s.db.GithubStat(req.Context(), offset, pageSize)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Github stat, %s", err.Error()), resp)
+			return
+		}
+
+		totalCount, err = s.db.CountGithubStat(req.Context())
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Github stat, %s", err.Error()), resp)
+			return
+		}
+
+		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks" )
+		break
+	case youtubePlatform:
+		stats, err = s.db.YoutubeStat(req.Context(), offset, pageSize)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Youtbue stat, %s", err.Error()), resp)
+			return
+		}
+
+		totalCount, err = s.db.CountYoutubeStat(req.Context())
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("cannot fetch Youtbue stat, %s", err.Error()), resp)
+			return
+		}
+
+		columnHeaders = append(columnHeaders, "Date", "Subscribers" )
+		break
 	}
 
-	totalCount, err := s.db.CommStatCount(req.Context())
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("cannot fetch community state, %s", err.Error()), resp)
-		return
-	}
 
 	totalPages := totalCount/int64(pageSize)
 	if totalCount > totalPages * int64(pageSize) {
@@ -1374,6 +1455,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 
 	s.renderJSON(map[string]interface{}{
 		"stats": stats,
+		"columns": columnHeaders,
 		"total": totalCount,
 		"totalPages": totalPages,
 		"currentPage": page,

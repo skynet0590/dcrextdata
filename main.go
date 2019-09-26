@@ -262,13 +262,6 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableCommunityStat {
-		if exists := db.CommStatTableExits(); !exists {
-			if err := db.CreateCommStatTable(); err != nil {
-				log.Error("Error creating reddit data table: ", err)
-				return err
-			}
-		}
-
 		redditCollector, err := commstats.NewCommStatCollector(cfg.CommunityStatInterval, db, &cfg.CommunityStatOptions)
 		if err == nil {
 			go redditCollector.Run(ctx)
@@ -323,6 +316,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		}
 		log.Info("Mempool table created successfully.")
 	}
+
 	if !db.BlockTableExits() {
 		if err := db.CreateBlockTable(); err != nil {
 			log.Error("Error creating block table: ", err)
@@ -331,6 +325,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		log.Info("Blocks table created successfully.")
 
 	}
+
 	if !db.VoteTableExits() {
 		if err := db.CreateVoteTable(); err != nil {
 			log.Error("Error creating vote table: ", err)
@@ -390,5 +385,32 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		log.Info("Pow table created successfully.")
 	}
 
+	if exists := db.RedditTableExits(); !exists {
+		if err := db.CreateRedditTable(); err != nil {
+			log.Error("Error creating reddit table: ", err)
+			return err
+		}
+	}
+
+	if exists := db.TwitterTableExits(); !exists {
+		if err := db.CreateTwitterTable(); err != nil {
+			log.Error("Error creating twitter table: ", err)
+			return err
+		}
+	}
+
+	if exists := db.YoutubeTableExits(); !exists {
+		if err := db.CreateYoutubeTable(); err != nil {
+			log.Error("Error creating youtube table: ", err)
+			return err
+		}
+	}
+
+	if exists := db.GithubTableExits(); !exists {
+		if err := db.CreateGithubTable(); err != nil {
+			log.Error("Error creating github table: ", err)
+			return err
+		}
+	}
 	return nil
 }

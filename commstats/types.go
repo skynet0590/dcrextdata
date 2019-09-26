@@ -26,9 +26,10 @@ type RedditResponse struct {
 }
 
 type Reddit struct {
-	Date time.Time `json:"date"`
-	Subscribers    int `json:"subscribers"`
-	AccountsActive int `json:"active_user_count"`
+	Date           time.Time `json:"date"`
+	Subscribers    int       `json:"subscribers"`
+	AccountsActive int       `json:"active_user_count"`
+	Subreddit      string `json:"subreddit"`
 }
 
 type Github struct {
@@ -48,9 +49,11 @@ type Twitter struct {
 }
 
 type DataStore interface {
-	StoreCommStat(context.Context, CommStat) error
+	StoreRedditStat(context.Context, Reddit) error
 	LastCommStatEntry() (time time.Time)
-
+	StoreTwitterStat(ctx context.Context, twitter Twitter) error
+	StoreYoutubeStat(ctx context.Context, youtube Youtube) error
+	StoreGithubStat(ctx context.Context, github Github) error
 }
 
 type Collector struct {

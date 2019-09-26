@@ -56,8 +56,14 @@ type DataQuery interface {
 	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 
-	CommStatCount(ctx context.Context) (int64, error)
-	CommStats(ctx context.Context, offtset int, limit int) ([]commstats.CommStat, error)
+	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
+	RedditStats(ctx context.Context, subreddit string, offtset int, limit int) ([]commstats.Reddit, error)
+	CountTwitterStat(ctx context.Context) (int64, error)
+	TwitterStats(ctx context.Context, offtset int, limit int) ([]commstats.Twitter, error)
+	CountYoutubeStat(ctx context.Context) (int64, error)
+	YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error)
+	CountGithubStat(ctx context.Context) (int64, error)
+	GithubStat(ctx context.Context, offtset int, limit int) ([]commstats.Github, error)
 }
 
 type Server struct {

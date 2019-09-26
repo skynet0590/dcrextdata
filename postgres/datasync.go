@@ -16,7 +16,6 @@ func (pg *PgDb) TableNames() []string {
 		models.TableNames.VSP,
 		models.TableNames.VSPTick,
 		models.TableNames.PowData,
-		models.TableNames.CommStat,
 	}
 }
 

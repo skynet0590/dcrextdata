@@ -106,16 +106,34 @@ const (
 		PRIMARY KEY (hash)
 	);`
 
-	createCommStatTable = `CREATE TABLE IF NOT EXISTS comm_stat (
+	lastCommStatEntryTime = `SELECT date FROM reddit ORDER BY date DESC LIMIT 1`
+
+	createRedditTable = `CREATE TABLE IF NOT EXISTS reddit (
 		date timestamp,
-		reddit_stat VARCHAR (1000) NOT NULL,
-		twitter_followers INT NOT NULL,
-		youtube_subscribers INT NOT NULL,
-		github_stars INT NOT NULL,
-		github_folks INT NOT NULL,
+		subreddit VARCHAR(256) NOT NULL,
+		subscribers INT NOT NULL,
+		active_Accounts INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
-	lastCommStatEntryTime = `SELECT date FROM comm_stat ORDER BY date DESC LIMIT 1`
+
+	createTwitterTable = `CREATE TABLE IF NOT EXISTS twitter (
+		date timestamp,
+		followers INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
+
+	createGithubTable = `CREATE TABLE IF NOT EXISTS github (
+		date timestamp,
+		stars INT NOT NULL,
+		folks INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
+
+	createYoutubeTable = `CREATE TABLE IF NOT EXISTS youtube (
+		date timestamp,
+		subscribers INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -214,13 +232,46 @@ func (pg *PgDb) VoteTableExits() bool {
 }
 
 // reddit table
-func (pg *PgDb) CreateCommStatTable() error {
-	_, err := pg.db.Exec(createCommStatTable)
+func (pg *PgDb) CreateRedditTable() error {
+	_, err := pg.db.Exec(createRedditTable)
 	return err
 }
 
-func (pg *PgDb) CommStatTableExits() bool {
-	exists, _ := pg.tableExists("comm_stat")
+func (pg *PgDb) RedditTableExits() bool {
+	exists, _ := pg.tableExists("reddit")
+	return exists
+}
+
+// twitter table
+func (pg *PgDb) CreateTwitterTable() error {
+	_, err := pg.db.Exec(createTwitterTable)
+	return err
+}
+
+func (pg *PgDb) TwitterTableExits() bool {
+	exists, _ := pg.tableExists("twitter")
+	return exists
+}
+
+// youtube table
+func (pg *PgDb) CreateGithubTable() error {
+	_, err := pg.db.Exec(createGithubTable)
+	return err
+}
+
+func (pg *PgDb) GithubTableExits() bool {
+	exists, _ := pg.tableExists("github")
+	return exists
+}
+
+// youtube table
+func (pg *PgDb) CreateYoutubeTable() error {
+	_, err := pg.db.Exec(createYoutubeTable)
+	return err
+}
+
+func (pg *PgDb) YoutubeTableExits() bool {
+	exists, _ := pg.tableExists("youtube")
 	return exists
 }
 
@@ -287,7 +338,22 @@ func (pg *PgDb) DropAllTables() error {
 	}
 
 	// reddit
-	if err := pg.dropTable("reddit_info"); err != nil {
+	if err := pg.dropTable("reddit"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("github"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("twitter"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("youtube"); err != nil {
 		return err
 	}
 

@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testCommStats(t *testing.T) {
+func testReddits(t *testing.T) {
 	t.Parallel()
 
-	query := CommStats()
+	query := Reddits()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testCommStatsDelete(t *testing.T) {
+func testRedditsDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testCommStatsDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testCommStatsDelete(t *testing.T) {
 	}
 }
 
-func testCommStatsQueryDeleteAll(t *testing.T) {
+func testRedditsQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testCommStatsQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := CommStats().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := Reddits().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testCommStatsQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testCommStatsSliceDeleteAll(t *testing.T) {
+func testRedditsSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testCommStatsSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := CommStatSlice{o}
+	slice := RedditSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testCommStatsSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testCommStatsSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testCommStatsExists(t *testing.T) {
+func testRedditsExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testCommStatsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := CommStatExists(ctx, tx, o.Date)
+	e, err := RedditExists(ctx, tx, o.Date)
 	if err != nil {
-		t.Errorf("Unable to check if CommStat exists: %s", err)
+		t.Errorf("Unable to check if Reddit exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected CommStatExists to return true, but got false.")
+		t.Errorf("Expected RedditExists to return true, but got false.")
 	}
 }
 
-func testCommStatsFind(t *testing.T) {
+func testRedditsFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testCommStatsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	commStatFound, err := FindCommStat(ctx, tx, o.Date)
+	redditFound, err := FindReddit(ctx, tx, o.Date)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if commStatFound == nil {
+	if redditFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testCommStatsBind(t *testing.T) {
+func testRedditsBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testCommStatsBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = CommStats().Bind(ctx, tx, o); err != nil {
+	if err = Reddits().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testCommStatsOne(t *testing.T) {
+func testRedditsOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testCommStatsOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := CommStats().One(ctx, tx); err != nil {
+	if x, err := Reddits().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testCommStatsAll(t *testing.T) {
+func testRedditsAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	commStatOne := &CommStat{}
-	commStatTwo := &CommStat{}
-	if err = randomize.Struct(seed, commStatOne, commStatDBTypes, false, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	redditOne := &Reddit{}
+	redditTwo := &Reddit{}
+	if err = randomize.Struct(seed, redditOne, redditDBTypes, false, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
-	if err = randomize.Struct(seed, commStatTwo, commStatDBTypes, false, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	if err = randomize.Struct(seed, redditTwo, redditDBTypes, false, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = commStatOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = commStatTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := CommStats().All(ctx, tx)
+	slice, err := Reddits().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testCommStatsAll(t *testing.T) {
 	}
 }
 
-func testCommStatsCount(t *testing.T) {
+func testRedditsCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	commStatOne := &CommStat{}
-	commStatTwo := &CommStat{}
-	if err = randomize.Struct(seed, commStatOne, commStatDBTypes, false, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	redditOne := &Reddit{}
+	redditTwo := &Reddit{}
+	if err = randomize.Struct(seed, redditOne, redditDBTypes, false, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
-	if err = randomize.Struct(seed, commStatTwo, commStatDBTypes, false, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	if err = randomize.Struct(seed, redditTwo, redditDBTypes, false, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = commStatOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = commStatTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = redditTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,14 +299,14 @@ func testCommStatsCount(t *testing.T) {
 	}
 }
 
-func testCommStatsInsert(t *testing.T) {
+func testRedditsInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -316,7 +316,7 @@ func testCommStatsInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,24 +326,24 @@ func testCommStatsInsert(t *testing.T) {
 	}
 }
 
-func testCommStatsInsertWhitelist(t *testing.T) {
+func testRedditsInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(commStatColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(redditColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,14 +353,14 @@ func testCommStatsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testCommStatsReload(t *testing.T) {
+func testRedditsReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -375,14 +375,14 @@ func testCommStatsReload(t *testing.T) {
 	}
 }
 
-func testCommStatsReloadAll(t *testing.T) {
+func testRedditsReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -392,21 +392,21 @@ func testCommStatsReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := CommStatSlice{o}
+	slice := RedditSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testCommStatsSelect(t *testing.T) {
+func testRedditsSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -416,7 +416,7 @@ func testCommStatsSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := CommStats().All(ctx, tx)
+	slice, err := Reddits().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,25 +427,25 @@ func testCommStatsSelect(t *testing.T) {
 }
 
 var (
-	commStatDBTypes = map[string]string{`Date`: `timestamp without time zone`, `RedditStat`: `character varying`, `TwitterFollowers`: `integer`, `YoutubeSubscribers`: `integer`, `GithubStars`: `integer`, `GithubFolks`: `integer`}
-	_               = bytes.MinRead
+	redditDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Subreddit`: `character varying`, `Subscribers`: `integer`, `ActiveAccounts`: `integer`}
+	_             = bytes.MinRead
 )
 
-func testCommStatsUpdate(t *testing.T) {
+func testRedditsUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(commStatPrimaryKeyColumns) {
+	if 0 == len(redditPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(commStatAllColumns) == len(commStatPrimaryKeyColumns) {
+	if len(redditAllColumns) == len(redditPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -455,7 +455,7 @@ func testCommStatsUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -464,8 +464,8 @@ func testCommStatsUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -475,18 +475,18 @@ func testCommStatsUpdate(t *testing.T) {
 	}
 }
 
-func testCommStatsSliceUpdateAll(t *testing.T) {
+func testRedditsSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(commStatAllColumns) == len(commStatPrimaryKeyColumns) {
+	if len(redditAllColumns) == len(redditPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &CommStat{}
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := &Reddit{}
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -496,7 +496,7 @@ func testCommStatsSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -505,18 +505,18 @@ func testCommStatsSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, commStatDBTypes, true, commStatPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	if err = randomize.Struct(seed, o, redditDBTypes, true, redditPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(commStatAllColumns, commStatPrimaryKeyColumns) {
-		fields = commStatAllColumns
+	if strmangle.StringSliceMatch(redditAllColumns, redditPrimaryKeyColumns) {
+		fields = redditAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			commStatAllColumns,
-			commStatPrimaryKeyColumns,
+			redditAllColumns,
+			redditPrimaryKeyColumns,
 		)
 	}
 
@@ -534,7 +534,7 @@ func testCommStatsSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := CommStatSlice{o}
+	slice := RedditSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -542,29 +542,29 @@ func testCommStatsSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testCommStatsUpsert(t *testing.T) {
+func testRedditsUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(commStatAllColumns) == len(commStatPrimaryKeyColumns) {
+	if len(redditAllColumns) == len(redditPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := CommStat{}
-	if err = randomize.Struct(seed, &o, commStatDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	o := Reddit{}
+	if err = randomize.Struct(seed, &o, redditDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert CommStat: %s", err)
+		t.Errorf("Unable to upsert Reddit: %s", err)
 	}
 
-	count, err := CommStats().Count(ctx, tx)
+	count, err := Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -573,15 +573,15 @@ func testCommStatsUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, commStatDBTypes, false, commStatPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize CommStat struct: %s", err)
+	if err = randomize.Struct(seed, &o, redditDBTypes, false, redditPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize Reddit struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert CommStat: %s", err)
+		t.Errorf("Unable to upsert Reddit: %s", err)
 	}
 
-	count, err = CommStats().Count(ctx, tx)
+	count, err = Reddits().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

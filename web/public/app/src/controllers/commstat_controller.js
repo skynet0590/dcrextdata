@@ -6,6 +6,8 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
   viewOption
+  platform
+  subreddit
 
   static get targets () {
     return [
@@ -13,7 +15,8 @@ export default class extends Controller {
       'currentPage', 'numPageWrapper', 'selectedNum', 'messageView',
       'viewOptionControl', 'viewOption',
       'chartWrapper', 'chartsView', 'tableWrapper', 'loadingData', 'messageView',
-      'tableWrapper', 'table', 'rowTemplate'
+      'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
+      'platform', 'subreddit', 'subredditWrapper'
     ]
   }
 
@@ -21,6 +24,22 @@ export default class extends Controller {
     this.currentPage = parseInt(this.currentPageTarget.dataset.currentPage)
     if (this.currentPage < 1) {
       this.currentPage = 1
+    }
+
+    this.platform = this.platformTarget.dataset.initialValue
+    if (this.platform === '') {
+      this.platform = this.platformTarget.value = this.platformTarget.options[0].innerText
+    }
+
+    if (this.platform === 'Reddit') {
+      show(this.subredditWrapperTarget)
+    } else {
+      hide(this.subredditWrapperTarget)
+    }
+
+    this.subreddit = this.subredditTarget.dataset.initialValue
+    if (this.subreddit === '') {
+      this.subreddit = this.subredditTarget.value = this.subredditTarget.options[0].innerText
     }
 
     this.viewOption = this.viewOptionControlTarget.dataset.viewOption
@@ -53,6 +72,23 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
+  platformChanged (event) {
+    this.platform = event.currentTarget.value
+    if (this.platform === 'Reddit') {
+      show(this.subredditWrapperTarget)
+    } else {
+      hide(this.subredditWrapperTarget)
+    }
+    this.currentPage = 1
+    this.fetchData()
+  }
+
+  subredditChanged (event) {
+    this.subreddit = event.currentTarget.value
+    this.currentPage = 1
+    this.fetchData()
+  }
+
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData()
@@ -75,7 +111,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/getCommunityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}`)
+    axios.get(`/getCommunityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
@@ -91,12 +127,12 @@ export default class extends Controller {
           hide(_this.pageSizeWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/communityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}`)
+          window.history.pushState(window.history.state, _this.addr, `/communityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`)
         } else {
           show(_this.tableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/communityStat?page=${result.currentPage}&records-per-page=${result.selectedNum}&view-option=${_this.viewOption}`
+          const pageUrl = `/communityStat?page=${result.currentPage}&records-per-page=${result.selectedNum}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`
           window.history.pushState(window.history.state, _this.addr, pageUrl)
 
           _this.currentPage = result.currentPage
@@ -115,39 +151,70 @@ export default class extends Controller {
           _this.totalPageCountTarget.textContent = result.totalPages
           _this.currentPageTarget.textContent = result.currentPage
 
-          _this.displayRecord(result.stats)
+          _this.displayRecord(result.stats, result.columns)
         }
       }).catch(function (e) {
         console.log(e)
       })
   }
 
-  displayRecord (stats) {
+  displayRecord (stats, columns) {
     hide(this.messageViewTarget)
     show(this.tableWrapperTarget)
     const _this = this
     this.tableTarget.innerHTML = ''
+
+    this.tableCol1Target.innerText = columns[0]
+    this.tableCol2Target.innerText = columns[1]
+    if (columns.length > 2) {
+      this.tableCol3Target.innerText = columns[2]
+    } else {
+      hide(this.tableCol2Target)
+    }
 
     stats.forEach(stat => {
       const exRow = document.importNode(_this.rowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
       fields[0].innerHTML = stat.date
-      fields[1].innerText = stat.youtube_subscribers
-      fields[2].innerText = stat.twitter_followers
-      fields[3].innerText = stat.github_stars
-      fields[4].innerHTML = stat.github_folks
-
-      const redditStat = stat.reddit_stats
-      for (let subreddit in redditStat) {
-        const currSubreddit = subreddit
-        if (redditStat.hasOwnProperty(currSubreddit)) {
-          fields[5].innerHTML += `<p>${currSubreddit} Subscriber: ${redditStat[currSubreddit].subscribers}, 
-                                        Active: ${redditStat[currSubreddit].active_user_count}</p>`
-        }
+      switch (_this.platform) {
+        case 'Reddit':
+          _this.displayRedditData(stat, fields)
+          break
+        case 'Twitter':
+          _this.displayTwitterStat(stat, fields)
+          break
+        case 'Github':
+          _this.displayGithubData(stat, fields)
+          break
+        case 'Youtube':
+          _this.displayYoutubeData(stat, fields)
+          break
       }
+
       _this.tableTarget.appendChild(exRow)
     })
+  }
+
+  displayRedditData (stat, fields) {
+    fields[1].innerHTML = stat.subscribers
+    fields[2].innerText = stat.active_user_count
+  }
+
+  displayTwitterStat (stat, fields) {
+    fields[1].innerHTML = stat.followers
+    hide(fields[2])
+  }
+
+  displayGithubData (stat, fields) {
+    fields[1].innerHTML = stat.stars
+    fields[2].innerText = stat.folks
+    hide(fields[2])
+  }
+
+  displayYoutubeData (stat, fields) {
+    fields[1].innerHTML = stat.subscribers
+    hide(fields[2])
   }
 
   fetchDataAndPlotGraph () {

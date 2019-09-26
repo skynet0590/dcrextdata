@@ -41,6 +41,8 @@ func NewCommStatCollector(period int64, store DataStore, options *config.Communi
 		options.Subreddit = append(options.Subreddit, "decred")
 	}
 
+	subreddits = options.Subreddit
+
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
 		period:    time.Duration(period),
@@ -115,13 +117,6 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		return ctx.Err()
 	}
 
-	var err error
-
-	stat := CommStat{
-		Date:        time.Now().UTC(),
-		RedditStats: map[string]Reddit{},
-	}
-
 	for _, subreddit := range c.options.Subreddit {
 		// reddit
 		resp := new(RedditResponse)
@@ -134,51 +129,88 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 			resp, err = c.fetchRedditStat(ctx, subreddit)
 		}
 
-		stat.RedditStats[subreddit] = resp.Data
+		err = c.dataStore.StoreRedditStat(ctx, Reddit{
+			Date:           time.Now(),
+			Subscribers:    resp.Data.Subscribers,
+			AccountsActive: resp.Data.AccountsActive,
+			Subreddit:      subreddit,
+		})
+		if err != nil {
+			log.Error("Unable to save reddit stat, %s", err.Error())
+			return err
+		}
 		log.Infof("New Reddit stat collected for %s at %s, Subscribers  %d, Active Users %d", subreddit,
 			time.Now().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
 	}
 
 	// twitter
-	stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
+	followers, err := c.getTwitterFollowers(ctx)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
 		}
 		log.Warn(err)
-		stat.TwitterFollowers, err = c.getTwitterFollowers(ctx)
+		followers, err = c.getTwitterFollowers(ctx)
+	}
+
+	var twitterStat = Twitter{Date:time.Now(), Followers:followers}
+	err = c.dataStore.StoreTwitterStat(ctx, twitterStat)
+	if err != nil {
+		log.Error("Unable to save twitter stat, %s", err.Error())
+		return err
 	}
 
 	log.Infof("New Twitter stat collected at %s, Followers %d",
-		time.Now().Format(dateMiliTemplate), stat.TwitterFollowers)
+		twitterStat.Date.Format(dateMiliTemplate), twitterStat.Followers)
 
 	// youtube
-	stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
+	youtubeSubscribers, err := c.getYoutubeSubscriberCount(ctx)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
 		}
 		log.Warn(err)
-		stat.YoutubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
+		youtubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
+	}
+
+	youtubeStat := Youtube{
+		Date:        time.Now(),
+		Subscribers: youtubeSubscribers,
+	}
+	err = c.dataStore.StoreYoutubeStat(ctx, youtubeStat)
+	if err != nil {
+		log.Error("Unable to save Youtube stat, %s", err.Error())
+		return err
 	}
 
 	log.Infof("New Youtube stat collected at %s, Subscribers %d",
-		time.Now().Format(dateMiliTemplate), stat.YoutubeSubscribers)
+		youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)
 
 	// github
-	stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
+	githubStars, githubFolks, err := c.getGithubData(ctx)
 	for retry := 0; err != nil; retry++ {
 		if retry == retryLimit {
 			return err
 		}
 		log.Warn(err)
-		stat.GithubStars, stat.GithubFolks, err = c.getGithubData(ctx)
+		githubStars, githubFolks, err = c.getGithubData(ctx)
+	}
+
+	githubStat := Github{
+		Date:  time.Now(),
+		Star:  githubStars,
+		Folks: githubFolks,
+	}
+	err = c.dataStore.StoreGithubStat(ctx, githubStat)
+	if err != nil {
+		log.Error("Unable to save Github stat, %s", err.Error())
+		return err
 	}
 
 	log.Infof("New Github stat collected at %s, Stars %d, Folks %d",
-		time.Now().Format(dateMiliTemplate), stat.GithubStars, stat.GithubFolks)
+		githubStat.Date.Format(dateMiliTemplate), githubStars, githubFolks)
 
-	return c.dataStore.StoreCommStat(ctx, stat)
+	return nil
 }
 
 func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {

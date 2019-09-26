@@ -11,6 +11,11 @@ const (
 	redditRequestURL  = "https://www.reddit.com/r/%s/about.json"
 )
 
+var subreddits []string
+func Subreddits() []string {
+	return subreddits
+}
+
 func (c *Collector) fetchRedditStat(ctx context.Context, subreddit string) (response *RedditResponse, err error) {
 	if ctx.Err() != nil {
 		err = ctx.Err()
