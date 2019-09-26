@@ -172,3 +172,42 @@ export function selectedOption (optTargets) {
   })
   return key
 }
+
+export function formatDate (date, format) {
+  if (!format || format === '') {
+    format = 'yyyy-MM-dd hh:mm'
+  }
+
+  let dd = date.getDate()
+  let mm = date.getMonth() + 1
+  let yyyy = date.getFullYear()
+  let milliseconds = date.getMilliseconds()
+  let seconds = date.getSeconds()
+  let minutes = date.getMinutes()
+  let hour = date.getHours()
+
+  if (dd < 10) {
+    dd = '0' + dd
+  }
+
+  if (mm < 10) {
+    mm = '0' + mm
+  }
+
+  if (hour < 10) {
+    hour = '0' + hour
+  }
+
+  if (minutes < 10) {
+    minutes = '0' + minutes
+  }
+
+  if (seconds < 10) {
+    seconds = '0' + seconds
+  }
+
+  let dateFormatted = format.replace('yyyy', yyyy).replace('MM', mm).replace('dd', dd)
+  dateFormatted = dateFormatted.replace('hh', hour).replace('mm', minutes)
+  dateFormatted = dateFormatted.replace('ss', seconds).replace('sss', milliseconds)
+  return dateFormatted
+}

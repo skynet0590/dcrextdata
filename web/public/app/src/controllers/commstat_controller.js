@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading } from '../utils'
+import {hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate} from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -244,7 +244,7 @@ export default class extends Controller {
       const exRow = document.importNode(_this.rowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerHTML = stat.date
+      fields[0].innerHTML = formatDate(new Date(stat.date))
       switch (_this.platform) {
         case 'Reddit':
           _this.displayRedditData(stat, fields)
