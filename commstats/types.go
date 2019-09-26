@@ -33,9 +33,9 @@ type Reddit struct {
 }
 
 type Github struct {
-	Date time.Time `json:"date"`
-	Star int `json:"star"`
-	Folks int `json:"folks"`
+	Date  time.Time `json:"date"`
+	Stars int       `json:"stars"`
+	Folks int       `json:"folks"`
 }
 
 type Youtube struct {

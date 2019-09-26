@@ -148,7 +148,7 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, offtset int, limit int) ([]comm
 func (pg *PgDb) StoreGithubStat(ctx context.Context, github commstats.Github) error {
 	githubModel := models.Github{
 		Date:  github.Date,
-		Stars: github.Star,
+		Stars: github.Stars,
 		Folks: github.Folks,
 	}
 
@@ -177,9 +177,9 @@ func (pg *PgDb) GithubStat(ctx context.Context, offtset int, limit int) ([]comms
 	var result []commstats.Github
 	for _, record := range statSlice {
 		stat := commstats.Github{
-			Date:           record.Date,
+			Date:  record.Date,
 			Folks: record.Folks,
-			Star: record.Stars,
+			Stars: record.Stars,
 		}
 
 		result = append(result, stat)

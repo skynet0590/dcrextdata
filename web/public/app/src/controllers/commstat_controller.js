@@ -209,7 +209,6 @@ export default class extends Controller {
   displayGithubData (stat, fields) {
     fields[1].innerHTML = stat.stars
     fields[2].innerText = stat.folks
-    hide(fields[2])
   }
 
   displayYoutubeData (stat, fields) {

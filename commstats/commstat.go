@@ -198,7 +198,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 
 	githubStat := Github{
 		Date:  time.Now(),
-		Star:  githubStars,
+		Stars: githubStars,
 		Folks: githubFolks,
 	}
 	err = c.dataStore.StoreGithubStat(ctx, githubStat)
