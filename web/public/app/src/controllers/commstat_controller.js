@@ -40,6 +40,11 @@ export default class extends Controller {
       this.subreddit = this.subredditTarget.value = this.subredditTarget.options[0].innerText
     }
 
+    this.twitterHandle = this.twitterHandleTarget.dataset.initialValue
+    if (this.twitterHandle === '') {
+      this.twitterHandle = this.twitterHandleTarget.value = this.twitterHandleTarget.options[0].innerText
+    }
+
     this.dataType = this.dataTypeTarget.dataset.initialValue
 
     this.viewOption = this.viewOptionControlTarget.dataset.initialValue
