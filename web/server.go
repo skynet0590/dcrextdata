@@ -58,8 +58,8 @@ type DataQuery interface {
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
 	RedditStats(ctx context.Context, subreddit string, offtset int, limit int) ([]commstats.Reddit, error)
-	CountTwitterStat(ctx context.Context) (int64, error)
-	TwitterStats(ctx context.Context, offtset int, limit int) ([]commstats.Twitter, error)
+	CountTwitterStat(ctx context.Context, handle string) (int64, error)
+	TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error)
 	CountYoutubeStat(ctx context.Context) (int64, error)
 	YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error)
 	CountGithubStat(ctx context.Context) (int64, error)

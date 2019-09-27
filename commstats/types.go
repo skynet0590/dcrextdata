@@ -44,8 +44,9 @@ type Youtube struct {
 }
 
 type Twitter struct {
-	Date time.Time `json:"date"`
-	Followers int `json:"followers"`
+	Date      time.Time `json:"date"`
+	Followers int       `json:"followers"`
+	Handle    string    `json:"handle"`
 }
 
 type ChartData struct {
@@ -59,6 +60,7 @@ type DataStore interface {
 	StoreTwitterStat(ctx context.Context, twitter Twitter) error
 	StoreYoutubeStat(ctx context.Context, youtube Youtube) error
 	StoreGithubStat(ctx context.Context, github Github) error
+	LastEntry(ctx context.Context, tableName string, receiver interface{}) error
 }
 
 type Collector struct {

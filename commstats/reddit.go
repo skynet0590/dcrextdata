@@ -16,6 +16,11 @@ func Subreddits() []string {
 	return subreddits
 }
 
+var twitterHandles []string
+func TwitterHandles() []string {
+	return twitterHandles
+}
+
 func (c *Collector) fetchRedditStat(ctx context.Context, subreddit string) (response *RedditResponse, err error) {
 	if ctx.Err() != nil {
 		err = ctx.Err()

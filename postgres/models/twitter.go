@@ -24,6 +24,7 @@ import (
 // Twitter is an object representing the database table.
 type Twitter struct {
 	Date      time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
+	Handle    string    `boil:"handle" json:"handle" toml:"handle" yaml:"handle"`
 	Followers int       `boil:"followers" json:"followers" toml:"followers" yaml:"followers"`
 
 	R *twitterR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -32,9 +33,11 @@ type Twitter struct {
 
 var TwitterColumns = struct {
 	Date      string
+	Handle    string
 	Followers string
 }{
 	Date:      "date",
+	Handle:    "handle",
 	Followers: "followers",
 }
 
@@ -42,9 +45,11 @@ var TwitterColumns = struct {
 
 var TwitterWhere = struct {
 	Date      whereHelpertime_Time
+	Handle    whereHelperstring
 	Followers whereHelperint
 }{
 	Date:      whereHelpertime_Time{field: "\"twitter\".\"date\""},
+	Handle:    whereHelperstring{field: "\"twitter\".\"handle\""},
 	Followers: whereHelperint{field: "\"twitter\".\"followers\""},
 }
 
@@ -65,8 +70,8 @@ func (*twitterR) NewStruct() *twitterR {
 type twitterL struct{}
 
 var (
-	twitterAllColumns            = []string{"date", "followers"}
-	twitterColumnsWithoutDefault = []string{"date", "followers"}
+	twitterAllColumns            = []string{"date", "handle", "followers"}
+	twitterColumnsWithoutDefault = []string{"date", "handle", "followers"}
 	twitterColumnsWithDefault    = []string{}
 	twitterPrimaryKeyColumns     = []string{"date"}
 )

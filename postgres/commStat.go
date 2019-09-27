@@ -67,6 +67,7 @@ func (pg *PgDb) StoreTwitterStat(ctx context.Context, twitter commstats.Twitter)
 	twitterModel := models.Twitter{
 		Date:      twitter.Date,
 		Followers: twitter.Followers,
+		Handle:    twitter.Handle,
 	}
 
 	err := twitterModel.Insert(ctx, pg.db, boil.Infer())
@@ -79,12 +80,13 @@ func (pg *PgDb) StoreTwitterStat(ctx context.Context, twitter commstats.Twitter)
 	return err
 }
 
-func (pg *PgDb) CountTwitterStat(ctx context.Context) (int64, error) {
-	return models.Twitters().Count(ctx, pg.db)
+func (pg *PgDb) CountTwitterStat(ctx context.Context, handle string) (int64, error) {
+	return models.Twitters(models.TwitterWhere.Handle.EQ(handle)).Count(ctx, pg.db)
 }
 
-func (pg *PgDb) TwitterStats(ctx context.Context, offtset int, limit int) ([]commstats.Twitter, error) {
+func (pg *PgDb) TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error) {
 	statSlice, err := models.Twitters(
+		models.TwitterWhere.Handle.EQ(handle),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.TwitterColumns.Date)),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {

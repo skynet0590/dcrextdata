@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import {hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate} from '../utils'
+import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -8,6 +8,7 @@ export default class extends Controller {
   viewOption
   platform
   subreddit
+  twitterHandle
   dataType
 
   static get targets () {
@@ -17,7 +18,7 @@ export default class extends Controller {
       'viewOptionControl', 'viewOption',
       'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
-      'platform', 'subreddit', 'subredditWrapper', 'dataTypeWrapper', 'dataType'
+      'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType', 'twitterHandle'
     ]
   }
 
@@ -32,11 +33,7 @@ export default class extends Controller {
       this.platform = this.platformTarget.value = this.platformTarget.options[0].innerText
     }
 
-    if (this.platform === 'Reddit') {
-      show(this.subredditWrapperTarget)
-    } else {
-      hide(this.subredditWrapperTarget)
-    }
+    this.showCurrentSubAccountWrapper()
 
     this.subreddit = this.subredditTarget.dataset.initialValue
     if (this.subreddit === '') {
@@ -45,7 +42,7 @@ export default class extends Controller {
 
     this.dataType = this.dataTypeTarget.dataset.initialValue
 
-    this.viewOption = this.viewOptionControlTarget.dataset.viewOption
+    this.viewOption = this.viewOptionControlTarget.dataset.initialValue
     if (this.viewOption === 'chart') {
       this.setChart()
     } else {
@@ -79,11 +76,7 @@ export default class extends Controller {
 
   platformChanged (event) {
     this.platform = event.currentTarget.value
-    if (this.platform === 'Reddit') {
-      show(this.subredditWrapperTarget)
-    } else {
-      hide(this.subredditWrapperTarget)
-    }
+    this.showCurrentSubAccountWrapper()
 
     this.updateDataTypeControl()
     this.currentPage = 1
@@ -104,9 +97,30 @@ export default class extends Controller {
     }
   }
 
+  twitterHandleChanged (event) {
+    this.twitterHandle = event.currentTarget.value
+    this.currentPage = 1
+    if (this.viewOption === 'table') {
+      this.fetchData()
+    } else {
+      this.fetchDataAndPlotGraph()
+    }
+  }
+
   dataTypeChanged (event) {
     this.dataType = event.currentTarget.value
     this.fetchDataAndPlotGraph()
+  }
+
+  showCurrentSubAccountWrapper () {
+    const that = this
+    this.subAccountWrapperTargets.forEach(el => {
+      if (el.dataset.platform === that.platform) {
+        show(el)
+      } else {
+        hide(el)
+      }
+    })
   }
 
   updateDataTypeControl () {
@@ -117,18 +131,13 @@ export default class extends Controller {
     }
 
     const _this = this
-    let shouldPreserveCorrentValue = false
-
     const addDataTypeOption = function (value, label) {
       let selected = _this.dataType === value ? 'selected' : ''
-      if (selected === '') {
-        shouldPreserveCorrentValue = true
-      }
       _this.dataTypeTarget.innerHTML += `<option ${selected} value="${value}">${label}</option>`
     }
     switch (this.platform) {
       case 'Reddit':
-        if (this.dataType === '') {
+        if (this.dataType !== 'subscribers' && this.dataType !== 'active_accounts') {
           this.dataType = 'subscribers'
         }
         addDataTypeOption('subscribers', 'Subscribers')
@@ -136,17 +145,13 @@ export default class extends Controller {
         show(_this.dataTypeWrapperTarget)
         break
       case 'Github':
-        if (this.dataType === '') {
+        if (this.dataType !== 'folks' && this.dataType !== 'stars') {
           this.dataType = 'folks'
         }
         addDataTypeOption('folks', 'Folks')
         addDataTypeOption('stars', 'Stars')
         show(_this.dataTypeWrapperTarget)
         break
-    }
-
-    if (!shouldPreserveCorrentValue) {
-      this.dataType = ''
     }
 
     if (this.dataType === '' && this.dataTypeTarget.innerHTML !== '') {
@@ -178,7 +183,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/getCommunityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}`)
+    axios.get(`/getCommunityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=` +
+      `${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}&twitter-handle=${this.twitterHandle}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
@@ -194,12 +200,15 @@ export default class extends Controller {
           hide(_this.pageSizeWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/community?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`)
+          window.history.pushState(window.history.state, _this.addr, `/community?page=${_this.nextPage}` +
+            `&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}` +
+            `&subreddit=${_this.subreddit}&twitter-handle=${_this.twitterHandle}`)
         } else {
           show(_this.tableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/community?page=${result.currentPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}&subreddit=${_this.subreddit}`
+          const pageUrl = `/community?page=${result.currentPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}` +
+            `&platform=${_this.platform}&subreddit=${_this.subreddit}&twitter-handle=${_this.twitterHandle}`
           window.history.pushState(window.history.state, _this.addr, pageUrl)
 
           _this.currentPage = result.currentPage
@@ -238,6 +247,10 @@ export default class extends Controller {
       show(this.tableCol2Target)
     } else {
       hide(this.tableCol2Target)
+    }
+
+    if (!stats) {
+      return
     }
 
     stats.forEach(stat => {
@@ -289,7 +302,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}&view-option=${this.viewOption}`
+    const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}` +
+      `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}`
     window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
 
     axios.get(`/communitychat?${queryString}`).then(function (response) {

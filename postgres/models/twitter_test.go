@@ -427,7 +427,7 @@ func testTwittersSelect(t *testing.T) {
 }
 
 var (
-	twitterDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Followers`: `integer`}
+	twitterDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Handle`: `character varying`, `Followers`: `integer`}
 	_              = bytes.MinRead
 )
 

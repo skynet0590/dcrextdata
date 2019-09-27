@@ -118,6 +118,7 @@ const (
 
 	createTwitterTable = `CREATE TABLE IF NOT EXISTS twitter (
 		date timestamp,
+		handle VARCHAR(256) NOT NULL,
 		followers INT NOT NULL,
 		PRIMARY KEY (date)
 	);`

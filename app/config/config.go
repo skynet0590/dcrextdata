@@ -32,6 +32,7 @@ const (
 	defaultPowInterval     = 300
 	defaultRedditInterval  = 300
 	defaultSyncInterval    = 60
+	defaultTwitterStatInterval = 60
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -57,6 +58,7 @@ func defaultFileOptions() ConfigFileOptions {
 	}
 
 	cfg.CommunityStatInterval = defaultRedditInterval
+	cfg.TwitterStatInterval = defaultTwitterStatInterval
 	return cfg
 }
 
@@ -123,6 +125,8 @@ type CommunityStatOptions struct {
 	DisableCommunityStat  bool     `long:"disablecommstat" description:"Disables periodic community stat collection"`
 	CommunityStatInterval int64    `long:"commstatinterval" description:"Collection interval for community stat collection"`
 	Subreddit             []string `long:"subreddit" description:"List of subreddit for community stat collection"`
+	TwitterHandles		  []string `long:"twitterhandle" description:"List of twitter handles community stat collection"`
+	TwitterStatInterval	  int 	   `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
 }
 
 func defaultConfig() Config {

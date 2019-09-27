@@ -20,7 +20,6 @@ import (
 const (
 	dateTemplate = "2006-01-02 15:04"
 	dateMiliTemplate = "2006-01-02 15:04:05.99"
-	twitterRequestURL = "https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=decredproject"
 	youtubeChannelId  = "UCJ2bYDaPYHpSmJPh_M5dNSg"
 	youtubeKey		  = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
 	retryLimit        = 3
@@ -42,6 +41,7 @@ func NewCommStatCollector(period int64, store DataStore, options *config.Communi
 	}
 
 	subreddits = options.Subreddit
+	twitterHandles = options.TwitterHandles
 
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
@@ -143,25 +143,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 			time.Now().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
 	}
 
-	// twitter
-	followers, err := c.getTwitterFollowers(ctx)
-	for retry := 0; err != nil; retry++ {
-		if retry == retryLimit {
-			return err
-		}
-		log.Warn(err)
-		followers, err = c.getTwitterFollowers(ctx)
-	}
-
-	var twitterStat = Twitter{Date:time.Now(), Followers:followers}
-	err = c.dataStore.StoreTwitterStat(ctx, twitterStat)
-	if err != nil {
-		log.Error("Unable to save twitter stat, %s", err.Error())
-		return err
-	}
-
-	log.Infof("New Twitter stat collected at %s, Followers %d",
-		twitterStat.Date.Format(dateMiliTemplate), twitterStat.Followers)
+	go c.startTwitterCollector(ctx)
 
 	// youtube
 	youtubeSubscribers, err := c.getYoutubeSubscriberCount(ctx)
@@ -211,45 +193,6 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		githubStat.Date.Format(dateMiliTemplate), githubStars, githubFolks)
 
 	return nil
-}
-
-func (c *Collector) getTwitterFollowers(ctx context.Context) (int, error) {
-	if ctx.Err() != nil {
-		return 0, ctx.Err()
-	}
-
-	request, err := http.NewRequest(http.MethodGet, twitterRequestURL, nil)
-	if err != nil {
-		return 0, err
-	}
-
-	// reddit returns too many redditRequest http status if user agent is not set
-	request.Header.Set("user-agent",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
-
-	// log.Tracef("GET %v", redditRequestURL)
-	resp, err := c.client.Do(request.WithContext(ctx))
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-	var response []struct {
-		Followers int `json:"followers_count"`
-	}
-	if resp.StatusCode == http.StatusOK {
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			return 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
-		}
-	} else {
-		return 0, fmt.Errorf("unable to fetch twitter followers: %s", resp.Status)
-	}
-
-	if len(response) < 1 {
-		return 0, errors.New("unable to fetch twitter followers, no response")
-	}
-
-	return response[0].Followers, nil
 }
 
 func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) {

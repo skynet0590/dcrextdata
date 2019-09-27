@@ -1317,6 +1317,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	platform := req.FormValue("platform")
 	subreddit := req.FormValue("subreddit")
 	dataType := req.FormValue("data-type")
+	twitterHandle := req.FormValue("twitter-handle")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -1324,15 +1325,19 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if viewOption == "" {
-		viewOption = "table"
+		viewOption = "chart"
 	}
 
 	if platform == "" {
 		platform  = commStatPlatforms[0]
 	}
 
-	if subreddit == "" {
+	if subreddit == "" && len(commstats.Subreddits()) > 0 {
 		subreddit = commstats.Subreddits()[0]
+	}
+
+	if twitterHandle == "" && len(commstats.TwitterHandles()) > 0 {
+		twitterHandle = commstats.TwitterHandles()[0]
 	}
 
 	selectedNum, _ := strconv.Atoi(selectedNumStr)
@@ -1350,18 +1355,20 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	nextPage = page + 1
 
 	data := map[string]interface{}{
-		"page":               page,
-		"viewOption":         viewOption,
-		"platforms":          commStatPlatforms,
-		"platform":           platform,
-		"subreddits":         commstats.Subreddits(),
-		"subreddit":          subreddit,
-		"dataType":			  dataType,
-		"currentPage":        page,
-		"pageSizeSelector":   pageSizeSelector,
-		"selectedNum":        selectedNum,
-		"previousPage":       previousPage,
-		"nextPage":           nextPage,
+		"page":             page,
+		"viewOption":       viewOption,
+		"platforms":        commStatPlatforms,
+		"platform":         platform,
+		"subreddits":       commstats.Subreddits(),
+		"subreddit":        subreddit,
+		"twitterHandles":   commstats.TwitterHandles(),
+		"twitterHandle":    twitterHandle,
+		"dataType":         dataType,
+		"currentPage":      page,
+		"pageSizeSelector": pageSizeSelector,
+		"selectedNum":      selectedNum,
+		"previousPage":     previousPage,
+		"nextPage":         nextPage,
 	}
 
 	s.render("community.html", data, res)
@@ -1371,7 +1378,6 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	plarform := req.FormValue("platform")
-	subreddit := req.FormValue("subreddit")
 	pageStr := req.FormValue("page")
 	pageSizeStr := req.FormValue("records-per-page")
 	page, _ := strconv.Atoi(pageStr)
@@ -1393,6 +1399,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 
 	switch plarform {
 	case redditPlatform:
+		subreddit := req.FormValue("subreddit")
 		stats, err = s.db.RedditStats(req.Context(), subreddit, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Reddit stat, %s", err.Error()), resp)
@@ -1408,13 +1415,14 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		columnHeaders = append(columnHeaders, "Date", "Subscribers", "Accounts Active" )
 		break
 	case twitterPlatform:
-		stats, err = s.db.TwitterStats(req.Context(), offset, pageSize)
+		handle := req.FormValue("twitter-handle")
+		stats, err = s.db.TwitterStats(req.Context(), handle, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Twitter stat, %s", err.Error()), resp)
 			return
 		}
 
-		totalCount, err = s.db.CountTwitterStat(req.Context())
+		totalCount, err = s.db.CountTwitterStat(req.Context(), handle)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Twitter stat, %s", err.Error()), resp)
 			return

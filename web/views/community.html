@@ -39,7 +39,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subredditWrapper">
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Reddit">
                             <div class=" mb-2">
                                 <div class="control-label">Subreddit</div>
                                 <select data-target="commstat.subreddit" data-initial-value="{{.subreddit}}"
@@ -48,6 +48,19 @@
                                     {{$subreddit := .subreddit}}
                                     {{ range $filter := .subreddits}}
                                         <option value="{{$filter}}" {{ if eq $filter $subreddit}} selected {{ end }}>{{$filter}}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Twitter">
+                            <div class=" mb-2">
+                                <div class="control-label">Handle</div>
+                                <select data-target="commstat.twitterHandle" data-initial-value="{{.twitterHandle}}"
+                                        data-action="change->commstat#twitterHandleChanged" class="form-control mr-5"
+                                        style="width: 120px;">
+                                    {{$twitterHandle := .twitterHandle}}
+                                    {{ range $filter := .twitterHandles}}
+                                        <option value="{{$filter}}" {{ if eq $filter $twitterHandle}} selected {{ end }}>{{$filter}}</option>
                                     {{ end }}
                                 </select>
                             </div>

@@ -46,6 +46,19 @@ func (pg *PgDb) LastEntry(ctx context.Context, tableName string, receiver interf
 	case models.TableNames.VSPTick:
 		columnName = models.VSPTickColumns.ID
 		break
+	case models.TableNames.Reddit:
+		columnName = models.RedditColumns.Date
+		break
+	case models.TableNames.Twitter:
+		columnName = models.TwitterColumns.Date
+		break
+	case models.TableNames.Github:
+		columnName = models.GithubColumns.Date
+		break
+	case models.TableNames.Youtube:
+		columnName = models.YoutubeColumns.Date
+		break
+
 	}
 
 	rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s DESC LIMIT 1", columnName, tableName, columnName))
