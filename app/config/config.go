@@ -12,53 +12,55 @@ import (
 )
 
 const (
-	DefaultConfigFilename  = "dcrextdata.conf"
-	defaultLogFilename     = "dcrextdata.log"
-	Hint                   = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
-	defaultDbHost          = "localhost"
-	defaultDbPort          = "5432"
-	defaultDbUser          = "postgres"
-	defaultDbPass          = "dbpass"
-	defaultDbName          = "dcrextdata"
-	defaultLogLevel        = "debug"
-	defaultHttpHost        = "127.0.0.1"
-	defaultHttpPort        = "7770"
-	defaultDcrdServer      = "127.0.0.1:9109"
-	defaultDcrdUser        = "rpcuser"
-	defaultDcrdPassword    = "rpcpass"
-	defaultDcrdNetworkType = "mainnet"
-	defaultMempoolInterval = 60
-	defaultVSPInterval     = 300
-	defaultPowInterval     = 300
-	defaultRedditInterval  = 300
-	defaultSyncInterval    = 60
+	DefaultConfigFilename      = "dcrextdata.conf"
+	defaultLogFilename         = "dcrextdata.log"
+	Hint                       = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
+	defaultDbHost              = "localhost"
+	defaultDbPort              = "5432"
+	defaultDbUser              = "postgres"
+	defaultDbPass              = "dbpass"
+	defaultDbName              = "dcrextdata"
+	defaultLogLevel            = "debug"
+	defaultHttpHost            = "127.0.0.1"
+	defaultHttpPort            = "7770"
+	defaultDcrdServer          = "127.0.0.1:9109"
+	defaultDcrdUser            = "rpcuser"
+	defaultDcrdPassword        = "rpcpass"
+	defaultDcrdNetworkType     = "mainnet"
+	defaultMempoolInterval     = 60
+	defaultVSPInterval         = 300
+	defaultPowInterval         = 300
+	defaultRedditInterval      = 300
+	defaultSyncInterval        = 60
 	defaultTwitterStatInterval = 60
+	defaultGithubStatInterval  = 60
 )
 
 func defaultFileOptions() ConfigFileOptions {
 	cfg := ConfigFileOptions{
-		LogFile:               defaultLogFilename,
-		ConfigFile:            DefaultConfigFilename,
-		DBHost:                defaultDbHost,
-		DBPort:                defaultDbPort,
-		DBUser:                defaultDbUser,
-		DBPass:                defaultDbPass,
-		DBName:                defaultDbName,
-		DebugLevel:            defaultLogLevel,
-		VSPInterval:           defaultVSPInterval,
-		PowInterval:           defaultPowInterval,
-		MempoolInterval:       defaultMempoolInterval,
-		DcrdNetworkType:       defaultDcrdNetworkType,
-		DcrdRpcServer:         defaultDcrdServer,
-		DcrdRpcUser:           defaultDcrdUser,
-		DcrdRpcPassword:       defaultDcrdPassword,
-		HTTPHost:              defaultHttpHost,
-		HTTPPort:              defaultHttpPort,
-		SyncInterval:          defaultSyncInterval,
+		LogFile:         defaultLogFilename,
+		ConfigFile:      DefaultConfigFilename,
+		DBHost:          defaultDbHost,
+		DBPort:          defaultDbPort,
+		DBUser:          defaultDbUser,
+		DBPass:          defaultDbPass,
+		DBName:          defaultDbName,
+		DebugLevel:      defaultLogLevel,
+		VSPInterval:     defaultVSPInterval,
+		PowInterval:     defaultPowInterval,
+		MempoolInterval: defaultMempoolInterval,
+		DcrdNetworkType: defaultDcrdNetworkType,
+		DcrdRpcServer:   defaultDcrdServer,
+		DcrdRpcUser:     defaultDcrdUser,
+		DcrdRpcPassword: defaultDcrdPassword,
+		HTTPHost:        defaultHttpHost,
+		HTTPPort:        defaultHttpPort,
+		SyncInterval:    defaultSyncInterval,
 	}
 
 	cfg.CommunityStatInterval = defaultRedditInterval
 	cfg.TwitterStatInterval = defaultTwitterStatInterval
+	cfg.GithubStatInterval = defaultGithubStatInterval
 	return cfg
 }
 
@@ -125,8 +127,10 @@ type CommunityStatOptions struct {
 	DisableCommunityStat  bool     `long:"disablecommstat" description:"Disables periodic community stat collection"`
 	CommunityStatInterval int64    `long:"commstatinterval" description:"Collection interval for community stat collection"`
 	Subreddit             []string `long:"subreddit" description:"List of subreddit for community stat collection"`
-	TwitterHandles		  []string `long:"twitterhandle" description:"List of twitter handles community stat collection"`
-	TwitterStatInterval	  int 	   `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
+	TwitterHandles        []string `long:"twitterhandle" description:"List of twitter handles community stat collection"`
+	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
+	GithubRepositories    []string `long:"githubrepository" description:"List of Github repositories to track"`
+	GithubStatInterval    int      `long:"githubstatinterval" description:"Number of minutes between Github stat collection"`
 }
 
 func defaultConfig() Config {

@@ -427,7 +427,7 @@ func testGithubsSelect(t *testing.T) {
 }
 
 var (
-	githubDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Stars`: `integer`, `Folks`: `integer`}
+	githubDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Repository`: `character varying`, `Stars`: `integer`, `Folks`: `integer`}
 	_             = bytes.MinRead
 )
 

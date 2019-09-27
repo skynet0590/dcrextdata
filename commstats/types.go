@@ -29,18 +29,19 @@ type Reddit struct {
 	Date           time.Time `json:"date"`
 	Subscribers    int       `json:"subscribers"`
 	AccountsActive int       `json:"active_user_count"`
-	Subreddit      string `json:"subreddit"`
+	Subreddit      string    `json:"subreddit"`
 }
 
 type Github struct {
-	Date  time.Time `json:"date"`
-	Stars int       `json:"stars"`
-	Folks int       `json:"folks"`
+	Date       time.Time `json:"date"`
+	Stars      int       `json:"stars"`
+	Folks      int       `json:"folks"`
+	Repository string    `json:"repository"`
 }
 
 type Youtube struct {
-	Date time.Time `json:"date"`
-	Subscribers int `json:"subscribers"`
+	Date        time.Time `json:"date"`
+	Subscribers int       `json:"subscribers"`
 }
 
 type Twitter struct {

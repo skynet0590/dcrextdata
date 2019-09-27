@@ -9,6 +9,7 @@ export default class extends Controller {
   platform
   subreddit
   twitterHandle
+  repository
   dataType
 
   static get targets () {
@@ -18,7 +19,7 @@ export default class extends Controller {
       'viewOptionControl', 'viewOption',
       'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
-      'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType', 'twitterHandle'
+      'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType', 'twitterHandle', 'repository'
     ]
   }
 
@@ -43,6 +44,11 @@ export default class extends Controller {
     this.twitterHandle = this.twitterHandleTarget.dataset.initialValue
     if (this.twitterHandle === '') {
       this.twitterHandle = this.twitterHandleTarget.value = this.twitterHandleTarget.options[0].innerText
+    }
+
+    this.repository = this.repositoryTarget.dataset.initialValue
+    if (this.repository === '') {
+      this.repository = this.repositoryTarget.value = this.repositoryTarget.options[0].innerText
     }
 
     this.dataType = this.dataTypeTarget.dataset.initialValue
@@ -75,6 +81,7 @@ export default class extends Controller {
     hide(this.messageViewTarget)
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
+    hide(this.numPageWrapperTarget)
     this.updateDataTypeControl()
     this.fetchDataAndPlotGraph()
   }
@@ -104,6 +111,16 @@ export default class extends Controller {
 
   twitterHandleChanged (event) {
     this.twitterHandle = event.currentTarget.value
+    this.currentPage = 1
+    if (this.viewOption === 'table') {
+      this.fetchData()
+    } else {
+      this.fetchDataAndPlotGraph()
+    }
+  }
+
+  repositoryChanged (event) {
+    this.repository = event.currentTarget.value
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -188,8 +205,10 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/getCommunityStat?page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=` +
-      `${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}&twitter-handle=${this.twitterHandle}`)
+    const queryString = `page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=` +
+      `${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}&twitter-handle=${this.twitterHandle}` +
+      `&repository=${this.repository}`
+    axios.get(`/getCommunityStat?${queryString}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
@@ -205,15 +224,12 @@ export default class extends Controller {
           hide(_this.pageSizeWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/community?page=${_this.nextPage}` +
-            `&records-per-page=${numberOfRows}&view-option=${_this.viewOption}&platform=${_this.platform}` +
-            `&subreddit=${_this.subreddit}&twitter-handle=${_this.twitterHandle}`)
+          window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
         } else {
           show(_this.tableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/community?page=${result.currentPage}&records-per-page=${numberOfRows}&view-option=${_this.viewOption}` +
-            `&platform=${_this.platform}&subreddit=${_this.subreddit}&twitter-handle=${_this.twitterHandle}`
+          const pageUrl = `/community?${queryString}`
           window.history.pushState(window.history.state, _this.addr, pageUrl)
 
           _this.currentPage = result.currentPage
@@ -308,7 +324,7 @@ export default class extends Controller {
 
     const _this = this
     const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}` +
-      `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}`
+      `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}&repository=${this.repository}`
     window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
 
     axios.get(`/communitychat?${queryString}`).then(function (response) {

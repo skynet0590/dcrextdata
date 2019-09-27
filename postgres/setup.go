@@ -125,6 +125,7 @@ const (
 
 	createGithubTable = `CREATE TABLE IF NOT EXISTS github (
 		date timestamp,
+		repository VARCHAR(256) NOT NULL,
 		stars INT NOT NULL,
 		folks INT NOT NULL,
 		PRIMARY KEY (date)

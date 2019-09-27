@@ -8,17 +8,25 @@ import (
 )
 
 const (
-	redditRequestURL  = "https://www.reddit.com/r/%s/about.json"
+	redditRequestURL = "https://www.reddit.com/r/%s/about.json"
 )
 
 var subreddits []string
+
 func Subreddits() []string {
 	return subreddits
 }
 
 var twitterHandles []string
+
 func TwitterHandles() []string {
 	return twitterHandles
+}
+
+var repositories []string
+
+func Repositories() []string {
+	return repositories
 }
 
 func (c *Collector) fetchRedditStat(ctx context.Context, subreddit string) (response *RedditResponse, err error) {

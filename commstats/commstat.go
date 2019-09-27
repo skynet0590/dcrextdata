@@ -18,11 +18,11 @@ import (
 )
 
 const (
-	dateTemplate = "2006-01-02 15:04"
+	dateTemplate     = "2006-01-02 15:04"
 	dateMiliTemplate = "2006-01-02 15:04:05.99"
-	youtubeChannelId  = "UCJ2bYDaPYHpSmJPh_M5dNSg"
-	youtubeKey		  = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
-	retryLimit        = 3
+	youtubeChannelId = "UCJ2bYDaPYHpSmJPh_M5dNSg"
+	youtubeKey       = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
+	retryLimit       = 3
 )
 
 func NewCommStatCollector(period int64, store DataStore, options *config.CommunityStatOptions) (*Collector, error) {
@@ -42,12 +42,13 @@ func NewCommStatCollector(period int64, store DataStore, options *config.Communi
 
 	subreddits = options.Subreddit
 	twitterHandles = options.TwitterHandles
+	repositories = options.GithubRepositories
 
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
 		period:    time.Duration(period),
 		dataStore: store,
-		options: options,
+		options:   options,
 	}, nil
 }
 
@@ -130,7 +131,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		}
 
 		err = c.dataStore.StoreRedditStat(ctx, Reddit{
-			Date:           time.Now(),
+			Date:           time.Now().UTC(),
 			Subscribers:    resp.Data.Subscribers,
 			AccountsActive: resp.Data.AccountsActive,
 			Subreddit:      subreddit,
@@ -156,7 +157,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 	}
 
 	youtubeStat := Youtube{
-		Date:        time.Now(),
+		Date:        time.Now().UTC(),
 		Subscribers: youtubeSubscribers,
 	}
 	err = c.dataStore.StoreYoutubeStat(ctx, youtubeStat)
@@ -169,28 +170,7 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)
 
 	// github
-	githubStars, githubFolks, err := c.getGithubData(ctx)
-	for retry := 0; err != nil; retry++ {
-		if retry == retryLimit {
-			return err
-		}
-		log.Warn(err)
-		githubStars, githubFolks, err = c.getGithubData(ctx)
-	}
-
-	githubStat := Github{
-		Date:  time.Now(),
-		Stars: githubStars,
-		Folks: githubFolks,
-	}
-	err = c.dataStore.StoreGithubStat(ctx, githubStat)
-	if err != nil {
-		log.Error("Unable to save Github stat, %s", err.Error())
-		return err
-	}
-
-	log.Infof("New Github stat collected at %s, Stars %d, Folks %d",
-		githubStat.Date.Format(dateMiliTemplate), githubStars, githubFolks)
+	go c.startGithubCollector(ctx)
 
 	return nil
 }
@@ -217,8 +197,8 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 	}
 	defer resp.Body.Close()
 	var response struct {
-		Items []struct{
-			Statistics struct{
+		Items []struct {
+			Statistics struct {
 				SubscriberCount string `json:"subscriberCount"`
 			} `json:"statistics"`
 		} `json:"items"`
@@ -242,38 +222,4 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 	}
 
 	return subscribers, nil
-}
-
-func (c *Collector) getGithubData(ctx context.Context) (int, int, error) {
-	if ctx.Err() != nil {
-		return 0, 0, ctx.Err()
-	}
-
-	request, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/decred/dcrd", nil)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	request.Header.Set("user-agent",
-		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36")
-
-	resp, err := c.client.Do(request.WithContext(ctx))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer resp.Body.Close()
-	var response struct {
-		Stars int `json:"stargazers_count"`
-		Folks int `json:"forks_count"`
-	}
-	if resp.StatusCode == http.StatusOK {
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			return 0, 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
-		}
-	} else {
-		return 0, 0, fmt.Errorf("unable to fetch youtube subscribers: %s", resp.Status)
-	}
-
-	return response.Stars, response.Folks, nil
 }

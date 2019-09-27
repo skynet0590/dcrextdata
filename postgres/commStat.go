@@ -52,7 +52,7 @@ func (pg *PgDb) RedditStats(ctx context.Context, subreddit string, offtset int, 
 	for _, record := range redditSlices {
 		stat := commstats.Reddit{
 			Date:           record.Date,
-			Subreddit:		record.Subreddit,
+			Subreddit:      record.Subreddit,
 			Subscribers:    record.Subscribers,
 			AccountsActive: record.ActiveAccounts,
 		}
@@ -96,7 +96,7 @@ func (pg *PgDb) TwitterStats(ctx context.Context, handle string, offtset int, li
 	var result []commstats.Twitter
 	for _, record := range statSlice {
 		stat := commstats.Twitter{
-			Date:           record.Date,
+			Date:      record.Date,
 			Followers: record.Followers,
 		}
 
@@ -137,7 +137,7 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, offtset int, limit int) ([]comm
 	var result []commstats.Youtube
 	for _, record := range statSlice {
 		stat := commstats.Youtube{
-			Date:           record.Date,
+			Date:        record.Date,
 			Subscribers: record.Subscribers,
 		}
 
@@ -149,9 +149,10 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, offtset int, limit int) ([]comm
 // github
 func (pg *PgDb) StoreGithubStat(ctx context.Context, github commstats.Github) error {
 	githubModel := models.Github{
-		Date:  github.Date,
-		Stars: github.Stars,
-		Folks: github.Folks,
+		Date:       github.Date,
+		Repository: github.Repository,
+		Stars:      github.Stars,
+		Folks:      github.Folks,
 	}
 
 	err := githubModel.Insert(ctx, pg.db, boil.Infer())
@@ -164,12 +165,13 @@ func (pg *PgDb) StoreGithubStat(ctx context.Context, github commstats.Github) er
 	return err
 }
 
-func (pg *PgDb) CountGithubStat(ctx context.Context) (int64, error) {
-	return models.Githubs().Count(ctx, pg.db)
+func (pg *PgDb) CountGithubStat(ctx context.Context, repository string) (int64, error) {
+	return models.Githubs(models.GithubWhere.Repository.EQ(repository)).Count(ctx, pg.db)
 }
 
-func (pg *PgDb) GithubStat(ctx context.Context, offtset int, limit int) ([]commstats.Github, error) {
+func (pg *PgDb) GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error) {
 	statSlice, err := models.Githubs(
+		models.GithubWhere.Repository.EQ(repository),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.GithubColumns.Date)),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
@@ -189,14 +191,17 @@ func (pg *PgDb) GithubStat(ctx context.Context, offtset int, limit int) ([]comms
 	return result, nil
 }
 
-func (pg *PgDb) CommunityChart(ctx context.Context, platform string, subreddit string, dataType string) (stats []commstats.ChartData, err error)  {
+func (pg *PgDb) CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) (stats []commstats.ChartData, err error) {
 	dataType = strings.ToLower(dataType)
 
 	var templateArgs = []interface{}{dataType, platform}
 	sqlTemplate := "SELECT date, %s as record FROM %s"
-	if platform == models.TableNames.Reddit {
-		sqlTemplate += " where %s = '%s'"
-		templateArgs = append(templateArgs, models.RedditColumns.Subreddit, subreddit)
+	var wheres []string
+	for attribute, value := range filters {
+		wheres = append(wheres, fmt.Sprintf("%s = %s", attribute, value))
+	}
+	if len(wheres) > 0 {
+		sqlTemplate += fmt.Sprintf(" where %s", strings.Join(wheres, " and "))
 	}
 	sqlTemplate += " ORDER BY date"
 	query := fmt.Sprintf(sqlTemplate, templateArgs...)

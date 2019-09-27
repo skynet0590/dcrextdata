@@ -23,34 +23,39 @@ import (
 
 // Github is an object representing the database table.
 type Github struct {
-	Date  time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
-	Stars int       `boil:"stars" json:"stars" toml:"stars" yaml:"stars"`
-	Folks int       `boil:"folks" json:"folks" toml:"folks" yaml:"folks"`
+	Date       time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
+	Repository string    `boil:"repository" json:"repository" toml:"repository" yaml:"repository"`
+	Stars      int       `boil:"stars" json:"stars" toml:"stars" yaml:"stars"`
+	Folks      int       `boil:"folks" json:"folks" toml:"folks" yaml:"folks"`
 
 	R *githubR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L githubL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GithubColumns = struct {
-	Date  string
-	Stars string
-	Folks string
+	Date       string
+	Repository string
+	Stars      string
+	Folks      string
 }{
-	Date:  "date",
-	Stars: "stars",
-	Folks: "folks",
+	Date:       "date",
+	Repository: "repository",
+	Stars:      "stars",
+	Folks:      "folks",
 }
 
 // Generated where
 
 var GithubWhere = struct {
-	Date  whereHelpertime_Time
-	Stars whereHelperint
-	Folks whereHelperint
+	Date       whereHelpertime_Time
+	Repository whereHelperstring
+	Stars      whereHelperint
+	Folks      whereHelperint
 }{
-	Date:  whereHelpertime_Time{field: "\"github\".\"date\""},
-	Stars: whereHelperint{field: "\"github\".\"stars\""},
-	Folks: whereHelperint{field: "\"github\".\"folks\""},
+	Date:       whereHelpertime_Time{field: "\"github\".\"date\""},
+	Repository: whereHelperstring{field: "\"github\".\"repository\""},
+	Stars:      whereHelperint{field: "\"github\".\"stars\""},
+	Folks:      whereHelperint{field: "\"github\".\"folks\""},
 }
 
 // GithubRels is where relationship names are stored.
@@ -70,8 +75,8 @@ func (*githubR) NewStruct() *githubR {
 type githubL struct{}
 
 var (
-	githubAllColumns            = []string{"date", "stars", "folks"}
-	githubColumnsWithoutDefault = []string{"date", "stars", "folks"}
+	githubAllColumns            = []string{"date", "repository", "stars", "folks"}
+	githubColumnsWithoutDefault = []string{"date", "repository", "stars", "folks"}
 	githubColumnsWithDefault    = []string{}
 	githubPrimaryKeyColumns     = []string{"date"}
 )

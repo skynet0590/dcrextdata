@@ -76,7 +76,7 @@ func (c *Collector) collectAndStoreTwitterStat(ctx context.Context) {
 			followers, err = c.getTwitterFollowers(ctx, handle)
 		}
 
-		var twitterStat = Twitter{Date:time.Now(), Followers:followers, Handle: handle}
+		var twitterStat = Twitter{Date: time.Now().UTC(), Followers: followers, Handle: handle}
 		err = c.dataStore.StoreTwitterStat(ctx, twitterStat)
 		if err != nil {
 			log.Error("Unable to save twitter stat, %s", err.Error())

@@ -26,9 +26,9 @@ const (
 	defaultInterval             = 1440 // All
 	noDataMessage               = "does not have data for the selected query option(s)."
 
-	redditPlatform = "Reddit"
+	redditPlatform  = "Reddit"
 	twitterPlatform = "Twitter"
-	githubPlatform = "Github"
+	githubPlatform  = "Github"
 	youtubePlatform = "Youtube"
 )
 
@@ -1318,6 +1318,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	subreddit := req.FormValue("subreddit")
 	dataType := req.FormValue("data-type")
 	twitterHandle := req.FormValue("twitter-handle")
+	repository := req.FormValue("repository")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -1329,7 +1330,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if platform == "" {
-		platform  = commStatPlatforms[0]
+		platform = commStatPlatforms[0]
 	}
 
 	if subreddit == "" && len(commstats.Subreddits()) > 0 {
@@ -1338,6 +1339,10 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 
 	if twitterHandle == "" && len(commstats.TwitterHandles()) > 0 {
 		twitterHandle = commstats.TwitterHandles()[0]
+	}
+
+	if repository == "" && len(commstats.Repositories()) > 0 {
+		repository = commstats.Repositories()[0]
 	}
 
 	selectedNum, _ := strconv.Atoi(selectedNumStr)
@@ -1363,6 +1368,8 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 		"subreddit":        subreddit,
 		"twitterHandles":   commstats.TwitterHandles(),
 		"twitterHandle":    twitterHandle,
+		"repositories":     commstats.Repositories(),
+		"repository":       repository,
 		"dataType":         dataType,
 		"currentPage":      page,
 		"pageSizeSelector": pageSizeSelector,
@@ -1395,7 +1402,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	var totalCount int64
 	var err error
 
-	offset := (page -1) * pageSize
+	offset := (page - 1) * pageSize
 
 	switch plarform {
 	case redditPlatform:
@@ -1412,7 +1419,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Subscribers", "Accounts Active" )
+		columnHeaders = append(columnHeaders, "Date", "Subscribers", "Accounts Active")
 		break
 	case twitterPlatform:
 		handle := req.FormValue("twitter-handle")
@@ -1431,19 +1438,20 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		columnHeaders = append(columnHeaders, "Date", "Followers")
 		break
 	case githubPlatform:
-		stats, err = s.db.GithubStat(req.Context(), offset, pageSize)
+		repository := req.FormValue("repository")
+		stats, err = s.db.GithubStat(req.Context(), repository, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Github stat, %s", err.Error()), resp)
 			return
 		}
 
-		totalCount, err = s.db.CountGithubStat(req.Context())
+		totalCount, err = s.db.CountGithubStat(req.Context(), repository)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Github stat, %s", err.Error()), resp)
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks" )
+		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks")
 		break
 	case youtubePlatform:
 		stats, err = s.db.YoutubeStat(req.Context(), offset, pageSize)
@@ -1458,21 +1466,20 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Subscribers" )
+		columnHeaders = append(columnHeaders, "Date", "Subscribers")
 		break
 	}
 
-
-	totalPages := totalCount/int64(pageSize)
-	if totalCount > totalPages * int64(pageSize) {
+	totalPages := totalCount / int64(pageSize)
+	if totalCount > totalPages*int64(pageSize) {
 		totalPages += 1
 	}
 
 	s.renderJSON(map[string]interface{}{
-		"stats": stats,
-		"columns": columnHeaders,
-		"total": totalCount,
-		"totalPages": totalPages,
+		"stats":       stats,
+		"columns":     columnHeaders,
+		"total":       totalCount,
+		"totalPages":  totalPages,
 		"currentPage": page,
 	}, resp)
 }
@@ -1481,14 +1488,15 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	plarform := req.FormValue("platform")
-	subreddit := req.FormValue("subreddit")
 	dataType := req.FormValue("data-type")
 
+	filters := map[string]string{}
 	yLabel := ""
 	switch plarform {
 	case githubPlatform:
 		yLabel = strings.ToTitle(dataType)
 		plarform = models.TableNames.Github
+		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
 		break
 	case twitterPlatform:
 		yLabel = "Followers"
@@ -1502,6 +1510,7 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 			yLabel = "Subscribers"
 		}
 		plarform = models.TableNames.Reddit
+		filters[models.RedditColumns.Subreddit] = fmt.Sprintf("'%s'", req.FormValue("subreddit"))
 	case youtubePlatform:
 		plarform = models.TableNames.Youtube
 		dataType = models.YoutubeColumns.Subscribers
@@ -1514,7 +1523,7 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	data, err := s.db.CommunityChart(req.Context(), plarform, subreddit, dataType)
+	data, err := s.db.CommunityChart(req.Context(), plarform, dataType, filters)
 	if err != nil {
 		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s", err.Error()), resp)
 		return
@@ -1523,7 +1532,7 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	var dates []time.Time
 	var pointsMap = map[time.Time]int64{}
 
-	csv := ""//fmt.Sprintf("Date,%s\n", yLabel)
+	csv := "" //fmt.Sprintf("Date,%s\n", yLabel)
 	for _, stat := range data {
 		dates = append(dates, stat.Date)
 		pointsMap[stat.Date] = stat.Record
@@ -1538,7 +1547,7 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	s.renderJSON(map[string]interface{}{
-		"stats": csv,
+		"stats":  csv,
 		"ylabel": yLabel,
 	}, resp)
 }

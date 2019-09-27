@@ -62,9 +62,9 @@ type DataQuery interface {
 	TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error)
 	CountYoutubeStat(ctx context.Context) (int64, error)
 	YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error)
-	CountGithubStat(ctx context.Context) (int64, error)
-	GithubStat(ctx context.Context, offtset int, limit int) ([]commstats.Github, error)
-	CommunityChart(ctx context.Context, platform string, subreddit string, dataType string) ([]commstats.ChartData, error)
+	CountGithubStat(ctx context.Context, repository string) (int64, error)
+	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
+	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
 }
 
 type Server struct {

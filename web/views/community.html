@@ -65,6 +65,19 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Github">
+                            <div class=" mb-2">
+                                <div class="control-label">Repository</div>
+                                <select data-target="commstat.repository" data-initial-value="{{.repository}}"
+                                        data-action="change->commstat#repositoryChanged" class="form-control mr-5"
+                                        style="width: 120px;">
+                                    {{$repository := .repository}}
+                                    {{ range $filter := .repositories}}
+                                        <option value="{{$filter}}" {{ if eq $filter $repository}} selected {{ end }}>{{$filter}}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                        </div>
                         <div class="control-div p-0 ml-1 d-none" data-target="commstat.dataTypeWrapper">
                             <div class=" mb-2">
                                 <div class="control-label">Data</div>
