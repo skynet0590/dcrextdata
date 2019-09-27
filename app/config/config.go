@@ -131,6 +131,7 @@ type CommunityStatOptions struct {
 	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
 	GithubRepositories    []string `long:"githubrepository" description:"List of Github repositories to track"`
 	GithubStatInterval    int      `long:"githubstatinterval" description:"Number of minutes between Github stat collection"`
+	YoutubeStatInterval   int 	   `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
 }
 
 func defaultConfig() Config {
