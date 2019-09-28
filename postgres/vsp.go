@@ -330,7 +330,7 @@ func (pg *PgDb) LastVspTickEntryTime() (time time.Time) {
 }
 
 func (pg *PgDb) VspTickCount(ctx context.Context) (int64, error) {
-	return models.VSPS().Count(ctx, pg.db)
+	return models.VSPTicks().Count(ctx, pg.db)
 }
 
 func (pg *PgDb) FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error) {
