@@ -13,6 +13,12 @@ import (
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 )
 
+var repositories []string
+
+func Repositories() []string {
+	return repositories
+}
+
 func (c *Collector) startGithubCollector(ctx context.Context) {
 	var lastCollectionDate time.Time
 	err := c.dataStore.LastEntry(ctx, models.TableNames.Github, &lastCollectionDate)
