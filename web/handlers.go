@@ -1494,7 +1494,7 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	yLabel := ""
 	switch plarform {
 	case githubPlatform:
-		yLabel = strings.ToTitle(dataType)
+		yLabel = "Folks"
 		plarform = models.TableNames.Github
 		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
 		break

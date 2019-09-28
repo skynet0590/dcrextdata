@@ -30,10 +30,11 @@ const (
 	defaultMempoolInterval     = 60
 	defaultVSPInterval         = 300
 	defaultPowInterval         = 300
-	defaultRedditInterval      = 300
 	defaultSyncInterval        = 60
-	defaultTwitterStatInterval = 60
-	defaultGithubStatInterval  = 60
+	defaultRedditInterval      = 60
+	defaultTwitterStatInterval = 60 * 24
+	defaultGithubStatInterval  = 60 * 24
+	defaultYoutubeInterval     = 60 * 24
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -61,6 +62,7 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.CommunityStatInterval = defaultRedditInterval
 	cfg.TwitterStatInterval = defaultTwitterStatInterval
 	cfg.GithubStatInterval = defaultGithubStatInterval
+	cfg.YoutubeStatInterval = defaultYoutubeInterval
 	return cfg
 }
 
@@ -131,7 +133,8 @@ type CommunityStatOptions struct {
 	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
 	GithubRepositories    []string `long:"githubrepository" description:"List of Github repositories to track"`
 	GithubStatInterval    int      `long:"githubstatinterval" description:"Number of minutes between Github stat collection"`
-	YoutubeStatInterval   int 	   `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
+	YoutubeStatInterval   int      `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
+	YoutubeDataApiKey     string   `long:"youtubedataapikey" description:"Youtube data API key gotten from google developer console"`
 }
 
 func defaultConfig() Config {

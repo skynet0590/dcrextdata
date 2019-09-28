@@ -17,10 +17,13 @@ import (
 
 const (
 	youtubeChannelId = "UCJ2bYDaPYHpSmJPh_M5dNSg"
-	youtubeKey       = "AIzaSyBmUyMNtZUqReP2NTs39UlTjd9aUjXWKq0"
 )
 
 func (c *Collector) startYoutubeCollector(ctx context.Context) {
+	if c.options.YoutubeDataApiKey == "" {
+		log.Error("youtubedataapikey is required for the youtube stat collector to work")
+		return
+	}
 	var lastCollectionDate time.Time
 	err := c.dataStore.LastEntry(ctx, models.TableNames.Youtube, &lastCollectionDate)
 	if err != nil && err != sql.ErrNoRows {
@@ -97,7 +100,7 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 	}
 
 	youtubeUrl := fmt.Sprintf("https://content.googleapis.com/youtube/v3/channels?key=%s&part=statistics&id=%s",
-		youtubeKey, youtubeChannelId)
+		c.options.YoutubeDataApiKey, youtubeChannelId)
 
 	request, err := http.NewRequest(http.MethodGet, youtubeUrl, nil)
 	if err != nil {
