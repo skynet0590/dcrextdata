@@ -9,7 +9,7 @@ import {
   appName,
   showLoading,
   hideLoading,
-  selectedOption
+  selectedOption, updateQueryParam, insertOrUpdateQueryParam
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -83,6 +83,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.nextPage = this.currentPage
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
   }
 
   setChart () {
@@ -110,6 +111,7 @@ export default class extends Controller {
       this.selectedFilterTarget.text = this.selectedExchange
     }
     this.fetchExchange(this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   resetCommonFilter () {
@@ -128,39 +130,47 @@ export default class extends Controller {
     this.nextPage = 1
     this.selectedInterval = this.selectedIntervalTarget.value
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('selected-interval', this.selectedInterval)
+    insertOrUpdateQueryParam('page', 1)
   }
 
   selectedTicksChanged () {
     this.selectedTick = this.selectedTicksTarget.value
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('selected-tick', this.selectedTick)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
     this.selectedExchange = this.selectedFilterTarget.value
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('selected-exchange', this.selectedExchange)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('page', this.currentPage - 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('page', this.currentPage + 1)
   }
 
   selectedCurrencyPairChanged () {
     this.nextPage = 1
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('selected-currency-pair', this.selectedCurrencyPair)
   }
 
-  NumberOfRowsChanged () {
+  numberOfRowsChanged () {
     this.nextPage = 1
     this.numberOfRows = this.selectedNumTarget.value
     this.fetchExchange(this.selectedViewOption)
+    insertOrUpdateQueryParam('records-per-page', this.numberOfRows)
   }
 
   fetchExchange (display) {
@@ -174,7 +184,6 @@ export default class extends Controller {
       url = `/exchangedata?page=${_this.nextPage}&selected-exchange=${_this.selectedExchange}&records-per-page=${_this.numberOfRows}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&view-option=${_this.selectedViewOption}`
     } else {
       const queryString = `selected-tick=${_this.selectedTick}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&selected-exchange=${_this.selectedExchange}&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, appName, `/exchanges?${queryString}`)
       url = `/exchangechart?${queryString}`
     }
 
@@ -196,9 +205,7 @@ export default class extends Controller {
             _this.totalPageCountTarget.textContent = 0
             _this.currentPageTarget.textContent = 0
             _this.selectedFilterTarget.value = _this.selectedFilterTarget.getAttribute('data-initial-value')
-            window.history.pushState(window.history.state, appName, `/exchanges?page=${_this.nextPage}&selected-exchange=${_this.selectedExchange}&records-per-page=${_this.numberOfRows}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&view-option=${_this.selectedViewOption}`)
           } else {
-            window.history.pushState(window.history.state, appName, `/exchanges?page=${result.currentPage}&selected-exchange=${_this.selectedExchange}&records-per-page=${result.selectedNum}&selected-currency-pair=${result.selectedCurrencyPair}&selected-interval=${result.selectedInterval}&view-option=${result.selectedViewOption}`)
             hide(_this.messageViewTarget)
             show(_this.exchangeTableTarget)
             _this.currentPage = result.currentPage
@@ -309,9 +316,6 @@ export default class extends Controller {
     let ex = this.chartsView.xAxisExtremes()
     let option = Zoom.mapKey(this.settings.zoom, ex, 1)
     setActiveOptionBtn(option, this.zoomOptionTargets)
-    /* var axesData = axesToRestoreYRange(this.settings.chart,
-        this.supportedYRange, this.chartsView.yAxisRanges())
-    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
   }
 
   _drawCallback (graph, first) {

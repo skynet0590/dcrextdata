@@ -173,6 +173,39 @@ export function selectedOption (optTargets) {
   return key
 }
 
+export function insertQueryParam (name, value) {
+  const urlParams = new URLSearchParams(window.location.search)
+  const oldValue = urlParams.get(name)
+  if (oldValue !== null) {
+    return false
+  }
+  urlParams.append(name, value)
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  return true
+}
+
+export function updateQueryParam (name, value) {
+  let urlParams = new URLSearchParams(window.location.search)
+  if (!urlParams.has(name)) {
+    return false
+  }
+  urlParams.set(name, value)
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  return true
+}
+
+export function insertOrUpdateQueryParam (name, value) {
+  const urlParams = new URLSearchParams(window.location.search)
+  return !urlParams.has(name) ? insertQueryParam(name, value) : updateQueryParam(name, value)
+}
+
+export function getParameterByName (name, url) {
+  const urlParams = new URLSearchParams(window.location.search)
+  return urlParams.get(name)
+}
+
 export function formatDate (date, format) {
   if (!format || format === '') {
     format = 'yyyy-MM-dd hh:mm'

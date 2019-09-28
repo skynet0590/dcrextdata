@@ -9,7 +9,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -30,9 +30,6 @@ export default class extends Controller {
   }
 
   initialize () {
-    this.query = new TurboQuery()
-    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType'])
-
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
       this.currentPage = 1
@@ -67,6 +64,7 @@ export default class extends Controller {
     show(this.btnWrapperTarget)
     this.nextPage = this.currentPage
     this.fetchData(this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
   }
 
   setChart () {
@@ -74,7 +72,6 @@ export default class extends Controller {
     hide(this.btnWrapperTarget)
     hide(this.tableWrapperTarget)
     hide(this.messageViewTarget)
-    this.chartFilter = this.selectedMempoolOptTarget.value = this.selectedMempoolOptTarget.options[0].value
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     show(this.chartDataTypeSelectorTarget)
@@ -82,32 +79,32 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.fetchData(this.selectedViewOption)
-  }
-
-  mempoolOptionChanged () {
-    this.chartFilter = this.selectedMempoolOptTarget.value
-    this.fetchData(this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   setDataType (event) {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     this.fetchData('chart')
+    insertOrUpdateQueryParam('chart-data-type', this.dataType)
   }
 
   numberOfRowsChanged () {
     this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
     this.fetchData(this.selectedViewOption)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumberOfRowsberOfRows)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData(this.selectedViewOption)
+    insertOrUpdateQueryParam('page', this.nextPage)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData(this.selectedViewOption)
+    insertOrUpdateQueryParam('page', this.nextPage)
   }
 
   fetchData (display) {
@@ -136,7 +133,6 @@ export default class extends Controller {
         show(_this.messageViewTarget)
         hide(_this.tableBodyTarget)
         hide(_this.btnWrapperTarget)
-        window.history.pushState(window.history.state, _this.addr, `/mempool?page=${_this.nextPage}&records-per-page=${_this.selectedNumberOfRowsberOfRows}&view-option=${_this.selectedViewOption}`)
       } else if (display === 'table' && result.mempoolData) {
         hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
         hide(_this.messageViewTarget)
@@ -144,8 +140,6 @@ export default class extends Controller {
         show(_this.btnWrapperTarget)
         _this.totalPageCountTarget.textContent = result.totalPages
         _this.currentPageTarget.textContent = result.currentPage
-        let url = `/mempool?page=${result.currentPage}&records-per-page=${result.selectedNumberOfRows}&view-option=${_this.selectedViewOption}`
-        window.history.pushState(window.history.state, _this.addr, url)
 
         _this.currentPage = result.currentPage
         if (_this.currentPage <= 1) {
@@ -164,8 +158,6 @@ export default class extends Controller {
         _this.displayMempool(result.mempoolData)
       } else {
         hideLoading(_this.loadingDataTarget, [_this.chartWrapperTarget])
-        let url = `/mempool?chart-data-type=${_this.dataType}&view-option=${_this.selectedViewOption}`
-        window.history.pushState(window.history.state, _this.addr, url)
         _this.plotGraph(result)
       }
     }).catch(function (e) {
@@ -236,13 +228,9 @@ export default class extends Controller {
   _zoomCallback (start, end) {
     this.lastZoom = Zoom.object(start, end)
     this.settings.zoom = Zoom.encode(this.lastZoom)
-    // this.query.replace(this.settings)
     let ex = this.chartsView.xAxisExtremes()
     let option = Zoom.mapKey(this.settings.zoom, ex, 1)
     setActiveOptionBtn(option, this.zoomOptionTargets)
-    /* var axesData = axesToRestoreYRange(this.settings.chart,
-        this.supportedYRange, this.chartsView.yAxisRanges())
-    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
   }
 
   _drawCallback (graph, first) {

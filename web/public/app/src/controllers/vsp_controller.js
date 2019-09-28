@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   options,
-  selectedOption
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -92,6 +92,7 @@ export default class extends Controller {
     show(this.vspSelectorWrapperTarget)
     this.nextPage = this.currentPage
     this.fetchData()
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
   }
 
   setChart () {
@@ -107,6 +108,7 @@ export default class extends Controller {
     hide(this.pageSizeWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.fetchDataAndPlotGraph()
+    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   selectedFilterChanged () {
@@ -119,21 +121,25 @@ export default class extends Controller {
       }
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.currentPage - 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.currentPage + 1)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchData()
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumTarget.value)
   }
 
   fetchData () {
@@ -158,12 +164,10 @@ export default class extends Controller {
           show(_this.messageViewTarget)
           hide(_this.vspTicksTableTarget)
           hide(_this.pageSizeWrapperTarget)
-          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${_this.nextPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
         } else {
           hide(_this.messageViewTarget)
           show(_this.vspTicksTableTarget)
           show(_this.pageSizeWrapperTarget)
-          window.history.pushState(window.history.state, _this.addr, `/vsp?page=${result.currentPage}&filter=${selectedFilter}&records-per-page=${result.selectedNum}&view-option=${_this.selectedViewOption}`)
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
             hide(_this.previousPageButtonTarget)
@@ -225,6 +229,7 @@ export default class extends Controller {
   dataTypeChanged () {
     this.dataType = this.dataTypeTarget.value
     this.fetchDataAndPlotGraph()
+    insertOrUpdateQueryParam('data-type', this.dataType)
   }
 
   fetchDataAndPlotGraph () {
@@ -240,7 +245,6 @@ export default class extends Controller {
 
     let _this = this
     const queryString = `data-type=${this.dataType}&vsps=${vsps.join('|')}&view-option=${_this.selectedViewOption}`
-    window.history.pushState(window.history.state, _this.addr, `/vsp?${queryString}`)
     axios.get(`/vspchartdata?${queryString}`).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -304,9 +308,6 @@ export default class extends Controller {
     let ex = this.chartsView.xAxisExtremes()
     let option = Zoom.mapKey(this.settings.zoom, ex, 1)
     setActiveOptionBtn(option, this.zoomOptionTargets)
-    /* var axesData = axesToRestoreYRange(this.settings.chart,
-        this.supportedYRange, this.chartsView.yAxisRanges())
-    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
   }
 
   _drawCallback (graph, first) {
