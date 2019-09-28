@@ -206,6 +206,35 @@ export function getParameterByName (name, url) {
   return urlParams.get(name)
 }
 
+export function updateZoomSelector (targets, minDate, maxDate) {
+  const duration = maxDate - minDate
+  const days = duration / (1000 * 60 * 60 * 24)
+  targets.forEach(el => {
+    let showElement = false
+    switch (el.dataset.option) {
+      case 'day':
+      case 'all':
+        showElement = days >= 1
+        break
+      case 'week':
+        showElement = days >= 7
+        break
+      case 'month':
+        showElement = days >= 30
+        break
+      case 'year':
+        showElement = days >= 365
+        break
+    }
+
+    if (showElement) {
+      show(el)
+    } else {
+      hide(el)
+    }
+  })
+}
+
 export function formatDate (date, format) {
   if (!format || format === '') {
     format = 'yyyy-MM-dd hh:mm'

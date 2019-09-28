@@ -8,7 +8,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, updateQueryParam, insertOrUpdateQueryParam
+  selectedOption, updateQueryParam, insertOrUpdateQueryParam, updateZoomSelector
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -332,8 +332,18 @@ export default class extends Controller {
     var dataSet = []
 
     const _this = this
+    let minDate, maxDate
     exs.forEach(ex => {
-      data.push(new Date(ex.time))
+      let date = new Date(ex.time)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+
+      data.push(date)
       data.push(ex.filter)
 
       dataSet.push(data)
@@ -359,6 +369,8 @@ export default class extends Controller {
     )
 
     _this.validateZoom()
+
+    updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)
   }
 
   drawInitialGraph () {

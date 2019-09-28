@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   selectedOption,
-  insertOrUpdateQueryParam, updateQueryParam
+  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -337,5 +337,6 @@ export default class extends Controller {
 
     _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
     _this.validateZoom()
+    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.min_date))
   }
 }

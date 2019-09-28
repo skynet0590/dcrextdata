@@ -9,7 +9,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -316,6 +316,7 @@ export default class extends Controller {
       )
 
       _this.validateZoom()
+      updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)
     }
   }
 
