@@ -59,7 +59,7 @@ func defaultFileOptions() ConfigFileOptions {
 		SyncInterval:    defaultSyncInterval,
 	}
 
-	cfg.CommunityStatInterval = defaultRedditInterval
+	cfg.RedditStatInterval = defaultRedditInterval
 	cfg.TwitterStatInterval = defaultTwitterStatInterval
 	cfg.GithubStatInterval = defaultGithubStatInterval
 	cfg.YoutubeStatInterval = defaultYoutubeInterval
@@ -127,7 +127,7 @@ type CommandLineOptions struct {
 type CommunityStatOptions struct {
 	// Community stat
 	DisableCommunityStat  bool     `long:"disablecommstat" description:"Disables periodic community stat collection"`
-	CommunityStatInterval int64    `long:"commstatinterval" description:"Collection interval for community stat collection"`
+	RedditStatInterval int64    `long:"redditstatinterval" description:"Collection interval for Reddit community stat"`
 	Subreddit             []string `long:"subreddit" description:"List of subreddit for community stat collection"`
 	TwitterHandles        []string `long:"twitterhandle" description:"List of twitter handles community stat collection"`
 	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`

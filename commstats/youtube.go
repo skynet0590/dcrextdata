@@ -32,11 +32,11 @@ func (c *Collector) startYoutubeCollector(ctx context.Context) {
 	}
 
 	secondsPassed := time.Since(lastCollectionDate)
-	period := time.Duration(c.options.TwitterStatInterval) * time.Hour
+	period := time.Duration(c.options.TwitterStatInterval) * time.Minute
 
 	if secondsPassed < period {
 		timeLeft := period - secondsPassed
-		log.Infof("Fetching Youtube stats every %dm, collected %s ago, will fetch in %s.", period/time.Hour, helpers.DurationToString(secondsPassed),
+		log.Infof("Fetching Youtube stats every %dm, collected %s ago, will fetch in %s.", period/time.Minute, helpers.DurationToString(secondsPassed),
 			helpers.DurationToString(timeLeft))
 
 		time.Sleep(timeLeft)
