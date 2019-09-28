@@ -262,7 +262,7 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableCommunityStat {
-		redditCollector, err := commstats.NewCommStatCollector(cfg.CommunityStatInterval, db, &cfg.CommunityStatOptions)
+		redditCollector, err := commstats.NewCommStatCollector(db, &cfg.CommunityStatOptions)
 		if err == nil {
 			go redditCollector.Run(ctx)
 		} else {

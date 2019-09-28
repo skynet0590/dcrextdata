@@ -19,16 +19,7 @@ const (
 	retryLimit       = 3
 )
 
-func NewCommStatCollector(period int64, store DataStore, options *config.CommunityStatOptions) (*Collector, error) {
-	if period < 300 {
-		log.Info("The minimum value for community stat collector interval is 300s(5m), setting interval to 300")
-		period = 300
-	}
-
-	if period > 1800 {
-		log.Info("The minimum value for community stat collector interval is 1800s(30m), setting interval to 1800")
-		period = 1800
-	}
+func NewCommStatCollector(store DataStore, options *config.CommunityStatOptions) (*Collector, error) {
 
 	if len(options.Subreddit) == 0 {
 		options.Subreddit = append(options.Subreddit, "decred")
@@ -40,7 +31,6 @@ func NewCommStatCollector(period int64, store DataStore, options *config.Communi
 
 	return &Collector{
 		client:    http.Client{Timeout: 10 * time.Second},
-		period:    time.Duration(period),
 		dataStore: store,
 		options:   options,
 	}, nil
@@ -75,6 +65,13 @@ func (c *Collector) Run(ctx context.Context) {
 
 	log.Info("Fetching community stats...")
 
+	go c.startTwitterCollector(ctx)
+
+	go c.startYoutubeCollector(ctx)
+
+	// github
+	go c.startGithubCollector(ctx)
+
 	err := c.collectAndStore(ctx)
 	app.ReleaseForNewModule()
 	if err != nil {
@@ -82,7 +79,7 @@ func (c *Collector) Run(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(c.period * time.Second)
+	ticker := time.NewTicker(time.Duration(c.options.RedditStatInterval) * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -137,13 +134,6 @@ func (c *Collector) collectAndStore(ctx context.Context) error {
 		log.Infof("New Reddit stat collected for %s at %s, Subscribers  %d, Active Users %d", subreddit,
 			time.Now().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
 	}
-
-	go c.startTwitterCollector(ctx)
-
-	go c.startYoutubeCollector(ctx)
-
-	// github
-	go c.startGithubCollector(ctx)
 
 	return nil
 }

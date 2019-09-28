@@ -66,7 +66,6 @@ type DataStore interface {
 
 type Collector struct {
 	client    http.Client
-	period    time.Duration
 	dataStore DataStore
 	options   *config.CommunityStatOptions
 }
