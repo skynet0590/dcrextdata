@@ -7,9 +7,9 @@
         {{ template "header" }}
         <div class="content">
             <div class="container-fluid">
-                <div class="row">
-                    <div class="offset-5 col-md-2">
-                        <ul>
+                <div class="row justify-content-center">
+                    <div>
+                        <ul style="margin-left: -24px">
                             <li>Mempool: {{ humanizeInt .mempoolCount}}</li>
                             <li>Blocks: {{ humanizeInt .blocksCount}}</li>
                             <li>Votes: {{ humanizeInt .votesCount}}</li>

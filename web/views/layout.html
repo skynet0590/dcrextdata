@@ -21,7 +21,7 @@
 {{ end }}
 
 {{ define "header" }}
-<div class="header">
+<div class="header" data-controller="layout">
     <div class="header-top">
         <div class="inner">
             <div class="container-fluid">
@@ -33,10 +33,10 @@
     </div>
     <nav class="navbar navbar-expand-sm navbar-light bg-light">
         <div class="container-fluid">
-            <button class="navbar-toggler" type="button" data-toggles="collapse" data-target="#nav">
+            <button data-action="click->layout#toggleNavbar" class="navbar-toggler" type="button" data-toggles="collapse" data-target="#nav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="nav">
+            <div class="collapse navbar-collapse" id="nav" data-target="layout.navbar">
                 <ul class="navbar-nav mx-auto">
                     <li class="nav-item">
                         <a class="nav-link" id="nav-mempool" href="/mempool">

@@ -6,7 +6,6 @@ import {
   legendFormatter,
   setActiveOptionBtn,
   options,
-  appName,
   showLoading,
   hideLoading,
   selectedOption, updateQueryParam, insertOrUpdateQueryParam
