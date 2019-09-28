@@ -140,6 +140,8 @@ func _main(ctx context.Context) error {
 	}
 
 	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync, cfg.SyncInterval)
+
+	var syncDbs = map[string]*postgres.PgDb{}
 	//register instances
 	for i := 0; i < len(cfg.SyncSources); i++ {
 		source := cfg.SyncSources[i]
@@ -153,11 +155,19 @@ func _main(ctx context.Context) error {
 			log.Errorf("can not create tables for sync data, %s", err.Error())
 			continue
 		}
+		syncDbs[databaseName] = db
 		syncCoordinator.AddSource(source, db, databaseName)
 	}
 	// http server method
 	if cfg.HttpMode {
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db)
+		extDbFactory := func(name string) (query web.DataQuery, e error) {
+			db, found := syncDbs[name]
+			if !found {
+				return nil, fmt.Errorf("no db is registered for the source, %s", name)
+			}
+			return db, nil
+		}
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, extDbFactory)
 	}
 
 	var dcrClient *rpcclient.Client
@@ -190,6 +200,11 @@ func _main(ctx context.Context) error {
 			} //running on port
 			fmt.Println(fmt.Sprintf("Error in opening a dcrd connection: %s", err.Error()))
 			return nil
+		}
+
+		err = collector.SetExplorerBestBlock(ctx)
+		if err != nil {
+			log.Errorf("Unable to retrieve explorer best block height. Dcrextdata will not be able to filter out staled blocks, %s", err.Error())
 		}
 	}
 

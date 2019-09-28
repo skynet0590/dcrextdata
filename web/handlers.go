@@ -860,17 +860,18 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	numberOfRows := req.FormValue("records-per-page")
 	viewOption := req.FormValue("view-option")
 	recordSet := req.FormValue("record-set")
+	chartType := req.FormValue("chart-type")
 
 	if viewOption == "" {
-		viewOption = "table"
+		viewOption = "chart"
 	}
 
 	if recordSet == "" {
-		if viewOption == chartViewOption {
-			recordSet = "blocks"
-		} else {
-			recordSet = "both"
-		}
+		recordSet = "both"
+	}
+
+	if chartType == "" {
+		chartType = "propagation"
 	}
 
 	var pageSize int
@@ -893,8 +894,9 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	ctx := req.Context()
 
 	data := map[string]interface{}{
-		"chartView":            true,
+		"chartView":            viewOption == "chart",
 		"selectedViewOption":   viewOption,
+		"chartType":			chartType,
 		"currentPage":          pageToLoad,
 		"propagationRecordSet": propagationRecordSet,
 		"pageSizeSelector":     pageSizeSelector,
@@ -936,18 +938,9 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	return data, nil
 }
 
-// /propagationchartdata
-func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
-	requestedRecordSet := req.FormValue("record-set")
-
-	var data []mempool.PropagationChartData
-	var err error
-
-	if requestedRecordSet == "votes" {
-		data, err = s.db.PropagationVoteChartData(req.Context())
-	} else {
-		data, err = s.db.PropagationBlockChartData(req.Context())
-	}
+// /blocksChartData
+func (s *Server) blocksChartData(res http.ResponseWriter, req *http.Request) {
+	data, err := s.db.PropagationBlockChartData(req.Context())
 
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
@@ -957,18 +950,11 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	var avgTimeForHeight = map[int64]float64{}
 	var heightArr []int64
 	for _, record := range data {
-		if existingTime, found := avgTimeForHeight[record.BlockHeight]; found {
-			avgTimeForHeight[record.BlockHeight] = (record.TimeDifference + existingTime) / 2
-		} else {
-			avgTimeForHeight[record.BlockHeight] = record.TimeDifference
-			heightArr = append(heightArr, record.BlockHeight)
-		}
+		avgTimeForHeight[record.BlockHeight] = record.TimeDifference
+		heightArr = append(heightArr, record.BlockHeight)
 	}
 
 	var yLabel = "Delay (s)"
-	if requestedRecordSet == "votes" {
-		yLabel = "Time Difference (s)"
-	}
 
 	var csv = fmt.Sprintf("Height,%s\n", yLabel)
 	for _, height := range heightArr {
@@ -977,6 +963,146 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 	}
 
 	s.renderJSON(csv, res)
+}
+
+// /votesChartDate
+func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
+	var data []mempool.PropagationChartData
+	var err error
+
+	data, err = s.db.PropagationVoteChartData(req.Context())
+
+	if err != nil {
+		s.renderErrorJSON(err.Error(), res)
+		return
+	}
+
+	var receiveTimeRecordsForHeight = map[int64][]float64{}
+	heightArr, err := s.db.BlockHeights(req.Context())
+
+	for _, record := range data {
+		receiveTimeRecordsForHeight[record.BlockHeight] = append(receiveTimeRecordsForHeight[record.BlockHeight], record.TimeDifference)
+	}
+
+	var yLabel = "Time Difference (Milliseconds)"
+	var csv = fmt.Sprintf("Height,%s\n", yLabel)
+
+	avg := func(records []float64) float64 {
+		if len(records) == 0 {
+			return 0
+		}
+		var sum float64
+		for _, record := range records {
+			sum += record
+		}
+
+		return sum/float64(len(records))
+	}
+
+	for _, height := range heightArr {
+		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height]) * 1000)
+		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
+	}
+
+	s.renderJSON(csv, res)
+}
+
+// propagationChartData
+func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+
+	var chartData struct {
+		CSV       string `json:"csv"`
+		YLabel    string `json:"yLabel"`
+		MinHeight int64  `json:"min_height"`
+		MaxHeight int64  `json:"max_height"`
+	}
+	pointsMap := map[int64][]string{}
+	var localBlockHeights []int64
+	var localBlockReceiveTimes = map[int64]time.Time{}
+
+	heightIsInLocalDb := func(height int64) bool {
+		for _, localHieght := range localBlockHeights {
+			if localHieght == height {
+				return true
+			}
+		}
+		return false
+	}
+
+	fetchChartDataForSource := func(db DataQuery, isLocal bool) {
+		data, err := db.FetchBlockReceiveTime(req.Context())
+
+		if err != nil {
+			s.renderErrorJSON(err.Error(), res)
+			return
+		}
+
+		var timeVarianceForHeights = map[int64]float64{}
+		for _, record := range data {
+			if isLocal {
+				localBlockHeights = append(localBlockHeights, record.BlockHeight)
+				localBlockReceiveTimes[record.BlockHeight] = record.ReceiveTime
+				continue
+			}
+
+			if !isLocal && !heightIsInLocalDb(record.BlockHeight) {
+				continue
+			}
+
+			if localTime, found := localBlockReceiveTimes[record.BlockHeight]; found {
+				timeVarianceForHeights[record.BlockHeight] = localTime.Sub(record.ReceiveTime).Seconds()
+			}
+		}
+
+		if isLocal {
+			sort.Slice(localBlockHeights, func(i, j int) bool {
+				return localBlockHeights[j] >= localBlockHeights[i]
+			})
+			return
+		}
+
+		for _, h := range localBlockHeights {
+			if timeDiff, found := timeVarianceForHeights[h]; found {
+				pointsMap[h] = append(pointsMap[h], fmt.Sprintf("%.4f", timeDiff))
+			}
+		}
+	}
+
+	fetchChartDataForSource(s.db, true)
+
+	syncSources, err := datasync.RegisteredSources()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if len(syncSources) == 0 {
+		s.renderErrorJSON("Please register at least one source to view chart", res)
+		return
+	}
+
+	var yLabel = "Block Time Variance (seconds)"
+
+	chartData.YLabel = yLabel
+
+	for _, source := range syncSources {
+		db, err := s.extDbFactory(source)
+		if err != nil {
+			s.renderErrorJSON(err.Error(), res)
+			return
+		}
+		fetchChartDataForSource(db, false)
+	}
+
+	chartData.CSV = fmt.Sprintf("%s,%s\n", "Height", strings.Join(syncSources, ","))
+	for _, height := range localBlockHeights {
+		if len(pointsMap[height]) == 0 {
+			continue
+		}
+		chartData.CSV  += fmt.Sprintf("%d, %s\n", height, strings.Join(pointsMap[height], ","))
+	}
+
+	s.renderJSON(chartData, res)
 }
 
 // /getblocks

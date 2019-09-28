@@ -81,6 +81,11 @@ type PropagationChartData struct {
 	TimeDifference float64 `json:"time_difference"`
 }
 
+type BlockReceiveTime struct {
+	BlockHeight int64 `json:"block_height"`
+	ReceiveTime time.Time
+}
+
 type DataStore interface {
 	MempoolTableName() string
 	BlockTableName() string
@@ -102,4 +107,5 @@ type Collector struct {
 	dataStore          DataStore
 	activeChain        *chaincfg.Params
 	syncIsDone         bool
+	bestBlockHeight    uint32
 }

@@ -46,24 +46,28 @@ type DataQuery interface {
 
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
+	BlockHeights(ctx context.Context) ([]int64, error)
 	BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
 	VotesCount(ctx context.Context) (int64, error)
 	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
+	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 }
 
 type Server struct {
 	templates map[string]*template.Template
 	lock      sync.RWMutex
 	db        DataQuery
+	extDbFactory func(name string) (DataQuery, error)
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery) {
+func StartHttpServer(httpHost, httpPort string, db DataQuery, extDbFactory func(name string) (DataQuery, error)) {
 	server := &Server{
-		templates: map[string]*template.Template{},
-		db:        db,
+		templates:    map[string]*template.Template{},
+		db:           db,
+		extDbFactory: extDbFactory,
 	}
 
 	router := chi.NewRouter()
@@ -121,6 +125,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
+	r.Get("/blockschartdata", s.blocksChartData)
+	r.Get("/voteschartdata", s.votesChartDate)
 	r.Get("/propagationchartdata", s.propagationChartData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)

@@ -1,14 +1,27 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, setActiveOptionBtn, showLoading, hideLoading, displayPillBtnOption, setActiveRecordSetBtn } from '../utils'
+import {
+  hide,
+  show,
+  setActiveOptionBtn,
+  showLoading,
+  hideLoading,
+  displayPillBtnOption,
+  setActiveRecordSetBtn,
+  legendFormatter
+} from '../utils'
 import dompurify from 'dompurify'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
+  chartType
+
   static get targets () {
     return [
-      'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption', 'selectedRecordSet', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption',
+      'tableRecordSetOptions', 'selectedRecordSet', 'bothRecordWrapper', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'chartTypesWrapper', 'chartType',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
       'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption', 'loadingData'
@@ -21,26 +34,26 @@ export default class extends Controller {
       this.currentPage = 1
     }
 
-    this.selectedRecordSetTargets.forEach(li => {
-      if (this.selectedViewOption === 'table' && li.dataset.option === 'both') {
-        li.classList.add('active')
-      } else {
-        li.classList.remove('active')
-      }
-    })
+    this.selectedViewOption = this.viewOptionControlTarget.dataset.initialValue
+    this.selectedRecordSet = this.tableRecordSetOptionsTarget.dataset.initialValue
+    this.chartType = this.chartTypesWrapperTarget.dataset.initialValue
 
-    this.selectedViewOption = this.viewOptionControlTarget.getAttribute('data-initial-value')
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionControlTargets)
+
     if (this.selectedViewOption === 'chart') {
+      setActiveOptionBtn(this.chartType, this.chartTypeTargets)
       this.setChart()
     } else {
+      setActiveOptionBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
       this.setTable()
     }
   }
 
   setTable () {
     this.selectedViewOption = 'table'
-    this.selectedRecordSet = 'both'
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    show(this.tableRecordSetOptionsTarget)
+    hide(this.chartTypesWrapperTarget)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
     show(this.paginationButtonsWrapperTarget)
@@ -54,7 +67,8 @@ export default class extends Controller {
 
   setChart () {
     this.selectedViewOption = 'chart'
-    this.selectedRecordSet = 'blocks'
+    hide(this.tableRecordSetOptionsTarget)
+    show(this.chartTypesWrapperTarget)
     hide(this.numPageWrapperTarget)
     hide(this.messageViewTarget)
     hide(this.paginationButtonsWrapperTarget)
@@ -63,7 +77,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
-    this.fetchChartDataAndPlot()
+    this.plotSelectedChart()
   }
 
   setBothRecordSet () {
@@ -73,8 +87,10 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
   }
 
@@ -85,8 +101,10 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
   }
 
@@ -97,9 +115,17 @@ export default class extends Controller {
     this.selectedNumTarget.value = this.selectedNumTarget.options[0].text
     if (this.selectedViewOption === 'table') {
       this.fetchTableData(1)
-    } else {
+    } else if (this.selectedViewOption === 'chart') {
       this.fetchChartDataAndPlot()
+    } else {
+      this.fetchChartExtDataAndPlot()
     }
+  }
+
+  changeChartType (event) {
+    this.chartType = event.currentTarget.dataset.option
+    setActiveOptionBtn(this.chartType, this.chartTypeTargets)
+    this.plotSelectedChart()
   }
 
   loadPreviousPage () {
@@ -139,7 +165,7 @@ export default class extends Controller {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&view-option=${_this.selectedViewOption}`
+      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&chart-type=${_this.chartsView}&view-option=${_this.selectedViewOption}`
       window.history.pushState(window.history.state, _this.addr, pageUrl)
 
       _this.currentPage = result.currentPage
@@ -325,15 +351,51 @@ export default class extends Controller {
     hide(this.votesTableTarget)
   }
 
+  plotSelectedChart () {
+    switch (this.chartType) {
+      default:
+        this.fetchChartExtDataAndPlot()
+        break
+      case 'blocks':
+      case 'votes':
+        this.fetchChartDataAndPlot()
+        break
+    }
+  }
+
   fetchChartDataAndPlot () {
+    let elementsToToggle = [this.chartWrapperTarget]
+    showLoading(this.loadingDataTarget, elementsToToggle)
+
+    const _this = this
+    axios.get(`/${this.chartType}chartdata`).then(function (response) {
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
+      _this.plotGraph(response.data)
+      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
+      window.history.pushState(window.history.state, _this.addr, url)
+    }).catch(function (e) {
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
+      console.log(e) // todo: handle error
+    })
+  }
+
+  fetchChartExtDataAndPlot () {
     let elementsToToggle = [this.chartWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
     axios.get('/propagationchartdata?record-set=' + this.selectedRecordSet).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
-      _this.plotGraph(response.data)
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&view-option=${_this.selectedViewOption}`
+      if (response.data.error !== undefined) {
+        _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${response.data.error}</p>`
+        show(_this.messageViewTarget)
+        hide(_this.chartWrapperTarget)
+      } else {
+        hide(_this.messageViewTarget)
+        show(_this.chartWrapperTarget)
+        _this.plotExtDataGraph(response.data)
+      }
+      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
       window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -344,7 +406,7 @@ export default class extends Controller {
   plotGraph (csv) {
     const _this = this
 
-    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (s)' : 'Delay (s)'
+    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (Milliseconds)' : 'Delay (s)'
     let options = {
       legend: 'always',
       includeZero: true,
@@ -361,7 +423,31 @@ export default class extends Controller {
     _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
   }
 
-  legendFormatter (data) {
+  plotExtDataGraph (chartData) {
+    const _this = this
+
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: _this.labelsTarget,
+      ylabel: chartData.yLabel,
+      xlabel: 'Height',
+      labelsKMB: true,
+      drawPoints: true,
+      strokeWidth: 0.0,
+      showRangeSelector: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData.csv, options)
+  }
+
+  propagationLegendFormatter (data) {
     let html = ''
     const votesDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Measured as the difference between the blocks timestamp and the time the block was received by this node.'
     const blocksDescription = '&nbsp;&nbsp;&nbsp;&nbsp;Showing the difference in time between the block and the votes.'
@@ -370,7 +456,7 @@ export default class extends Controller {
       let dashLabels = data.series.reduce((nodes, series) => {
         return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML} ${descriptionText}</div>`
       }, '')
-      html = `<div class="d-flex flex-wrap justify-content-center align-items-center">
+      html = `<div class="d-flex flex-wrap justify-content-center align-items-center" style="text-align: center !important;">
               <div class="pr-3">${this.getLabels()[0]}: N/A</div>
               <div class="d-flex flex-wrap">${dashLabels}</div>
             </div>`
