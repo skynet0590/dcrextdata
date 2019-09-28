@@ -71,7 +71,51 @@ var (
 
 // /home
 func (s *Server) homePage(res http.ResponseWriter, req *http.Request) {
-	data := map[string]interface{}{}
+	mempoolCount, err := s.db.MempoolCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get mempools count, %s", err.Error()), res)
+		return
+	}
+
+	blocksCount, err := s.db.BlockCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get blocks count, %s", err.Error()), res)
+		return
+	}
+
+	votesCount, err := s.db.VotesCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get votes count, %s", err.Error()), res)
+		return
+	}
+
+	powCount, err := s.db.PowCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get PoW count, %s", err.Error()), res)
+		return
+	}
+
+	vspCount, err := s.db.VspTickCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get VSP count, %s", err.Error()), res)
+		return
+	}
+
+	exchangeCount, err := s.db.ExchangeTickCount(req.Context())
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get Exchange count, %s", err.Error()), res)
+		return
+	}
+
+	data := map[string]interface{}{
+		"mempoolCount": mempoolCount,
+		"blocksCount":  blocksCount,
+		"votesCount":   votesCount,
+		"powCount":     powCount,
+		"vspCount":     vspCount,
+		"exchangeTick": exchangeCount,
+	}
+
 	s.render("home.html", data, res)
 }
 
@@ -905,7 +949,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	data := map[string]interface{}{
 		"chartView":            viewOption == "chart",
 		"selectedViewOption":   viewOption,
-		"chartType":			chartType,
+		"chartType":            chartType,
 		"currentPage":          pageToLoad,
 		"propagationRecordSet": propagationRecordSet,
 		"pageSizeSelector":     pageSizeSelector,
@@ -1005,11 +1049,11 @@ func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
 			sum += record
 		}
 
-		return sum/float64(len(records))
+		return sum / float64(len(records))
 	}
 
 	for _, height := range heightArr {
-		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height]) * 1000)
+		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height])*1000)
 		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
 	}
 
@@ -1108,7 +1152,7 @@ func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request
 		if len(pointsMap[height]) == 0 {
 			continue
 		}
-		chartData.CSV  += fmt.Sprintf("%d, %s\n", height, strings.Join(pointsMap[height], ","))
+		chartData.CSV += fmt.Sprintf("%d, %s\n", height, strings.Join(pointsMap[height], ","))
 	}
 
 	s.renderJSON(chartData, res)

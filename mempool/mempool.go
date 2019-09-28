@@ -38,7 +38,7 @@ func (c *Collector) SetClient(client *rpcclient.Client) {
 	c.dcrClient = client
 }
 
-func (c *Collector) SetExplorerBestBlock(ctx context.Context) (error) {
+func (c *Collector) SetExplorerBestBlock(ctx context.Context) error {
 	var explorerUrl string
 	switch c.activeChain.Name {
 	case chaincfg.MainNetParams.Name:

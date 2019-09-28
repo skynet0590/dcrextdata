@@ -178,6 +178,10 @@ func (pg *PgDb) FetchExchangeForSync(ctx context.Context, lastID int, skip, take
 	return exchanges, totalCount, nil
 }
 
+func (pg *PgDb) ExchangeTickCount(ctx context.Context) (int64, error) {
+	return models.ExchangeTicks().Count(ctx, pg.db)
+}
+
 // FetchExchangeTicks fetches a slice exchange ticks of the supplied exchange name
 func (pg *PgDb) FetchExchangeTicks(ctx context.Context, currencyPair, name string, interval, offset, limit int) ([]ticks.TickDto, int64, error) {
 	query := []qm.QueryMod{

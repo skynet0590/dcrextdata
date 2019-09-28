@@ -7,6 +7,48 @@
         {{ template "header" }}
         <div class="content">
             <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-10 offset-1">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <a href="/mempool" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .mempoolCount}}</h3>
+                                    <p>Mempool Data Recorded</p>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/propagation?chart-type=blocks" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .blocksCount }}</h3>
+                                    <p>Blocks Recorded</p>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/propagation?chart-type=votes" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .votesCount }}</h3>
+                                    <p>Votes Recorded</p>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/pow" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .powCount}}</h3>
+                                    <p>PoW Data Recorded</p>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/vsp" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .vspCount}}</h3>
+                                    <p>VSP Ticks Recorded</p>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/exchanges" class="tile gray">
+                                    <h3 class="title">{{ humanizeInt .exchangeTick}}</h3>
+                                    <p>Exchange Ticks Recorded</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
