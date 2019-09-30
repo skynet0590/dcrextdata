@@ -24,7 +24,7 @@ export default class extends Controller {
       'chartTypesWrapper', 'chartType',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
-      'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption', 'loadingData'
+      'totalPageCount', 'currentPage', 'viewOptionControl', 'viewOption', 'loadingData'
     ]
   }
 
