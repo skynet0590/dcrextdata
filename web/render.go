@@ -2,7 +2,9 @@ package web
 
 import (
 	"encoding/json"
+	"net"
 	"net/http"
+	"strings"
 )
 
 func (s *Server) render(tplName string, data map[string]interface{}, res http.ResponseWriter) {
@@ -11,9 +13,16 @@ func (s *Server) render(tplName string, data map[string]interface{}, res http.Re
 
 	if tpl, ok := s.templates[tplName]; ok {
 		err := tpl.Execute(res, data)
-		if err != nil {
-			log.Errorf("Error executing template: %s", err.Error())
+		if err == nil {
+			return
 		}
+		// Filter out broken pipe (user pressed "stop") errors
+		if _, ok := err.(*net.OpError); ok {
+			if strings.Contains(err.Error(), "broken pipe") {
+				return
+			}
+		}
+		log.Errorf("Error executing template: %s", err.Error())
 		return
 	}
 

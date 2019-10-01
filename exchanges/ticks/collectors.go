@@ -50,7 +50,7 @@ var (
 		Bittrex:    NewBittrexCollector,
 		Bittrexusd: NewBittrexUSDCollector,
 		Poloniex:   NewPoloniexCollector,
-		Bleutrade:  NewBleutradeCollector,
+		// Bleutrade:  NewBleutradeCollector,
 		Binance:    NewBinanceCollector,
 	}
 

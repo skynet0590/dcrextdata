@@ -78,7 +78,7 @@ func (pg *PgDb) RegisterExchange(ctx context.Context, exchange ticks.ExchangeDat
 // StoreExchangeTicks
 func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval int, pair string, ticks []ticks.Tick) (time.Time, error) {
 	if len(ticks) == 0 {
-		return zeroTime, fmt.Errorf("No ticks recieved for %s", name)
+		return zeroTime, fmt.Errorf("No ticks received for %s", name)
 	}
 
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(name)).One(ctx, pg.db)

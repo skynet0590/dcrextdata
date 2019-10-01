@@ -33,7 +33,7 @@ var (
 		ticks.Bittrex,
 		ticks.Bittrexusd,
 		ticks.Binance,
-		ticks.Bleutrade,
+		// ticks.Bleutrade,
 		ticks.Poloniex,
 	}
 )
