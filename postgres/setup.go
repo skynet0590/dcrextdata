@@ -105,6 +105,37 @@ const (
 		validity VARCHAR(128),
 		PRIMARY KEY (hash)
 	);`
+
+	lastCommStatEntryTime = `SELECT date FROM reddit ORDER BY date DESC LIMIT 1`
+
+	createRedditTable = `CREATE TABLE IF NOT EXISTS reddit (
+		date timestamp,
+		subreddit VARCHAR(256) NOT NULL,
+		subscribers INT NOT NULL,
+		active_accounts INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
+
+	createTwitterTable = `CREATE TABLE IF NOT EXISTS twitter (
+		date timestamp,
+		handle VARCHAR(256) NOT NULL,
+		followers INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
+
+	createGithubTable = `CREATE TABLE IF NOT EXISTS github (
+		date timestamp,
+		repository VARCHAR(256) NOT NULL,
+		stars INT NOT NULL,
+		folks INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
+
+	createYoutubeTable = `CREATE TABLE IF NOT EXISTS youtube (
+		date timestamp,
+		subscribers INT NOT NULL,
+		PRIMARY KEY (date)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -202,8 +233,47 @@ func (pg *PgDb) VoteTableExits() bool {
 	return exists
 }
 
-func (pg *PgDb) SyncHistoryTableExists() bool {
-	exists, _ := pg.tableExists("sync_history")
+// reddit table
+func (pg *PgDb) CreateRedditTable() error {
+	_, err := pg.db.Exec(createRedditTable)
+	return err
+}
+
+func (pg *PgDb) RedditTableExits() bool {
+	exists, _ := pg.tableExists("reddit")
+	return exists
+}
+
+// twitter table
+func (pg *PgDb) CreateTwitterTable() error {
+	_, err := pg.db.Exec(createTwitterTable)
+	return err
+}
+
+func (pg *PgDb) TwitterTableExits() bool {
+	exists, _ := pg.tableExists("twitter")
+	return exists
+}
+
+// youtube table
+func (pg *PgDb) CreateGithubTable() error {
+	_, err := pg.db.Exec(createGithubTable)
+	return err
+}
+
+func (pg *PgDb) GithubTableExits() bool {
+	exists, _ := pg.tableExists("github")
+	return exists
+}
+
+// youtube table
+func (pg *PgDb) CreateYoutubeTable() error {
+	_, err := pg.db.Exec(createYoutubeTable)
+	return err
+}
+
+func (pg *PgDb) YoutubeTableExits() bool {
+	exists, _ := pg.tableExists("youtube")
 	return exists
 }
 
@@ -269,7 +339,31 @@ func (pg *PgDb) DropAllTables() error {
 		return err
 	}
 
-	// pow_data
+	// reddit
+	if err := pg.dropTable("reddit"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("github"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("twitter"); err != nil {
+		return err
+	}
+
+	// reddit
+	if err := pg.dropTable("youtube"); err != nil {
+		return err
+	}
+
+	// comm_stat
+	if err := pg.dropTable("comm_stat"); err != nil {
+		return err
+	}
+
 	return nil
 }
 

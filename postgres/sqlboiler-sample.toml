@@ -11,4 +11,4 @@
             "pow_data",
             "mempool",
             "block",
-            "sync_history"]
+            "comm_stat"]

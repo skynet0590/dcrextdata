@@ -7,20 +7,26 @@ var TableNames = struct {
 	Block        string
 	Exchange     string
 	ExchangeTick string
+	Github       string
 	Mempool      string
 	PowData      string
-	SyncHistory  string
+	Reddit       string
+	Twitter      string
 	Vote         string
 	VSP          string
 	VSPTick      string
+	Youtube      string
 }{
 	Block:        "block",
 	Exchange:     "exchange",
 	ExchangeTick: "exchange_tick",
+	Github:       "github",
 	Mempool:      "mempool",
 	PowData:      "pow_data",
-	SyncHistory:  "sync_history",
+	Reddit:       "reddit",
+	Twitter:      "twitter",
 	Vote:         "vote",
 	VSP:          "vsp",
 	VSPTick:      "vsp_tick",
+	Youtube:      "youtube",
 }

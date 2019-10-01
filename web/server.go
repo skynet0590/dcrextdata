@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -54,6 +55,16 @@ type DataQuery interface {
 	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
 	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
+
+	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
+	RedditStats(ctx context.Context, subreddit string, offtset int, limit int) ([]commstats.Reddit, error)
+	CountTwitterStat(ctx context.Context, handle string) (int64, error)
+	TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error)
+	CountYoutubeStat(ctx context.Context) (int64, error)
+	YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error)
+	CountGithubStat(ctx context.Context, repository string) (int64, error)
+	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
+	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
 }
 
 type Server struct {
@@ -132,6 +143,10 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
 	r.Get("/votesdata", s.getVoteData)
+
+	r.Get("/community", s.community)
+	r.Get("/getCommunityStat", s.getCommunityStat)
+	r.Get("/communitychat", s.communityChat)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

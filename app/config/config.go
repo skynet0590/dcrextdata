@@ -12,29 +12,33 @@ import (
 )
 
 const (
-	DefaultConfigFilename  = "dcrextdata.conf"
-	defaultLogFilename     = "dcrextdata.log"
-	Hint                   = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
-	defaultDbHost          = "localhost"
-	defaultDbPort          = "5432"
-	defaultDbUser          = "postgres"
-	defaultDbPass          = "dbpass"
-	defaultDbName          = "dcrextdata"
-	defaultLogLevel        = "debug"
-	defaultHttpHost        = "127.0.0.1"
-	defaultHttpPort        = "7770"
-	defaultDcrdServer      = "127.0.0.1:9109"
-	defaultDcrdUser        = "rpcuser"
-	defaultDcrdPassword    = "rpcpass"
-	defaultDcrdNetworkType = "mainnet"
-	defaultMempoolInterval = 60
-	defaultVSPInterval     = 300
-	defaultPowInterval     = 300
-	defaultSyncInterval    = 60
+	DefaultConfigFilename      = "dcrextdata.conf"
+	defaultLogFilename         = "dcrextdata.log"
+	Hint                       = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
+	defaultDbHost              = "localhost"
+	defaultDbPort              = "5432"
+	defaultDbUser              = "postgres"
+	defaultDbPass              = "dbpass"
+	defaultDbName              = "dcrextdata"
+	defaultLogLevel            = "debug"
+	defaultHttpHost            = "127.0.0.1"
+	defaultHttpPort            = "7770"
+	defaultDcrdServer          = "127.0.0.1:9109"
+	defaultDcrdUser            = "rpcuser"
+	defaultDcrdPassword        = "rpcpass"
+	defaultDcrdNetworkType     = "mainnet"
+	defaultMempoolInterval     = 60
+	defaultVSPInterval         = 300
+	defaultPowInterval         = 300
+	defaultSyncInterval        = 60
+	defaultRedditInterval      = 60
+	defaultTwitterStatInterval = 60 * 24
+	defaultGithubStatInterval  = 60 * 24
+	defaultYoutubeInterval     = 60 * 24
 )
 
 func defaultFileOptions() ConfigFileOptions {
-	return ConfigFileOptions{
+	cfg := ConfigFileOptions{
 		LogFile:         defaultLogFilename,
 		ConfigFile:      DefaultConfigFilename,
 		DBHost:          defaultDbHost,
@@ -52,8 +56,14 @@ func defaultFileOptions() ConfigFileOptions {
 		DcrdRpcPassword: defaultDcrdPassword,
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
-		SyncInterval: 	 defaultSyncInterval,
+		SyncInterval:    defaultSyncInterval,
 	}
+
+	cfg.RedditStatInterval = defaultRedditInterval
+	cfg.TwitterStatInterval = defaultTwitterStatInterval
+	cfg.GithubStatInterval = defaultGithubStatInterval
+	cfg.YoutubeStatInterval = defaultYoutubeInterval
+	return cfg
 }
 
 type Config struct {
@@ -104,12 +114,27 @@ type ConfigFileOptions struct {
 	SyncInterval  int      `long:"syncinterval" description:"The number of minuets between sync operations"`
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
+
+	CommunityStatOptions `group:"Community Stat"`
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
 	Reset    bool `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	HttpMode bool `long:"http" description:"Launch http server"`
+}
+
+type CommunityStatOptions struct {
+	// Community stat
+	DisableCommunityStat  bool     `long:"disablecommstat" description:"Disables periodic community stat collection"`
+	RedditStatInterval int64    `long:"redditstatinterval" description:"Collection interval for Reddit community stat"`
+	Subreddit             []string `long:"subreddit" description:"List of subreddit for community stat collection"`
+	TwitterHandles        []string `long:"twitterhandle" description:"List of twitter handles community stat collection"`
+	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
+	GithubRepositories    []string `long:"githubrepository" description:"List of Github repositories to track"`
+	GithubStatInterval    int      `long:"githubstatinterval" description:"Number of minutes between Github stat collection"`
+	YoutubeStatInterval   int      `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
+	YoutubeDataApiKey     string   `long:"youtubedataapikey" description:"Youtube data API key gotten from google developer console"`
 }
 
 func defaultConfig() Config {

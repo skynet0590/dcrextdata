@@ -239,7 +239,7 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.ExchangeData{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -290,7 +290,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.TickDto{}
-			err = helpers.GetResponse(ctx, &http.Client{}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {

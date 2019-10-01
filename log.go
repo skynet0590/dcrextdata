@@ -13,6 +13,7 @@ import (
 
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
+	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres"
@@ -46,6 +47,7 @@ var (
 	vspLog     = backendLog.Logger("VSPC")
 	powLog     = backendLog.Logger("POWL")
 	mempoolLog = backendLog.Logger("MEMP")
+	redditLog  = backendLog.Logger("REDD")
 	webLog     = backendLog.Logger("WEBL")
 	syncLog    = backendLog.Logger("SYNC")
 )
@@ -58,6 +60,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"VSPC": vspLog,
 	"POWL": powLog,
 	"MEMP": mempoolLog,
+	"REDD": redditLog,
 	"WEBL": webLog,
 	"SYNC": syncLog,
 }
@@ -68,6 +71,7 @@ func init() {
 	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)
 	mempool.UseLogger(mempoolLog)
+	commstats.UseLogger(redditLog)
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
 }

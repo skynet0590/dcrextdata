@@ -12,15 +12,21 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("ExchangeTicks", testExchangeTicksUpsert)
 
+	t.Run("Githubs", testGithubsUpsert)
+
 	t.Run("Mempools", testMempoolsUpsert)
 
 	t.Run("PowData", testPowDataUpsert)
 
-	t.Run("SyncHistories", testSyncHistoriesUpsert)
+	t.Run("Reddits", testRedditsUpsert)
+
+	t.Run("Twitters", testTwittersUpsert)
 
 	t.Run("Votes", testVotesUpsert)
 
 	t.Run("VSPS", testVSPSUpsert)
 
 	t.Run("VSPTicks", testVSPTicksUpsert)
+
+	t.Run("Youtubes", testYoutubesUpsert)
 }
