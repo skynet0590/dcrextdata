@@ -22,6 +22,7 @@ import (
 )
 
 type DataQuery interface {
+	ExchangeTickCount(ctx context.Context) (int64, error)
 	AllExchangeTicks(ctx context.Context, currencyPair string, defaultInterval, offset, limit int) ([]ticks.TickDto, int64, error)
 	AllExchange(ctx context.Context) (models.ExchangeSlice, error)
 	FetchExchangeTicks(ctx context.Context, currencyPair, name string, defaultInterval, offset, limit int) ([]ticks.TickDto, int64, error)
@@ -29,12 +30,14 @@ type DataQuery interface {
 	ExchangeTicksChartData(ctx context.Context, filter string, currencyPair string, selectedInterval int, exchanges string) ([]ticks.TickChartData, error)
 	AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error)
 
+	VspTickCount(ctx context.Context) (int64, error)
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	AllVSPTicks(ctx context.Context, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error)
 	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
+	PowCount(ctx context.Context) (int64, error)
 	FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error)
 	FetchPowDataBySource(ctx context.Context, source string, offset, limit int) ([]pow.PowDataDto, int64, error)
 	FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, error)
@@ -68,9 +71,9 @@ type DataQuery interface {
 }
 
 type Server struct {
-	templates map[string]*template.Template
-	lock      sync.RWMutex
-	db        DataQuery
+	templates    map[string]*template.Template
+	lock         sync.RWMutex
+	db           DataQuery
 	extDbFactory func(name string) (DataQuery, error)
 }
 

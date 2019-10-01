@@ -94,6 +94,10 @@ func responseToPowModel(data pow.PowData) (models.PowDatum, error) {
 	}, nil
 }
 
+func (pg *PgDb) PowCount(ctx context.Context) (int64, error) {
+	return models.PowData().Count(ctx, pg.db)
+}
+
 func (pg *PgDb) FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error) {
 	powDatum, err := models.PowData(qm.Offset(offset), qm.Limit(limit), qm.OrderBy(fmt.Sprintf("%s DESC", models.PowDatumColumns.Time))).All(ctx, pg.db)
 	if err != nil {

@@ -80,7 +80,7 @@
                                     >
                                         <li class="nav-item">
                                             <a
-                                                    class="nav-link active"
+                                                    class="nav-link active d-none"
                                                     href="javascript:void(0);"
                                                     data-target="exchange.zoomOption"
                                                     data-action="click->exchange#setZoom"
@@ -89,7 +89,7 @@
                                         </li>
                                         <li class="nav-item">
                                             <a
-                                                    class="nav-link"
+                                                    class="nav-link d-none"
                                                     href="javascript:void(0);"
                                                     data-target="exchange.zoomOption"
                                                     data-action="click->exchange#setZoom"
@@ -98,7 +98,7 @@
                                         </li>
                                         <li class="nav-item">
                                             <a
-                                                    class="nav-link"
+                                                    class="nav-link d-none"
                                                     href="javascript:void(0);"
                                                     data-target="exchange.zoomOption"
                                                     data-action="click->exchange#setZoom"
@@ -107,7 +107,7 @@
                                         </li>
                                         <li class="nav-item">
                                             <a
-                                                    class="nav-link"
+                                                    class="nav-link d-none"
                                                     href="javascript:void(0);"
                                                     data-target="exchange.zoomOption"
                                                     data-action="click->exchange#setZoom"
@@ -116,7 +116,7 @@
                                         </li>
                                         <li class="nav-item">
                                             <a
-                                                    class="nav-link"
+                                                    class="nav-link d-none"
                                                     href="javascript:void(0);"
                                                     data-target="exchange.zoomOption"
                                                     data-action="click->exchange#setZoom"
@@ -129,7 +129,7 @@
 
                     <div data-target="exchange.numPageWrapper" class="control-div p-0 ml-2 {{ if .chartView }}d-none{{ end }}">
                         <div class="control-label">Page Size:</div>
-                        <select data-target="exchange.selectedNum" data-action="change->exchange#NumberOfRowsChanged" class="form-control" style="width: 70px;">
+                        <select data-target="exchange.selectedNum" data-action="change->exchange#numberOfRowsChanged" class="form-control" style="width: 70px;">
                             {{$selectedNum := .selectedNum}}
                             {{ range $index, $filter := .pageSizeSelector}}
                             <option value="{{$index}}" {{ if eq $index $selectedNum}} selected {{ end }}>{{$filter}}</option>

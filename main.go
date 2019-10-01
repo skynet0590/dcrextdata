@@ -241,13 +241,15 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableExchangeTicks {
-		ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
-		if err == nil {
-			ticksHub.RegisterSyncer(syncCoordinator)
-			go ticksHub.Run(ctx)
-		} else {
-			log.Error(err)
-		}
+		go func() {
+			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
+			if err == nil {
+				ticksHub.RegisterSyncer(syncCoordinator)
+				ticksHub.Run(ctx)
+			} else {
+				log.Error(err)
+			}
+		}()
 	}
 
 	if !cfg.DisablePow {

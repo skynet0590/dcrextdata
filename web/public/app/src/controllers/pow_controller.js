@@ -1,6 +1,15 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, selectedOption } from '../utils'
+import {
+  hide,
+  show,
+  legendFormatter,
+  setActiveOptionBtn,
+  showLoading,
+  hideLoading,
+  selectedOption,
+  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
+} from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
 import TurboQuery from '../helpers/turbolinks_helper'
@@ -70,6 +79,7 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = this.currentPage
     this.fetchData()
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
   }
 
   setChart () {
@@ -85,30 +95,42 @@ export default class extends Controller {
     hide(this.pageSizeWrapperTarget)
     show(this.chartDataTypeSelectorTarget)
     this.fetchDataAndPlotGraph()
+    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   poolCheckChanged (event) {
+    let selectedPools = []
+    this.poolTargets.forEach(el => {
+      if (el.checked) {
+        selectedPools.push(el.value)
+      }
+    })
     this.fetchDataAndPlotGraph()
+    insertOrUpdateQueryParam('pools', selectedPools.join('|'))
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
     this.fetchData()
+    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.currentPage - 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.currentPage + 1)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.selectedNumTarget.value)
   }
 
   fetchData () {
@@ -135,13 +157,10 @@ export default class extends Controller {
           hide(_this.pageSizeWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/pow?page=${_this.nextPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
         } else {
           show(_this.powTableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/pow?page=${result.currentPage}&filter=${selectedFilter}&records-per-page=${result.selectedNum}&view-option=${_this.selectedViewOption}`
-          window.history.pushState(window.history.state, _this.addr, pageUrl)
 
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
@@ -198,6 +217,7 @@ export default class extends Controller {
     }
 
     this.fetchDataAndPlotGraph()
+    insertOrUpdateQueryParam('data-type', this.dataType)
   }
 
   fetchDataAndPlotGraph () {
@@ -213,7 +233,6 @@ export default class extends Controller {
 
     const _this = this
     const queryString = `data-type=${this.dataType}&pools=${selectedPools.join('|')}&view-option=${_this.selectedViewOption}`
-    window.history.pushState(window.history.state, _this.addr, `/pow?${queryString}`)
 
     axios.get(`/powchart?${queryString}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -279,9 +298,6 @@ export default class extends Controller {
     let ex = this.chartsView.xAxisExtremes()
     let option = Zoom.mapKey(this.settings.zoom, ex, 1)
     setActiveOptionBtn(option, this.zoomOptionTargets)
-    /* var axesData = axesToRestoreYRange(this.settings.chart,
-        this.supportedYRange, this.chartsView.yAxisRanges())
-    if (axesData) this.chartsView.updateOptions({ axes: axesData }) */
   }
 
   _drawCallback (graph, first) {
@@ -321,5 +337,6 @@ export default class extends Controller {
 
     _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
     _this.validateZoom()
+    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.min_date))
   }
 }

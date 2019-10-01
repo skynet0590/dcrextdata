@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -59,6 +60,28 @@ func templateFuncMap() template.FuncMap {
 		},
 		"stringsReplace": func(input string, old string, new string) string {
 			return strings.Replace(input, old, new, -1)
+		},
+		"humanizeInt": func(number int64) string {
+			s := strconv.Itoa(int(number))
+			r1 := ""
+			idx := 0
+
+			// Reverse and interleave the separator.
+			for i := len(s) - 1; i >= 0; i-- {
+				idx++
+				if idx == 4 {
+					idx = 1
+					r1 = r1 + ","
+				}
+				r1 = r1 + string(s[i])
+			}
+
+			// Reverse back and return.
+			r2 := ""
+			for i := len(r1) - 1; i >= 0; i-- {
+				r2 = r2 + string(r1[i])
+			}
+			return r2
 		},
 	}
 }

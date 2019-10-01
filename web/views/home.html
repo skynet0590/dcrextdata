@@ -7,6 +7,18 @@
         {{ template "header" }}
         <div class="content">
             <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div>
+                        <ul style="margin-left: -24px">
+                            <li>Mempool: {{ humanizeInt .mempoolCount}}</li>
+                            <li>Blocks: {{ humanizeInt .blocksCount}}</li>
+                            <li>Votes: {{ humanizeInt .votesCount}}</li>
+                            <li>PoW: {{ humanizeInt .powCount}}</li>
+                            <li>VSP Ticks: {{ humanizeInt .vspCount}}</li>
+                            <li>Exchange Ticks: {{ humanizeInt .exchangeTick}}</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

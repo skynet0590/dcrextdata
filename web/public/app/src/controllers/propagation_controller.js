@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam
 } from '../utils'
 import dompurify from 'dompurify'
 
@@ -24,7 +24,7 @@ export default class extends Controller {
       'chartTypesWrapper', 'chartType',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
-      'totalPageCount', 'currentPage', 'viewOptionControl', 'chartSelector', 'viewOption', 'loadingData'
+      'totalPageCount', 'currentPage', 'viewOptionControl', 'viewOption', 'loadingData'
     ]
   }
 
@@ -63,6 +63,7 @@ export default class extends Controller {
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchTableData(this.currentPage)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
   }
 
   setChart () {
@@ -78,6 +79,7 @@ export default class extends Controller {
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.plotSelectedChart()
+    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   setBothRecordSet () {
@@ -92,6 +94,8 @@ export default class extends Controller {
     } else {
       this.fetchChartExtDataAndPlot()
     }
+
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
   }
 
   setBlocksRecordSet () {
@@ -106,6 +110,8 @@ export default class extends Controller {
     } else {
       this.fetchChartExtDataAndPlot()
     }
+
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
   }
 
   setVotesRecordSet () {
@@ -120,25 +126,32 @@ export default class extends Controller {
     } else {
       this.fetchChartExtDataAndPlot()
     }
+
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
   }
 
   changeChartType (event) {
     this.chartType = event.currentTarget.dataset.option
     setActiveOptionBtn(this.chartType, this.chartTypeTargets)
     this.plotSelectedChart()
+    insertOrUpdateQueryParam('chart-type', this.chartType)
   }
 
   loadPreviousPage () {
     this.fetchTableData(this.currentPage - 1)
+    insertOrUpdateQueryParam('page', this.currentPage - 1)
   }
 
   loadNextPage () {
     this.fetchTableData(this.currentPage + 1)
+    insertOrUpdateQueryParam('page', this.currentPage + 1)
   }
 
   numberOfRowsChanged () {
     this.selectedNum = this.selectedNumTarget.value
     this.fetchTableData(1)
+    insertOrUpdateQueryParam('page', 1)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNum)
   }
 
   fetchTableData (page) {
@@ -165,8 +178,6 @@ export default class extends Controller {
       let result = response.data
       _this.totalPageCountTarget.textContent = result.totalPages
       _this.currentPageTarget.textContent = result.currentPage
-      const pageUrl = `propagation?page=${result.currentPage}&records-per-page=${result.selectedNum}&record-set=${_this.selectedRecordSet}&chart-type=${_this.chartsView}&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, _this.addr, pageUrl)
 
       _this.currentPage = result.currentPage
       if (_this.currentPage <= 1) {
@@ -371,8 +382,6 @@ export default class extends Controller {
     axios.get(`/${this.chartType}chartdata`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       console.log(e) // todo: handle error
@@ -395,8 +404,6 @@ export default class extends Controller {
         show(_this.chartWrapperTarget)
         _this.plotExtDataGraph(response.data)
       }
-      const url = '/propagation?record-set=' + _this.selectedRecordSet + `&chart-type=` + _this.chartType + `&view-option=${_this.selectedViewOption}`
-      window.history.pushState(window.history.state, _this.addr, url)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       console.log(e) // todo: handle error
