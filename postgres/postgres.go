@@ -8,6 +8,8 @@ package postgres
 
 import (
 	"database/sql"
+	
+	"github.com/raedahgroup/dcrextdata/cache"
 )
 
 type PgDb struct {
@@ -28,4 +30,8 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 func (pg *PgDb) Close() error {
 	log.Trace("Closing postgresql connection")
 	return pg.db.Close()
+}
+
+func (pg *PgDb) RegisterCharts(charts *cache.ChartData) {
+
 }
