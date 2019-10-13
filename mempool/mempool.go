@@ -22,6 +22,7 @@ import (
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
@@ -182,7 +183,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context) {
+func (c *Collector) StartMonitoring(ctx context.Context, charts *cache.ChartData) {
 	var mu sync.Mutex
 
 	collectMempool := func() {
@@ -259,6 +260,10 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 		err = c.dataStore.StoreMempool(ctx, mempoolDto)
 		if err != nil {
 			log.Error(err)
+		} else {
+			if err = charts.TriggerUpdate(ctx);  err != nil {
+				log.Errorf("Charts update problem: %s", err.Error())
+			}
 		}
 	}
 

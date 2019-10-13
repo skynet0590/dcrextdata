@@ -675,7 +675,7 @@ func (charts *ChartData) Dump(dumpPath string) {
 }
 
 // TriggerUpdate triggers (*ChartData).Update.
-func (charts *ChartData) TriggerUpdate(ctx context.Context, _ string, _ uint32) error {
+func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 	if err := charts.Update(ctx); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
@@ -734,7 +734,10 @@ func (charts *ChartData) validState(stateID uint64) bool {
 func (charts *ChartData) MempoolTime() uint64 {
 	charts.mtx.RLock()
 	defer charts.mtx.RUnlock()
-	return (charts.Mempool.Time[len(charts.Mempool.Time)-1])
+	if len(charts.Mempool.Time) == 0 {
+		return 0
+	}
+	return charts.Mempool.Time[len(charts.Mempool.Time)-1]
 }
 
 // Height is the height of the blocks data. Data is assumed to be complete and

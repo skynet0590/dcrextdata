@@ -69,3 +69,13 @@ func (s *Server) renderJSON(data interface{}, res http.ResponseWriter) {
 	res.Header().Set("Content-Type", "application/json")
 	res.Write(d)
 }
+
+// writeJSONBytes prepares the headers for pre-encoded JSON and writes the JSON
+// bytes.
+func (routes *Server) renderJSONBytes(data []byte, w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_, err := w.Write(data)
+	if err != nil {
+		log.Warnf("ResponseWriter.Write error: %v", err)
+	}
+}

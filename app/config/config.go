@@ -15,6 +15,7 @@ import (
 const (
 	DefaultConfigFilename      = "dcrextdata.conf"
 	defaultLogFilename         = "dcrextdata.log"
+	defaultChartsCacheDump	   = "charts-cache.glob"
 	Hint                       = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
 	defaultDbHost              = "localhost"
 	defaultDbPort              = "5432"
@@ -70,6 +71,7 @@ func defaultFileOptions() ConfigFileOptions {
 		HTTPHost:        defaultHttpHost,
 		HTTPPort:        defaultHttpPort,
 		SyncInterval:    defaultSyncInterval,
+		ChartsCacheDump: defaultChartsCacheDump,
 	}
 
 	cfg.RedditStatInterval = defaultRedditInterval
@@ -142,6 +144,9 @@ type ConfigFileOptions struct {
 	SyncInterval  int      `long:"syncinterval" description:"The number of minuets between sync operations"`
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
+
+	// charts
+	ChartsCacheDump string
 
 	CommunityStatOptions
 	NetworkSnapshotOptions

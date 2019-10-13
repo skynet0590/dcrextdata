@@ -20,3 +20,5 @@ cpu.prof
 mem.prof
 profile*.png
 .DS_Store
+
+charts-cache.glob

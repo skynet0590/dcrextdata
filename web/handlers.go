@@ -2185,5 +2185,5 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 		log.Warnf(`Error fetching chart %s at bin level '%s': %v`, chartType, bin, err)
 		return
 	}
-	s.renderJSON(chartData, w)
+	s.renderJSONBytes(chartData, w)
 }

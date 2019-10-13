@@ -166,6 +166,18 @@ func _main(ctx context.Context) error {
 	charts := cache.NewChartData(ctx, uint32(mempoolCount), netParams(cfg.DcrdNetworkType))
 	db.RegisterCharts(charts)
 
+	// Pre-populate charts data using the dumped cache data in the .gob file path
+	// provided instead of querying the data from the dbs.
+	// This charts pre-population is faster than db querying
+	// and can be done before the monitors are fully set up.
+	if err = charts.Load(ctx, cfg.ChartsCacheDump); err != nil {
+		log.Warnf("Failed to load charts data cache: %v", err)
+	}
+
+	// This dumps the cache charts data into a file for future use on system
+	// exit.
+	defer charts.Dump(cfg.ChartsCacheDump)
+
 	syncCoordinator := datasync.NewCoordinator(!cfg.DisableSync, cfg.SyncInterval)
 
 	var syncDbs = map[string]*postgres.PgDb{}
@@ -258,7 +270,7 @@ func _main(ctx context.Context) error {
 
 		collector.SetClient(dcrClient)
 
-		go collector.StartMonitoring(ctx)
+		go collector.StartMonitoring(ctx, charts)
 	}
 
 	if !cfg.DisableVSP {
