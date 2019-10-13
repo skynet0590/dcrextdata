@@ -2173,3 +2173,17 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 
 	return
 }
+
+// api/charts/{dataType}
+func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
+	chartType := getChartTypeCtx(r)
+	bin := r.URL.Query().Get("bin")
+	axis := r.URL.Query().Get("axis")
+	chartData, err := s.charts.Chart(chartType, bin, axis)
+	if err != nil {
+		http.NotFound(w, r)
+		log.Warnf(`Error fetching chart %s at bin level '%s': %v`, chartType, bin, err)
+		return
+	}
+	s.renderJSON(chartData, w)
+}

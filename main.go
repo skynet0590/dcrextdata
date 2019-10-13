@@ -195,7 +195,7 @@ func _main(ctx context.Context) error {
 			}
 			return db, nil
 		}
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, netParams(cfg.DcrdNetworkType), extDbFactory)
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, charts, db, netParams(cfg.DcrdNetworkType), extDbFactory)
 	}
 
 	var dcrClient *rpcclient.Client

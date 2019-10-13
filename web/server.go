@@ -15,6 +15,7 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
@@ -99,16 +100,18 @@ type Server struct {
 	db           DataQuery
 	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
+	charts        *cache.ChartData
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain *chaincfg.Params,
-	extDbFactory func(name string) (DataQuery, error)) {
-
+func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery, 
+	activeChain *chaincfg.Params, extDbFactory func(name string) (DataQuery, error)) {
+		
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db:           db,
 		activeChain:  activeChain,
 		extDbFactory: extDbFactory,
+		charts:       charts,
 	}
 
 	router := chi.NewRouter()
@@ -196,6 +199,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/snapshot/node-countries", s.nodeCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
+	r.With(chartTypeCtx).Get("/api/charts/{charttype}", s.chartTypeData)
 }
 
 func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {
