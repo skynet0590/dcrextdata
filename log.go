@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"os"
 	"sort"
 	"strings"
@@ -52,6 +53,7 @@ var (
 	webLog      = backendLog.Logger("WEBL")
 	syncLog     = backendLog.Logger("SYNC")
 	snapshotLog = backendLog.Logger("NETS")
+	cacheLog    = backendLog.Logger("CACH")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -66,6 +68,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"WEBL": webLog,
 	"SYNC": syncLog,
 	"NETS": snapshotLog,
+	"CACH": cacheLog,
 }
 
 func init() {
@@ -78,6 +81,7 @@ func init() {
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
 	netsnapshot.UseLogger(snapshotLog)
+	cache.UseLogger(cacheLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and
