@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/null"
@@ -473,4 +474,31 @@ func (pg *PgDb) FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockRecei
 	}
 
 	return chartData, nil
+}
+
+// *****CHARTS******* //
+
+func (pg *PgDb) chartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
+
+	charts.Height()
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(time.Unix(int64(charts.MempoolTime()), 0))).All(ctx, pg.db)
+	if err != nil {
+		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
+	}
+	return mempoolSlice, cancel, nil
+}
+
+// Append the results from retrieveChartBlocks to the provided ChartData.
+// This is the Appender half of a pair that make up a cache.ChartUpdater.
+func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) error {
+	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
+	chartsMempool := charts.Mempool
+	for _, mempoolData := range mempoolSlice {
+		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.Unix()))
+		chartsMempool.Fees = append(chartsMempool.Fees, mempoolData.TotalFee.Float64)
+		chartsMempool.TxCount = append(chartsMempool.TxCount, uint64(mempoolData.NumberOfTransactions.Int))
+		chartsMempool.Size = append(chartsMempool.Size, uint64(mempoolData.Size.Int))
+	}
+	return nil
 }

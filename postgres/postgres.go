@@ -8,12 +8,12 @@ package postgres
 
 import (
 	"database/sql"
-	
-	"github.com/raedahgroup/dcrextdata/cache"
+	"time"
 )
 
 type PgDb struct {
 	db *sql.DB
+	queryTimeout time.Duration
 }
 
 func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
@@ -30,8 +30,4 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 func (pg *PgDb) Close() error {
 	log.Trace("Closing postgresql connection")
 	return pg.db.Close()
-}
-
-func (pg *PgDb) RegisterCharts(charts *cache.ChartData) {
-
 }
