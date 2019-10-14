@@ -163,7 +163,7 @@ func _main(ctx context.Context) error {
 		log.Errorf("Cannot fetch mempool count, %s", err.Error())
 	}
 
-	charts := cache.NewChartData(ctx, uint32(mempoolCount), netParams(cfg.DcrdNetworkType))
+	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncSources, netParams(cfg.DcrdNetworkType))
 	db.RegisterCharts(charts)
 
 	// Pre-populate charts data using the dumped cache data in the .gob file path

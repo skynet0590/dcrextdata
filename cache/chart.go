@@ -18,7 +18,7 @@ const (
 	MempoolSize 		= "mempool-size"
 	MempoolFees			= "mempool-fees"
 	MempoolTxCount		= "mempool-tx-count"
-	BlocPropagation		= "block-propagation"
+	BlockPropagation	= "block-propagation"
 	BlockTimestamp		= "block-timestamp"
 	VotesReceiveTime	= "votes-receive-time"
 )
@@ -68,9 +68,6 @@ func ParseAxis(aType string) axisType {
 const (
 	// aDay defines the number of seconds in a day.
 	aDay = 86400
-	// HashrateAvgLength is the number of blocks used the rolling average for
-	// the network hashrate calculation.
-	HashrateAvgLength = 120
 )
 
 // cacheVersion helps detect when the cache data stored has changed its
@@ -246,7 +243,7 @@ type propagationSet struct {
 	Height           ChartUints
 	BlockPropagation map[string]ChartUints
 	Timestamp        ChartUints
-	VotesReceiveTime ChartUints
+	VotesReceiveTime ChartFloats
 }
 
 // Snip truncates the zoomSet to a provided length.
@@ -264,12 +261,16 @@ func (set *propagationSet) Snip(length int) {
 
 // Constructor for a sized zoomSet for blocks, which has has no Height slice
 // since the height is implicit for block-binned data.
-func newPropagationSet(size int) *propagationSet {
+func newPropagationSet(size int, syncSources []string) *propagationSet {
+	blockPropagation := make(map[string]ChartUints)
+	for _, source := range syncSources {
+		blockPropagation[source] = newChartUints(size)
+	}
 	return &propagationSet{
-		Height:      newChartUints(size),
-		Timestamp:  newChartUints(size),
-		VotesReceiveTime:   newChartUints(size),
-		BlockPropagation:      make(map[string]ChartUints),
+		Height:           newChartUints(size),
+		Timestamp:        newChartUints(size),
+		VotesReceiveTime: newChartFloats(size),
+		BlockPropagation: blockPropagation,
 	}
 }
 
@@ -378,7 +379,7 @@ type ChartGobject struct {
 	Time             ChartUints
 	BlockPropagation map[string]ChartUints
 	BlockTimestamp   ChartUints
-	VotesReceiveTime ChartUints
+	VotesReceiveTime ChartFloats
 
 
 	PoolSize         ChartUints
@@ -488,111 +489,24 @@ func (charts *ChartData) Lengthen() error {
 		return nil
 	}
 
-	// Make sure the database has set an equal number of blocks in each data set.
-	blocks := charts.Blocks
-	shortest, err = ValidateLengths(blocks.Height, blocks.Time,
-		blocks.PoolSize, blocks.PoolValue, blocks.BlockSize, blocks.TxCount,
-		blocks.NewAtoms, blocks.Chainwork, blocks.Fees)
+	// Make sure the database has set equal number of block propagation data set
+	propagation := charts.Propagation
+	shortest, err = ValidateLengths(propagation.Height, propagation.Timestamp, propagation.VotesReceiveTime)
 	if err != nil {
-		log.Warnf("ChartData.Lengthen: block data length mismatch detected. "+
-			"Truncating blocks length to %d", shortest)
-		blocks.Snip(shortest)
+		log.Warnf("ChartData.Lengthen: propagation data length mismatch detected. Truncating propagation to %d", shortest)
+		mempool.Snip(shortest)
 	}
 	if shortest == 0 {
-		// No blocks yet. Not an error.
+		// no propagation data yet. Not an error
 		return nil
-	}
-
-	windows := charts.Windows
-	shortest, err = ValidateLengths(windows.Time, windows.PowDiff,
-		windows.TicketPrice, windows.StakeCount, windows.MissedVotes)
-	if err != nil {
-		log.Warnf("ChartData.Lengthen: window data length mismatch detected. "+
-			"Truncating windows length to %d", shortest)
-		charts.Windows.Snip(shortest)
-	}
-	if shortest == 0 {
-		return fmt.Errorf("unexpected zero-length window data")
-	}
-
-	days := charts.Days
-
-	// Get the current first and last midnight stamps.
-	end := midnight(blocks.Time[len(blocks.Time)-1])
-	var start uint64
-	if len(days.Time) > 0 {
-		start = days.Time[len(days.Time)-1] // already truncated to midnight
-	} else {
-		// Start from the beginning.
-		// Already checked for empty blocks above.
-		start = midnight(blocks.Time[0])
-	}
-
-	// Find the index that begins new data.
-	offset := 0
-	for i, t := range blocks.Time {
-		if t > start {
-			offset = i
-			break
-		}
-	}
-
-	intervals := [][2]int{}
-	// If there is day or more worth of new data, append to the Days zoomSet by
-	// finding the first and last+1 blocks of each new day, and taking averages
-	// or sums of the blocks in the interval.
-	if end > start+aDay {
-		next := start + aDay
-		startIdx := 0
-		for i, t := range blocks.Time[offset:] {
-			if t >= next {
-				// Once passed the next midnight, prepare a day window by storing the
-				// range of indices.
-				intervals = append(intervals, [2]int{startIdx + offset, i + offset})
-				days.Time = append(days.Time, start)
-				start = next
-				next += aDay
-				startIdx = i
-				if t > end {
-					break
-				}
-			}
-		}
-		for _, interval := range intervals {
-			// For each new day, take an appropriate snapshot. Some sets use sums,
-			// some use averages, and some use the last value of the day.
-			days.Height = append(days.Height, uint64(interval[1]-1))
-			days.PoolSize = append(days.PoolSize, blocks.PoolSize.Avg(interval[0], interval[1]))
-			days.PoolValue = append(days.PoolValue, blocks.PoolValue.Avg(interval[0], interval[1]))
-			days.BlockSize = append(days.BlockSize, blocks.BlockSize.Sum(interval[0], interval[1]))
-			days.TxCount = append(days.TxCount, blocks.TxCount.Sum(interval[0], interval[1]))
-			days.NewAtoms = append(days.NewAtoms, blocks.NewAtoms.Sum(interval[0], interval[1]))
-			days.Chainwork = append(days.Chainwork, blocks.Chainwork[interval[1]])
-			days.Fees = append(days.Fees, blocks.Fees.Sum(interval[0], interval[1]))
-		}
-	}
-
-	// Check that all relevant datasets have been updated to the same length.
-	daysLen, err := ValidateLengths(days.Height, days.Time, days.PoolSize,
-		days.PoolValue, days.BlockSize, days.TxCount, days.NewAtoms,
-		days.Chainwork, days.Fees)
-	if err != nil {
-		return fmt.Errorf("day bin: %v", err)
-	} else if daysLen == 0 {
-		log.Warnf("(*ChartData).Lengthen: Zero-length day-binned data!")
 	}
 
 	charts.cacheMtx.Lock()
 	defer charts.cacheMtx.Unlock()
-	// The cacheID for day-binned data, only increment the cacheID when entries
-	// were added.
-	if len(intervals) > 0 {
-		days.cacheID++
-	}
+
 	// For mempool, blocks and windows, the cacheID is the last timestamp.
 	charts.Mempool.cacheID = mempool.Time[len(mempool.Time)-1]
-	charts.Blocks.cacheID = blocks.Time[len(blocks.Time)-1]
-	charts.Windows.cacheID = windows.Time[len(windows.Time)-1]
+	charts.Propagation.cacheID = propagation.Height[len(propagation.Height)-1]
 	return nil
 }
 
@@ -658,6 +572,11 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Mempool.TxCount = gobject.MempoolTxCount
 	charts.Mempool.Size = gobject.MempoolSize
 	charts.Mempool.Fees = gobject.MempoolFees
+	charts.Propagation.Height = gobject.Height
+	charts.Propagation.VotesReceiveTime = gobject.VotesReceiveTime
+	charts.Propagation.Timestamp = gobject.BlockTimestamp
+	charts.Propagation.BlockPropagation = gobject.BlockPropagation
+
 	charts.Blocks.Height = gobject.Height
 	charts.Blocks.Time = gobject.Time
 	charts.Blocks.PoolSize = gobject.PoolSize
@@ -731,7 +650,11 @@ func (charts *ChartData) gobject() *ChartGobject {
 		MempoolFees:    charts.Mempool.Fees,
 		MempoolSize:    charts.Mempool.Size,
 		MempoolTxCount: charts.Mempool.TxCount,
-		Height:         charts.Blocks.Height,
+		Height:         charts.Propagation.Height,
+		VotesReceiveTime: charts.Propagation.VotesReceiveTime,
+		BlockPropagation: charts.Propagation.BlockPropagation,
+		BlockTimestamp: charts.Propagation.Timestamp,
+
 		Time:           charts.Blocks.Time,
 		PoolSize:       charts.Blocks.PoolSize,
 		PoolValue:      charts.Blocks.PoolValue,
@@ -782,14 +705,14 @@ func (charts *ChartData) MempoolTime() uint64 {
 	return charts.Mempool.Time[len(charts.Mempool.Time)-1]
 }
 
-// Height is the height of the blocks data. Data is assumed to be complete and
-// without extraneous entries, which means that the (zoomSet).Height does not
-// need to be populated for (ChartData).Blocks because the height is just
-// len(Blocks.*)-1.
+// Height is the height of the propagation blocks data, which is the most recent entry
 func (charts *ChartData) Height() int32 {
 	charts.mtx.RLock()
 	defer charts.mtx.RUnlock()
-	return int32(len(charts.Blocks.Time)) - 1
+	if len(charts.Propagation.Height) == 0 {
+		return 0
+	}
+	return int32(charts.Propagation.Height[len(charts.Propagation.Height) -1])
 }
 
 // FeesTip is the height of the Fees data.
@@ -868,7 +791,7 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, height uint32, chainParams *chaincfg.Params) *ChartData {
+func NewChartData(ctx context.Context, height uint32, syncSources []string, chainParams *chaincfg.Params) *ChartData {
 	base64Height := int64(height)
 	// Allocate datasets for at least as many blocks as in a sdiff window.
 	if base64Height < chainParams.StakeDiffWindowSize {
@@ -886,6 +809,7 @@ func NewChartData(ctx context.Context, height uint32, chainParams *chaincfg.Para
 		DiffInterval: int32(chainParams.StakeDiffWindowSize),
 		StartPOS:     int32(chainParams.StakeValidationHeight),
 		Mempool:      newMempoolSet(size),
+		Propagation:  newPropagationSet(size, syncSources),
 		Blocks:       newBlockSet(size),
 		Windows:      newWindowSet(windows),
 		Days:         newDaySet(days),
@@ -947,9 +871,13 @@ func (charts *ChartData) cacheChart(chartID string, bin binLevel, axis axisType,
 type ChartMaker func(charts *ChartData, bin binLevel, axis axisType) ([]byte, error)
 
 var chartMakers = map[string]ChartMaker{
-	MempoolSize:	 mempoolSize,
-	MempoolTxCount:	 mempoolTxCount,
-	MempoolFees:	 mempoolFees,
+	MempoolSize:    mempoolSize,
+	MempoolTxCount: mempoolTxCount,
+	MempoolFees:    mempoolFees,
+
+	BlockPropagation: blockPropagation,
+	BlockTimestamp:   blockTimestamp,
+	VotesReceiveTime: votesReceiveTime,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
@@ -1079,4 +1007,16 @@ func mempoolTxCount(charts *ChartData, bin binLevel, axis axisType) ([]byte, err
 
 func mempoolFees(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
 	return charts.encode(charts.Mempool.Time, charts.Mempool.Fees)
+}
+
+func blockPropagation(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
+	panic("not implemented")
+}
+
+func blockTimestamp(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
+	return charts.encode(charts.Propagation.Height, charts.Propagation.Timestamp)
+}
+
+func votesReceiveTime(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
+	return charts.encode(charts.Propagation.Height, charts.Propagation.VotesReceiveTime)
 }
