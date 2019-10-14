@@ -1,5 +1,6 @@
 import dompurify from 'dompurify'
 import humanize from './helpers/humanize_helper'
+import { map } from 'lodash-es'
 
 const Dygraph = require('../../dist/js/dygraphs.min.js')
 
@@ -276,6 +277,28 @@ export function removeUrlParam (name) {
 export function getParameterByName (name, url) {
   const urlParams = new URLSearchParams(window.location.search)
   return urlParams.get(name)
+}
+
+export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoefficient, windowS) {
+  windowS = windowS || 1
+  yCoefficient = yCoefficient || 1
+  zCoefficient = zCoefficient || 1
+  return map(gData.x, (n, i) => {
+    let xAxisVal
+    if (isHeightAxis && isDayBinned) {
+      xAxisVal = n
+    } else if (isHeightAxis) {
+      xAxisVal = i * windowS
+    } else {
+      xAxisVal = new Date(n * 1000)
+    }
+    const data = [xAxisVal, gData.y[i] * yCoefficient]
+    if (gData.z) {
+      data.push(gData.z[i] * zCoefficient)
+    }
+
+    return data
+  })
 }
 
 export function updateZoomSelector (targets, minDate, maxDate) {

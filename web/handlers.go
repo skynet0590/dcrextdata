@@ -22,7 +22,7 @@ import (
 const (
 	chartViewOption             = "chart"
 	defaultViewOption           = chartViewOption
-	mempoolDefaultChartDataType = "size"
+	mempoolDefaultChartDataType = "mempool-size"
 	maxPageSize                 = 250
 	defaultPageSize             = 20
 	defaultInterval             = 1440 // All
