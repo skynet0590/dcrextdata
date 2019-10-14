@@ -547,25 +547,30 @@ type propagationSet struct {
 	height           []uint64
 	timestamp        []uint64
 	voteReceiveTime  []float64
-	blockPropagation map[string][]uint64
+	blockPropagation map[string][]float64
 }
 
 func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	emptyCancelFunc := func() {}
 	var propagationSet propagationSet
 
 	chartsBlockHeight := charts.Height()
 	blockReceiveTime, err := pg.fetchBlockReceiveTimeByHeight(ctx, chartsBlockHeight)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, nil, err
+		return nil, emptyCancelFunc, err
 	}
+
+	localBlockReceiveTime := make(map[uint64]time.Time)
 	for _, record := range blockReceiveTime {
 		propagationSet.height = append(propagationSet.height, uint64(record.BlockHeight))
 		propagationSet.timestamp = append(propagationSet.timestamp, uint64(record.ReceiveTime.Unix()))
+
+		localBlockReceiveTime[uint64(record.BlockHeight)] = record.ReceiveTime
 	}
 
 	votesReceiveTime, err := pg.propagationVoteChartDataByHeight(ctx, chartsBlockHeight)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, nil, err
+		return nil, emptyCancelFunc, err
 	}
 	var votesTimeDeviations = make(map[int64][]float64)
 
@@ -585,10 +590,33 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 		propagationSet.voteReceiveTime = append(propagationSet.voteReceiveTime, 0)
 	}
 
-	// todo: propagation data
-	return propagationSet, func() {
+	propagationSet.blockPropagation = make(map[string][]float64)
+	for _, source := range pg.syncSources {
+		db, err := pg.syncSourceDbProvider(source)
+		if err != nil {
+			return nil, emptyCancelFunc, err
+		}
 
-	}, nil
+		blockReceiveTime, err := db.fetchBlockReceiveTimeByHeight(ctx, chartsBlockHeight)
+		if err != nil && err != sql.ErrNoRows {
+			return nil, emptyCancelFunc, err
+		}
+
+		receiveTimeMap := make(map[uint64]time.Time)
+		for _, record := range blockReceiveTime {
+			receiveTimeMap[uint64(record.BlockHeight)] = record.ReceiveTime
+		}
+
+		for _, height := range propagationSet.height {
+			if sourceTime, found := receiveTimeMap[height]; found {
+				propagationSet.blockPropagation[source] = append(propagationSet.blockPropagation[source], localBlockReceiveTime[height].Sub(sourceTime).Seconds())
+				continue
+			}
+			propagationSet.blockPropagation[source] = append(propagationSet.blockPropagation[source], 0)
+		}
+	}
+
+	return propagationSet, emptyCancelFunc, nil
 }
 
 func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) error {
@@ -601,6 +629,10 @@ func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) erro
 	}
 	for _, voteTime := range propagationSet.voteReceiveTime {
 		charts.Propagation.VotesReceiveTime = append(charts.Propagation.VotesReceiveTime, voteTime)
+	}
+
+	for source, deviations := range propagationSet.blockPropagation {
+		charts.Propagation.BlockPropagation[source] = append(charts.Propagation.BlockPropagation[source], deviations...)
 	}
 
 	return nil

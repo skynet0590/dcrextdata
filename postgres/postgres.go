@@ -12,8 +12,10 @@ import (
 )
 
 type PgDb struct {
-	db *sql.DB
-	queryTimeout time.Duration
+	db                   *sql.DB
+	queryTimeout         time.Duration
+	syncSourceDbProvider func(source string) (*PgDb, error)
+	syncSources          []string
 }
 
 func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {

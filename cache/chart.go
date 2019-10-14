@@ -241,7 +241,7 @@ func newMempoolSet(size int) *mempoolSet {
 type propagationSet struct {
 	cacheID          uint64
 	Height           ChartUints
-	BlockPropagation map[string]ChartUints
+	BlockPropagation map[string]ChartFloats
 	Timestamp        ChartUints
 	VotesReceiveTime ChartFloats
 }
@@ -262,9 +262,9 @@ func (set *propagationSet) Snip(length int) {
 // Constructor for a sized zoomSet for blocks, which has has no Height slice
 // since the height is implicit for block-binned data.
 func newPropagationSet(size int, syncSources []string) *propagationSet {
-	blockPropagation := make(map[string]ChartUints)
+	blockPropagation := make(map[string]ChartFloats)
 	for _, source := range syncSources {
-		blockPropagation[source] = newChartUints(size)
+		blockPropagation[source] = newChartFloats(size)
 	}
 	return &propagationSet{
 		Height:           newChartUints(size),
@@ -377,7 +377,7 @@ type ChartGobject struct {
 	MempoolTxCount   ChartUints
 	Height           ChartUints
 	Time             ChartUints
-	BlockPropagation map[string]ChartUints
+	BlockPropagation map[string]ChartFloats
 	BlockTimestamp   ChartUints
 	VotesReceiveTime ChartFloats
 
@@ -428,7 +428,7 @@ type ChartData struct {
 	ctx          context.Context
 	DiffInterval int32
 	StartPOS     int32
-	Mempool		 *mempoolSet
+	Mempool      *mempoolSet
 	Propagation  *propagationSet
 	Blocks       *zoomSet
 	Windows      *windowSet
@@ -436,6 +436,7 @@ type ChartData struct {
 	cacheMtx     sync.RWMutex
 	cache        map[string]*cachedChart
 	updaters     []ChartUpdater
+	sunySource   []string
 }
 
 // Check that the length of all arguments is equal.
@@ -815,6 +816,7 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, chai
 		Days:         newDaySet(days),
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
+		sunySource:   syncSources,
 	}
 }
 
@@ -935,6 +937,33 @@ func (charts *ChartData) encode(sets ...lengther) ([]byte, error) {
 	return json.Marshal(response)
 }
 
+// Encode the slices. The set lengths are truncated to the smallest of the
+// arguments.
+func (charts *ChartData) encodeArr(sets []lengther) ([]byte, error) {
+	if len(sets) == 0 {
+		return nil, fmt.Errorf("encode called without arguments")
+	}
+	smaller := sets[0].Length()
+	for _, x := range sets {
+		l := x.Length()
+		if l < smaller {
+			smaller = l
+		}
+	}
+	response := make(chartResponse)
+	for i := range sets {
+		rk := responseKeys[i%len(responseKeys)]
+		// If the length of the responseKeys array has been exceeded, add a integer
+		// suffix to the response key. The key progression is x, y, z, x1, y1, z1,
+		// x2, ...
+		if i >= len(responseKeys) {
+			rk += strconv.Itoa(i / len(responseKeys))
+		}
+		response[rk] = sets[i].Truncate(smaller)
+	}
+	return json.Marshal(response)
+}
+
 // Each point is translated to the sum of all points before and itself.
 func accumulate(data ChartUints) ChartUints {
 	d := make(ChartUints, 0, len(data))
@@ -1010,7 +1039,12 @@ func mempoolFees(charts *ChartData, bin binLevel, axis axisType) ([]byte, error)
 }
 
 func blockPropagation(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	panic("not implemented")
+	var deviations = []lengther{charts.Propagation.Height}
+	for _, source := range charts.sunySource {
+		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
+	}
+
+	return charts.encodeArr(deviations)
 }
 
 func blockTimestamp(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
