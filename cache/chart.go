@@ -15,9 +15,12 @@ import (
 
 // Keys for specifying chart data type.
 const (
-	MempoolSize 	= "mempool-size"
-	MempoolFees		= "mempool-fees"
-	MempoolTxCount	= "mempool-tx-count"
+	MempoolSize 		= "mempool-size"
+	MempoolFees			= "mempool-fees"
+	MempoolTxCount		= "mempool-tx-count"
+	BlocPropagation		= "block-propagation"
+	BlockTimestamp		= "block-timestamp"
+	VotesReceiveTime	= "votes-receive-time"
 )
 
 // binLevel specifies the granularity of data.
@@ -237,6 +240,39 @@ func newMempoolSet(size int) *mempoolSet {
 	}
 }
 
+// propagationSet is a set of propagation data
+type propagationSet struct {
+	cacheID          uint64
+	Height           ChartUints
+	BlockPropagation map[string]ChartUints
+	Timestamp        ChartUints
+	VotesReceiveTime ChartUints
+}
+
+// Snip truncates the zoomSet to a provided length.
+func (set *propagationSet) Snip(length int) {
+	if length < 0 {
+		length = 0
+	}
+	set.Height = set.Height.snip(length)
+	for source, records := range set.BlockPropagation {
+		set.BlockPropagation[source] = records.snip(length)
+	}
+	set.Timestamp = set.Timestamp.snip(length)
+	set.VotesReceiveTime = set.VotesReceiveTime.snip(length)
+}
+
+// Constructor for a sized zoomSet for blocks, which has has no Height slice
+// since the height is implicit for block-binned data.
+func newPropagationSet(size int) *propagationSet {
+	return &propagationSet{
+		Height:      newChartUints(size),
+		Timestamp:  newChartUints(size),
+		VotesReceiveTime:   newChartUints(size),
+		BlockPropagation:      make(map[string]ChartUints),
+	}
+}
+
 // zoomSet is a set of binned data. The smallest bin is block-sized. The zoomSet
 // is managed by explorer, and subsequently the database packages. ChartData
 // provides methods for validating the data and handling concurrency. The
@@ -334,24 +370,29 @@ func newWindowSet(size int) *windowSet {
 // has a lot of extraneous fields, and also embeds sync.RWMutex, so is not
 // suitable for gobbing.
 type ChartGobject struct {
-	MempoolTime    ChartUints
-	MempoolSize    ChartUints
-	MempoolFees    ChartFloats
-	MempoolTxCount ChartUints
-	Height         ChartUints
-	Time           ChartUints
-	PoolSize       ChartUints
-	PoolValue      ChartFloats
-	BlockSize      ChartUints
-	TxCount        ChartUints
-	NewAtoms       ChartUints
-	Chainwork      ChartUints
-	Fees           ChartUints
-	WindowTime     ChartUints
-	PowDiff        ChartFloats
-	TicketPrice    ChartUints
-	StakeCount     ChartUints
-	MissedVotes    ChartUints
+	MempoolTime      ChartUints
+	MempoolSize      ChartUints
+	MempoolFees      ChartFloats
+	MempoolTxCount   ChartUints
+	Height           ChartUints
+	Time             ChartUints
+	BlockPropagation map[string]ChartUints
+	BlockTimestamp   ChartUints
+	VotesReceiveTime ChartUints
+
+
+	PoolSize         ChartUints
+	PoolValue        ChartFloats
+	BlockSize        ChartUints
+	TxCount          ChartUints
+	NewAtoms         ChartUints
+	Chainwork        ChartUints
+	Fees             ChartUints
+	WindowTime       ChartUints
+	PowDiff          ChartFloats
+	TicketPrice      ChartUints
+	StakeCount       ChartUints
+	MissedVotes      ChartUints
 }
 
 // The chart data is cached with the current cacheID of the zoomSet or windowSet.
@@ -387,6 +428,7 @@ type ChartData struct {
 	DiffInterval int32
 	StartPOS     int32
 	Mempool		 *mempoolSet
+	Propagation  *propagationSet
 	Blocks       *zoomSet
 	Windows      *windowSet
 	Days         *zoomSet

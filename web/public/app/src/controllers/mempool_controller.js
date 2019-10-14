@@ -292,6 +292,7 @@ export default class extends Controller {
           labelsDiv: _this.labelsTarget,
           ylabel: _this.title,
           xlabel: 'Date',
+          labels: ['Date', _this.title],
           labelsUTC: true,
           labelsKMB: true,
           maxNumberWidth: 10,
