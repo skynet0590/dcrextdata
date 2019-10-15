@@ -70,6 +70,7 @@
 
                             <ul class="nav nav-pills {{ if eq .propagation.selectedViewOption "chart"}} d-none {{ end }}"
                                 data-target="propagation.chartTypesWrapper"
+                                data-sync-sources="{{ .propagation.syncSources }}"
                                 data-initial-value="{{ .propagation.chartType }}">
                                 <li class="nav-item">
                                     <a
@@ -77,7 +78,7 @@
                                             data-action="click->propagation#changeChartType"
                                             class="nav-link active"
                                             href="javascript:void(0);"
-                                            data-option="propagation">Block Propagation</a>
+                                            data-option="block-propagation">Block Propagation</a>
                                 </li>
                                 <li class="nav-item">
                                     <a
@@ -85,7 +86,7 @@
                                             data-action="click->propagation#changeChartType"
                                             class="nav-link"
                                             href="javascript:void(0);"
-                                            data-option="blocks">Block Timestamp</a>
+                                            data-option="block-timestamp">Block Timestamp</a>
                                 </li>
                                 <li class="nav-item">
                                     <a
@@ -93,7 +94,7 @@
                                             data-action="click->propagation#changeChartType"
                                             class="nav-link"
                                             href="javascript:void(0);"
-                                            data-option="votes">Votes Receive Time</a>
+                                            data-option="votes-receive-time">Votes Receive Time</a>
                                 </li>
                             </ul>
                         </div>

@@ -981,7 +981,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	}
 
 	if chartType == "" {
-		chartType = "propagation"
+		chartType = "block-propagation"
 	}
 
 	var pageSize int
@@ -1003,6 +1003,8 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	ctx := req.Context()
 
+	syncSources, _ := datasync.RegisteredSources()
+
 	data := map[string]interface{}{
 		"chartView":            viewOption == "chart",
 		"selectedViewOption":   viewOption,
@@ -1016,6 +1018,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		"url":                  "/propagation",
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           0,
+		"syncSources":			strings.Join(syncSources, "|"),
 	}
 
 	if viewOption == defaultViewOption {
@@ -1046,33 +1049,6 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	}
 
 	return data, nil
-}
-
-// /blocksChartData
-func (s *Server) blocksChartData(res http.ResponseWriter, req *http.Request) {
-	data, err := s.db.PropagationBlockChartData(req.Context())
-
-	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
-		return
-	}
-
-	var avgTimeForHeight = map[int64]float64{}
-	var heightArr []int64
-	for _, record := range data {
-		avgTimeForHeight[record.BlockHeight] = record.TimeDifference
-		heightArr = append(heightArr, record.BlockHeight)
-	}
-
-	var yLabel = "Delay (s)"
-
-	var csv = fmt.Sprintf("Height,%s\n", yLabel)
-	for _, height := range heightArr {
-		timeDifference := fmt.Sprintf("%04.2f", avgTimeForHeight[height])
-		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
-	}
-
-	s.renderJSON(csv, res)
 }
 
 // /votesChartDate

@@ -288,7 +288,7 @@ export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoe
     if (isHeightAxis && isDayBinned) {
       xAxisVal = n
     } else if (isHeightAxis) {
-      xAxisVal = i * windowS
+      xAxisVal = n * windowS
     } else {
       xAxisVal = new Date(n * 1000)
     }

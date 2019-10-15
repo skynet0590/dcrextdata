@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData
 } from '../utils'
 import dompurify from 'dompurify'
 
@@ -16,6 +16,7 @@ const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
   chartType
+  syncSources
 
   static get targets () {
     return [
@@ -37,6 +38,11 @@ export default class extends Controller {
     this.selectedViewOption = this.viewOptionControlTarget.dataset.initialValue
     this.selectedRecordSet = this.tableRecordSetOptionsTarget.dataset.initialValue
     this.chartType = this.chartTypesWrapperTarget.dataset.initialValue
+
+    const syncSources = this.chartTypesWrapperTarget.dataset.syncSources
+    if (syncSources) {
+      this.syncSources = syncSources.split('|')
+    }
 
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionControlTargets)
 
@@ -374,8 +380,8 @@ export default class extends Controller {
       default:
         this.fetchChartExtDataAndPlot()
         break
-      case 'blocks':
-      case 'votes':
+      case 'block-timestamp':
+      case 'votes-receive-time':
         this.fetchChartDataAndPlot()
         break
     }
@@ -386,7 +392,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/${this.chartType}chartdata`).then(function (response) {
+    axios.get(`/api/charts/${this.chartType}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
     }).catch(function (e) {
@@ -400,7 +406,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get('/propagationchartdata?record-set=' + this.selectedRecordSet).then(function (response) {
+    axios.get(`/api/charts/${this.chartType}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (response.data.error !== undefined) {
         _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${response.data.error}</p>`
@@ -417,36 +423,45 @@ export default class extends Controller {
     })
   }
 
-  plotGraph (csv) {
+  plotGraph (data) {
     const _this = this
 
-    let yLabel = this.selectedRecordSet === 'votes' ? 'Time Difference (Milliseconds)' : 'Delay (s)'
+    let yLabel = this.chartType === 'votes-receive-time' ? 'Time Difference (Milliseconds)' : 'Delay (s)'
     let options = {
       legend: 'always',
       includeZero: true,
-      legendFormatter: _this.legendFormatter,
+      legendFormatter: _this.propagationLegendFormatter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
       xlabel: 'Height',
+      labels: ['Height', yLabel],
       labelsKMB: true,
       drawPoints: true,
       strokeWidth: 0.0,
       showRangeSelector: true
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, csv, options)
+    const chartData = zipXYZData(data, true)
+
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
   }
 
-  plotExtDataGraph (chartData) {
+  plotExtDataGraph (data) {
     const _this = this
 
+    const labels = ['Height']
+    this.syncSources.forEach(source => {
+      labels.push(source)
+    })
+    console.log(labels)
     let options = {
       legend: 'always',
       includeZero: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
-      ylabel: chartData.yLabel,
+      ylabel: 'Block Time Variance (seconds)',
       xlabel: 'Height',
+      labels: labels,
       labelsKMB: true,
       drawPoints: true,
       strokeWidth: 0.0,
@@ -458,7 +473,10 @@ export default class extends Controller {
       }
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData.csv, options)
+    const chartData = zipXYZData(data, true)
+
+    console.log(chartData)
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
   }
 
   propagationLegendFormatter (data) {

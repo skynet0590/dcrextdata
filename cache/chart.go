@@ -239,11 +239,11 @@ func newMempoolSet(size int) *mempoolSet {
 
 // propagationSet is a set of propagation data
 type propagationSet struct {
-	cacheID          uint64
-	Height           ChartUints
-	BlockPropagation map[string]ChartFloats
-	Timestamp        ChartUints
-	VotesReceiveTime ChartFloats
+	cacheID                    uint64
+	Height                     ChartUints
+	BlockPropagation           map[string]ChartFloats
+	BlockDelays                ChartFloats
+	VotesReceiveTimeDeviations ChartFloats
 }
 
 // Snip truncates the zoomSet to a provided length.
@@ -255,8 +255,8 @@ func (set *propagationSet) Snip(length int) {
 	for source, records := range set.BlockPropagation {
 		set.BlockPropagation[source] = records.snip(length)
 	}
-	set.Timestamp = set.Timestamp.snip(length)
-	set.VotesReceiveTime = set.VotesReceiveTime.snip(length)
+	set.BlockDelays = set.BlockDelays.snip(length)
+	set.VotesReceiveTimeDeviations = set.VotesReceiveTimeDeviations.snip(length)
 }
 
 // Constructor for a sized zoomSet for blocks, which has has no Height slice
@@ -267,10 +267,10 @@ func newPropagationSet(size int, syncSources []string) *propagationSet {
 		blockPropagation[source] = newChartFloats(size)
 	}
 	return &propagationSet{
-		Height:           newChartUints(size),
-		Timestamp:        newChartUints(size),
-		VotesReceiveTime: newChartFloats(size),
-		BlockPropagation: blockPropagation,
+		Height:                     newChartUints(size),
+		BlockDelays:                newChartFloats(size),
+		VotesReceiveTimeDeviations: newChartFloats(size),
+		BlockPropagation:           blockPropagation,
 	}
 }
 
@@ -378,7 +378,7 @@ type ChartGobject struct {
 	Height           ChartUints
 	Time             ChartUints
 	BlockPropagation map[string]ChartFloats
-	BlockTimestamp   ChartUints
+	ChartDelays      ChartFloats
 	VotesReceiveTime ChartFloats
 
 
@@ -492,7 +492,7 @@ func (charts *ChartData) Lengthen() error {
 
 	// Make sure the database has set equal number of block propagation data set
 	propagation := charts.Propagation
-	shortest, err = ValidateLengths(propagation.Height, propagation.Timestamp, propagation.VotesReceiveTime)
+	shortest, err = ValidateLengths(propagation.Height, propagation.BlockDelays, propagation.VotesReceiveTimeDeviations)
 	if err != nil {
 		log.Warnf("ChartData.Lengthen: propagation data length mismatch detected. Truncating propagation to %d", shortest)
 		mempool.Snip(shortest)
@@ -574,8 +574,8 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Mempool.Size = gobject.MempoolSize
 	charts.Mempool.Fees = gobject.MempoolFees
 	charts.Propagation.Height = gobject.Height
-	charts.Propagation.VotesReceiveTime = gobject.VotesReceiveTime
-	charts.Propagation.Timestamp = gobject.BlockTimestamp
+	charts.Propagation.VotesReceiveTimeDeviations = gobject.VotesReceiveTime
+	charts.Propagation.BlockDelays = gobject.ChartDelays
 	charts.Propagation.BlockPropagation = gobject.BlockPropagation
 
 	charts.Blocks.Height = gobject.Height
@@ -647,14 +647,14 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 
 func (charts *ChartData) gobject() *ChartGobject {
 	return &ChartGobject{
-		MempoolTime:    charts.Mempool.Time,
-		MempoolFees:    charts.Mempool.Fees,
-		MempoolSize:    charts.Mempool.Size,
-		MempoolTxCount: charts.Mempool.TxCount,
-		Height:         charts.Propagation.Height,
-		VotesReceiveTime: charts.Propagation.VotesReceiveTime,
+		MempoolTime:      charts.Mempool.Time,
+		MempoolFees:      charts.Mempool.Fees,
+		MempoolSize:      charts.Mempool.Size,
+		MempoolTxCount:   charts.Mempool.TxCount,
+		Height:           charts.Propagation.Height,
+		VotesReceiveTime: charts.Propagation.VotesReceiveTimeDeviations,
 		BlockPropagation: charts.Propagation.BlockPropagation,
-		BlockTimestamp: charts.Propagation.Timestamp,
+		ChartDelays:      charts.Propagation.BlockDelays,
 
 		Time:           charts.Blocks.Time,
 		PoolSize:       charts.Blocks.PoolSize,
@@ -1048,9 +1048,9 @@ func blockPropagation(charts *ChartData, bin binLevel, axis axisType) ([]byte, e
 }
 
 func blockTimestamp(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Propagation.Height, charts.Propagation.Timestamp)
+	return charts.encode(charts.Propagation.Height, charts.Propagation.BlockDelays)
 }
 
 func votesReceiveTime(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Propagation.Height, charts.Propagation.VotesReceiveTime)
+	return charts.encode(charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
 }
