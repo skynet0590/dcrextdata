@@ -51,18 +51,14 @@ type DataQuery interface {
 	GetPowDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
-	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
-	MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error)
+	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Dto, error)
 
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
-	BlockHeights(ctx context.Context) ([]int64, error)
 	BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
 	VotesCount(ctx context.Context) (int64, error)
-	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
-	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
 	RedditStats(ctx context.Context, subreddit string, offset int, limit int) ([]commstats.Reddit, error)
@@ -166,12 +162,9 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/filteredpow", s.getFilteredPowData)
 	r.Get("/powchart", s.getPowChartData)
 	r.Get("/mempool", s.mempoolPage)
-	r.Get("/mempoolcharts", s.getMempoolChartData)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
-	r.Get("/voteschartdata", s.votesChartDate)
-	r.Get("/propagationchartdata", s.propagationChartData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)

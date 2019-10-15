@@ -84,14 +84,14 @@ func (pg *PgDb) MempoolCount(ctx context.Context) (int64, error) {
 	return models.Mempools().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error) {
+func (pg *PgDb) Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Dto, error) {
 	mempoolSlice, err := models.Mempools(qm.OrderBy("time DESC"), qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
-	var result []mempool.MempoolDto
+	var result []mempool.Dto
 	for _, m := range mempoolSlice {
-		result = append(result, mempool.MempoolDto{
+		result = append(result, mempool.Dto{
 			TotalFee:             m.TotalFee.Float64,
 			FirstSeenTime:        m.FirstSeenTime.Time.Format(dateTemplate),
 			Total:                m.Total.Float64,
@@ -130,16 +130,6 @@ func (pg *PgDb) FetchMempoolForSync(ctx context.Context, date time.Time, offtset
 	totalCount, err := models.Mempools(models.MempoolWhere.Time.GTE(date)).Count(ctx, pg.db)
 
 	return result, totalCount, nil
-}
-
-func (pg *PgDb) MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error) {
-	mempoolChartSlice, err := models.Mempools(qm.Select(fmt.Sprintf("%s, time", chartFilter)), qm.OrderBy("time")).All(ctx, pg.db)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-
-	return mempoolChartSlice, nil
 }
 
 func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
@@ -222,22 +212,6 @@ func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.Bl
 	}
 
 	return blocks, nil
-}
-
-func (pg *PgDb) BlockHeights(ctx context.Context) ([]int64, error) {
-	blockSlice, err := models.Blocks(qm.Select(models.BlockColumns.Height), qm.OrderBy(models.BlockColumns.Height)).All(ctx, pg.db)
-	if err != nil {
-		return nil, err
-	}
-
-	var blockHeights []int64
-
-	for _, block := range blockSlice {
-
-		blockHeights = append(blockHeights, int64(block.Height))
-	}
-
-	return blockHeights, nil
 }
 
 func (pg *PgDb) BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
@@ -426,23 +400,6 @@ func (pg *PgDb) FetchVoteForSync(ctx context.Context, date time.Time, offtset in
 	return result, totalCount, nil
 }
 
-func (pg *PgDb) PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error) {
-	voteSlice, err := models.Votes(qm.OrderBy(models.VoteColumns.VotingOn)).All(ctx, pg.db)
-	if err != nil {
-		return nil, err
-	}
-
-	var chartData []mempool.PropagationChartData
-	for _, vote := range voteSlice {
-		blockReceiveTimeDiff := vote.ReceiveTime.Time.Sub(vote.BlockReceiveTime.Time).Seconds()
-		chartData = append(chartData, mempool.PropagationChartData{
-			BlockHeight: vote.VotingOn.Int64, TimeDifference: blockReceiveTimeDiff,
-		})
-	}
-
-	return chartData, nil
-}
-
 func (pg *PgDb) propagationVoteChartDataByHeight(ctx context.Context, height int32) ([]mempool.PropagationChartData, error) {
 	voteSlice, err := models.Votes(
 		models.VoteWhere.VotingOn.GT(null.Int64From(int64(height))),
@@ -475,23 +432,6 @@ func (pg *PgDb) propagationBlockChartData(ctx context.Context, height int) ([]me
 		blockReceiveTimeDiff := block.ReceiveTime.Time.Sub(block.InternalTimestamp.Time).Seconds()
 		chartData = append(chartData, mempool.PropagationChartData{
 			BlockHeight: int64(block.Height), TimeDifference: blockReceiveTimeDiff,
-		})
-	}
-
-	return chartData, nil
-}
-
-func (pg *PgDb) FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error) {
-	blockSlice, err := models.Blocks(qm.Select(models.BlockColumns.Height, models.BlockColumns.ReceiveTime),
-		qm.OrderBy(models.BlockColumns.Height)).All(ctx, pg.db)
-	if err != nil {
-		return nil, err
-	}
-
-	var chartData []mempool.BlockReceiveTime
-	for _, block := range blockSlice {
-		chartData = append(chartData, mempool.BlockReceiveTime{
-			BlockHeight: int64(block.Height), ReceiveTime: block.ReceiveTime.Time,
 		})
 	}
 
