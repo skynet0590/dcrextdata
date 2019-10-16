@@ -103,7 +103,7 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 	firstTime := ticks[0].Time
 	added := 0
 	for _, tick := range ticks {
-		// if tick.Time.Unix() <= lastTime.Unix() {
+		// if tick.PropagationTime.Unix() <= lastTime.Unix() {
 		// 	continue
 		// }
 		xcTick := tickToExchangeTick(exchange.ID, pair, interval, tick)

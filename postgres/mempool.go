@@ -156,7 +156,7 @@ func (pg *PgDb) SaveBlock(ctx context.Context, block mempool.Block) error {
 		}
 	}
 
-	log.Infof("New block received at %s, Height: %d, Hash: ...%s",
+	log.Infof("New block received at %s, PropagationHeight: %d, Hash: ...%s",
 		block.BlockReceiveTime.Format(dateMiliTemplate), block.BlockHeight, block.BlockHash[len(block.BlockHash)-23:])
 	return nil
 }

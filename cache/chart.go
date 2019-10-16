@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,9 +20,12 @@ const (
 	MempoolSize 		= "mempool-size"
 	MempoolFees			= "mempool-fees"
 	MempoolTxCount		= "mempool-tx-count"
+
 	BlockPropagation	= "block-propagation"
 	BlockTimestamp		= "block-timestamp"
 	VotesReceiveTime	= "votes-receive-time"
+
+	PowChart = "pow"
 )
 
 // binLevel specifies the granularity of data.
@@ -37,6 +42,8 @@ const (
 	WindowBin  binLevel = "window"
 	HeightAxis axisType = "height"
 	TimeAxis   axisType = "time"
+	HashrateAxis axisType = "hashrate"
+	WorkerAxis	axisType = "workers"
 )
 
 // DefaultBinLevel will be used if a bin level is not specified to
@@ -57,9 +64,14 @@ func ParseBin(bin string) binLevel {
 
 // ParseAxis returns the matching axis type, else the default of time axis.
 func ParseAxis(aType string) axisType {
+	aType = strings.ToLower(aType)
 	switch axisType(aType) {
 	case HeightAxis:
 		return HeightAxis
+	case HashrateAxis:
+		return HashrateAxis
+	case WorkerAxis:
+		return WorkerAxis
 	default:
 		return TimeAxis
 	}
@@ -201,6 +213,28 @@ func (data ChartUints) Sum(s, e int) (sum uint64) {
 	return
 }
 
+func margeChartUints(data ...ChartUints) ChartUints {
+	var allRecords ChartUints
+	for _, record := range data {
+		allRecords = append(allRecords, record...)
+	}
+
+	sort.Slice(allRecords, func(i, j int) bool {
+		return allRecords[j] > allRecords[i]
+	})
+
+	var keys = map[uint64]bool{}
+	var result ChartUints
+	for _, record := range allRecords {
+		if _, found := keys[record]; !found {
+			keys[record] = true
+			result = append(result, record)
+		}
+	}
+
+	return result
+}
+
 // A constructor for a sized ChartFloats.
 func newChartUints(size int) ChartUints {
 	return make(ChartUints, 0, size)
@@ -226,7 +260,7 @@ func (set *mempoolSet) Snip(length int) {
 	set.TxCount = set.TxCount.snip(length)
 }
 
-// Constructor for a sized zoomSet for blocks, which has has no Height slice
+// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
 func newMempoolSet(size int) *mempoolSet {
 	return &mempoolSet{
@@ -259,7 +293,7 @@ func (set *propagationSet) Snip(length int) {
 	set.VotesReceiveTimeDeviations = set.VotesReceiveTimeDeviations.snip(length)
 }
 
-// Constructor for a sized zoomSet for blocks, which has has no Height slice
+// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
 func newPropagationSet(size int, syncSources []string) *propagationSet {
 	blockPropagation := make(map[string]ChartFloats)
@@ -271,6 +305,56 @@ func newPropagationSet(size int, syncSources []string) *propagationSet {
 		BlockDelays:                newChartFloats(size),
 		VotesReceiveTimeDeviations: newChartFloats(size),
 		BlockPropagation:           blockPropagation,
+	}
+}
+
+// powSet is a set of powChart data
+type powSet struct {
+	Time     map[string]ChartUints
+	Hashrate map[string]ChartUints
+	Workers  map[string]ChartUints
+}
+
+// Snip truncates the zoomSet to a provided length.
+func (set *powSet) Snip(length int) {
+	if length < 0 {
+		length = 0
+	}
+
+	for pool, records := range set.Time {
+		set.Time[pool] = records.snip(length)
+	}
+	for pool, records := range set.Hashrate {
+		set.Hashrate[pool] = records.snip(length)
+	}
+
+	for pool, records := range set.Workers {
+		set.Workers[pool] = records.snip(length)
+	}
+}
+
+// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
+// since the height is implicit for block-binned data.
+func newPowSet(pools []string, size int) *powSet {
+	timeSet := make(map[string]ChartUints)
+	for _, pool := range pools {
+		timeSet[pool] = newChartUints(size)
+	}
+
+	hashrate := make(map[string]ChartUints)
+	for _, pool := range pools {
+		hashrate[pool] = newChartUints(size)
+	}
+
+	workers := make(map[string]ChartUints)
+	for _, pool := range pools {
+		workers[pool] = newChartUints(size)
+	}
+
+	return &powSet{
+		Time:     timeSet,
+		Hashrate: hashrate,
+		Workers:  workers,
 	}
 }
 
@@ -308,7 +392,7 @@ func (set *zoomSet) Snip(length int) {
 	set.Fees = set.Fees.snip(length)
 }
 
-// Constructor for a sized zoomSet for blocks, which has has no Height slice
+// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
 func newBlockSet(size int) *zoomSet {
 	return &zoomSet{
@@ -371,15 +455,19 @@ func newWindowSet(size int) *windowSet {
 // has a lot of extraneous fields, and also embeds sync.RWMutex, so is not
 // suitable for gobbing.
 type ChartGobject struct {
-	MempoolTime      ChartUints
-	MempoolSize      ChartUints
-	MempoolFees      ChartFloats
-	MempoolTxCount   ChartUints
-	Height           ChartUints
-	Time             ChartUints
-	BlockPropagation map[string]ChartFloats
-	ChartDelays      ChartFloats
-	VotesReceiveTime ChartFloats
+	MempoolTime       ChartUints
+	MempoolSize       ChartUints
+	MempoolFees       ChartFloats
+	MempoolTxCount    ChartUints
+	PropagationHeight ChartUints
+	PropagationTime   ChartUints
+	BlockPropagation  map[string]ChartFloats
+	ChartDelays       ChartFloats
+	VotesReceiveTime  ChartFloats
+	PowTime			  map[string]ChartUints
+	PowHashrate		  map[string]ChartUints
+	PowWorkers		  map[string]ChartUints
+
 
 
 	PoolSize         ChartUints
@@ -430,13 +518,14 @@ type ChartData struct {
 	StartPOS     int32
 	Mempool      *mempoolSet
 	Propagation  *propagationSet
+	Pow          *powSet
 	Blocks       *zoomSet
 	Windows      *windowSet
 	Days         *zoomSet
 	cacheMtx     sync.RWMutex
 	cache        map[string]*cachedChart
 	updaters     []ChartUpdater
-	sunySource   []string
+	syncSource   []string
 }
 
 // Check that the length of all arguments is equal.
@@ -573,13 +662,18 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Mempool.TxCount = gobject.MempoolTxCount
 	charts.Mempool.Size = gobject.MempoolSize
 	charts.Mempool.Fees = gobject.MempoolFees
-	charts.Propagation.Height = gobject.Height
+
+	charts.Propagation.Height = gobject.PropagationHeight
 	charts.Propagation.VotesReceiveTimeDeviations = gobject.VotesReceiveTime
 	charts.Propagation.BlockDelays = gobject.ChartDelays
 	charts.Propagation.BlockPropagation = gobject.BlockPropagation
 
-	charts.Blocks.Height = gobject.Height
-	charts.Blocks.Time = gobject.Time
+	charts.Pow.Time = gobject.PowTime
+	charts.Pow.Hashrate = gobject.PowHashrate
+	charts.Pow.Workers = gobject.PowWorkers
+
+	charts.Blocks.Height = gobject.PropagationHeight
+	charts.Blocks.Time = gobject.PropagationTime
 	charts.Blocks.PoolSize = gobject.PoolSize
 	charts.Blocks.PoolValue = gobject.PoolValue
 	charts.Blocks.BlockSize = gobject.BlockSize
@@ -647,28 +741,28 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 
 func (charts *ChartData) gobject() *ChartGobject {
 	return &ChartGobject{
-		MempoolTime:      charts.Mempool.Time,
-		MempoolFees:      charts.Mempool.Fees,
-		MempoolSize:      charts.Mempool.Size,
-		MempoolTxCount:   charts.Mempool.TxCount,
-		Height:           charts.Propagation.Height,
-		VotesReceiveTime: charts.Propagation.VotesReceiveTimeDeviations,
-		BlockPropagation: charts.Propagation.BlockPropagation,
-		ChartDelays:      charts.Propagation.BlockDelays,
+		MempoolTime:       charts.Mempool.Time,
+		MempoolFees:       charts.Mempool.Fees,
+		MempoolSize:       charts.Mempool.Size,
+		MempoolTxCount:    charts.Mempool.TxCount,
+		PropagationHeight: charts.Propagation.Height,
+		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
+		BlockPropagation:  charts.Propagation.BlockPropagation,
+		ChartDelays:       charts.Propagation.BlockDelays,
 
-		Time:           charts.Blocks.Time,
-		PoolSize:       charts.Blocks.PoolSize,
-		PoolValue:      charts.Blocks.PoolValue,
-		BlockSize:      charts.Blocks.BlockSize,
-		TxCount:        charts.Blocks.TxCount,
-		NewAtoms:       charts.Blocks.NewAtoms,
-		Chainwork:      charts.Blocks.Chainwork,
-		Fees:           charts.Blocks.Fees,
-		WindowTime:     charts.Windows.Time,
-		PowDiff:        charts.Windows.PowDiff,
-		TicketPrice:    charts.Windows.TicketPrice,
-		StakeCount:     charts.Windows.StakeCount,
-		MissedVotes:    charts.Windows.MissedVotes,
+		PropagationTime: charts.Blocks.Time,
+		PoolSize:        charts.Blocks.PoolSize,
+		PoolValue:       charts.Blocks.PoolValue,
+		BlockSize:       charts.Blocks.BlockSize,
+		TxCount:         charts.Blocks.TxCount,
+		NewAtoms:        charts.Blocks.NewAtoms,
+		Chainwork:       charts.Blocks.Chainwork,
+		Fees:            charts.Blocks.Fees,
+		WindowTime:      charts.Windows.Time,
+		PowDiff:         charts.Windows.PowDiff,
+		TicketPrice:     charts.Windows.TicketPrice,
+		StakeCount:      charts.Windows.StakeCount,
+		MissedVotes:     charts.Windows.MissedVotes,
 	}
 }
 
@@ -706,7 +800,7 @@ func (charts *ChartData) MempoolTime() uint64 {
 	return charts.Mempool.Time[len(charts.Mempool.Time)-1]
 }
 
-// Height is the height of the propagation blocks data, which is the most recent entry
+// PropagationHeight is the height of the propagation blocks data, which is the most recent entry
 func (charts *ChartData) Height() int32 {
 	charts.mtx.RLock()
 	defer charts.mtx.RUnlock()
@@ -714,6 +808,16 @@ func (charts *ChartData) Height() int32 {
 		return 0
 	}
 	return int32(charts.Propagation.Height[len(charts.Propagation.Height) -1])
+}
+
+// PowTime is the time of the latest PoW data appended to the chart
+func (charts *ChartData) PowTime(pool string) uint64 {
+	charts.mtx.RLock()
+	defer charts.mtx.RUnlock()
+	if len(charts.Pow.Time[pool]) == 0 {
+		return 0
+	}
+	return charts.Pow.Time[pool][len(charts.Pow.Time[pool])-1]
 }
 
 // FeesTip is the height of the Fees data.
@@ -792,7 +896,7 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, height uint32, syncSources []string, chainParams *chaincfg.Params) *ChartData {
+func NewChartData(ctx context.Context, height uint32, syncSources []string, poolSources []string, chainParams *chaincfg.Params) *ChartData {
 	base64Height := int64(height)
 	// Allocate datasets for at least as many blocks as in a sdiff window.
 	if base64Height < chainParams.StakeDiffWindowSize {
@@ -811,12 +915,13 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, chai
 		StartPOS:     int32(chainParams.StakeValidationHeight),
 		Mempool:      newMempoolSet(size),
 		Propagation:  newPropagationSet(size, syncSources),
+		Pow:          newPowSet(poolSources, size),
 		Blocks:       newBlockSet(size),
 		Windows:      newWindowSet(windows),
 		Days:         newDaySet(days),
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
-		sunySource:   syncSources,
+		syncSource:   syncSources,
 	}
 }
 
@@ -870,7 +975,7 @@ func (charts *ChartData) cacheChart(chartID string, bin binLevel, axis axisType,
 
 // ChartMaker is a function that accepts a chart type and BinLevel, and returns
 // a JSON-encoded chartResponse.
-type ChartMaker func(charts *ChartData, bin binLevel, axis axisType) ([]byte, error)
+type ChartMaker func(charts *ChartData, bin binLevel, axis axisType, sources ...string) ([]byte, error)
 
 var chartMakers = map[string]ChartMaker{
 	MempoolSize:    mempoolSize,
@@ -880,11 +985,13 @@ var chartMakers = map[string]ChartMaker{
 	BlockPropagation: blockPropagation,
 	BlockTimestamp:   blockTimestamp,
 	VotesReceiveTime: votesReceiveTime,
+
+	PowChart: powChart,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
-func (charts *ChartData) Chart(chartID, binString, axisString string) ([]byte, error) {
+func (charts *ChartData) Chart(chartID, binString, axisString string, sources ...string) ([]byte, error) {
 	bin := ParseBin(binString)
 	axis := ParseAxis(axisString)
 	cache, found, cacheID := charts.getCache(chartID, bin, axis)
@@ -898,7 +1005,7 @@ func (charts *ChartData) Chart(chartID, binString, axisString string) ([]byte, e
 	// Do the locking here, rather than in encodeXY, so that the helper functions
 	// (accumulate, btw) are run under lock.
 	charts.mtx.RLock()
-	data, err := maker(charts, bin, axis)
+	data, err := maker(charts, bin, axis, sources...)
 	charts.mtx.RUnlock()
 	if err != nil {
 		return nil, err
@@ -912,34 +1019,16 @@ var responseKeys = []string{"x", "y", "z"}
 
 // Encode the slices. The set lengths are truncated to the smallest of the
 // arguments.
-func (charts *ChartData) encode(sets ...lengther) ([]byte, error) {
-	if len(sets) == 0 {
-		return nil, fmt.Errorf("encode called without arguments")
-	}
-	smaller := sets[0].Length()
-	for _, x := range sets {
-		l := x.Length()
-		if l < smaller {
-			smaller = l
-		}
-	}
-	response := make(chartResponse)
-	for i := range sets {
-		rk := responseKeys[i%len(responseKeys)]
-		// If the length of the responseKeys array has been exceeded, add a integer
-		// suffix to the response key. The key progression is x, y, z, x1, y1, z1,
-		// x2, ...
-		if i >= len(responseKeys) {
-			rk += strconv.Itoa(i / len(responseKeys))
-		}
-		response[rk] = sets[i].Truncate(smaller)
-	}
-	return json.Marshal(response)
+func (charts *ChartData) encode(keys []string, sets ...lengther) ([]byte, error) {
+	return charts.encodeArr(keys, sets)
 }
 
 // Encode the slices. The set lengths are truncated to the smallest of the
 // arguments.
-func (charts *ChartData) encodeArr(sets []lengther) ([]byte, error) {
+func (charts *ChartData) encodeArr(keys []string, sets []lengther) ([]byte, error) {
+	if keys == nil {
+		keys = responseKeys
+	}
 	if len(sets) == 0 {
 		return nil, fmt.Errorf("encode called without arguments")
 	}
@@ -952,12 +1041,12 @@ func (charts *ChartData) encodeArr(sets []lengther) ([]byte, error) {
 	}
 	response := make(chartResponse)
 	for i := range sets {
-		rk := responseKeys[i%len(responseKeys)]
+		rk := keys[i%len(keys)]
 		// If the length of the responseKeys array has been exceeded, add a integer
 		// suffix to the response key. The key progression is x, y, z, x1, y1, z1,
 		// x2, ...
-		if i >= len(responseKeys) {
-			rk += strconv.Itoa(i / len(responseKeys))
+		if i >= len(keys) {
+			rk += strconv.Itoa(i / len(keys))
 		}
 		response[rk] = sets[i].Truncate(smaller)
 	}
@@ -1026,31 +1115,55 @@ func avgBlockTimes(ticks, blocks ChartUints) (ChartUints, ChartUints) {
 	return times, avgDiffs
 }
 
-func mempoolSize(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Mempool.Time, charts.Mempool.Size)
+func mempoolSize(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Size)
 }
 
-func mempoolTxCount(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Mempool.Time, charts.Mempool.TxCount)
+func mempoolTxCount(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.TxCount)
 }
 
-func mempoolFees(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Mempool.Time, charts.Mempool.Fees)
+func mempoolFees(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Fees)
 }
 
-func blockPropagation(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
+func blockPropagation(charts *ChartData, _ binLevel, _ axisType, syncSources ...string) ([]byte, error) {
 	var deviations = []lengther{charts.Propagation.Height}
-	for _, source := range charts.sunySource {
+	for _, source := range syncSources {
 		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
 	}
 
-	return charts.encodeArr(deviations)
+	return charts.encodeArr(nil, deviations)
 }
 
-func blockTimestamp(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Propagation.Height, charts.Propagation.BlockDelays)
+func blockTimestamp(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([]byte, error) {
+	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.BlockDelays)
 }
 
-func votesReceiveTime(charts *ChartData, bin binLevel, axis axisType) ([]byte, error) {
-	return charts.encode(charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
+func votesReceiveTime(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([]byte, error) {
+	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
+}
+
+func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]byte, error) {
+	var timeData []ChartUints
+	for _, pool := range pools {
+		timeData = append(timeData, charts.Pow.Time[pool])
+	}
+
+	var deviations = []lengther{margeChartUints(timeData...)}
+
+	var keys = []string{ "x" }
+	for _, pool := range pools {
+		keys = append(keys, strings.Replace(strings.ToLower(pool), " ", "_", -1))
+		switch axis {
+		case WorkerAxis:
+			deviations = append(deviations, charts.Pow.Workers[pool])
+			continue
+		case HashrateAxis:
+			deviations = append(deviations, charts.Pow.Hashrate[pool])
+			continue
+		}
+	}
+
+	return charts.encodeArr(keys, deviations)
 }

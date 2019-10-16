@@ -1988,10 +1988,12 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 
 // api/charts/{dataType}
 func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
 	chartType := getChartTypeCtx(r)
 	bin := r.URL.Query().Get("bin")
 	axis := r.URL.Query().Get("axis")
-	chartData, err := s.charts.Chart(chartType, bin, axis)
+	sources := r.URL.Query().Get("sources")
+	chartData, err := s.charts.Chart(chartType, bin, axis, strings.Split(sources, "|")...)
 	if err != nil {
 		http.NotFound(w, r)
 		log.Warnf(`Error fetching chart %s at bin level '%s': %v`, chartType, bin, err)

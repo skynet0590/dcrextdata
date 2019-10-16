@@ -183,7 +183,13 @@ func _main(ctx context.Context) error {
 		log.Errorf("Cannot fetch mempool count, %s", err.Error())
 	}
 
-	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, netParams(cfg.DcrdNetworkType))
+	pools, _ := db.FetchPowSourceData(ctx)
+	var poolSources []string
+	for _, pool := range pools {
+		poolSources = append(poolSources, pool.Source)
+	}
+
+	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, poolSources, netParams(cfg.DcrdNetworkType))
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {

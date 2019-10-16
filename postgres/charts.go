@@ -17,4 +17,10 @@ func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, sy
 		Fetcher:  pg.fetchBlockPropagationChart,
 		Appender: appendBlockPropagationChart,
 	})
+
+	charts.AddUpdater(cache.ChartUpdater{
+		Tag:      "PoW chart",
+		Fetcher:  pg.fetchPowChart,
+		Appender: appendPowChart,
+	})
 }
