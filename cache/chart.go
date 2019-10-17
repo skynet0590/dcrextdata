@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
+	"github.com/volatiletech/null"
 )
 
 // Keys for specifying chart data type.
@@ -40,6 +41,10 @@ const (
 	DayBin     binLevel = "day"
 	BlockBin   binLevel = "block"
 	WindowBin  binLevel = "window"
+	MempoolBin binLevel = "mempool"
+	PropagationBin binLevel = "propagation"
+	PowBin binLevel = "pow"
+
 	HeightAxis axisType = "height"
 	TimeAxis   axisType = "time"
 	HashrateAxis axisType = "hashrate"
@@ -167,6 +172,65 @@ func newChartFloats(size int) ChartFloats {
 	return make([]float64, 0, size)
 }
 
+// ChartNullUints is a slice of null.uints. It satisfies the lengther interface.
+type ChartNullUints []*null.Uint64
+
+// Length returns the length of data. Satisfies the lengther interface.
+func (data ChartNullUints) Length() int {
+	return len(data)
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data ChartNullUints) Truncate(l int) lengther {
+	return data[:l]
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data ChartNullUints) ToChartString() ChartStrings {
+	var result ChartStrings
+	for _, record := range data {
+		if record == nil {
+			result = append(result, "")
+		} else if !record.Valid {
+			result = append(result, "NaN")
+		} else {
+			result = append(result, fmt.Sprintf("%d", record.Uint64))
+		}
+	}
+
+	return result
+}
+
+// If the data is longer than max, return a subset of length max.
+func (data ChartNullUints) snip(max int) ChartNullUints {
+	if len(data) < max {
+		max = len(data)
+	}
+	return data[:max]
+}
+
+// A constructor for a sized ChartUints.
+func newChartNullUints(size int) ChartNullUints {
+	return make(ChartNullUints, 0, size)
+}
+
+// ChartStrings is a slice of strings. It satisfies the lengther interface, and
+// provides methods for taking averages or sums of segments.
+type ChartStrings []string
+
+// Length returns the length of data. Satisfies the lengther interface.
+func (data ChartStrings) Length() int {
+	return len(data)
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data ChartStrings) Truncate(l int) lengther {
+	return data[:l]
+}
+
 // ChartUints is a slice of uints. It satisfies the lengther interface, and
 // provides methods for taking averages or sums of segments.
 type ChartUints []uint64
@@ -235,7 +299,7 @@ func margeChartUints(data ...ChartUints) ChartUints {
 	return result
 }
 
-// A constructor for a sized ChartFloats.
+// A constructor for a sized ChartUints.
 func newChartUints(size int) ChartUints {
 	return make(ChartUints, 0, size)
 }
@@ -310,9 +374,10 @@ func newPropagationSet(size int, syncSources []string) *propagationSet {
 
 // powSet is a set of powChart data
 type powSet struct {
-	Time     map[string]ChartUints
-	Hashrate map[string]ChartUints
-	Workers  map[string]ChartUints
+	cacheID  uint64
+	Time     ChartUints
+	Hashrate map[string]ChartNullUints
+	Workers  map[string]ChartNullUints
 }
 
 // Snip truncates the zoomSet to a provided length.
@@ -321,9 +386,8 @@ func (set *powSet) Snip(length int) {
 		length = 0
 	}
 
-	for pool, records := range set.Time {
-		set.Time[pool] = records.snip(length)
-	}
+	set.Time = set.Time.snip(length)
+
 	for pool, records := range set.Hashrate {
 		set.Hashrate[pool] = records.snip(length)
 	}
@@ -336,23 +400,18 @@ func (set *powSet) Snip(length int) {
 // Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
 func newPowSet(pools []string, size int) *powSet {
-	timeSet := make(map[string]ChartUints)
+	hashrate := make(map[string]ChartNullUints)
 	for _, pool := range pools {
-		timeSet[pool] = newChartUints(size)
+		hashrate[pool] = newChartNullUints(size)
 	}
 
-	hashrate := make(map[string]ChartUints)
+	workers := make(map[string]ChartNullUints)
 	for _, pool := range pools {
-		hashrate[pool] = newChartUints(size)
-	}
-
-	workers := make(map[string]ChartUints)
-	for _, pool := range pools {
-		workers[pool] = newChartUints(size)
+		workers[pool] = newChartNullUints(size)
 	}
 
 	return &powSet{
-		Time:     timeSet,
+		Time:     newChartUints(size),
 		Hashrate: hashrate,
 		Workers:  workers,
 	}
@@ -464,9 +523,9 @@ type ChartGobject struct {
 	BlockPropagation  map[string]ChartFloats
 	ChartDelays       ChartFloats
 	VotesReceiveTime  ChartFloats
-	PowTime			  map[string]ChartUints
-	PowHashrate		  map[string]ChartUints
-	PowWorkers		  map[string]ChartUints
+	PowTime			  ChartUints
+	PowHashrate		  map[string]ChartNullUints
+	PowWorkers		  map[string]ChartNullUints
 
 
 
@@ -811,13 +870,13 @@ func (charts *ChartData) Height() int32 {
 }
 
 // PowTime is the time of the latest PoW data appended to the chart
-func (charts *ChartData) PowTime(pool string) uint64 {
+func (charts *ChartData) PowTime() uint64 {
 	charts.mtx.RLock()
 	defer charts.mtx.RUnlock()
-	if len(charts.Pow.Time[pool]) == 0 {
+	if len(charts.Pow.Time) == 0 {
 		return 0
 	}
-	return charts.Pow.Time[pool][len(charts.Pow.Time[pool])-1]
+	return charts.Pow.Time[len(charts.Pow.Time)-1]
 }
 
 // FeesTip is the height of the Fees data.
@@ -892,6 +951,8 @@ func (charts *ChartData) Update(ctx context.Context) error {
 	if err := charts.Lengthen(); err != nil {
 		return fmt.Errorf("(*ChartData).Lengthen failed: %v", err)
 	}
+	// clear cached
+	charts.cache = map[string]*cachedChart{} // TODO: look for a way to only remove updated chart
 	return nil
 }
 
@@ -927,17 +988,19 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, pool
 
 // A cacheKey is used to specify cached data of a given type and BinLevel.
 func cacheKey(chartID string, bin binLevel, axis axisType) string {
-	// The axis type is only required when bin level is set to DayBin.
-	if bin == DayBin {
-		return chartID + "-" + string(bin) + "-" + string(axis)
-	}
-	return chartID + "-" + string(bin)
+	return chartID + "-" + string(bin) + "-" + string(axis)
 }
 
 // Grabs the cacheID associated with the provided BinLevel. Should
 // be called under at least a (ChartData).cacheMtx.RLock.
 func (charts *ChartData) cacheID(bin binLevel) uint64 {
 	switch bin {
+	case MempoolBin:
+		return charts.Mempool.cacheID
+	case PropagationBin:
+		return charts.Propagation.cacheID
+	case PowBin:
+		return charts.Pow.cacheID
 	case BlockBin:
 		return charts.Blocks.cacheID
 	case DayBin:
@@ -994,7 +1057,11 @@ var chartMakers = map[string]ChartMaker{
 func (charts *ChartData) Chart(chartID, binString, axisString string, sources ...string) ([]byte, error) {
 	bin := ParseBin(binString)
 	axis := ParseAxis(axisString)
-	cache, found, cacheID := charts.getCache(chartID, bin, axis)
+
+	sort.Strings(sources)
+	completeId := strings.Join(append(sources, chartID), "-")
+
+	cache, found, cacheID := charts.getCache(completeId, bin, axis)
 	if found && cache.cacheID == cacheID {
 		return cache.data, nil
 	}
@@ -1010,7 +1077,7 @@ func (charts *ChartData) Chart(chartID, binString, axisString string, sources ..
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(chartID, bin, axis, data)
+	charts.cacheChart(completeId, bin, axis, data)
 	return data, nil
 }
 
@@ -1145,25 +1212,18 @@ func votesReceiveTime(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([
 }
 
 func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]byte, error) {
-	var timeData []ChartUints
-	for _, pool := range pools {
-		timeData = append(timeData, charts.Pow.Time[pool])
-	}
+	var deviations = []lengther{ charts.Pow.Time }
 
-	var deviations = []lengther{margeChartUints(timeData...)}
-
-	var keys = []string{ "x" }
 	for _, pool := range pools {
-		keys = append(keys, strings.Replace(strings.ToLower(pool), " ", "_", -1))
 		switch axis {
 		case WorkerAxis:
-			deviations = append(deviations, charts.Pow.Workers[pool])
+			deviations = append(deviations, charts.Pow.Workers[pool].ToChartString())
 			continue
 		case HashrateAxis:
-			deviations = append(deviations, charts.Pow.Hashrate[pool])
+			deviations = append(deviations, charts.Pow.Hashrate[pool].ToChartString())
 			continue
 		}
 	}
 
-	return charts.encodeArr(keys, deviations)
+	return charts.encodeArr(nil, deviations)
 }
