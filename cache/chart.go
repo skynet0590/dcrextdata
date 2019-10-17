@@ -27,6 +27,7 @@ const (
 	VotesReceiveTime	= "votes-receive-time"
 
 	PowChart = "pow"
+	VSP = "vsp"
 )
 
 // binLevel specifies the granularity of data.
@@ -49,6 +50,16 @@ const (
 	TimeAxis   axisType = "time"
 	HashrateAxis axisType = "hashrate"
 	WorkerAxis	axisType = "workers"
+
+	ImmatureAxis axisType = "immature"
+	LiveAxis axisType = "live"
+	VotedAxis axisType = "voted"
+	MissedAxis axisType = "missed"
+	PoolFeesAxis axisType = "pool-fees"
+	ProportionLiveAxis axisType = "proportion-live"
+	ProportionMissedAxis axisType = "proportion-missed"
+	UserCountAxis axisType = "user-count"
+	UsersActiveAxis axisType = "users-active"
 )
 
 // DefaultBinLevel will be used if a bin level is not specified to
@@ -417,6 +428,119 @@ func newPowSet(pools []string, size int) *powSet {
 	}
 }
 
+// vspSet is a set of Vsp chart data
+type vspSet struct {
+	cacheID          uint64
+	Time             ChartUints
+	Immature         map[string]ChartNullUints
+	Live             map[string]ChartNullUints
+	Voted            map[string]ChartNullUints
+	Missed           map[string]ChartNullUints
+	PoolFees         map[string]ChartNullUints
+	ProportionLive   map[string]ChartNullUints
+	ProportionMissed map[string]ChartNullUints
+	UserCount        map[string]ChartNullUints
+	UsersActive      map[string]ChartNullUints
+}
+
+// Snip truncates the vspSet to a provided length.
+func (set *vspSet) Snip(length int) {
+	if length < 0 {
+		length = 0
+	}
+
+	set.Time = set.Time.snip(length)
+
+	for vsp, records := range set.Immature {
+		set.Immature[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.Live {
+		set.Live[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.Voted {
+		set.Voted[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.Missed {
+		set.Missed[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.PoolFees {
+		set.PoolFees[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.ProportionMissed {
+		set.ProportionMissed[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.ProportionLive {
+		set.ProportionLive[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.UsersActive {
+		set.UsersActive[vsp] = records.snip(length)
+	}
+	for vsp, records := range set.UserCount {
+		set.UserCount[vsp] = records.snip(length)
+	}
+}
+
+// Constructor for a sized vspSet.
+func newVspSet(vsps []string, size int) *vspSet {
+	immature := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		immature[vsp] = newChartNullUints(size)
+	}
+
+	live := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		live[vsp] = newChartNullUints(size)
+	}
+
+	voted := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		voted[vsp] = newChartNullUints(size)
+	}
+
+	missed := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		missed[vsp] = newChartNullUints(size)
+	}
+
+	poolFees := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		poolFees[vsp] = newChartNullUints(size)
+	}
+
+	proportionLive := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		proportionLive[vsp] = newChartNullUints(size)
+	}
+
+	proportionMissed := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		proportionMissed[vsp] = newChartNullUints(size)
+	}
+
+	userCount := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		userCount[vsp] = newChartNullUints(size)
+	}
+
+	usersActive := make(map[string]ChartNullUints)
+	for _, vsp := range vsps {
+		immature[vsp] = newChartNullUints(size)
+	}
+
+	return &vspSet{
+		Time:             newChartUints(size),
+		Immature:         immature,
+		Live:             live,
+		Voted:            voted,
+		Missed:           missed,
+		PoolFees:         poolFees,
+		ProportionLive:   proportionLive,
+		ProportionMissed: proportionMissed,
+		UserCount:        userCount,
+		UsersActive:      usersActive,
+	}
+}
+
 // zoomSet is a set of binned data. The smallest bin is block-sized. The zoomSet
 // is managed by explorer, and subsequently the database packages. ChartData
 // provides methods for validating the data and handling concurrency. The
@@ -523,10 +647,21 @@ type ChartGobject struct {
 	BlockPropagation  map[string]ChartFloats
 	ChartDelays       ChartFloats
 	VotesReceiveTime  ChartFloats
+
 	PowTime			  ChartUints
 	PowHashrate		  map[string]ChartNullUints
 	PowWorkers		  map[string]ChartNullUints
 
+	VspTime             ChartUints
+	VspImmature         map[string]ChartNullUints
+	VspLive             map[string]ChartNullUints
+	VspVoted            map[string]ChartNullUints
+	VspMissed           map[string]ChartNullUints
+	VspPoolFees         map[string]ChartNullUints
+	VspProportionLive   map[string]ChartNullUints
+	VspProportionMissed map[string]ChartNullUints
+	VspUserCount        map[string]ChartNullUints
+	VspUsersActive      map[string]ChartNullUints
 
 
 	PoolSize         ChartUints
@@ -578,6 +713,8 @@ type ChartData struct {
 	Mempool      *mempoolSet
 	Propagation  *propagationSet
 	Pow          *powSet
+	Vsp 		  *vspSet
+
 	Blocks       *zoomSet
 	Windows      *windowSet
 	Days         *zoomSet
@@ -800,28 +937,40 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 
 func (charts *ChartData) gobject() *ChartGobject {
 	return &ChartGobject{
-		MempoolTime:       charts.Mempool.Time,
-		MempoolFees:       charts.Mempool.Fees,
-		MempoolSize:       charts.Mempool.Size,
-		MempoolTxCount:    charts.Mempool.TxCount,
-		PropagationHeight: charts.Propagation.Height,
-		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
-		BlockPropagation:  charts.Propagation.BlockPropagation,
-		ChartDelays:       charts.Propagation.BlockDelays,
-
-		PropagationTime: charts.Blocks.Time,
-		PoolSize:        charts.Blocks.PoolSize,
-		PoolValue:       charts.Blocks.PoolValue,
-		BlockSize:       charts.Blocks.BlockSize,
-		TxCount:         charts.Blocks.TxCount,
-		NewAtoms:        charts.Blocks.NewAtoms,
-		Chainwork:       charts.Blocks.Chainwork,
-		Fees:            charts.Blocks.Fees,
-		WindowTime:      charts.Windows.Time,
-		PowDiff:         charts.Windows.PowDiff,
-		TicketPrice:     charts.Windows.TicketPrice,
-		StakeCount:      charts.Windows.StakeCount,
-		MissedVotes:     charts.Windows.MissedVotes,
+		MempoolTime:         charts.Mempool.Time,
+		MempoolSize:         charts.Mempool.Size,
+		MempoolFees:         charts.Mempool.Fees,
+		MempoolTxCount:      charts.Mempool.TxCount,
+		PropagationHeight:   charts.Propagation.Height,
+		PropagationTime:     charts.Blocks.Time,
+		BlockPropagation:    charts.Propagation.BlockPropagation,
+		ChartDelays:         charts.Propagation.BlockDelays,
+		VotesReceiveTime:    charts.Propagation.VotesReceiveTimeDeviations,
+		PowTime:             charts.Pow.Time,
+		PowHashrate:         charts.Pow.Hashrate,
+		PowWorkers:          charts.Pow.Workers,
+		VspTime:             charts.Vsp.Time,
+		VspImmature:         charts.Vsp.Immature,
+		VspLive:             charts.Vsp.Live,
+		VspVoted:            charts.Vsp.Voted,
+		VspMissed:           charts.Vsp.Missed,
+		VspPoolFees:         charts.Vsp.PoolFees,
+		VspProportionLive:   charts.Vsp.ProportionLive,
+		VspProportionMissed: charts.Vsp.ProportionMissed,
+		VspUserCount:        charts.Vsp.UserCount,
+		VspUsersActive:      charts.Vsp.UsersActive,
+		PoolSize:            charts.Blocks.PoolSize,
+		PoolValue:           charts.Blocks.PoolValue,
+		BlockSize:           charts.Blocks.BlockSize,
+		TxCount:             charts.Blocks.TxCount,
+		NewAtoms:            charts.Blocks.NewAtoms,
+		Chainwork:           charts.Blocks.Chainwork,
+		Fees:                charts.Blocks.Fees,
+		WindowTime:          charts.Windows.Time,
+		PowDiff:             charts.Windows.PowDiff,
+		TicketPrice:         charts.Windows.TicketPrice,
+		StakeCount:          charts.Windows.StakeCount,
+		MissedVotes:         charts.Windows.MissedVotes,
 	}
 }
 
@@ -877,6 +1026,16 @@ func (charts *ChartData) PowTime() uint64 {
 		return 0
 	}
 	return charts.Pow.Time[len(charts.Pow.Time)-1]
+}
+
+// VspTime is the time of the latest Vsp data appended to the chart
+func (charts *ChartData) VspTime() uint64 {
+	charts.mtx.RLock()
+	defer charts.mtx.RUnlock()
+	if len(charts.Vsp.Time) == 0 {
+		return 0
+	}
+	return charts.Vsp.Time[len(charts.Vsp.Time)-1]
 }
 
 // FeesTip is the height of the Fees data.
@@ -957,7 +1116,7 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, height uint32, syncSources []string, poolSources []string, chainParams *chaincfg.Params) *ChartData {
+func NewChartData(ctx context.Context, height uint32, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
 	base64Height := int64(height)
 	// Allocate datasets for at least as many blocks as in a sdiff window.
 	if base64Height < chainParams.StakeDiffWindowSize {
@@ -977,6 +1136,7 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, pool
 		Mempool:      newMempoolSet(size),
 		Propagation:  newPropagationSet(size, syncSources),
 		Pow:          newPowSet(poolSources, size),
+		Vsp:		  newVspSet(vsps, size),
 		Blocks:       newBlockSet(size),
 		Windows:      newWindowSet(windows),
 		Days:         newDaySet(days),
@@ -994,6 +1154,7 @@ func cacheKey(chartID string, bin binLevel, axis axisType) string {
 // Grabs the cacheID associated with the provided BinLevel. Should
 // be called under at least a (ChartData).cacheMtx.RLock.
 func (charts *ChartData) cacheID(bin binLevel) uint64 {
+	//TODO: cacheID should consider all chart types and axis
 	switch bin {
 	case MempoolBin:
 		return charts.Mempool.cacheID
@@ -1050,6 +1211,8 @@ var chartMakers = map[string]ChartMaker{
 	VotesReceiveTime: votesReceiveTime,
 
 	PowChart: powChart,
+	
+	VSP: makeVspChart,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
@@ -1268,11 +1431,88 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}
 
-	var minDate = charts.Pow.Time[0]
-	var maxDate = charts.Pow.Time[len(charts.Pow.Time) - 1]
-
-	powChartData.MinDate = time.Unix(int64(minDate), 0).UTC()
-	powChartData.MaxDate = time.Unix(int64(maxDate), 0).UTC()
+	powChartData.MinDate = time.Unix(int64(charts.Pow.Time[0]), 0).UTC()
+	powChartData.MaxDate = time.Unix(int64(charts.Pow.Time[len(charts.Pow.Time) - 1]), 0).UTC()
 
 	return json.Marshal(powChartData)
+}
+
+func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) ([]byte, error) {
+	var deviations []ChartNullUints
+
+	for _, vsp := range vsps {
+		switch axis {
+		case LiveAxis:
+			deviations = append(deviations, charts.Vsp.Live[vsp])
+			continue
+		case VotedAxis:
+			deviations = append(deviations, charts.Vsp.Voted[vsp])
+			continue
+		case MissedAxis:
+			deviations = append(deviations, charts.Vsp.Missed[vsp])
+			continue
+		case PoolFeesAxis:
+			deviations = append(deviations, charts.Vsp.PoolFees[vsp])
+			continue
+		case ProportionLiveAxis:
+			deviations = append(deviations, charts.Vsp.ProportionLive[vsp])
+			continue
+		case ProportionMissedAxis:
+			deviations = append(deviations, charts.Vsp.ProportionMissed[vsp])
+			continue
+		case UserCountAxis:
+			deviations = append(deviations, charts.Vsp.UserCount[vsp])
+			continue
+		case UsersActiveAxis:
+			deviations = append(deviations, charts.Vsp.UsersActive[vsp])
+			continue
+		}
+	}
+
+	var vspChartData = struct {
+		CSV     string    `json:"csv"`
+		MinDate time.Time `json:"min_date"`
+		MaxDate time.Time `json:"max_date"`
+	}{
+		CSV: fmt.Sprintf("Date,%s\n", strings.Join(vsps, ",")),
+	}
+
+	if len(charts.Vsp.Time) == 0 {
+		return json.Marshal(vspChartData)
+	}
+
+	hasAny := func(index int) bool {
+		for _, data := range deviations {
+			if index >= len(data){
+				continue
+			}
+
+			if record := data[index]; record != nil && record.Valid && record.Uint64 > 0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	for index := range charts.Vsp.Time {
+		if !hasAny(index) {
+			continue
+		}
+
+		var lineRecords = []string{time.Unix(int64(charts.Vsp.Time[index]), 0).UTC().String()}
+		for _, data := range deviations {
+			if record := data[index]; record != nil && record.Valid {
+				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
+			} else {
+				lineRecords = append(lineRecords, "NaN")
+			}
+		}
+
+		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
+	}
+
+	vspChartData.MinDate = time.Unix(int64(charts.Vsp.Time[0]), 0).UTC()
+	vspChartData.MaxDate = time.Unix(int64(charts.Vsp.Time[len(charts.Vsp.Time) - 1]), 0).UTC()
+
+	return json.Marshal(vspChartData)
 }
