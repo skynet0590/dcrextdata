@@ -370,7 +370,9 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (int
 	}
 
 	for _, pool := range poolSources {
-		points, err := models.PowData(models.PowDatumWhere.Time.GT(int(charts.PowTime()))).All(ctx, pg.db)
+		points, err := models.PowData(
+			models.PowDatumWhere.Source.EQ(pool),
+			models.PowDatumWhere.Time.GT(int(charts.PowTime()))).All(ctx, pg.db)
 		if err != nil {
 			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
 		}
@@ -386,7 +388,7 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (int
 			if record, found := pointsMap[uint64(date)]; found {
 				powDataSet.workers[pool] = append(powDataSet.workers[pool], &null.Uint64{Valid: true, Uint64: uint64(record.Workers.Int)})
 				hashrateRaw, _ := strconv.ParseInt(record.PoolHashrate.String, 10, 64)
-				powDataSet.hashrate[pool] = append(powDataSet.hashrate[pool], &null.Uint64{Valid: false, Uint64: uint64(hashrateRaw)})
+				powDataSet.hashrate[pool] = append(powDataSet.hashrate[pool], &null.Uint64{Valid: true, Uint64: uint64(hashrateRaw)})
 				hasFoundOne = true
 			} else {
 				if hasFoundOne {

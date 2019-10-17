@@ -1212,18 +1212,67 @@ func votesReceiveTime(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([
 }
 
 func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]byte, error) {
-	var deviations = []lengther{ charts.Pow.Time }
+	var deviations []ChartNullUints
 
 	for _, pool := range pools {
 		switch axis {
 		case WorkerAxis:
-			deviations = append(deviations, charts.Pow.Workers[pool].ToChartString())
+			deviations = append(deviations, charts.Pow.Workers[pool])
 			continue
 		case HashrateAxis:
-			deviations = append(deviations, charts.Pow.Hashrate[pool].ToChartString())
+			deviations = append(deviations, charts.Pow.Hashrate[pool])
 			continue
 		}
 	}
 
-	return charts.encodeArr(nil, deviations)
+
+	var powChartData = struct {
+		CSV     string    `json:"csv"`
+		MinDate time.Time `json:"min_date"`
+		MaxDate time.Time `json:"max_date"`
+	}{
+		CSV: fmt.Sprintf("Date,%s\n", strings.Join(pools, ",")),
+	}
+
+	if len(charts.Pow.Time) == 0 {
+		return json.Marshal(powChartData)
+	}
+
+	hasAny := func(index int) bool {
+		for _, data := range deviations {
+			if index >= len(data){
+				continue
+			}
+
+			if record := data[index]; record != nil && record.Valid && record.Uint64 > 0 {
+				return true
+			}
+		}
+		return false
+	}
+
+	for index := range charts.Pow.Time {
+		if !hasAny(index) {
+			continue
+		}
+
+		var lineRecords = []string{time.Unix(int64(charts.Pow.Time[index]), 0).UTC().String()}
+		for _, data := range deviations {
+			if record := data[index]; record != nil && record.Valid {
+				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
+			} else {
+				lineRecords = append(lineRecords, "NaN")
+			}
+		}
+
+		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
+	}
+
+	var minDate = charts.Pow.Time[0]
+	var maxDate = charts.Pow.Time[len(charts.Pow.Time) - 1]
+
+	powChartData.MinDate = time.Unix(int64(minDate), 0).UTC()
+	powChartData.MaxDate = time.Unix(int64(maxDate), 0).UTC()
+
+	return json.Marshal(powChartData)
 }

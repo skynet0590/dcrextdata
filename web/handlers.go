@@ -618,7 +618,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	if selectedDataType == "" {
-		selectedDataType = "pool_hashrate"
+		selectedDataType = "hashrate"
 	}
 
 	var pageSize int
