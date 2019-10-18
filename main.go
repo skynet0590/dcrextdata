@@ -189,7 +189,13 @@ func _main(ctx context.Context) error {
 		poolSources = append(poolSources, pool.Source)
 	}
 
-	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, poolSources, netParams(cfg.DcrdNetworkType))
+	allVspData, _ := db.FetchVSPs(ctx)
+	var vsps []string
+	for _, vspSource := range allVspData {
+		vsps = append(vsps, vspSource.Name)
+	}
+
+	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {

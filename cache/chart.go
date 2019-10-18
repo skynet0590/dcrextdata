@@ -84,10 +84,30 @@ func ParseAxis(aType string) axisType {
 	switch axisType(aType) {
 	case HeightAxis:
 		return HeightAxis
+		// PoW axis
 	case HashrateAxis:
 		return HashrateAxis
 	case WorkerAxis:
 		return WorkerAxis
+		// vsp axis
+	case ImmatureAxis:
+		return ImmatureAxis
+	case LiveAxis:
+		return LiveAxis
+	case VotedAxis:
+		return VotedAxis
+	case MissedAxis:
+		return MissedAxis
+	case PoolFeesAxis:
+		return PoolFeesAxis
+	case ProportionLiveAxis:
+		return ProportionLiveAxis
+	case ProportionMissedAxis:
+		return ProportionMissedAxis
+	case UserCountAxis:
+		return UserCountAxis
+	case UsersActiveAxis:
+		return UsersActiveAxis
 	default:
 		return TimeAxis
 	}
@@ -183,8 +203,38 @@ func newChartFloats(size int) ChartFloats {
 	return make([]float64, 0, size)
 }
 
+type ChartNullData interface {
+	lengther
+	Value(index int) interface{}
+	Valid(index int) bool
+	IsZero(index int) bool
+	String(index int) string
+}
+
 // ChartNullUints is a slice of null.uints. It satisfies the lengther interface.
 type ChartNullUints []*null.Uint64
+
+func (data ChartNullUints) Value(index int) interface{} {
+	if data == nil || len(data) <= index || data[index] == nil {
+		return uint64(0)
+	}
+	return data[index].Uint64
+}
+
+func (data ChartNullUints) Valid(index int) bool {
+	if data != nil && len(data) > index && data[index] != nil{
+		return data[index].Valid
+	}
+	return false
+}
+
+func (data ChartNullUints) IsZero(index int) bool {
+	return data.Value(index).(uint64) == 0
+}
+
+func (data ChartNullUints) String(index int) string {
+	return strconv.FormatUint(data.Value(index).(uint64), 10)
+}
 
 // Length returns the length of data. Satisfies the lengther interface.
 func (data ChartNullUints) Length() int {
@@ -225,6 +275,56 @@ func (data ChartNullUints) snip(max int) ChartNullUints {
 // A constructor for a sized ChartUints.
 func newChartNullUints(size int) ChartNullUints {
 	return make(ChartNullUints, 0, size)
+}
+
+// ChartNullFloats is a slice of null.float64. It satisfies the lengther interface.
+type ChartNullFloats []*null.Float64
+
+
+func (data ChartNullFloats) Value(index int) interface{} {
+	if data == nil || len(data) <= index  || data[index] == nil{
+		return float64(0)
+	}
+	return data[index].Float64
+}
+
+func (data ChartNullFloats) Valid(index int) bool {
+	if data != nil && len(data) > index  && data[index] != nil{
+		return data[index].Valid
+	}
+	return false
+}
+
+func (data ChartNullFloats) IsZero(index int) bool {
+	return data.Value(index).(float64) == 0
+}
+
+func (data ChartNullFloats) String(index int) string {
+	return fmt.Sprintf("%f", data.Value(index).(float64))
+}
+
+// Length returns the length of data. Satisfies the lengther interface.
+func (data ChartNullFloats) Length() int {
+	return len(data)
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data ChartNullFloats) Truncate(l int) lengther {
+	return data[:l]
+}
+
+// If the data is longer than max, return a subset of length max.
+func (data ChartNullFloats) snip(max int) ChartNullFloats {
+	if len(data) < max {
+		max = len(data)
+	}
+	return data[:max]
+}
+
+// A constructor for a sized ChartUints.
+func newChartNullFloats(size int) ChartNullFloats {
+	return make(ChartNullFloats, 0, size)
 }
 
 // ChartStrings is a slice of strings. It satisfies the lengther interface, and
@@ -436,9 +536,9 @@ type vspSet struct {
 	Live             map[string]ChartNullUints
 	Voted            map[string]ChartNullUints
 	Missed           map[string]ChartNullUints
-	PoolFees         map[string]ChartNullUints
-	ProportionLive   map[string]ChartNullUints
-	ProportionMissed map[string]ChartNullUints
+	PoolFees         map[string]ChartNullFloats
+	ProportionLive   map[string]ChartNullFloats
+	ProportionMissed map[string]ChartNullFloats
 	UserCount        map[string]ChartNullUints
 	UsersActive      map[string]ChartNullUints
 }
@@ -502,19 +602,19 @@ func newVspSet(vsps []string, size int) *vspSet {
 		missed[vsp] = newChartNullUints(size)
 	}
 
-	poolFees := make(map[string]ChartNullUints)
+	poolFees := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		poolFees[vsp] = newChartNullUints(size)
+		poolFees[vsp] = newChartNullFloats(size)
 	}
 
-	proportionLive := make(map[string]ChartNullUints)
+	proportionLive := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		proportionLive[vsp] = newChartNullUints(size)
+		proportionLive[vsp] = newChartNullFloats(size)
 	}
 
-	proportionMissed := make(map[string]ChartNullUints)
+	proportionMissed := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		proportionMissed[vsp] = newChartNullUints(size)
+		proportionMissed[vsp] = newChartNullFloats(size)
 	}
 
 	userCount := make(map[string]ChartNullUints)
@@ -657,9 +757,9 @@ type ChartGobject struct {
 	VspLive             map[string]ChartNullUints
 	VspVoted            map[string]ChartNullUints
 	VspMissed           map[string]ChartNullUints
-	VspPoolFees         map[string]ChartNullUints
-	VspProportionLive   map[string]ChartNullUints
-	VspProportionMissed map[string]ChartNullUints
+	VspPoolFees         map[string]ChartNullFloats
+	VspProportionLive   map[string]ChartNullFloats
+	VspProportionMissed map[string]ChartNullFloats
 	VspUserCount        map[string]ChartNullUints
 	VspUsersActive      map[string]ChartNullUints
 
@@ -949,6 +1049,7 @@ func (charts *ChartData) gobject() *ChartGobject {
 		PowTime:             charts.Pow.Time,
 		PowHashrate:         charts.Pow.Hashrate,
 		PowWorkers:          charts.Pow.Workers,
+
 		VspTime:             charts.Vsp.Time,
 		VspImmature:         charts.Vsp.Immature,
 		VspLive:             charts.Vsp.Live,
@@ -959,6 +1060,7 @@ func (charts *ChartData) gobject() *ChartGobject {
 		VspProportionMissed: charts.Vsp.ProportionMissed,
 		VspUserCount:        charts.Vsp.UserCount,
 		VspUsersActive:      charts.Vsp.UsersActive,
+
 		PoolSize:            charts.Blocks.PoolSize,
 		PoolValue:           charts.Blocks.PoolValue,
 		BlockSize:           charts.Blocks.BlockSize,
@@ -1438,10 +1540,13 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 }
 
 func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) ([]byte, error) {
-	var deviations []ChartNullUints
+	var deviations []ChartNullData
 
 	for _, vsp := range vsps {
 		switch axis {
+		case ImmatureAxis:
+			deviations = append(deviations, charts.Vsp.Immature[vsp])
+			continue
 		case LiveAxis:
 			deviations = append(deviations, charts.Vsp.Live[vsp])
 			continue
@@ -1483,17 +1588,18 @@ func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) 
 
 	hasAny := func(index int) bool {
 		for _, data := range deviations {
-			if index >= len(data){
+			if index >= data.Length() {
 				continue
 			}
 
-			if record := data[index]; record != nil && record.Valid && record.Uint64 > 0 {
+			if data.Valid(index) && !data.IsZero(index) {
 				return true
 			}
 		}
 		return false
 	}
 
+	var minDate, maxDate uint64
 	for index := range charts.Vsp.Time {
 		if !hasAny(index) {
 			continue
@@ -1501,18 +1607,25 @@ func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) 
 
 		var lineRecords = []string{time.Unix(int64(charts.Vsp.Time[index]), 0).UTC().String()}
 		for _, data := range deviations {
-			if record := data[index]; record != nil && record.Valid {
-				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
+			if data.Valid(index) {
+				lineRecords = append(lineRecords, data.String(index))
 			} else {
 				lineRecords = append(lineRecords, "NaN")
 			}
 		}
 
+		if minDate == 0 || minDate > charts.Vsp.Time[index] {
+			minDate = charts.Vsp.Time[index]
+		}
+
+		if maxDate < charts.Vsp.Time[index] {
+			maxDate = charts.Vsp.Time[index]
+		}
 		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}
 
-	vspChartData.MinDate = time.Unix(int64(charts.Vsp.Time[0]), 0).UTC()
-	vspChartData.MaxDate = time.Unix(int64(charts.Vsp.Time[len(charts.Vsp.Time) - 1]), 0).UTC()
+	vspChartData.MinDate = time.Unix(int64(minDate), 0).UTC()
+	vspChartData.MaxDate = time.Unix(int64(maxDate), 0).UTC()
 
 	return json.Marshal(vspChartData)
 }
