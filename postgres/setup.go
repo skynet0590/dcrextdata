@@ -71,8 +71,8 @@ const (
 	lastPowEntryTime         = `SELECT time FROM pow_data ORDER BY time DESC LIMIT 1`
 
 	createMempoolTable = `CREATE TABLE IF NOT EXISTS mempool (
-		time blockDelay,
-		first_seen_time blockDelay,
+		time timestamp,
+		first_seen_time timestamp,
 		number_of_transactions INT,
 		voters INT,
 		tickets INT,
@@ -88,8 +88,8 @@ const (
 
 	createBlockTable = `CREATE TABLE IF NOT EXISTS block (
 		height INT,
-		receive_time blockDelay,
-		internal_timestamp blockDelay,
+		receive_time timestamp,
+		internal_timestamp timestamp,
 		hash VARCHAR(512),
 		PRIMARY KEY (height)
 	);`
@@ -98,9 +98,9 @@ const (
 		hash VARCHAR(128),
 		voting_on INT8,
 		block_hash VARCHAR(128),
-		receive_time blockDelay,
-		block_receive_time blockDelay,
-		targeted_block_time blockDelay,
+		receive_time timestamp,
+		block_receive_time timestamp,
+		targeted_block_time timestamp,
 		validator_id INT,
 		validity VARCHAR(128),
 		PRIMARY KEY (hash)
@@ -109,7 +109,7 @@ const (
 	lastCommStatEntryTime = `SELECT date FROM reddit ORDER BY date DESC LIMIT 1`
 
 	createRedditTable = `CREATE TABLE IF NOT EXISTS reddit (
-		blockDelay date,
+		date timestamp,
 		subreddit VARCHAR(256) NOT NULL,
 		subscribers INT NOT NULL,
 		active_accounts INT NOT NULL,
@@ -117,14 +117,14 @@ const (
 	);`
 
 	createTwitterTable = `CREATE TABLE IF NOT EXISTS twitter (
-		date blockDelay,
+		date timestamp,
 		handle VARCHAR(256) NOT NULL,
 		followers INT NOT NULL,
 		PRIMARY KEY (date)
 	);`
 
 	createGithubTable = `CREATE TABLE IF NOT EXISTS github (
-		date blockDelay,
+		date timestamp,
 		repository VARCHAR(256) NOT NULL,
 		stars INT NOT NULL,
 		folks INT NOT NULL,
@@ -132,7 +132,7 @@ const (
 	);`
 
 	createYoutubeTable = `CREATE TABLE IF NOT EXISTS youtube (
-		date blockDelay,
+		date timestamp,
 		subscribers INT NOT NULL,
 		view_count INT NOT NULL,
 		channel VARCHAR(256) NOT NULL,
