@@ -109,7 +109,7 @@ const (
 	lastCommStatEntryTime = `SELECT date FROM reddit ORDER BY date DESC LIMIT 1`
 
 	createRedditTable = `CREATE TABLE IF NOT EXISTS reddit (
-		date blockDelay,
+		blockDelay date,
 		subreddit VARCHAR(256) NOT NULL,
 		subscribers INT NOT NULL,
 		active_accounts INT NOT NULL,
