@@ -40,8 +40,6 @@ type DataQuery interface {
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	AllVSPTicks(ctx context.Context, offset, limit int) ([]vsp.VSPTickDto, int64, error)
-	FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error)
-	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
 	PowCount(ctx context.Context) (int64, error)
 	FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error)
@@ -156,7 +154,6 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/exchanges/intervals", s.tickIntervalsByExchangeAndPair)
 	r.Get("/api/exchanges/currency-pairs", s.currencyPairByExchange)
 	r.Get("/vsp", s.getVspTicks)
-	r.Get("/vspchartdata", s.vspChartData)
 	r.Get("/vsps", s.getFilteredVspTicks)
 	r.Get("/pow", s.powPage)
 	r.Get("/filteredpow", s.getFilteredPowData)

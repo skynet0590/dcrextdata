@@ -61,11 +61,11 @@ var (
 		"Live",
 		"Voted",
 		"Missed",
-		"Pool_Fees",
-		"Proportion_Live",
-		"Proportion_Missed",
-		"User_Count",
-		"Users_Active",
+		"Pool-Fees",
+		"Proportion-Live",
+		"Proportion-Missed",
+		"User-Count",
+		"Users-Active",
 	}
 
 	commStatPlatforms = []string{redditPlatform, twitterPlatform, githubPlatform, youtubePlatform}
@@ -467,117 +467,6 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	return data, nil
-}
-
-// vspchartdata
-func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	selectedExchange := req.FormValue("vsps")
-	selectedAttribute := req.FormValue("data-type")
-
-	vsps := strings.Split(selectedExchange, "|")
-
-	ctx := req.Context()
-	dates, err := s.db.GetVspTickDistinctDates(ctx, vsps)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from VSP table, %s", err.Error()), res)
-		return
-	}
-
-	var vspChartData = struct {
-		CSV     string    `json:"csv"`
-		MinDate time.Time `json:"min_date"`
-		MaxDate time.Time `json:"max_date"`
-	}{
-		CSV: "Date," + strings.Join(vsps, ",") + "\n",
-	}
-
-	var resultMap = map[time.Time][]string{}
-	for _, date := range dates {
-		if vspChartData.MinDate.IsZero() || date.Before(vspChartData.MinDate) {
-			vspChartData.MinDate = date
-		}
-		if vspChartData.MaxDate.IsZero() || date.After(vspChartData.MaxDate) {
-			vspChartData.MaxDate = date
-		}
-		resultMap[date] = []string{date.String()}
-	}
-
-	for _, source := range vsps {
-		points, err := s.db.FetchChartData(ctx, selectedAttribute, source)
-		if err != nil {
-			s.renderErrorJSON(fmt.Sprintf("Error in fetching %s records for %s: %s", selectedAttribute, source, err.Error()), res)
-			return
-		}
-
-		var vspPointMap = map[time.Time]string{}
-		var vspDates []time.Time
-		for _, point := range points {
-			vspPointMap[point.Date] = point.Record
-			vspDates = append(vspDates, point.Date)
-		}
-
-		sort.Slice(vspDates, func(i, j int) bool {
-			return vspDates[i].Before(vspDates[j])
-		})
-
-		for date, _ := range resultMap {
-			if date.Year() == 1970 || date.IsZero() {
-				continue
-			}
-			if record, found := vspPointMap[date]; found {
-				skip := false
-				if record == "0" || record == "" {
-					skip = true
-					for _, vspDate := range vspDates {
-						if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
-							skip = false
-						}
-					}
-				}
-				if !skip {
-					resultMap[date] = append(resultMap[date], record)
-				} else {
-					resultMap[date] = append(resultMap[date], "Nan")
-				}
-			} else {
-				// if they have not been any record for this vsp, give a gap (Nan) else use space
-				padding := "Nan"
-				for _, vspDate := range vspDates {
-					if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
-						padding = ""
-					}
-				}
-				resultMap[date] = append(resultMap[date], padding)
-			}
-		}
-	}
-
-	for _, date := range dates {
-		if date.Year() == 1970 || date.IsZero() {
-			continue
-		}
-
-		points := resultMap[date]
-		hasAtleastOneRecord := false
-		for index, point := range points {
-			// the first index is the date
-			if index == 0 {
-				continue
-			}
-			if point != "" && point != "Nan" {
-				hasAtleastOneRecord = true
-			}
-		}
-
-		if !hasAtleastOneRecord {
-			continue
-		}
-
-		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
-	}
-
-	s.renderJSON(vspChartData, res)
 }
 
 // /PoW

@@ -211,6 +211,15 @@ type ChartNullData interface {
 	String(index int) string
 }
 
+func noValidEntryBeforeIndex(data ChartNullData, index int) bool {
+	for i := index; i >= 0; i-- {
+		if data.Valid(i) {
+			return false
+		}
+	}
+	return true
+}
+
 // ChartNullUints is a slice of null.uints. It satisfies the lengther interface.
 type ChartNullUints []*null.Uint64
 
@@ -1526,7 +1535,12 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 			if record := data[index]; record != nil && record.Valid {
 				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
 			} else {
-				lineRecords = append(lineRecords, "NaN")
+				// if no valid entry has been found, give a space using Nan
+				if noValidEntryBeforeIndex(data, index) {
+					lineRecords = append(lineRecords, "Nan")
+				} else {
+					lineRecords = append(lineRecords, "")
+				}
 			}
 		}
 
@@ -1610,7 +1624,12 @@ func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) 
 			if data.Valid(index) {
 				lineRecords = append(lineRecords, data.String(index))
 			} else {
-				lineRecords = append(lineRecords, "NaN")
+				// if no valid entry has been found, give a space using Nan
+				if noValidEntryBeforeIndex(data, index) {
+					lineRecords = append(lineRecords, "Nan")
+				} else {
+					lineRecords = append(lineRecords, "")
+				}
 			}
 		}
 

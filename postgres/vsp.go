@@ -9,7 +9,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -334,71 +333,12 @@ func (pg *PgDb) VspTickCount(ctx context.Context) (int64, error) {
 	return models.VSPTicks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error) {
-	attribute = strings.ToLower(attribute)
-	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
-	if err != nil {
-		return nil, err
-	}
-	query := fmt.Sprintf("SELECT time as date, %s as record FROM vsp_tick where %s = %d ORDER BY time",
-		attribute, models.VSPTickColumns.VSPID, vspInfo.ID)
-	rows, err := pg.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		var rec vsp.ChartData
-		err = rows.Scan(&rec.Date, &rec.Record)
-		if err != nil {
-			return nil, err
-		}
-		if attribute == models.VSPTickColumns.ProportionLive || attribute == models.VSPTickColumns.ProportionMissed {
-			value, err := strconv.ParseFloat(rec.Record, 64)
-			if err != nil {
-				return nil, err
-			}
-			rec.Record = RoundValue(value)
-		}
-		records = append(records, rec)
-	}
-	return
-}
-
 func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time) (records models.VSPTickSlice, err error) {
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
 	return models.VSPTicks(models.VSPTickWhere.VSPID.EQ(vspInfo.ID), models.VSPTickWhere.Time.GT(start)).All(ctx, pg.db)
-}
-
-func (pg *PgDb) GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error) {
-	var vspIds []string
-	for _, vspName := range vsps {
-		id, err := pg.vspIdByName(ctx, vspName)
-		if err != nil {
-			return nil, err
-		}
-		vspIds = append(vspIds, strconv.Itoa(id))
-	}
-
-	query := fmt.Sprintf("SELECT DISTINCT time FROM vsp_tick WHERE vsp_id IN ('%s') ORDER BY time", strings.Join(vspIds, "', '"))
-	rows, err := pg.db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	var dates []time.Time
-
-	for rows.Next() {
-		var date time.Time
-		err = rows.Scan(&date)
-		if err != nil {
-			return nil, err
-		}
-		dates = append(dates, date)
-	}
-	return dates, nil
 }
 
 func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time) ([]time.Time, error) {
@@ -575,6 +515,38 @@ func appendVspChart(charts *cache.ChartData, data interface{}) error {
 		}
 
 		charts.Vsp.PoolFees[vspSource] = append(charts.Vsp.PoolFees[vspSource], record...)
+	}
+
+	for vspSource, record := range vspDataSet.proportionLive {
+		if charts.Vsp.ProportionLive == nil {
+			charts.Vsp.ProportionLive = map[string]cache.ChartNullFloats{}
+		}
+
+		charts.Vsp.ProportionLive[vspSource] = append(charts.Vsp.ProportionLive[vspSource], record...)
+	}
+
+	for vspSource, record := range vspDataSet.proportionMissed {
+		if charts.Vsp.ProportionMissed == nil {
+			charts.Vsp.ProportionMissed = map[string]cache.ChartNullFloats{}
+		}
+
+		charts.Vsp.ProportionMissed[vspSource] = append(charts.Vsp.ProportionMissed[vspSource], record...)
+	}
+
+	for vspSource, record := range vspDataSet.usersActive {
+		if charts.Vsp.UsersActive == nil {
+			charts.Vsp.UsersActive = map[string]cache.ChartNullUints{}
+		}
+
+		charts.Vsp.UsersActive[vspSource] = append(charts.Vsp.UsersActive[vspSource], record...)
+	}
+
+	for vspSource, record := range vspDataSet.userCount {
+		if charts.Vsp.UserCount == nil {
+			charts.Vsp.UserCount = map[string]cache.ChartNullUints{}
+		}
+
+		charts.Vsp.UserCount[vspSource] = append(charts.Vsp.UserCount[vspSource], record...)
 	}
 
 	return nil
