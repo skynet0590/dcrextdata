@@ -28,6 +28,7 @@ const (
 
 	PowChart = "pow"
 	VSP = "vsp"
+	Exchange = "exchange"
 )
 
 // binLevel specifies the granularity of data.
@@ -108,6 +109,14 @@ func ParseAxis(aType string) axisType {
 		return UserCountAxis
 	case UsersActiveAxis:
 		return UsersActiveAxis
+	case ExchangeClose:
+		return ExchangeClose
+	case ExchangeHigh:
+		return ExchangeHigh
+	case ExchangeOpen:
+		return ExchangeOpen
+	case ExchangeLow:
+		return ExchangeLow
 	default:
 		return TimeAxis
 	}
