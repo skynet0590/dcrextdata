@@ -65,6 +65,8 @@ func (c *Collector) Run(ctx context.Context) {
 
 	log.Info("Fetching community stats...")
 
+	app.ReleaseForNewModule()
+
 	go c.startTwitterCollector(ctx)
 
 	go c.startYoutubeCollector(ctx)
