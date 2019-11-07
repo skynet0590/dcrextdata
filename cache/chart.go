@@ -18,16 +18,16 @@ import (
 
 // Keys for specifying chart data type.
 const (
-	MempoolSize 		= "mempool-size"
-	MempoolFees			= "mempool-fees"
-	MempoolTxCount		= "mempool-tx-count"
+	MempoolSize    = "mempool-size"
+	MempoolFees    = "mempool-fees"
+	MempoolTxCount = "mempool-tx-count"
 
-	BlockPropagation	= "block-propagation"
-	BlockTimestamp		= "block-timestamp"
-	VotesReceiveTime	= "votes-receive-time"
+	BlockPropagation = "block-propagation"
+	BlockTimestamp   = "block-timestamp"
+	VotesReceiveTime = "votes-receive-time"
 
 	PowChart = "pow"
-	VSP = "vsp"
+	VSP      = "vsp"
 	Exchange = "exchange"
 )
 
@@ -40,27 +40,27 @@ type axisType string
 
 // These are the recognized binLevel and axisType values.
 const (
-	DayBin     binLevel = "day"
-	BlockBin   binLevel = "block"
-	WindowBin  binLevel = "window"
-	MempoolBin binLevel = "mempool"
+	DayBin         binLevel = "day"
+	BlockBin       binLevel = "block"
+	WindowBin      binLevel = "window"
+	MempoolBin     binLevel = "mempool"
 	PropagationBin binLevel = "propagation"
-	PowBin binLevel = "pow"
+	PowBin         binLevel = "pow"
 
-	HeightAxis axisType = "height"
-	TimeAxis   axisType = "time"
+	HeightAxis   axisType = "height"
+	TimeAxis     axisType = "time"
 	HashrateAxis axisType = "hashrate"
-	WorkerAxis	axisType = "workers"
+	WorkerAxis   axisType = "workers"
 
-	ImmatureAxis axisType = "immature"
-	LiveAxis axisType = "live"
-	VotedAxis axisType = "voted"
-	MissedAxis axisType = "missed"
-	PoolFeesAxis axisType = "pool-fees"
-	ProportionLiveAxis axisType = "proportion-live"
+	ImmatureAxis         axisType = "immature"
+	LiveAxis             axisType = "live"
+	VotedAxis            axisType = "voted"
+	MissedAxis           axisType = "missed"
+	PoolFeesAxis         axisType = "pool-fees"
+	ProportionLiveAxis   axisType = "proportion-live"
 	ProportionMissedAxis axisType = "proportion-missed"
-	UserCountAxis axisType = "user-count"
-	UsersActiveAxis axisType = "users-active"
+	UserCountAxis        axisType = "user-count"
+	UsersActiveAxis      axisType = "users-active"
 )
 
 // DefaultBinLevel will be used if a bin level is not specified to
@@ -230,6 +230,61 @@ func noValidEntryBeforeIndex(data ChartNullData, index int) bool {
 	return true
 }
 
+// chartNullIntsPointer is a wrapper around ChartNullInt with Items as []nullUint64Pointer instead of
+// []*null.Uint64 to bring the possibility of writing to god
+type chartNullIntsPointer struct {
+	Items []nullUint64Pointer
+}
+
+// nullUint64Pointer provides a wrapper around *null.Uint64 to resolve the issue of inability to write nil pointer to gob
+type nullUint64Pointer struct {
+	HasValue bool
+	Value    null.Uint64
+}
+
+func (data chartNullIntsPointer) toChartNullUint() ChartNullUints {
+	var result ChartNullUints
+	for _, item := range data.Items {
+		if item.HasValue {
+			result = append(result, &item.Value)
+		} else {
+			result = append(result, nil)
+		}
+	}
+
+	return result
+}
+
+func (data ChartNullUints) toChartNullUintWrapper() chartNullIntsPointer {
+	var result chartNullIntsPointer
+	for _, item := range data {
+		var intPointer nullUint64Pointer
+		if item != nil {
+			intPointer.HasValue = true
+			intPointer.Value = *item
+		}
+		result.Items = append(result.Items, intPointer)
+	}
+
+	return result
+}
+
+func uintMapToPointer(input map[string]ChartNullUints) map[string]chartNullIntsPointer {
+	result := map[string]chartNullIntsPointer{}
+	for key, value := range input {
+		result[key] = value.toChartNullUintWrapper()
+	}
+	return result
+}
+
+func uintPointerMapToUint(input map[string]chartNullIntsPointer) map[string]ChartNullUints {
+	result := map[string]ChartNullUints{}
+	for key, value := range input {
+		result[key] = value.toChartNullUint()
+	}
+	return result
+}
+
 // ChartNullUints is a slice of null.uints. It satisfies the lengther interface.
 type ChartNullUints []*null.Uint64
 
@@ -241,7 +296,7 @@ func (data ChartNullUints) Value(index int) interface{} {
 }
 
 func (data ChartNullUints) Valid(index int) bool {
-	if data != nil && len(data) > index && data[index] != nil{
+	if data != nil && len(data) > index && data[index] != nil {
 		return data[index].Valid
 	}
 	return false
@@ -296,19 +351,73 @@ func newChartNullUints(size int) ChartNullUints {
 	return make(ChartNullUints, 0, size)
 }
 
+// nullFloat64Pointer is a wrapper around ChartNullFloats with Items as []nullFloat64Pointer instead of
+// []*null.Float64 to bring the possibility of writing it to god
+type chartNullFloatsPointer struct {
+	Items []nullFloat64Pointer
+}
+
+// nullFloat64Pointer provides a wrapper around *null.Float64 to resolve the issue of inability to write nil pointer to gob
+type nullFloat64Pointer struct {
+	HasValue bool
+	Value    null.Float64
+}
+
+func (data chartNullFloatsPointer) toChartNullFloats() ChartNullFloats {
+	var result ChartNullFloats
+	for _, item := range data.Items {
+		if item.HasValue {
+			result = append(result, &item.Value)
+		} else {
+			result = append(result, nil)
+		}
+	}
+
+	return result
+}
+
+func (data ChartNullFloats) toChartNullFloatsWrapper() chartNullFloatsPointer {
+	var result chartNullFloatsPointer
+	for _, item := range data {
+		var intPointer nullFloat64Pointer
+		if item != nil {
+			intPointer.HasValue = true
+			intPointer.Value = *item
+		}
+		result.Items = append(result.Items, intPointer)
+	}
+
+	return result
+}
+
+func floatMapToPointer(input map[string]ChartNullFloats) map[string]chartNullFloatsPointer {
+	result := map[string]chartNullFloatsPointer{}
+	for key, value := range input {
+		result[key] = value.toChartNullFloatsWrapper()
+	}
+	return result
+}
+
+func floatPointerMapToChartFloatMap(input map[string]chartNullFloatsPointer) map[string]ChartNullFloats {
+	result := map[string]ChartNullFloats{}
+	for key, value := range input {
+		result[key] = value.toChartNullFloats()
+	}
+	return result
+}
+
 // ChartNullFloats is a slice of null.float64. It satisfies the lengther interface.
 type ChartNullFloats []*null.Float64
 
-
 func (data ChartNullFloats) Value(index int) interface{} {
-	if data == nil || len(data) <= index  || data[index] == nil{
+	if data == nil || len(data) <= index || data[index] == nil {
 		return float64(0)
 	}
 	return data[index].Float64
 }
 
 func (data ChartNullFloats) Valid(index int) bool {
-	if data != nil && len(data) > index  && data[index] != nil{
+	if data != nil && len(data) > index && data[index] != nil {
 		return data[index].Valid
 	}
 	return false
@@ -440,7 +549,7 @@ type mempoolSet struct {
 	Time    ChartUints
 	Size    ChartUints
 	TxCount ChartUints
-	Fees 	ChartFloats
+	Fees    ChartFloats
 }
 
 // Snip truncates the zoomSet to a provided length.
@@ -458,10 +567,10 @@ func (set *mempoolSet) Snip(length int) {
 // since the height is implicit for block-binned data.
 func newMempoolSet(size int) *mempoolSet {
 	return &mempoolSet{
-		Time:      newChartUints(size),
-		Size:  newChartUints(size),
-		TxCount:   newChartUints(size),
-		Fees:      newChartFloats(size),
+		Time:    newChartUints(size),
+		Size:    newChartUints(size),
+		TxCount: newChartUints(size),
+		Fees:    newChartFloats(size),
 	}
 }
 
@@ -768,19 +877,19 @@ type ChartGobject struct {
 	VotesReceiveTime  ChartFloats
 
 	PowTime     ChartUints
-	PowHashrate map[string]ChartNullUints
-	PowWorkers  map[string]ChartNullUints
+	PowHashrate map[string]chartNullIntsPointer
+	PowWorkers  map[string]chartNullIntsPointer
 
 	VspTime             ChartUints
-	VspImmature         map[string]ChartNullUints
-	VspLive             map[string]ChartNullUints
-	VspVoted            map[string]ChartNullUints
-	VspMissed           map[string]ChartNullUints
-	VspPoolFees         map[string]ChartNullFloats
-	VspProportionLive   map[string]ChartNullFloats
-	VspProportionMissed map[string]ChartNullFloats
-	VspUserCount        map[string]ChartNullUints
-	VspUsersActive      map[string]ChartNullUints
+	VspImmature         map[string]chartNullIntsPointer
+	VspLive             map[string]chartNullIntsPointer
+	VspVoted            map[string]chartNullIntsPointer
+	VspMissed           map[string]chartNullIntsPointer
+	VspPoolFees         map[string]chartNullFloatsPointer
+	VspProportionLive   map[string]chartNullFloatsPointer
+	VspProportionMissed map[string]chartNullFloatsPointer
+	VspUserCount        map[string]chartNullIntsPointer
+	VspUsersActive      map[string]chartNullIntsPointer
 
 	PoolSize    ChartUints
 	PoolValue   ChartFloats
@@ -996,8 +1105,8 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Propagation.BlockPropagation = gobject.BlockPropagation
 
 	charts.Pow.Time = gobject.PowTime
-	charts.Pow.Hashrate = gobject.PowHashrate
-	charts.Pow.Workers = gobject.PowWorkers
+	charts.Pow.Hashrate = uintPointerMapToUint(gobject.PowHashrate)
+	charts.Pow.Workers = uintPointerMapToUint(gobject.PowWorkers)
 
 	charts.Blocks.Height = gobject.PropagationHeight
 	charts.Blocks.Time = gobject.PropagationTime
@@ -1081,19 +1190,19 @@ func (charts *ChartData) gobject() *ChartGobject {
 		ChartDelays:       charts.Propagation.BlockDelays,
 		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
 		PowTime:           charts.Pow.Time,
-		PowHashrate:       charts.Pow.Hashrate,
-		PowWorkers:        charts.Pow.Workers,
+		PowHashrate:       uintMapToPointer(charts.Pow.Hashrate),
+		PowWorkers:        uintMapToPointer(charts.Pow.Workers),
 
 		VspTime:             charts.Vsp.Time,
-		VspImmature:         charts.Vsp.Immature,
-		VspLive:             charts.Vsp.Live,
-		VspVoted:            charts.Vsp.Voted,
-		VspMissed:           charts.Vsp.Missed,
-		VspPoolFees:         charts.Vsp.PoolFees,
-		VspProportionLive:   charts.Vsp.ProportionLive,
-		VspProportionMissed: charts.Vsp.ProportionMissed,
-		VspUserCount:        charts.Vsp.UserCount,
-		VspUsersActive:      charts.Vsp.UsersActive,
+		VspImmature:         uintMapToPointer(charts.Vsp.Immature),
+		VspLive:             uintMapToPointer(charts.Vsp.Live),
+		VspVoted:            uintMapToPointer(charts.Vsp.Voted),
+		VspMissed:           uintMapToPointer(charts.Vsp.Missed),
+		VspPoolFees:         floatMapToPointer(charts.Vsp.PoolFees),
+		VspProportionLive:   floatMapToPointer(charts.Vsp.ProportionLive),
+		VspProportionMissed: floatMapToPointer(charts.Vsp.ProportionMissed),
+		VspUserCount:        uintMapToPointer(charts.Vsp.UserCount),
+		VspUsersActive:      uintMapToPointer(charts.Vsp.UsersActive),
 
 		Exchange: *charts.Exchange,
 
@@ -1153,7 +1262,7 @@ func (charts *ChartData) Height() int32 {
 	if len(charts.Propagation.Height) == 0 {
 		return 0
 	}
-	return int32(charts.Propagation.Height[len(charts.Propagation.Height) -1])
+	return int32(charts.Propagation.Height[len(charts.Propagation.Height)-1])
 }
 
 // PowTime is the time of the latest PoW data appended to the chart
@@ -1350,7 +1459,7 @@ var chartMakers = map[string]ChartMaker{
 	VotesReceiveTime: votesReceiveTime,
 
 	PowChart: powChart,
-	
+
 	VSP: makeVspChart,
 
 	Exchange: makeExchangeChart,
@@ -1530,7 +1639,6 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 		}
 	}
 
-
 	var powChartData = struct {
 		CSV     string    `json:"csv"`
 		MinDate time.Time `json:"min_date"`
@@ -1545,7 +1653,7 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 
 	hasAny := func(index int) bool {
 		for _, data := range deviations {
-			if index >= len(data){
+			if index >= len(data) {
 				continue
 			}
 
@@ -1579,7 +1687,7 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 	}
 
 	powChartData.MinDate = time.Unix(int64(charts.Pow.Time[0]), 0).UTC()
-	powChartData.MaxDate = time.Unix(int64(charts.Pow.Time[len(charts.Pow.Time) - 1]), 0).UTC()
+	powChartData.MaxDate = time.Unix(int64(charts.Pow.Time[len(charts.Pow.Time)-1]), 0).UTC()
 
 	return json.Marshal(powChartData)
 }

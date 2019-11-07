@@ -555,7 +555,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 
 		for _, height := range propagationSet.height {
 			if sourceTime, found := receiveTimeMap[height]; found {
-				propagationSet.blockPropagation[source] = append(propagationSet.blockPropagation[source], localBlockReceiveTime[height] - sourceTime)
+				propagationSet.blockPropagation[source] = append(propagationSet.blockPropagation[source], localBlockReceiveTime[height]-sourceTime)
 				continue
 			}
 			propagationSet.blockPropagation[source] = append(propagationSet.blockPropagation[source], 0)

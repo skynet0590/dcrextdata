@@ -346,7 +346,7 @@ func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time) ([]time.Ti
 		qm.Select(models.VSPTickColumns.Time),
 		models.VSPTickWhere.Time.GT(start),
 		qm.OrderBy(models.VSPTickColumns.Time),
-		).All(ctx, pg.db)
+	).All(ctx, pg.db)
 
 	if err != nil {
 		return nil, err
@@ -373,7 +373,7 @@ func (pg *PgDb) vspIdByName(ctx context.Context, name string) (id int, err error
 }
 
 type vspSet struct {
-	time     []uint64
+	time             []uint64
 	immature         map[string][]*null.Uint64
 	live             map[string][]*null.Uint64
 	voted            map[string][]*null.Uint64
@@ -411,7 +411,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 	}
 
 	dates, err := pg.allVspTickDates(ctx, time.Unix(int64(charts.VspTime()), 0))
-	if err != nil && err != sql.ErrNoRows{
+	if err != nil && err != sql.ErrNoRows {
 		return nil, cancelFun, err
 	}
 
@@ -425,7 +425,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", vspSource.Name, err.Error())
 		}
 
-		var pointsMap= map[time.Time]*models.VSPTick{}
+		var pointsMap = map[time.Time]*models.VSPTick{}
 		for _, record := range points {
 			pointsMap[record.Time] = record
 		}

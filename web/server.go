@@ -94,7 +94,7 @@ type Server struct {
 	db           DataQuery
 	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
-	charts        *cache.ChartData
+	charts       *cache.ChartData
 }
 
 func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery, 

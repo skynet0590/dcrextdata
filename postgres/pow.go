@@ -377,7 +377,7 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (int
 			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
 		}
 
-		var pointsMap= map[uint64]*models.PowDatum{}
+		var pointsMap = map[uint64]*models.PowDatum{}
 		for _, record := range points {
 			pointsMap[uint64(record.Time)] = record
 

@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-const(
+const (
 	ExchangeCloseAxis axisType = "close"
-	ExchangeHighAxis axisType = "high"
-	ExchangeOpenAxis axisType = "open"
-	ExchangeLowAxis axisType = "low"
+	ExchangeHighAxis  axisType = "high"
+	ExchangeOpenAxis  axisType = "open"
+	ExchangeLowAxis   axisType = "low"
 )
 
 type exchangeSet struct {
@@ -62,6 +62,7 @@ func (set *exchangeSet) Append(key string, time ChartUints, open ChartFloats, cl
 		}
 	}
 }
+
 // BuildExchangeKey returns exchange name, currency pair and interval joined by -
 func BuildExchangeKey(exchangeName string, currencyPair string, interval int) string {
 	return fmt.Sprintf("%s-%s-%d", exchangeName, currencyPair, interval)

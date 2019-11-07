@@ -25,7 +25,7 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 	}
 	db.SetMaxOpenConns(5)
 	return &PgDb{
-		db: db,
+		db:           db,
 		queryTimeout: time.Second * 30,
 	}, nil
 }

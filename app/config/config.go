@@ -15,7 +15,7 @@ import (
 const (
 	DefaultConfigFilename      = "dcrextdata.conf"
 	defaultLogFilename         = "dcrextdata.log"
-	defaultChartsCacheDump	   = "charts-cache.glob"
+	defaultChartsCacheDump     = "charts-cache.glob"
 	Hint                       = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
 	defaultDbHost              = "localhost"
 	defaultDbPort              = "5432"

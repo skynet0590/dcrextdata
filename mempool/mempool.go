@@ -120,7 +120,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				}
 
 				if voteInfo.Validation.Validity {
-					vote.Validity = "Valid"
+					vote.Validity = "HasValue"
 				} else {
 					vote.Validity = "Invalid"
 				}
@@ -261,7 +261,7 @@ func (c *Collector) StartMonitoring(ctx context.Context, charts *cache.ChartData
 		if err != nil {
 			log.Error(err)
 		} else {
-			if err = charts.TriggerUpdate(ctx);  err != nil {
+			if err = charts.TriggerUpdate(ctx); err != nil {
 				log.Errorf("Charts update problem: %s", err.Error())
 			}
 		}

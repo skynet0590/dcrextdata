@@ -773,7 +773,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		"url":                  "/propagation",
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           0,
-		"syncSources":			strings.Join(syncSources, "|"),
+		"syncSources":          strings.Join(syncSources, "|"),
 	}
 
 	if viewOption == defaultViewOption {
