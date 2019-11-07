@@ -75,7 +75,7 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 
 	runSyncers()
 
-	ticker := time.NewTicker(1 * time.Hour)
+	ticker := time.NewTicker(time.Duration(s.period) * time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -99,10 +99,18 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 			return fmt.Errorf("error in fetching sync history, %s", err.Error())
 
 		}
+		retries := 0
 		url := fmt.Sprintf("%s/api/sync/%s?last=%s&skip=%d&take=%d", source.url, tableName, lastEntry, skip, take)
-		result, err := syncer.Collect(ctx, url)
+
+		var result *Result
+		for {
+			result, err = syncer.Collect(ctx, url)
+			retries++
+			if err == nil || retries >= 3 {
+				break
+			}
+		}
 		if err != nil {
-			// todo: check if this is a sync disable error before stopping
 			return fmt.Errorf("error in fetching data for %s, %s", url, err.Error())
 		}
 

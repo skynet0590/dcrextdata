@@ -15,6 +15,7 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/go-chi/chi/middleware"
 	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -108,6 +109,7 @@ func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db Data
 	}
 
 	router := chi.NewRouter()
+	router.Use(middleware.DefaultCompress)
 	workDir, _ := os.Getwd()
 
 	filesDir := filepath.Join(workDir, "web/public/dist")

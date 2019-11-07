@@ -37,8 +37,10 @@ func (set *exchangeTickSet) Snip(length int) {
 
 func (exch *exchangeSet) ticks(exchange string, axis axisType, interval int) (time ChartUints, ticks ChartFloats, err error) {
 	if tickSet, found := exch.exchanges[exchange]; found {
-
+		return tickSet.Time, nil, nil
 	} else {
 		return nil, nil, errors.New("exchange not found")
 	}
+
+	return nil, nil, nil
 }

@@ -109,14 +109,14 @@ func ParseAxis(aType string) axisType {
 		return UserCountAxis
 	case UsersActiveAxis:
 		return UsersActiveAxis
-	case ExchangeClose:
-		return ExchangeClose
-	case ExchangeHigh:
-		return ExchangeHigh
-	case ExchangeOpen:
-		return ExchangeOpen
-	case ExchangeLow:
-		return ExchangeLow
+	case ExchangeCloseAxis:
+		return ExchangeCloseAxis
+	case ExchangeHighAxis:
+		return ExchangeHighAxis
+	case ExchangeOpenAxis:
+		return ExchangeOpenAxis
+	case ExchangeLowAxis:
+		return ExchangeLowAxis
 	default:
 		return TimeAxis
 	}
