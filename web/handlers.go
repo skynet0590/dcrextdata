@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
@@ -1770,10 +1771,24 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	chartType := getChartTypeCtx(r)
 	bin := r.URL.Query().Get("bin")
 	axis := r.URL.Query().Get("axis")
-	sources := r.URL.Query().Get("sources")
-	chartData, err := s.charts.Chart(chartType, bin, axis, strings.Split(sources, "|")...)
+	extras := r.URL.Query().Get("sources")
+	// the extra data passed for exchange chart is the exchange set key
+	if chartType == cache.Exchange {
+		selectedCurrencyPair := r.FormValue("selected-currency-pair")
+		selectedInterval := r.FormValue("selected-interval")
+		selectedExchange := r.FormValue("selected-exchange")
+
+		interval, err := strconv.Atoi(selectedInterval)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("Invalid interval, %s", err.Error()), w)
+			return
+		}
+
+		extras = cache.BuildExchangeKey(selectedExchange, selectedCurrencyPair, interval)
+	}
+	chartData, err := s.charts.Chart(chartType, bin, axis, strings.Split(extras, "|")...)
 	if err != nil {
-		http.NotFound(w, r)
+		s.renderErrorJSON(err.Error(), w)
 		log.Warnf(`Error fetching chart %s at bin level '%s': %v`, chartType, bin, err)
 		return
 	}

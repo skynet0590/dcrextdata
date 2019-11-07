@@ -109,6 +109,7 @@ func ParseAxis(aType string) axisType {
 		return UserCountAxis
 	case UsersActiveAxis:
 		return UsersActiveAxis
+		// exchange
 	case ExchangeCloseAxis:
 		return ExchangeCloseAxis
 	case ExchangeHighAxis:
@@ -766,9 +767,9 @@ type ChartGobject struct {
 	ChartDelays       ChartFloats
 	VotesReceiveTime  ChartFloats
 
-	PowTime			  ChartUints
-	PowHashrate		  map[string]ChartNullUints
-	PowWorkers		  map[string]ChartNullUints
+	PowTime     ChartUints
+	PowHashrate map[string]ChartNullUints
+	PowWorkers  map[string]ChartNullUints
 
 	VspTime             ChartUints
 	VspImmature         map[string]ChartNullUints
@@ -781,19 +782,20 @@ type ChartGobject struct {
 	VspUserCount        map[string]ChartNullUints
 	VspUsersActive      map[string]ChartNullUints
 
+	PoolSize    ChartUints
+	PoolValue   ChartFloats
+	BlockSize   ChartUints
+	TxCount     ChartUints
+	NewAtoms    ChartUints
+	Chainwork   ChartUints
+	Fees        ChartUints
+	WindowTime  ChartUints
+	PowDiff     ChartFloats
+	TicketPrice ChartUints
+	StakeCount  ChartUints
+	MissedVotes ChartUints
 
-	PoolSize         ChartUints
-	PoolValue        ChartFloats
-	BlockSize        ChartUints
-	TxCount          ChartUints
-	NewAtoms         ChartUints
-	Chainwork        ChartUints
-	Fees             ChartUints
-	WindowTime       ChartUints
-	PowDiff          ChartFloats
-	TicketPrice      ChartUints
-	StakeCount       ChartUints
-	MissedVotes      ChartUints
+	Exchange exchangeSet
 }
 
 // The chart data is cached with the current cacheID of the zoomSet or windowSet.
@@ -831,15 +833,16 @@ type ChartData struct {
 	Mempool      *mempoolSet
 	Propagation  *propagationSet
 	Pow          *powSet
-	Vsp 		  *vspSet
+	Vsp          *vspSet
+	Exchange     *exchangeSet
 
-	Blocks       *zoomSet
-	Windows      *windowSet
-	Days         *zoomSet
-	cacheMtx     sync.RWMutex
-	cache        map[string]*cachedChart
-	updaters     []ChartUpdater
-	syncSource   []string
+	Blocks     *zoomSet
+	Windows    *windowSet
+	Days       *zoomSet
+	cacheMtx   sync.RWMutex
+	cache      map[string]*cachedChart
+	updaters   []ChartUpdater
+	syncSource []string
 }
 
 // Check that the length of all arguments is equal.
@@ -888,10 +891,6 @@ func (charts *ChartData) Lengthen() error {
 		log.Warnf("ChartData.Lengthen: mempool data length mismatch detected. Truncating mempool to %d", shortest)
 		mempool.Snip(shortest)
 	}
-	if shortest == 0 {
-		// no mempool yet. Not an error
-		return nil
-	}
 
 	// Make sure the database has set equal number of block propagation data set
 	propagation := charts.Propagation
@@ -900,23 +899,37 @@ func (charts *ChartData) Lengthen() error {
 		log.Warnf("ChartData.Lengthen: propagation data length mismatch detected. Truncating propagation to %d", shortest)
 		mempool.Snip(shortest)
 	}
-	if shortest == 0 {
-		// no propagation data yet. Not an error
-		return nil
+
+	// Make sure exchange data has set equal number of record for each set
+	for _, tick := range charts.Exchange.Ticks {
+		shortest, err := ValidateLengths(tick.Time, tick.Open, tick.Close, tick.High, tick.Low)
+		if err != nil {
+			log.Warnf("ChartData.Lengthen: exchange data length mismatch detected for a set. Truncating to %d", shortest)
+			tick.Snip(shortest)
+		}
+		if tick.Time.Length() > 0 {
+			tick.cacheID = tick.Time[len(tick.Time)-1]
+		}
 	}
 
 	charts.cacheMtx.Lock()
 	defer charts.cacheMtx.Unlock()
 
 	// For mempool, blocks and windows, the cacheID is the last timestamp.
-	charts.Mempool.cacheID = mempool.Time[len(mempool.Time)-1]
-	charts.Propagation.cacheID = propagation.Height[len(propagation.Height)-1]
+	if mempool.Time.Length() > 0 {
+		charts.Mempool.cacheID = mempool.Time[len(mempool.Time)-1]
+	}
+
+	if propagation.Height.Length() > 0 {
+		charts.Propagation.cacheID = propagation.Height[len(propagation.Height)-1]
+	}
+
 	return nil
 }
 
-// isfileExists checks if the provided file paths exists. It returns true if
+// isFileExists checks if the provided file paths exists. It returns true if
 // it does exist and false if otherwise.
-func isfileExists(filePath string) bool {
+func isFileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	return !os.IsNotExist(err)
 }
@@ -926,9 +939,9 @@ func isfileExists(filePath string) bool {
 // Drops the old .gob dump before creating a new one. Delete the old cache here
 // rather than after loading so that a dump will still be available after a crash.
 func (charts *ChartData) writeCacheFile(filePath string) error {
-	if isfileExists(filePath) {
+	if isFileExists(filePath) {
 		// delete the old dump files before creating new ones.
-		os.RemoveAll(filePath)
+		_ = os.RemoveAll(filePath)
 	}
 
 	file, err := os.Create(filePath)
@@ -995,6 +1008,9 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Blocks.NewAtoms = gobject.NewAtoms
 	charts.Blocks.Chainwork = gobject.Chainwork
 	charts.Blocks.Fees = gobject.Fees
+
+	charts.Exchange = &gobject.Exchange
+
 	charts.Windows.Time = gobject.WindowTime
 	charts.Windows.PowDiff = gobject.PowDiff
 	charts.Windows.TicketPrice = gobject.TicketPrice
@@ -1055,18 +1071,18 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 
 func (charts *ChartData) gobject() *ChartGobject {
 	return &ChartGobject{
-		MempoolTime:         charts.Mempool.Time,
-		MempoolSize:         charts.Mempool.Size,
-		MempoolFees:         charts.Mempool.Fees,
-		MempoolTxCount:      charts.Mempool.TxCount,
-		PropagationHeight:   charts.Propagation.Height,
-		PropagationTime:     charts.Blocks.Time,
-		BlockPropagation:    charts.Propagation.BlockPropagation,
-		ChartDelays:         charts.Propagation.BlockDelays,
-		VotesReceiveTime:    charts.Propagation.VotesReceiveTimeDeviations,
-		PowTime:             charts.Pow.Time,
-		PowHashrate:         charts.Pow.Hashrate,
-		PowWorkers:          charts.Pow.Workers,
+		MempoolTime:       charts.Mempool.Time,
+		MempoolSize:       charts.Mempool.Size,
+		MempoolFees:       charts.Mempool.Fees,
+		MempoolTxCount:    charts.Mempool.TxCount,
+		PropagationHeight: charts.Propagation.Height,
+		PropagationTime:   charts.Blocks.Time,
+		BlockPropagation:  charts.Propagation.BlockPropagation,
+		ChartDelays:       charts.Propagation.BlockDelays,
+		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
+		PowTime:           charts.Pow.Time,
+		PowHashrate:       charts.Pow.Hashrate,
+		PowWorkers:        charts.Pow.Workers,
 
 		VspTime:             charts.Vsp.Time,
 		VspImmature:         charts.Vsp.Immature,
@@ -1079,18 +1095,20 @@ func (charts *ChartData) gobject() *ChartGobject {
 		VspUserCount:        charts.Vsp.UserCount,
 		VspUsersActive:      charts.Vsp.UsersActive,
 
-		PoolSize:            charts.Blocks.PoolSize,
-		PoolValue:           charts.Blocks.PoolValue,
-		BlockSize:           charts.Blocks.BlockSize,
-		TxCount:             charts.Blocks.TxCount,
-		NewAtoms:            charts.Blocks.NewAtoms,
-		Chainwork:           charts.Blocks.Chainwork,
-		Fees:                charts.Blocks.Fees,
-		WindowTime:          charts.Windows.Time,
-		PowDiff:             charts.Windows.PowDiff,
-		TicketPrice:         charts.Windows.TicketPrice,
-		StakeCount:          charts.Windows.StakeCount,
-		MissedVotes:         charts.Windows.MissedVotes,
+		Exchange: *charts.Exchange,
+
+		PoolSize:    charts.Blocks.PoolSize,
+		PoolValue:   charts.Blocks.PoolValue,
+		BlockSize:   charts.Blocks.BlockSize,
+		TxCount:     charts.Blocks.TxCount,
+		NewAtoms:    charts.Blocks.NewAtoms,
+		Chainwork:   charts.Blocks.Chainwork,
+		Fees:        charts.Blocks.Fees,
+		WindowTime:  charts.Windows.Time,
+		PowDiff:     charts.Windows.PowDiff,
+		TicketPrice: charts.Windows.TicketPrice,
+		StakeCount:  charts.Windows.StakeCount,
+		MissedVotes: charts.Windows.MissedVotes,
 	}
 }
 
@@ -1256,8 +1274,9 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, pool
 		Mempool:      newMempoolSet(size),
 		Propagation:  newPropagationSet(size, syncSources),
 		Pow:          newPowSet(poolSources, size),
-		Vsp:		  newVspSet(vsps, size),
+		Vsp:          newVspSet(vsps, size),
 		Blocks:       newBlockSet(size),
+		Exchange:     newExchangeSet(),
 		Windows:      newWindowSet(windows),
 		Days:         newDaySet(days),
 		cache:        make(map[string]*cachedChart),
@@ -1333,21 +1352,24 @@ var chartMakers = map[string]ChartMaker{
 	PowChart: powChart,
 	
 	VSP: makeVspChart,
+
+	Exchange: makeExchangeChart,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
-func (charts *ChartData) Chart(chartID, binString, axisString string, sources ...string) ([]byte, error) {
+func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...string) ([]byte, error) {
 	bin := ParseBin(binString)
 	axis := ParseAxis(axisString)
 
-	sort.Strings(sources)
-	completeId := strings.Join(append(sources, chartID), "-")
+	sort.Strings(extras)
+	completeId := strings.Join(append(extras, chartID), "-")
 
 	cache, found, cacheID := charts.getCache(completeId, bin, axis)
 	if found && cache.cacheID == cacheID {
 		return cache.data, nil
 	}
+
 	maker, hasMaker := chartMakers[chartID]
 	if !hasMaker {
 		return nil, UnknownChartErr
@@ -1355,7 +1377,7 @@ func (charts *ChartData) Chart(chartID, binString, axisString string, sources ..
 	// Do the locking here, rather than in encodeXY, so that the helper functions
 	// (accumulate, btw) are run under lock.
 	charts.mtx.RLock()
-	data, err := maker(charts, bin, axis, sources...)
+	data, err := maker(charts, bin, axis, extras...)
 	charts.mtx.RUnlock()
 	if err != nil {
 		return nil, err

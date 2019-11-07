@@ -29,4 +29,10 @@ func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, sy
 		Fetcher:  pg.fetchVspChart,
 		Appender: appendVspChart,
 	})
+
+	charts.AddUpdater(cache.ChartUpdater{
+		Tag:      "Exchange chart",
+		Fetcher:  pg.fetchExchangeChart,
+		Appender: appendExchangeChart,
+	})
 }

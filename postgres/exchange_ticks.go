@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/cache"
+	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-
-	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 )
 
 const (
@@ -294,14 +294,12 @@ func (pg *PgDb) AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickD
 		return nil, err
 	}
 
-	TickDtoCP := []ticks.TickDtoCP{}
+	var currencyPairs []ticks.TickDtoCP
 	for _, cp := range exchangeTickCPSlice {
-		TickDtoCP = append(TickDtoCP, ticks.TickDtoCP{
-			CurrencyPair: cp.CurrencyPair,
-		})
+		currencyPairs = append(currencyPairs, ticks.TickDtoCP{cp.CurrencyPair})
 	}
 
-	return TickDtoCP, err
+	return currencyPairs, err
 }
 
 func (pg *PgDb) CurrencyPairByExchange(ctx context.Context, exchangeName string) ([]ticks.TickDtoCP, error) {
@@ -423,6 +421,30 @@ func (pg *PgDb) ExchangeTicksChartData(ctx context.Context, selectedTick string,
 	return tickChart, err
 }
 
+func (pg *PgDb) exchangeTicksChartData(ctx context.Context, currencyPair string, selectedInterval int, exchangeName string, exchangeTickTime uint64) (models.ExchangeTickSlice, error) {
+
+	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(exchangeName)).One(ctx, pg.db)
+	if err != nil {
+		return nil, fmt.Errorf("the selected exchange, %s does not exist, %s", exchangeName, err.Error())
+	}
+
+	queryMods := []qm.QueryMod{
+		models.ExchangeTickWhere.Time.GT(time.Unix(int64(exchangeTickTime), 0)),
+		models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair),
+		models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
+		models.ExchangeTickWhere.Interval.EQ(selectedInterval),
+		qm.OrderBy(models.ExchangeTickColumns.Time),
+	}
+
+	exchangeFilterResult, err := models.ExchangeTicks(queryMods...).All(ctx, pg.db)
+	if err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("error in fetching exchange tick, %s", err.Error())
+	}
+
+	return exchangeFilterResult, nil
+}
+
 // FetchExchangeTicks fetches a slice exchange ticks for the sync operation
 func (pg *PgDb) FetchExchangeTicksForSync(ctx context.Context, date time.Time, skip, take int) ([]ticks.TickSyncDto, int64, error) {
 	query := []qm.QueryMod{
@@ -517,4 +539,68 @@ func (pg *PgDb) LastExchangeEntryID() (id int64) {
 	rows := pg.db.QueryRow(lastExchangeEntryID)
 	_ = rows.Scan(&id)
 	return
+}
+
+type exchangeTickSet struct {
+	time  cache.ChartUints
+	open  cache.ChartFloats
+	close cache.ChartFloats
+	high  cache.ChartFloats
+	low   cache.ChartFloats
+}
+
+func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	cancel := func() {}
+	exchanges, err := pg.AllExchange(ctx)
+	if err != nil {
+		return nil, cancel, err
+	}
+
+	exchangeTickIntervals := []int{
+		5,
+		60,
+		120,
+		1440,
+	}
+
+	currencyPairs, err := pg.AllExchangeTicksCurrencyPair(ctx)
+	if err != nil {
+		return nil, cancel, fmt.Errorf("Chart:Updater:Exchange cannot fetch currency pair, %s", err.Error())
+	}
+
+	var tickSets = map[string]exchangeTickSet{}
+	for _, currencyPair := range currencyPairs {
+		for _, exchange := range exchanges {
+			for _, interval := range exchangeTickIntervals {
+				key := cache.BuildExchangeKey(exchange.Name, currencyPair.CurrencyPair, interval)
+				exchangeTickTime := charts.ExchangeSetTime(key)
+				tickSlice, err := pg.exchangeTicksChartData(ctx, currencyPair.CurrencyPair, interval, exchange.Name, exchangeTickTime)
+				if err != nil && err != sql.ErrNoRows {
+					return nil, cancel, err
+				}
+
+				var tickSet exchangeTickSet
+				for _, exchangeTick := range tickSlice {
+					tickSet.time = append(tickSet.time, uint64(exchangeTick.Time.UTC().Unix()))
+					tickSet.open = append(tickSet.open, exchangeTick.Open)
+					tickSet.close = append(tickSet.close, exchangeTick.Close)
+					tickSet.high = append(tickSet.high, exchangeTick.High)
+					tickSet.low = append(tickSet.low, exchangeTick.Low)
+				}
+
+				tickSets[key] = tickSet
+			}
+		}
+	}
+
+	return tickSets, cancel, nil
+}
+
+func appendExchangeChart(charts *cache.ChartData, data interface{}) error {
+	var tickSets = data.(map[string]exchangeTickSet)
+	for key, tickSet := range tickSets {
+		charts.Exchange.Append(key, tickSet.time, tickSet.open, tickSet.close, tickSet.high, tickSet.low)
+	}
+
+	return nil
 }

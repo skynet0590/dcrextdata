@@ -1,6 +1,9 @@
 package cache
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const(
 	ExchangeCloseAxis axisType = "close"
@@ -9,38 +12,93 @@ const(
 	ExchangeLowAxis axisType = "low"
 )
 
-type exchangeAxis struct {
-
+type exchangeSet struct {
+	// holds a set of exchange tick where the key is exchange name, currency pair and interval joined by -
+	Ticks map[string]exchangeTick
 }
 
-type exchangeSet struct {
-	exchanges map[string]exchangeTickSet
+type exchangeTick struct {
+	Time    ChartUints
+	Open    ChartFloats
+	Close   ChartFloats
+	High    ChartFloats
+	Low     ChartFloats
+	cacheID uint64
+}
+
+func (tickSet *exchangeTick) Snip(length int) {
+	tickSet.Time = tickSet.Time.snip(length)
+	tickSet.Open = tickSet.Open.snip(length)
+	tickSet.Close = tickSet.Close.snip(length)
+	tickSet.High = tickSet.High.snip(length)
+	tickSet.Low = tickSet.Low.snip(length)
 }
 
 func (set *exchangeSet) Snip(length int) {
-	for _, tickSet := range set.exchanges {
+	for _, tickSet := range set.Ticks {
 		tickSet.Snip(length)
 	}
 }
 
-// exchangeTickSet is a set of exchange tick data
-type exchangeTickSet struct {
-	Time ChartUints
-	Ticks ChartNullFloats
+func newExchangeSet() *exchangeSet {
+	return &exchangeSet{Ticks: map[string]exchangeTick{}}
 }
 
-// Snip truncates the exchangeSet to a provided length.
-func (set *exchangeTickSet) Snip(length int) {
-	set.Time = set.Time.snip(length)
-	set.Ticks = set.Ticks.snip(length)
-}
+func (set *exchangeSet) Append(key string, time ChartUints, open ChartFloats, close ChartFloats, high ChartFloats, low ChartFloats) {
+	if existingTick, found := set.Ticks[key]; found {
 
-func (exch *exchangeSet) ticks(exchange string, axis axisType, interval int) (time ChartUints, ticks ChartFloats, err error) {
-	if tickSet, found := exch.exchanges[exchange]; found {
-		return tickSet.Time, nil, nil
+		existingTick.Time = append(existingTick.Time, time...)
+		existingTick.Open = append(existingTick.Open, open...)
+		existingTick.Close = append(existingTick.Close, close...)
+		existingTick.High = append(existingTick.High, high...)
+		existingTick.Low = append(existingTick.Low, low...)
 	} else {
-		return nil, nil, errors.New("exchange not found")
+		set.Ticks[key] = exchangeTick{
+			Time:  time,
+			Open:  open,
+			Close: close,
+			High:  high,
+			Low:   low,
+		}
+	}
+}
+// BuildExchangeKey returns exchange name, currency pair and interval joined by -
+func BuildExchangeKey(exchangeName string, currencyPair string, interval int) string {
+	return fmt.Sprintf("%s-%s-%d", exchangeName, currencyPair, interval)
+}
+
+func (charts *ChartData) ExchangeSetTime(key string) uint64 {
+	if tick, found := charts.Exchange.Ticks[key]; found && len(tick.Time) > 0 {
+		return tick.Time[len(tick.Time)-1]
+	}
+	return 0
+}
+
+func makeExchangeChart(charts *ChartData, _ binLevel, axis axisType, setKey ...string) ([]byte, error) {
+	if len(setKey) < 1 {
+		return nil, errors.New("exchange set key is required for exchange chart")
 	}
 
-	return nil, nil, nil
+	if tick, found := charts.Exchange.Ticks[setKey[0]]; found {
+		var yAxis ChartFloats
+		switch axis {
+		case ExchangeOpenAxis:
+			yAxis = tick.Open
+			break
+		case ExchangeCloseAxis:
+			yAxis = tick.Close
+			break
+		case ExchangeLowAxis:
+			yAxis = tick.Low
+			break
+		case ExchangeHighAxis:
+			yAxis = tick.High
+			break
+		default:
+			return nil, errors.New("invalid exchange chart axis")
+		}
+
+		return charts.encode(nil, tick.Time, yAxis)
+	}
+	return nil, errors.New("no record found for the selected exchange")
 }
