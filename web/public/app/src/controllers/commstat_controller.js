@@ -19,7 +19,8 @@ export default class extends Controller {
       'viewOptionControl', 'viewOption',
       'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
-      'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType', 'twitterHandle', 'repository'
+      'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType',
+      'twitterHandle', 'repository', 'channel'
     ]
   }
 
@@ -49,6 +50,11 @@ export default class extends Controller {
     this.repository = this.repositoryTarget.dataset.initialValue
     if (this.repository === '') {
       this.repository = this.repositoryTarget.value = this.repositoryTarget.options[0].innerText
+    }
+
+    this.channel = this.channelTarget.dataset.initialValue
+    if (this.channel === '') {
+      this.channel = this.channelTarget.value = this.channelTarget.options[0].innerText
     }
 
     this.dataType = this.dataTypeTarget.dataset.initialValue
@@ -129,6 +135,16 @@ export default class extends Controller {
     }
   }
 
+  channelChanged (event) {
+    this.channel = event.currentTarget.value
+    this.currentPage = 1
+    if (this.viewOption === 'table') {
+      this.fetchData()
+    } else {
+      this.fetchDataAndPlotGraph()
+    }
+  }
+
   dataTypeChanged (event) {
     this.dataType = event.currentTarget.value
     this.fetchDataAndPlotGraph()
@@ -174,6 +190,14 @@ export default class extends Controller {
         addDataTypeOption('stars', 'Stars')
         show(_this.dataTypeWrapperTarget)
         break
+      case 'Youtube':
+        if (this.dataType !== 'subscribers' && this.dataType !== 'view_count') {
+          this.dataType = 'subscribers'
+        }
+        addDataTypeOption('subscribers', 'Subscribers')
+        addDataTypeOption('view_count', 'View Count')
+        show(_this.dataTypeWrapperTarget)
+        break
     }
 
     if (this.dataType === '' && this.dataTypeTarget.innerHTML !== '') {
@@ -207,7 +231,7 @@ export default class extends Controller {
     const _this = this
     const queryString = `page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=` +
       `${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}&twitter-handle=${this.twitterHandle}` +
-      `&repository=${this.repository}`
+      `&repository=${this.repository}&channel=${this.channel}`
     axios.get(`/getCommunityStat?${queryString}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -265,9 +289,9 @@ export default class extends Controller {
     this.tableCol2Target.innerText = columns[1]
     if (columns.length > 2) {
       this.tableCol3Target.innerText = columns[2]
-      show(this.tableCol2Target)
+      show(this.tableCol3Target)
     } else {
-      hide(this.tableCol2Target)
+      hide(this.tableCol3Target)
     }
 
     if (!stats) {
@@ -315,7 +339,7 @@ export default class extends Controller {
 
   displayYoutubeData (stat, fields) {
     fields[1].innerHTML = stat.subscribers
-    hide(fields[2])
+    fields[2].innerText = stat.view_count
   }
 
   fetchDataAndPlotGraph () {
@@ -324,7 +348,7 @@ export default class extends Controller {
 
     const _this = this
     const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}` +
-      `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}&repository=${this.repository}`
+      `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}&repository=${this.repository}&channel=${this.channel}`
     window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
 
     axios.get(`/communitychat?${queryString}`).then(function (response) {

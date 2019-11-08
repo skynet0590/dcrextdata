@@ -110,6 +110,8 @@ func (pg *PgDb) StoreYoutubeStat(ctx context.Context, youtube commstats.Youtube)
 	youtubeModel := models.Youtube{
 		Date:        youtube.Date,
 		Subscribers: youtube.Subscribers,
+		ViewCount:   youtube.ViewCount,
+		Channel:     youtube.Channel,
 	}
 
 	err := youtubeModel.Insert(ctx, pg.db, boil.Infer())
@@ -122,12 +124,13 @@ func (pg *PgDb) StoreYoutubeStat(ctx context.Context, youtube commstats.Youtube)
 	return err
 }
 
-func (pg *PgDb) CountYoutubeStat(ctx context.Context) (int64, error) {
-	return models.Youtubes().Count(ctx, pg.db)
+func (pg *PgDb) CountYoutubeStat(ctx context.Context, channel string) (int64, error) {
+	return models.Youtubes(models.YoutubeWhere.Channel.EQ(channel)).Count(ctx, pg.db)
 }
 
-func (pg *PgDb) YoutubeStat(ctx context.Context, offtset int, limit int) ([]commstats.Youtube, error) {
+func (pg *PgDb) YoutubeStat(ctx context.Context, channel string, offtset int, limit int) ([]commstats.Youtube, error) {
 	statSlice, err := models.Youtubes(
+		models.YoutubeWhere.Channel.EQ(channel),
 		qm.OrderBy(fmt.Sprintf("%s DESC", models.YoutubeColumns.Date)),
 		qm.Offset(offtset), qm.Limit(limit)).All(ctx, pg.db)
 	if err != nil {
@@ -139,6 +142,8 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, offtset int, limit int) ([]comm
 		stat := commstats.Youtube{
 			Date:        record.Date,
 			Subscribers: record.Subscribers,
+			ViewCount: record.ViewCount,
+			Channel: record.Channel,
 		}
 
 		result = append(result, stat)

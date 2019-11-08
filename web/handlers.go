@@ -1363,6 +1363,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 	dataType := req.FormValue("data-type")
 	twitterHandle := req.FormValue("twitter-handle")
 	repository := req.FormValue("repository")
+	channel := req.FormValue("channel")
 
 	page, _ := strconv.Atoi(pageStr)
 	if page < 1 {
@@ -1389,7 +1390,11 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 		repository = commstats.Repositories()[0]
 	}
 
-	selectedNum, _ := strconv.Atoi(selectedNumStr)
+	if channel == "" && len(commstats.YoutubeChannels()) > 0 {
+		channel = commstats.YoutubeChannels()[0]
+	}
+
+		selectedNum, _ := strconv.Atoi(selectedNumStr)
 	if selectedNum == 0 {
 		selectedNum = 20
 	}
@@ -1414,6 +1419,8 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 		"twitterHandle":    twitterHandle,
 		"repositories":     commstats.Repositories(),
 		"repository":       repository,
+		"channels":         commstats.YoutubeChannels(),
+		"channel":          channel,
 		"dataType":         dataType,
 		"currentPage":      page,
 		"pageSizeSelector": pageSizeSelector,
@@ -1498,19 +1505,20 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks")
 		break
 	case youtubePlatform:
-		stats, err = s.db.YoutubeStat(req.Context(), offset, pageSize)
+		channel := req.FormValue("channel")
+		stats, err = s.db.YoutubeStat(req.Context(), channel, offset, pageSize)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Youtbue stat, %s", err.Error()), resp)
 			return
 		}
 
-		totalCount, err = s.db.CountYoutubeStat(req.Context())
+		totalCount, err = s.db.CountYoutubeStat(req.Context(), channel)
 		if err != nil {
 			s.renderErrorJSON(fmt.Sprintf("cannot fetch Youtbue stat, %s", err.Error()), resp)
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Subscribers")
+		columnHeaders = append(columnHeaders, "Date", "Subscribers", "View Count")
 		break
 	}
 
@@ -1557,8 +1565,12 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		filters[models.RedditColumns.Subreddit] = fmt.Sprintf("'%s'", req.FormValue("subreddit"))
 	case youtubePlatform:
 		plarform = models.TableNames.Youtube
-		dataType = models.YoutubeColumns.Subscribers
-		yLabel = "Subscribers"
+		if dataType == models.YoutubeColumns.ViewCount {
+			yLabel = "View Count"
+		} else if dataType == models.YoutubeColumns.Subscribers {
+			yLabel = "Subscribers"
+		}
+		filters[models.YoutubeColumns.Channel] = fmt.Sprintf("'%s'", req.FormValue("channel"))
 		break
 	}
 

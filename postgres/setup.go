@@ -134,6 +134,8 @@ const (
 	createYoutubeTable = `CREATE TABLE IF NOT EXISTS youtube (
 		date timestamp,
 		subscribers INT NOT NULL,
+		view_count INT NOT NULL,
+		channel VARCHAR(256) NOT NULL,
 		PRIMARY KEY (date)
 	);`
 )
