@@ -42,6 +42,7 @@ type Github struct {
 type Youtube struct {
 	Date        time.Time `json:"date"`
 	Subscribers int       `json:"subscribers"`
+	Channel string    `json:"channel"`
 }
 
 type Twitter struct {

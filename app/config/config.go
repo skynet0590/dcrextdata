@@ -37,6 +37,14 @@ const (
 	defaultYoutubeInterval     = 60 * 24
 )
 
+var (
+	defaultSubreddits         	= []string{"decred"}
+	defaultTwitterHandles     	= []string{"decredproject"}
+	defaultGithubRepositories 	= []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
+	defaultYoutubeChannelNames 	= []string{"Decred"}
+	defaultYoutubeChannelId		= []string{"UCJ2bYDaPYHpSmJPh_M5dNSg"}
+)
+
 func defaultFileOptions() ConfigFileOptions {
 	cfg := ConfigFileOptions{
 		LogFile:         defaultLogFilename,
@@ -60,9 +68,14 @@ func defaultFileOptions() ConfigFileOptions {
 	}
 
 	cfg.RedditStatInterval = defaultRedditInterval
+	cfg.Subreddit = defaultSubreddits
 	cfg.TwitterStatInterval = defaultTwitterStatInterval
+	cfg.TwitterHandles = defaultTwitterHandles
 	cfg.GithubStatInterval = defaultGithubStatInterval
+	cfg.GithubRepositories = defaultGithubRepositories
 	cfg.YoutubeStatInterval = defaultYoutubeInterval
+	cfg.YoutubeChannelName = defaultYoutubeChannelNames
+	cfg.YoutubeChannelId = defaultYoutubeChannelId
 	return cfg
 }
 
@@ -133,6 +146,8 @@ type CommunityStatOptions struct {
 	TwitterStatInterval   int      `long:"twitterstatinterval" description:"Number of minutes between Twitter stat collection"`
 	GithubRepositories    []string `long:"githubrepository" description:"List of Github repositories to track"`
 	GithubStatInterval    int      `long:"githubstatinterval" description:"Number of minutes between Github stat collection"`
+	YoutubeChannelName	  []string `long:"youtubechannelname" description:"List of Youtube channel names to be tracked"`
+	YoutubeChannelId	  []string `long:"youtubechannelid" description:"List of Youtube channel ID to be tracked"`
 	YoutubeStatInterval   int      `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
 	YoutubeDataApiKey     string   `long:"youtubedataapikey" description:"Youtube data API key gotten from google developer console"`
 }

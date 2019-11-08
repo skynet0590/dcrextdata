@@ -15,15 +15,23 @@ import (
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 )
 
-const (
-	youtubeChannelId = "UCJ2bYDaPYHpSmJPh_M5dNSg"
-)
+var youtubeChannels []string
+
+func YoutubeChannels() []string {
+	return youtubeChannels
+}
 
 func (c *Collector) startYoutubeCollector(ctx context.Context) {
 	if c.options.YoutubeDataApiKey == "" {
 		log.Error("youtubedataapikey is required for the youtube stat collector to work")
 		return
 	}
+
+	if len(c.options.YoutubeChannelName) != len(c.options.YoutubeChannelId) {
+		log.Error("Both name and ID is required for all youtube channels")
+		return
+	}
+
 	var lastCollectionDate time.Time
 	err := c.dataStore.LastEntry(ctx, models.TableNames.Youtube, &lastCollectionDate)
 	if err != nil && err != sql.ErrNoRows {
@@ -71,36 +79,43 @@ func (c *Collector) startYoutubeCollector(ctx context.Context) {
 func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context) {
 	log.Info("Starting Github stats collection cycle")
 	// youtube
-	youtubeSubscribers, err := c.getYoutubeSubscriberCount(ctx)
-	for retry := 0; err != nil; retry++ {
-		if retry == retryLimit {
+	for index, id := range c.options.YoutubeChannelId {
+		youtubeSubscribers, err := c.getYoutubeSubscriberCount(ctx, id)
+		for retry := 0; err != nil; retry++ {
+			if retry == retryLimit {
+				return
+			}
+			log.Warn(err)
+			youtubeSubscribers, err = c.getYoutubeSubscriberCount(ctx, id)
+		}
+
+		var channel = c.options.YoutubeChannelName[index]
+
+		youtubeStat := Youtube{
+			Date:        time.Now().UTC(),
+			Subscribers: youtubeSubscribers,
+			Channel: channel,
+		}
+		err = c.dataStore.StoreYoutubeStat(ctx, youtubeStat)
+		if err != nil {
+			log.Error("Unable to save Youtube stat, %s", err.Error())
 			return
 		}
-		log.Warn(err)
-		youtubeSubscribers, err = c.getYoutubeSubscriberCount(ctx)
+
+
+		log.Infof("New Youtube stat collected for %s at %s, Subscribers %d", channel,
+			youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)
 	}
 
-	youtubeStat := Youtube{
-		Date:        time.Now().UTC(),
-		Subscribers: youtubeSubscribers,
-	}
-	err = c.dataStore.StoreYoutubeStat(ctx, youtubeStat)
-	if err != nil {
-		log.Error("Unable to save Youtube stat, %s", err.Error())
-		return
-	}
-
-	log.Infof("New Youtube stat collected at %s, Subscribers %d",
-		youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)
 }
 
-func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) {
+func (c *Collector) getYoutubeSubscriberCount(ctx context.Context, youtubeChannelId string) (int, error) {
 	if ctx.Err() != nil {
 		return 0, ctx.Err()
 	}
 
-	youtubeUrl := fmt.Sprintf("https://content.googleapis.com/youtube/v3/channels?key=%s&part=statistics&id=%s",
-		c.options.YoutubeDataApiKey, youtubeChannelId)
+	youtubeUrl := fmt.Sprintf("https://www.googleapis.com/youtube/v3/channels?part=statistics&id=%s&key=%s",
+		youtubeChannelId, c.options.YoutubeDataApiKey)
 
 	request, err := http.NewRequest(http.MethodGet, youtubeUrl, nil)
 	if err != nil {
@@ -128,7 +143,7 @@ func (c *Collector) getYoutubeSubscriberCount(ctx context.Context) (int, error) 
 			return 0, fmt.Errorf(fmt.Sprintf("Failed to decode json: %v", err))
 		}
 	} else {
-		return 0, fmt.Errorf("unable to fetch youtube subscribers: %s", resp.Status)
+		return 0, fmt.Errorf("unable to fetch youtube subscribers: %s, %s", resp.Status, youtubeUrl)
 	}
 
 	if len(response.Items) < 1 {

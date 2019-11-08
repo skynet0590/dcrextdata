@@ -26,6 +26,7 @@
                     </div>
 
                     <div class="mr-auto d-flex my-2">
+
                         <div class="control-div p-0 ml-1">
                             <div class=" mb-2">
                                 <div class="control-label">Platform:</div>
@@ -39,6 +40,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Reddit">
                             <div class=" mb-2">
                                 <div class="control-label">Subreddit</div>
@@ -52,6 +54,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Twitter">
                             <div class=" mb-2">
                                 <div class="control-label">Handle</div>
@@ -65,6 +68,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Github">
                             <div class=" mb-2">
                                 <div class="control-label">Repository</div>
@@ -78,6 +82,21 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Youtube">
+                            <div class=" mb-2">
+                                <div class="control-label">Channel</div>
+                                <select data-target="commstat.channel" data-initial-value="{{.channel}}"
+                                        data-action="change->commstat#channelChanged" class="form-control mr-5"
+                                        style="width: 120px;">
+                                    {{$channel := .channel}}
+                                    {{ range $filter := .channels}}
+                                        <option value="{{$filter}}" {{ if eq $filter $channel}} selected {{ end }}>{{$filter}}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="control-div p-0 ml-1 d-none" data-target="commstat.dataTypeWrapper">
                             <div class=" mb-2">
                                 <div class="control-label">Data</div>
@@ -87,6 +106,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div data-target="commstat.numPageWrapper"
                              class="control-div p-0 ml-1 {{ if eq .viewOption "chart" }}d-none{{ end }}">
                             <div class=" mb-2 float-md-right">
@@ -102,6 +122,7 @@
                                 </select>
                             </div>
                         </div>
+
                         <div data-target="commstat.pageSizeWrapper"
                              class="d-flex {{ if eq .viewOption "chart" }}d-none{{ end }}">
                             <a href="javascript:void(0)" data-target="commstat.previousPageButton"
