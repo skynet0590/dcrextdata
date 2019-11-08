@@ -110,6 +110,7 @@ func (pg *PgDb) StoreYoutubeStat(ctx context.Context, youtube commstats.Youtube)
 	youtubeModel := models.Youtube{
 		Date:        youtube.Date,
 		Subscribers: youtube.Subscribers,
+		ViewCount:   youtube.ViewCount,
 		Channel:     youtube.Channel,
 	}
 
@@ -141,6 +142,7 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, channel string, offtset int, li
 		stat := commstats.Youtube{
 			Date:        record.Date,
 			Subscribers: record.Subscribers,
+			ViewCount: record.ViewCount,
 			Channel: record.Channel,
 		}
 

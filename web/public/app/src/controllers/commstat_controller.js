@@ -190,6 +190,14 @@ export default class extends Controller {
         addDataTypeOption('stars', 'Stars')
         show(_this.dataTypeWrapperTarget)
         break
+      case 'Youtube':
+        if (this.dataType !== 'subscribers' && this.dataType !== 'view_count') {
+          this.dataType = 'subscribers'
+        }
+        addDataTypeOption('subscribers', 'Subscribers')
+        addDataTypeOption('view_count', 'View Count')
+        show(_this.dataTypeWrapperTarget)
+        break
     }
 
     if (this.dataType === '' && this.dataTypeTarget.innerHTML !== '') {
@@ -331,7 +339,7 @@ export default class extends Controller {
 
   displayYoutubeData (stat, fields) {
     fields[1].innerHTML = stat.subscribers
-    hide(fields[2])
+    fields[2].innerText = stat.view_count
   }
 
   fetchDataAndPlotGraph () {

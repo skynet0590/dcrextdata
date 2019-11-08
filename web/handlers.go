@@ -1518,7 +1518,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Subscribers")
+		columnHeaders = append(columnHeaders, "Date", "Subscribers", "View Count")
 		break
 	}
 
@@ -1565,8 +1565,11 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		filters[models.RedditColumns.Subreddit] = fmt.Sprintf("'%s'", req.FormValue("subreddit"))
 	case youtubePlatform:
 		plarform = models.TableNames.Youtube
-		dataType = models.YoutubeColumns.Subscribers
-		yLabel = "Subscribers"
+		if dataType == models.YoutubeColumns.ViewCount {
+			yLabel = "View Count"
+		} else if dataType == models.YoutubeColumns.Subscribers {
+			yLabel = "Subscribers"
+		}
 		filters[models.YoutubeColumns.Channel] = fmt.Sprintf("'%s'", req.FormValue("channel"))
 		break
 	}
