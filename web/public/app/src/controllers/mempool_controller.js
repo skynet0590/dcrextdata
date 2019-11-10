@@ -64,7 +64,7 @@ export default class extends Controller {
     show(this.btnWrapperTarget)
     this.nextPage = this.currentPage
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
     trimUrl(['view-option', 'page', 'records-per-page'])
   }
 
@@ -91,25 +91,25 @@ export default class extends Controller {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     this.fetchData('chart')
-    insertOrUpdateQueryParam('chart-data-type', this.dataType)
+    insertOrUpdateQueryParam('chart-data-type', this.dataType, 'mempool-size')
   }
 
   numberOfRowsChanged () {
     this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('records-per-page', this.selectedNumberOfRowsberOfRows)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumberOfRowsberOfRows, 20)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.nextPage)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.nextPage)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   fetchData (display) {

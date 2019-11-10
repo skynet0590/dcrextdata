@@ -152,6 +152,7 @@ export default class extends Controller {
     this.currentPage -= 1
     this.fetchTableData(this.currentPage)
     insertOrUpdateQueryParam('page', this.currentPage, 1)
+    insertOrUpdateQueryParam('chart-type', this.chartType, 'block-propagation')
   }
 
   loadNextPage () {

@@ -464,8 +464,8 @@ func (pg *PgDb) fetchBlockReceiveTimeByHeight(ctx context.Context, height int32)
 func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
-	charts.Height()
-	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(time.Unix(int64(charts.MempoolTime()), 0))).All(ctx, pg.db)
+	charts.PropagationHeight()
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(time.Unix(int64(charts.MempoolTime()), 0).UTC())).All(ctx, pg.db)
 	if err != nil {
 		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
 	}
@@ -497,7 +497,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 	emptyCancelFunc := func() {}
 	var propagationSet propagationSet
 
-	chartsBlockHeight := charts.Height()
+	chartsBlockHeight := charts.PropagationHeight()
 	blockDelays, err := pg.propagationBlockChartData(ctx, int(chartsBlockHeight))
 	if err != nil && err != sql.ErrNoRows {
 		return nil, emptyCancelFunc, err

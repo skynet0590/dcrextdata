@@ -911,6 +911,7 @@ type ChartGobject struct {
 type cachedChart struct {
 	cacheID uint64
 	data    []byte
+	version uint64
 }
 
 // A generic structure for JSON encoding keyed data sets.
@@ -1024,13 +1025,21 @@ func (charts *ChartData) Lengthen() error {
 	charts.cacheMtx.Lock()
 	defer charts.cacheMtx.Unlock()
 
-	// For mempool, blocks and windows, the cacheID is the last timestamp.
+	// set cacheID to latest
 	if mempool.Time.Length() > 0 {
 		charts.Mempool.cacheID = mempool.Time[len(mempool.Time)-1]
 	}
 
 	if propagation.Height.Length() > 0 {
 		charts.Propagation.cacheID = propagation.Height[len(propagation.Height)-1]
+	}
+
+	if charts.Vsp.Time.Length() > 0 {
+		charts.Vsp.cacheID = charts.Vsp.Time[charts.Vsp.Time.Length()-1]
+	}
+
+	if charts.Pow.Time.Length() > 0 {
+		charts.Pow.cacheID = charts.Pow.Time[charts.Pow.Time.Length()-1]
 	}
 
 	return nil
@@ -1171,10 +1180,12 @@ func (charts *ChartData) Dump(dumpPath string) {
 
 // TriggerUpdate triggers (*ChartData).Update.
 func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
+	log.Info("Starting chart data update")
 	if err := charts.Update(ctx); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
 	}
+	log.Info("Chart data update completed")
 	return nil
 }
 
@@ -1256,7 +1267,7 @@ func (charts *ChartData) MempoolTime() uint64 {
 }
 
 // PropagationHeight is the height of the propagation blocks data, which is the most recent entry
-func (charts *ChartData) Height() int32 {
+func (charts *ChartData) PropagationHeight() int32 {
 	charts.mtx.RLock()
 	defer charts.mtx.RUnlock()
 	if len(charts.Propagation.Height) == 0 {
@@ -1353,12 +1364,10 @@ func (charts *ChartData) Update(ctx context.Context) error {
 		}
 	}
 
-	// Since the charts db data query is complete. Update chart.Days derived dataset.
+	// Since the charts db data query is complete. Update derived dataset.
 	if err := charts.Lengthen(); err != nil {
 		return fmt.Errorf("(*ChartData).Lengthen failed: %v", err)
 	}
-	// clear cached
-	charts.cache = map[string]*cachedChart{} // TODO: look for a way to only remove updated chart
 	return nil
 }
 
@@ -1432,7 +1441,7 @@ func (charts *ChartData) getCache(chartID string, bin binLevel, axis axisType) (
 }
 
 // Store the chart associated with the provided type and BinLevel.
-func (charts *ChartData) cacheChart(chartID string, bin binLevel, axis axisType, data []byte) {
+func (charts *ChartData) cacheChart(chartID string, version uint64, bin binLevel, axis axisType, data []byte) {
 	ck := cacheKey(chartID, bin, axis)
 	charts.cacheMtx.Lock()
 	defer charts.cacheMtx.Unlock()
@@ -1441,6 +1450,7 @@ func (charts *ChartData) cacheChart(chartID string, bin binLevel, axis axisType,
 	// ChartMaker and here. This would just cause a one block delay.
 	charts.cache[ck] = &cachedChart{
 		cacheID: charts.cacheID(bin),
+		version: version,
 		data:    data,
 	}
 }
@@ -1465,6 +1475,31 @@ var chartMakers = map[string]ChartMaker{
 	Exchange: makeExchangeChart,
 }
 
+func (charts *ChartData) getVersion(chartID string) uint64 {
+	switch chartID {
+	case MempoolTxCount:
+	case MempoolSize:
+	case MempoolFees:
+		return charts.MempoolTime()
+	case BlockPropagation:
+	case BlockTimestamp:
+	case VotesReceiveTime:
+		return uint64(charts.PropagationHeight())
+	case PowChart:
+		return charts.PowTime()
+	case VSP:
+		return charts.VspTime()
+	case Exchange:
+		var version uint64
+		for key, _ := range charts.Exchange.Ticks {
+			if charts.ExchangeSetTime(key) > version {
+				version = charts.ExchangeSetTime(key)
+			}
+		}
+		return version
+	}
+	return charts.MempoolTime()
+}
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
 func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...string) ([]byte, error) {
@@ -1474,9 +1509,14 @@ func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...
 	sort.Strings(extras)
 	completeId := strings.Join(append(extras, chartID), "-")
 
+	currentVersion := charts.getVersion(chartID)
 	cache, found, cacheID := charts.getCache(completeId, bin, axis)
 	if found && cache.cacheID == cacheID {
-		return cache.data, nil
+		if currentVersion == cache.version {
+			return cache.data, nil
+		}
+		ck := cacheKey(completeId, bin, axis)
+		delete(charts.cache, ck)
 	}
 
 	maker, hasMaker := chartMakers[chartID]
@@ -1491,7 +1531,7 @@ func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(completeId, bin, axis, data)
+	charts.cacheChart(completeId, currentVersion, bin, axis, data)
 	return data, nil
 }
 
@@ -1532,68 +1572,6 @@ func (charts *ChartData) encodeArr(keys []string, sets []lengther) ([]byte, erro
 		response[rk] = sets[i].Truncate(smaller)
 	}
 	return json.Marshal(response)
-}
-
-// Each point is translated to the sum of all points before and itself.
-func accumulate(data ChartUints) ChartUints {
-	d := make(ChartUints, 0, len(data))
-	var accumulator uint64
-	for _, v := range data {
-		accumulator += v
-		d = append(d, accumulator)
-	}
-	return d
-}
-
-// Translate the times slice to a slice of differences. The original dataset
-// minus the first element is returned for convenience.
-func blockTimes(blocks ChartUints) (ChartUints, ChartUints) {
-	times := make(ChartUints, 0, len(blocks))
-	dataLen := len(blocks)
-	if dataLen < 2 {
-		// Fewer than two data points is invalid for btw. Return empty data sets so
-		// that the JSON encoding will have the correct type.
-		return times, times
-	}
-	last := blocks[0]
-	for _, v := range blocks[1:] {
-		dif := v - last
-		if int64(dif) < 0 {
-			dif = 0
-		}
-		times = append(times, dif)
-		last = v
-	}
-	return blocks[1:], times
-}
-
-// Take the average block times on the intervals defined by the ticks argument.
-func avgBlockTimes(ticks, blocks ChartUints) (ChartUints, ChartUints) {
-	if len(ticks) < 2 {
-		// Return empty arrays so that JSON-encoding will have the correct type.
-		return ChartUints{}, ChartUints{}
-	}
-	avgDiffs := make(ChartUints, 0, len(ticks)-1)
-	times := make(ChartUints, 0, len(ticks)-1)
-	nextIdx := 1
-	workingOn := ticks[0]
-	next := ticks[nextIdx]
-	lastIdx := 0
-	for i, t := range blocks {
-		if t > next {
-			_, pts := blockTimes(blocks[lastIdx:i])
-			avgDiffs = append(avgDiffs, pts.Avg(0, len(pts)))
-			times = append(times, workingOn)
-			nextIdx++
-			if nextIdx > len(ticks)-1 {
-				break
-			}
-			lastIdx = i
-			next = ticks[nextIdx]
-			workingOn = next
-		}
-	}
-	return times, avgDiffs
 }
 
 func mempoolSize(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
