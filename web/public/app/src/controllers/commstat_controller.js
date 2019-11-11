@@ -1,6 +1,17 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate, trimUrl, insertOrUpdateQueryParam, removeUrlParam } from '../utils'
+import {
+  hide,
+  show,
+  legendFormatter,
+  setActiveOptionBtn,
+  showLoading,
+  hideLoading,
+  formatDate,
+  trimUrl,
+  insertOrUpdateQueryParam,
+  removeUrlParam
+} from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 const redditPlatform = 'Reddit'
@@ -85,6 +96,7 @@ export default class extends Controller {
     this.pageSizeTarget.value = this.pageSize
     this.updateDataTypeControl()
     this.fetchData()
+    insertOrUpdateQueryParam('view-option', this.viewOption, 'chart')
   }
 
   setChart () {
@@ -156,6 +168,7 @@ export default class extends Controller {
     } else {
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('platform', this.platform, this.platformTarget.options[0].innerText)
   }
 
   resetSubAccountsAndDataType () {
@@ -189,6 +202,7 @@ export default class extends Controller {
     } else {
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('subreddit', this.subreddit, event.currentTarget.options[0].innerText)
   }
 
   twitterHandleChanged (event) {
@@ -204,6 +218,7 @@ export default class extends Controller {
     } else {
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('twitter-handle', this.twitterHandle, event.currentTarget.options[0].innerText)
   }
 
   repositoryChanged (event) {
@@ -219,6 +234,7 @@ export default class extends Controller {
     } else {
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('repository', this.repository, event.currentTarget.options[0].innerText)
   }
 
   channelChanged (event) {
@@ -234,6 +250,7 @@ export default class extends Controller {
     } else {
       this.fetchDataAndPlotGraph()
     }
+    insertOrUpdateQueryParam('channel', this.channel, event.currentTarget.options[0].innerText)
   }
 
   dataTypeChanged (event) {
@@ -244,6 +261,7 @@ export default class extends Controller {
     }
     insertOrUpdateQueryParam('data-type', this.dataType, defaultDataType)
     this.fetchDataAndPlotGraph()
+    insertOrUpdateQueryParam('data-type', this.dataType, this.dataTypeTarget.options[0].getAttribute('value'))
   }
 
   showCurrentSubAccountWrapper () {
@@ -310,12 +328,14 @@ export default class extends Controller {
     }
     insertOrUpdateQueryParam('page', this.currentPage, 1)
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   loadNextPage () {
     this.currentPage += 1
     insertOrUpdateQueryParam('page', this.currentPage, 1)
     this.fetchData()
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   pageSizeChanged (event) {
@@ -328,6 +348,7 @@ export default class extends Controller {
     insertOrUpdateQueryParam('page', this.currentPage, 1)
     insertOrUpdateQueryParam('records-per-page', this.pageSize, defaultPageSize)
     this.fetchData()
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumTarget.value, 20)
   }
 
   fetchData () {

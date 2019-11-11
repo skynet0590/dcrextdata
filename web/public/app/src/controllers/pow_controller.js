@@ -139,6 +139,7 @@ export default class extends Controller {
     this.currentPage = 1
     this.fetchData()
     insertOrUpdateQueryParam('page', this.currentPage, 1)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumTarget.value, 20)
   }
 
   fetchData () {

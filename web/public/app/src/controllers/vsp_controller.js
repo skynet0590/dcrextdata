@@ -238,7 +238,7 @@ export default class extends Controller {
   dataTypeChanged () {
     this.dataType = this.dataTypeTarget.value
     this.fetchDataAndPlotGraph()
-    insertOrUpdateQueryParam('data-type', this.dataType)
+    insertOrUpdateQueryParam('data-type', this.dataType, 'Immature')
   }
 
   fetchDataAndPlotGraph () {
