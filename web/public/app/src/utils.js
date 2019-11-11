@@ -377,3 +377,14 @@ export function getNumberOfPages (recordsCount, pageSize) {
   }
   return pageCount
 }
+
+/* eslint no-undef: 0 */
+export function notifySuccess (title, message) {
+  toastr.success(title, message)
+}
+
+export function notifyFailure (title, message) {
+  toastr.error(title, message)
+}
+
+/* eslint no-undef: 1 */

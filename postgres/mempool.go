@@ -478,7 +478,7 @@ func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) er
 	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
 	chartsMempool := charts.Mempool
 	for _, mempoolData := range mempoolSlice {
-		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.Unix()))
+		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.UTC().Unix()))
 		chartsMempool.Fees = append(chartsMempool.Fees, mempoolData.TotalFee.Float64)
 		chartsMempool.TxCount = append(chartsMempool.TxCount, uint64(mempoolData.NumberOfTransactions.Int))
 		chartsMempool.Size = append(chartsMempool.Size, uint64(mempoolData.Size.Int))

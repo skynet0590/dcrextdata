@@ -362,7 +362,7 @@ export default class extends Controller {
       options
     )
 
-    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.min_date))
+    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.max_date))
   }
 
   drawInitialGraph () {

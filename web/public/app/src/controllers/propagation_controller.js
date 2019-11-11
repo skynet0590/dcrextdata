@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData, notifyFailure
 } from '../utils'
 import dompurify from 'dompurify'
 
@@ -448,6 +448,10 @@ export default class extends Controller {
   }
 
   plotExtDataGraph (data) {
+    if (!this.syncSources) {
+      notifyFailure('Sync sources required', 'Add one or more sync sources to the configuration file to view propagation chart')
+      return
+    }
     const _this = this
 
     const labels = ['Height']
