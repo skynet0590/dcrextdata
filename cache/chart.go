@@ -40,13 +40,6 @@ type axisType string
 
 // These are the recognized binLevel and axisType values.
 const (
-	DayBin         binLevel = "day"
-	BlockBin       binLevel = "block"
-	WindowBin      binLevel = "window"
-	MempoolBin     binLevel = "mempool"
-	PropagationBin binLevel = "propagation"
-	PowBin         binLevel = "pow"
-
 	HeightAxis   axisType = "height"
 	TimeAxis     axisType = "time"
 	HashrateAxis axisType = "hashrate"
@@ -62,22 +55,6 @@ const (
 	UserCountAxis        axisType = "user-count"
 	UsersActiveAxis      axisType = "users-active"
 )
-
-// DefaultBinLevel will be used if a bin level is not specified to
-// (*ChartData).Chart (via empty string), or if the provided BinLevel is
-// invalid.
-var DefaultBinLevel = DayBin
-
-// ParseBin will return the matching bin level, else the default bin.
-func ParseBin(bin string) binLevel {
-	switch binLevel(bin) {
-	case BlockBin:
-		return BlockBin
-	case WindowBin:
-		return WindowBin
-	}
-	return DefaultBinLevel
-}
 
 // ParseAxis returns the matching axis type, else the default of time axis.
 func ParseAxis(aType string) axisType {
@@ -122,11 +99,6 @@ func ParseAxis(aType string) axisType {
 		return TimeAxis
 	}
 }
-
-const (
-	// aDay defines the number of seconds in a day.
-	aDay = 86400
-)
 
 // cacheVersion helps detect when the cache data stored has changed its
 // structure or content. A change on the cache version results to recomputing
@@ -183,29 +155,6 @@ func (data ChartFloats) snip(max int) ChartFloats {
 		max = len(data)
 	}
 	return data[:max]
-}
-
-// Avg is the average value of a segment of the dataset.
-func (data ChartFloats) Avg(s, e int) float64 {
-	if e <= s {
-		return 0
-	}
-	var sum float64
-	for _, v := range data[s:e] {
-		sum += v
-	}
-	return sum / float64(e-s)
-}
-
-// Sum is the accumulation of a segment of the dataset.
-func (data ChartFloats) Sum(s, e int) (sum float64) {
-	if e <= s {
-		return 0
-	}
-	for _, v := range data[s:e] {
-		sum += v
-	}
-	return
 }
 
 // A constructor for a sized ChartFloats.
@@ -398,7 +347,7 @@ func floatMapToPointer(input map[string]ChartNullFloats) map[string]chartNullFlo
 	return result
 }
 
-func floatPointerMapToChartFloatMap(input map[string]chartNullFloatsPointer) map[string]ChartNullFloats {
+func floatPointerToChartFloatMap(input map[string]chartNullFloatsPointer) map[string]ChartNullFloats {
 	result := map[string]ChartNullFloats{}
 	for key, value := range input {
 		result[key] = value.toChartNullFloats()
@@ -491,51 +440,6 @@ func (data ChartUints) snip(max int) ChartUints {
 		max = len(data)
 	}
 	return data[:max]
-}
-
-// Avg is the average value of a segment of the dataset.
-func (data ChartUints) Avg(s, e int) uint64 {
-	if e <= s {
-		return 0
-	}
-	var sum uint64
-	for _, v := range data[s:e] {
-		sum += v
-	}
-	return sum / uint64(e-s)
-}
-
-// Sum is the accumulation of a segment of the dataset.
-func (data ChartUints) Sum(s, e int) (sum uint64) {
-	if e <= s {
-		return 0
-	}
-	for _, v := range data[s:e] {
-		sum += v
-	}
-	return
-}
-
-func margeChartUints(data ...ChartUints) ChartUints {
-	var allRecords ChartUints
-	for _, record := range data {
-		allRecords = append(allRecords, record...)
-	}
-
-	sort.Slice(allRecords, func(i, j int) bool {
-		return allRecords[j] > allRecords[i]
-	})
-
-	var keys = map[uint64]bool{}
-	var result ChartUints
-	for _, record := range allRecords {
-		if _, found := keys[record]; !found {
-			keys[record] = true
-			result = append(result, record)
-		}
-	}
-
-	return result
 }
 
 // A constructor for a sized ChartUints.
@@ -769,99 +673,6 @@ func newVspSet(vsps []string, size int) *vspSet {
 	}
 }
 
-// zoomSet is a set of binned data. The smallest bin is block-sized. The zoomSet
-// is managed by explorer, and subsequently the database packages. ChartData
-// provides methods for validating the data and handling concurrency. The
-// cacheID is updated anytime new data is added and validated (see
-// Lengthen), typically once per bin duration.
-type zoomSet struct {
-	cacheID   uint64
-	Height    ChartUints
-	Time      ChartUints
-	PoolSize  ChartUints
-	PoolValue ChartFloats
-	BlockSize ChartUints
-	TxCount   ChartUints
-	NewAtoms  ChartUints
-	Chainwork ChartUints
-	Fees      ChartUints
-}
-
-// Snip truncates the zoomSet to a provided length.
-func (set *zoomSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-	set.Height = set.Height.snip(length)
-	set.Time = set.Time.snip(length)
-	set.PoolSize = set.PoolSize.snip(length)
-	set.PoolValue = set.PoolValue.snip(length)
-	set.BlockSize = set.BlockSize.snip(length)
-	set.TxCount = set.TxCount.snip(length)
-	set.NewAtoms = set.NewAtoms.snip(length)
-	set.Chainwork = set.Chainwork.snip(length)
-	set.Fees = set.Fees.snip(length)
-}
-
-// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
-// since the height is implicit for block-binned data.
-func newBlockSet(size int) *zoomSet {
-	return &zoomSet{
-		Height:    newChartUints(size),
-		Time:      newChartUints(size),
-		PoolSize:  newChartUints(size),
-		PoolValue: newChartFloats(size),
-		BlockSize: newChartUints(size),
-		TxCount:   newChartUints(size),
-		NewAtoms:  newChartUints(size),
-		Chainwork: newChartUints(size),
-		Fees:      newChartUints(size),
-	}
-}
-
-// Constructor for a sized zoomSet for day-binned data.
-func newDaySet(size int) *zoomSet {
-	set := newBlockSet(size)
-	set.Height = newChartUints(size)
-	return set
-}
-
-// windowSet is for data that only changes at the difficulty change interval,
-// 144 blocks on mainnet. stakeValid defines the number windows before the
-// stake validation height.
-type windowSet struct {
-	cacheID     uint64
-	Time        ChartUints
-	PowDiff     ChartFloats
-	TicketPrice ChartUints
-	StakeCount  ChartUints
-	MissedVotes ChartUints
-}
-
-// Snip truncates the windowSet to a provided length.
-func (set *windowSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-
-	set.Time = set.Time.snip(length)
-	set.PowDiff = set.PowDiff.snip(length)
-	set.TicketPrice = set.TicketPrice.snip(length)
-	set.StakeCount = set.StakeCount.snip(length)
-	set.MissedVotes = set.MissedVotes.snip(length)
-}
-
-// Constructor for a sized windowSet.
-func newWindowSet(size int) *windowSet {
-	return &windowSet{
-		Time:        newChartUints(size),
-		PowDiff:     newChartFloats(size),
-		TicketPrice: newChartUints(size),
-		StakeCount:  newChartUints(size),
-		MissedVotes: newChartUints(size),
-	}
-}
-
 // ChartGobject is the storage object for saving to a gob file. ChartData itself
 // has a lot of extraneous fields, and also embeds sync.RWMutex, so is not
 // suitable for gobbing.
@@ -871,7 +682,6 @@ type ChartGobject struct {
 	MempoolFees       ChartFloats
 	MempoolTxCount    ChartUints
 	PropagationHeight ChartUints
-	PropagationTime   ChartUints
 	BlockPropagation  map[string]ChartFloats
 	ChartDelays       ChartFloats
 	VotesReceiveTime  ChartFloats
@@ -938,20 +748,16 @@ type ChartUpdater struct {
 type ChartData struct {
 	mtx          sync.RWMutex
 	ctx          context.Context
-	DiffInterval int32
-	StartPOS     int32
 	Mempool      *mempoolSet
 	Propagation  *propagationSet
 	Pow          *powSet
 	Vsp          *vspSet
 	Exchange     *exchangeSet
 
-	Blocks     *zoomSet
-	Windows    *windowSet
-	Days       *zoomSet
 	cacheMtx   sync.RWMutex
 	cache      map[string]*cachedChart
 	updaters   []ChartUpdater
+
 	syncSource []string
 }
 
@@ -978,14 +784,6 @@ func ValidateLengths(lens ...lengther) (int, error) {
 		return shortest, fmt.Errorf("data length mismatch")
 	}
 	return firstLen, nil
-}
-
-// Reduce the timestamp to the previous midnight.
-func midnight(t uint64) (mid uint64) {
-	if t > 0 {
-		mid = t - t%aDay
-	}
-	return
 }
 
 // Lengthen performs data validation and populates the Days zoomSet. If there is
@@ -1117,32 +915,29 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 	charts.Pow.Hashrate = uintPointerMapToUint(gobject.PowHashrate)
 	charts.Pow.Workers = uintPointerMapToUint(gobject.PowWorkers)
 
-	charts.Blocks.Height = gobject.PropagationHeight
-	charts.Blocks.Time = gobject.PropagationTime
-	charts.Blocks.PoolSize = gobject.PoolSize
-	charts.Blocks.PoolValue = gobject.PoolValue
-	charts.Blocks.BlockSize = gobject.BlockSize
-	charts.Blocks.TxCount = gobject.TxCount
-	charts.Blocks.NewAtoms = gobject.NewAtoms
-	charts.Blocks.Chainwork = gobject.Chainwork
-	charts.Blocks.Fees = gobject.Fees
-
 	charts.Exchange = &gobject.Exchange
 
-	charts.Windows.Time = gobject.WindowTime
-	charts.Windows.PowDiff = gobject.PowDiff
-	charts.Windows.TicketPrice = gobject.TicketPrice
-	charts.Windows.StakeCount = gobject.StakeCount
-	charts.Windows.MissedVotes = gobject.MissedVotes
+	charts.Vsp.Time = gobject.VspTime
+	charts.Vsp.Immature = uintPointerMapToUint(gobject.VspImmature)
+	charts.Vsp.Live = uintPointerMapToUint(gobject.VspLive)
+	charts.Vsp.Missed = uintPointerMapToUint(gobject.VspMissed)
+	charts.Vsp.UserCount = uintPointerMapToUint(gobject.VspUserCount)
+	charts.Vsp.UsersActive = uintPointerMapToUint(gobject.VspUsersActive)
+	charts.Vsp.Voted = uintPointerMapToUint(gobject.VspVoted)
+	charts.Vsp.PoolFees = floatPointerToChartFloatMap(gobject.VspPoolFees)
+	charts.Vsp.ProportionLive = floatPointerToChartFloatMap(gobject.VspProportionLive)
+	charts.Vsp.ProportionMissed = floatPointerToChartFloatMap(gobject.VspProportionMissed)
+
 	charts.mtx.Unlock()
 
 	err = charts.Lengthen()
 	if err != nil {
 		log.Warnf("problem detected during (*ChartData).Lengthen. clearing datasets: %v", err)
 		charts.Mempool.Snip(0)
-		charts.Blocks.Snip(0)
-		charts.Windows.Snip(0)
-		charts.Days.Snip(0)
+		charts.Propagation.Snip(0)
+		charts.Pow.Snip(0)
+		charts.Exchange.Snip(0)
+		charts.Vsp.Snip(0)
 	}
 
 	return nil
@@ -1191,18 +986,19 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 
 func (charts *ChartData) gobject() *ChartGobject {
 	return &ChartGobject{
-		MempoolTime:       charts.Mempool.Time,
-		MempoolSize:       charts.Mempool.Size,
-		MempoolFees:       charts.Mempool.Fees,
-		MempoolTxCount:    charts.Mempool.TxCount,
+		MempoolTime:    charts.Mempool.Time,
+		MempoolSize:    charts.Mempool.Size,
+		MempoolFees:    charts.Mempool.Fees,
+		MempoolTxCount: charts.Mempool.TxCount,
+
 		PropagationHeight: charts.Propagation.Height,
-		PropagationTime:   charts.Blocks.Time,
 		BlockPropagation:  charts.Propagation.BlockPropagation,
 		ChartDelays:       charts.Propagation.BlockDelays,
 		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
-		PowTime:           charts.Pow.Time,
-		PowHashrate:       uintMapToPointer(charts.Pow.Hashrate),
-		PowWorkers:        uintMapToPointer(charts.Pow.Workers),
+
+		PowTime:     charts.Pow.Time,
+		PowHashrate: uintMapToPointer(charts.Pow.Hashrate),
+		PowWorkers:  uintMapToPointer(charts.Pow.Workers),
 
 		VspTime:             charts.Vsp.Time,
 		VspImmature:         uintMapToPointer(charts.Vsp.Immature),
@@ -1216,19 +1012,6 @@ func (charts *ChartData) gobject() *ChartGobject {
 		VspUsersActive:      uintMapToPointer(charts.Vsp.UsersActive),
 
 		Exchange: *charts.Exchange,
-
-		PoolSize:    charts.Blocks.PoolSize,
-		PoolValue:   charts.Blocks.PoolValue,
-		BlockSize:   charts.Blocks.BlockSize,
-		TxCount:     charts.Blocks.TxCount,
-		NewAtoms:    charts.Blocks.NewAtoms,
-		Chainwork:   charts.Blocks.Chainwork,
-		Fees:        charts.Blocks.Fees,
-		WindowTime:  charts.Windows.Time,
-		PowDiff:     charts.Windows.PowDiff,
-		TicketPrice: charts.Windows.TicketPrice,
-		StakeCount:  charts.Windows.StakeCount,
-		MissedVotes: charts.Windows.MissedVotes,
 	}
 }
 
@@ -1243,9 +1026,9 @@ func (charts *ChartData) StateID() uint64 {
 // stateID returns a unique (enough) ID associated with the state of the Blocks
 // data.
 func (charts *ChartData) stateID() uint64 {
-	timeLen := len(charts.Blocks.Time)
+	timeLen := len(charts.Mempool.Time)
 	if timeLen > 0 {
-		return charts.Blocks.Time[timeLen-1]
+		return charts.Mempool.Time[timeLen-1]
 	}
 	return 0
 }
@@ -1296,41 +1079,6 @@ func (charts *ChartData) VspTime() uint64 {
 	return charts.Vsp.Time[len(charts.Vsp.Time)-1]
 }
 
-// FeesTip is the height of the Fees data.
-func (charts *ChartData) FeesTip() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return int32(len(charts.Blocks.Fees)) - 1
-}
-
-// NewAtomsTip is the height of the NewAtoms data.
-func (charts *ChartData) NewAtomsTip() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return int32(len(charts.Blocks.NewAtoms)) - 1
-}
-
-// TicketPriceTip is the height of the TicketPrice data.
-func (charts *ChartData) TicketPriceTip() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return int32(len(charts.Windows.TicketPrice))*charts.DiffInterval - 1
-}
-
-// PoolSizeTip is the height of the PoolSize data.
-func (charts *ChartData) PoolSizeTip() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return int32(len(charts.Blocks.PoolSize)) - 1
-}
-
-// MissedVotesTip is the height of the MissedVotes data.
-func (charts *ChartData) MissedVotesTip() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return int32(len(charts.Windows.MissedVotes))*charts.DiffInterval - 1
-}
-
 // AddUpdater adds a ChartUpdater to the Updaters slice. Updaters are run
 // sequentially during (*ChartData).Update.
 func (charts *ChartData) AddUpdater(updater ChartUpdater) {
@@ -1378,25 +1126,17 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, pool
 	if base64Height < chainParams.StakeDiffWindowSize {
 		height = uint32(chainParams.StakeDiffWindowSize)
 	}
-	genesis := chainParams.GenesisBlock.Header.Timestamp
 	// Start datasets at 25% larger than height. This matches golang's default
 	// capacity size increase for slice lengths > 1024
 	// https://github.com/golang/go/blob/87e48c5afdcf5e01bb2b7f51b7643e8901f4b7f9/src/runtime/slice.go#L100-L112
 	size := int(height * 5 / 4)
-	days := int(time.Since(genesis)/time.Hour/24)*5/4 + 1 // at least one day
-	windows := int(base64Height/chainParams.StakeDiffWindowSize+1) * 5 / 4
 	return &ChartData{
 		ctx:          ctx,
-		DiffInterval: int32(chainParams.StakeDiffWindowSize),
-		StartPOS:     int32(chainParams.StakeValidationHeight),
 		Mempool:      newMempoolSet(size),
 		Propagation:  newPropagationSet(size, syncSources),
 		Pow:          newPowSet(poolSources, size),
 		Vsp:          newVspSet(vsps, size),
-		Blocks:       newBlockSet(size),
 		Exchange:     newExchangeSet(),
-		Windows:      newWindowSet(windows),
-		Days:         newDaySet(days),
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
 		syncSource:   syncSources,
@@ -1404,78 +1144,13 @@ func NewChartData(ctx context.Context, height uint32, syncSources []string, pool
 }
 
 // A cacheKey is used to specify cached data of a given type and BinLevel.
-func cacheKey(chartID string, bin binLevel, axis axisType) string {
-	return chartID + "-" + string(bin) + "-" + string(axis)
+func cacheKey(chartID string, axis axisType) string {
+	return chartID + "-" + string(axis)
 }
 
-// Grabs the cacheID associated with the provided BinLevel. Should
+// Grabs the cacheID associated with the provided chartID. Should
 // be called under at least a (ChartData).cacheMtx.RLock.
-func (charts *ChartData) cacheID(bin binLevel) uint64 {
-	//TODO: cacheID should consider all chart types and axis
-	switch bin {
-	case MempoolBin:
-		return charts.Mempool.cacheID
-	case PropagationBin:
-		return charts.Propagation.cacheID
-	case PowBin:
-		return charts.Pow.cacheID
-	case BlockBin:
-		return charts.Blocks.cacheID
-	case DayBin:
-		return charts.Days.cacheID
-	case WindowBin:
-		return charts.Windows.cacheID
-	}
-	return 0
-}
-
-// Grab the cached data, if it exists. The cacheID is returned as a convenience.
-func (charts *ChartData) getCache(chartID string, bin binLevel, axis axisType) (data *cachedChart, found bool, cacheID uint64) {
-	// Ignore zero length since bestHeight would just be set to zero anyway.
-	ck := cacheKey(chartID, bin, axis)
-	charts.cacheMtx.RLock()
-	defer charts.cacheMtx.RUnlock()
-	cacheID = charts.cacheID(bin)
-	data, found = charts.cache[ck]
-	return
-}
-
-// Store the chart associated with the provided type and BinLevel.
-func (charts *ChartData) cacheChart(chartID string, version uint64, bin binLevel, axis axisType, data []byte) {
-	ck := cacheKey(chartID, bin, axis)
-	charts.cacheMtx.Lock()
-	defer charts.cacheMtx.Unlock()
-	// Using the current best cacheID. This leaves open the small possibility that
-	// the cacheID is wrong, if the cacheID has been updated between the
-	// ChartMaker and here. This would just cause a one block delay.
-	charts.cache[ck] = &cachedChart{
-		cacheID: charts.cacheID(bin),
-		version: version,
-		data:    data,
-	}
-}
-
-// ChartMaker is a function that accepts a chart type and BinLevel, and returns
-// a JSON-encoded chartResponse.
-type ChartMaker func(charts *ChartData, bin binLevel, axis axisType, sources ...string) ([]byte, error)
-
-var chartMakers = map[string]ChartMaker{
-	MempoolSize:    mempoolSize,
-	MempoolTxCount: mempoolTxCount,
-	MempoolFees:    mempoolFees,
-
-	BlockPropagation: blockPropagation,
-	BlockTimestamp:   blockTimestamp,
-	VotesReceiveTime: votesReceiveTime,
-
-	PowChart: powChart,
-
-	VSP: makeVspChart,
-
-	Exchange: makeExchangeChart,
-}
-
-func (charts *ChartData) getVersion(chartID string) uint64 {
+func (charts *ChartData) cacheID(chartID string) uint64 {
 	switch chartID {
 	case MempoolTxCount:
 	case MempoolSize:
@@ -1500,22 +1175,68 @@ func (charts *ChartData) getVersion(chartID string) uint64 {
 	}
 	return charts.MempoolTime()
 }
+
+// Grab the cached data, if it exists. The cacheID is returned as a convenience.
+func (charts *ChartData) getCache(chartID string, axis axisType) (data *cachedChart, found bool, cacheID uint64) {
+	// Ignore zero length since bestHeight would just be set to zero anyway.
+	ck := cacheKey(chartID, axis)
+	charts.cacheMtx.RLock()
+	defer charts.cacheMtx.RUnlock()
+	cacheID = charts.cacheID(chartID)
+	data, found = charts.cache[ck]
+	return
+}
+
+// Store the chart associated with the provided type and BinLevel.
+func (charts *ChartData) cacheChart(chartID string, version uint64, axis axisType, data []byte) {
+	ck := cacheKey(chartID, axis)
+	charts.cacheMtx.Lock()
+	defer charts.cacheMtx.Unlock()
+	// Using the current best cacheID. This leaves open the small possibility that
+	// the cacheID is wrong, if the cacheID has been updated between the
+	// ChartMaker and here. This would just cause a one block delay.
+	charts.cache[ck] = &cachedChart{
+		cacheID: charts.cacheID(chartID),
+		version: version,
+		data:    data,
+	}
+}
+
+// ChartMaker is a function that accepts a chart type and BinLevel, and returns
+// a JSON-encoded chartResponse.
+type ChartMaker func(charts *ChartData, axis axisType, sources ...string) ([]byte, error)
+
+var chartMakers = map[string]ChartMaker{
+	MempoolSize:    mempoolSize,
+	MempoolTxCount: mempoolTxCount,
+	MempoolFees:    mempoolFees,
+
+	BlockPropagation: blockPropagation,
+	BlockTimestamp:   blockTimestamp,
+	VotesReceiveTime: votesReceiveTime,
+
+	PowChart: powChart,
+
+	VSP: makeVspChart,
+
+	Exchange: makeExchangeChart,
+}
+
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
-func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...string) ([]byte, error) {
-	bin := ParseBin(binString)
+func (charts *ChartData) Chart(chartID, axisString string, extras ...string) ([]byte, error) {
 	axis := ParseAxis(axisString)
 
 	sort.Strings(extras)
 	completeId := strings.Join(append(extras, chartID), "-")
 
-	currentVersion := charts.getVersion(chartID)
-	cache, found, cacheID := charts.getCache(completeId, bin, axis)
+	currentVersion := charts.cacheID(chartID)
+	cache, found, cacheID := charts.getCache(completeId, axis)
 	if found && cache.cacheID == cacheID {
 		if currentVersion == cache.version {
 			return cache.data, nil
 		}
-		ck := cacheKey(completeId, bin, axis)
+		ck := cacheKey(completeId, axis)
 		delete(charts.cache, ck)
 	}
 
@@ -1526,12 +1247,12 @@ func (charts *ChartData) Chart(chartID, binString, axisString string, extras ...
 	// Do the locking here, rather than in encodeXY, so that the helper functions
 	// (accumulate, btw) are run under lock.
 	charts.mtx.RLock()
-	data, err := maker(charts, bin, axis, extras...)
+	data, err := maker(charts, axis, extras...)
 	charts.mtx.RUnlock()
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(completeId, currentVersion, bin, axis, data)
+	charts.cacheChart(completeId, currentVersion, axis, data)
 	return data, nil
 }
 
@@ -1574,19 +1295,19 @@ func (charts *ChartData) encodeArr(keys []string, sets []lengther) ([]byte, erro
 	return json.Marshal(response)
 }
 
-func mempoolSize(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+func mempoolSize(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
 	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Size)
 }
 
-func mempoolTxCount(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+func mempoolTxCount(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
 	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.TxCount)
 }
 
-func mempoolFees(charts *ChartData, bin binLevel, axis axisType, _ ...string) ([]byte, error) {
+func mempoolFees(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
 	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Fees)
 }
 
-func blockPropagation(charts *ChartData, _ binLevel, _ axisType, syncSources ...string) ([]byte, error) {
+func blockPropagation(charts *ChartData, _ axisType, syncSources ...string) ([]byte, error) {
 	var deviations = []lengther{charts.Propagation.Height}
 	for _, source := range syncSources {
 		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
@@ -1595,15 +1316,15 @@ func blockPropagation(charts *ChartData, _ binLevel, _ axisType, syncSources ...
 	return charts.encodeArr(nil, deviations)
 }
 
-func blockTimestamp(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([]byte, error) {
+func blockTimestamp(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
 	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.BlockDelays)
 }
 
-func votesReceiveTime(charts *ChartData, _ binLevel, _ axisType, _ ...string) ([]byte, error) {
+func votesReceiveTime(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
 	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
 }
 
-func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]byte, error) {
+func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
 	var deviations []ChartNullUints
 
 	for _, pool := range pools {
@@ -1670,7 +1391,7 @@ func powChart(charts *ChartData, _ binLevel, axis axisType, pools ...string) ([]
 	return json.Marshal(powChartData)
 }
 
-func makeVspChart(charts *ChartData, _ binLevel, axis axisType, vsps ...string) ([]byte, error) {
+func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
 	var deviations []ChartNullData
 
 	for _, vsp := range vsps {

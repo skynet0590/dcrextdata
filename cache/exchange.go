@@ -75,7 +75,7 @@ func (charts *ChartData) ExchangeSetTime(key string) uint64 {
 	return 0
 }
 
-func makeExchangeChart(charts *ChartData, _ binLevel, axis axisType, setKey ...string) ([]byte, error) {
+func makeExchangeChart(charts *ChartData, axis axisType, setKey ...string) ([]byte, error) {
 	if len(setKey) < 1 {
 		return nil, errors.New("exchange set key is required for exchange chart")
 	}
