@@ -299,7 +299,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			if err != nil {
 				return nil, fmt.Errorf("invalid date, %s", err.Error())
 			}
-			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, time.Unix(unitDate, 0), skip, take)
+			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, helpers.UnixTime(unitDate), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return

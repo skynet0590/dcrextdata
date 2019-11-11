@@ -77,7 +77,7 @@ func (pc *Collector) Run(ctx context.Context) {
 	log.Info("Triggering PoW collectors.")
 
 	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
-	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
+	lastCollectionDate := helpers.UnixTime(lastCollectionDateUnix)
 	secondsPassed := time.Since(lastCollectionDate)
 	period := time.Duration(pc.period) * time.Second
 
@@ -124,7 +124,7 @@ func (pc *Collector) CollectAsync(ctx context.Context) {
 				}
 			}
 			completeCollectionCycle := pc.store.LastPowEntryTime("")
-			collectionCycleDate := time.Unix(completeCollectionCycle, 0)
+			collectionCycleDate := helpers.UnixTime(completeCollectionCycle)
 			timeInterval := time.Since(collectionCycleDate)
 			log.Info("The next collection cycle begins in", timeInterval)
 

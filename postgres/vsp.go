@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -105,7 +106,7 @@ func responseToVSP(name string, resp *vsp.ResposeData) *models.VSP {
 		APIVersionsSupported: types.Int64Array(resp.APIVersionsSupported),
 		Network:              null.StringFrom(resp.Network),
 		URL:                  null.StringFrom(resp.URL),
-		Launched:             null.TimeFrom(time.Unix(resp.Launched, 0)),
+		Launched:             null.TimeFrom(helpers.UnixTime(resp.Launched)),
 	}
 }
 
@@ -121,7 +122,7 @@ func responseToVSPTick(poolID int, resp *vsp.ResposeData) *models.VSPTick {
 		ProportionMissed: resp.ProportionMissed,
 		UserCount:        resp.UserCount,
 		UsersActive:      resp.UserCountActive,
-		Time:             time.Unix(resp.LastUpdated, 0).UTC(),
+		Time:             helpers.UnixTime(resp.LastUpdated),
 	}
 }
 
@@ -410,7 +411,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 		vsps = append(vsps, vspSource.Name)
 	}
 
-	dates, err := pg.allVspTickDates(ctx, time.Unix(int64(charts.VspTime()), 0))
+	dates, err := pg.allVspTickDates(ctx, helpers.UnixTime(int64(charts.VspTime())))
 	if err != nil && err != sql.ErrNoRows {
 		return nil, cancelFun, err
 	}
@@ -420,7 +421,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 	}
 
 	for _, vspSource := range allVspData {
-		points, err := pg.fetchChartData(ctx, vspSource.Name, int64ToTime(int64(charts.VspTime())))
+		points, err := pg.fetchChartData(ctx, vspSource.Name, helpers.UnixTime(int64(charts.VspTime())))
 		if err != nil {
 			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", vspSource.Name, err.Error())
 		}

@@ -12,17 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
-)
-
-const (
-	NegativeFiveMin = time.Duration(-5) * time.Minute
-	NegativeOneHour = time.Duration(-1) * time.Hour
-	NegativeOneDay  = time.Duration(-24) * time.Hour
 )
 
 var (
@@ -103,9 +98,6 @@ func (pg *PgDb) StoreExchangeTicks(ctx context.Context, name string, interval in
 	firstTime := ticks[0].Time
 	added := 0
 	for _, tick := range ticks {
-		// if tick.PropagationTime.Unix() <= lastTime.Unix() {
-		// 	continue
-		// }
 		xcTick := tickToExchangeTick(exchange.ID, pair, interval, tick)
 		err = xcTick.Insert(ctx, pg.db, boil.Infer())
 		if err != nil && !strings.Contains(err.Error(), "unique constraint") {
@@ -429,7 +421,7 @@ func (pg *PgDb) exchangeTicksChartData(ctx context.Context, currencyPair string,
 	}
 
 	queryMods := []qm.QueryMod{
-		models.ExchangeTickWhere.Time.GT(time.Unix(int64(exchangeTickTime), 0)),
+		models.ExchangeTickWhere.Time.GT(helpers.UnixTime(int64(exchangeTickTime))),
 		models.ExchangeTickWhere.CurrencyPair.EQ(currencyPair),
 		models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
 		models.ExchangeTickWhere.Interval.EQ(selectedInterval),

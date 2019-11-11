@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/volatiletech/null"
 )
 
@@ -946,7 +947,7 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 // Load loads chart data from the gob file at the specified path and performs an
 // update.
 func (charts *ChartData) Load(ctx context.Context, cacheDumpPath string) error {
-	t := time.Now()
+	t := helpers.NowUTC()
 	defer func() {
 		log.Debugf("Completed the initial chart load and update in %f s",
 			time.Since(t).Seconds())
@@ -975,12 +976,10 @@ func (charts *ChartData) Dump(dumpPath string) {
 
 // TriggerUpdate triggers (*ChartData).Update.
 func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
-	log.Info("Starting chart data update")
 	if err := charts.Update(ctx); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
 	}
-	log.Info("Chart data update completed")
 	return nil
 }
 
@@ -1368,7 +1367,7 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 			continue
 		}
 
-		var lineRecords = []string{time.Unix(int64(charts.Pow.Time[index]), 0).UTC().String()}
+		var lineRecords = []string{helpers.UnixTime(int64(charts.Pow.Time[index])).String()}
 		for _, data := range deviations {
 			if record := data[index]; record != nil && record.Valid {
 				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
@@ -1385,8 +1384,8 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}
 
-	powChartData.MinDate = time.Unix(int64(charts.Pow.Time[0]), 0).UTC()
-	powChartData.MaxDate = time.Unix(int64(charts.Pow.Time[len(charts.Pow.Time)-1]), 0).UTC()
+	powChartData.MinDate = helpers.UnixTime(int64(charts.Pow.Time[0]))
+	powChartData.MaxDate = helpers.UnixTime(int64(charts.Pow.Time[len(charts.Pow.Time)-1]))
 
 	return json.Marshal(powChartData)
 }
@@ -1457,7 +1456,7 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 			continue
 		}
 
-		var lineRecords = []string{time.Unix(int64(charts.Vsp.Time[index]), 0).UTC().String()}
+		var lineRecords = []string{helpers.UnixTime(int64(charts.Vsp.Time[index])).String()}
 		for _, data := range deviations {
 			if data.Valid(index) {
 				lineRecords = append(lineRecords, data.String(index))
@@ -1481,8 +1480,8 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}
 
-	vspChartData.MinDate = time.Unix(int64(minDate), 0).UTC()
-	vspChartData.MaxDate = time.Unix(int64(maxDate), 0).UTC()
+	vspChartData.MinDate = helpers.UnixTime(int64(minDate))
+	vspChartData.MaxDate = helpers.UnixTime(int64(maxDate))
 
 	return json.Marshal(vspChartData)
 }

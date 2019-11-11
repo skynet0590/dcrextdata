@@ -85,7 +85,7 @@ var (
 				"command":      "returnChartData",
 				"currencyPair": cpair,
 				"start":        last.Unix(),
-				"end":          helpers.NowUtc().Unix(),
+				"end":          helpers.NowUTC().Unix(),
 				"period":       int(interval.Seconds()),
 			})
 		},
@@ -164,7 +164,7 @@ func (xc *commonExchange) Get(ctx context.Context, last *time.Time, interval tim
 	}
 	xc.respLock.Lock()
 	defer xc.respLock.Unlock()
-	for helpers.NowUtc().Add(-interval).Unix() > last.Unix() {
+	for helpers.NowUTC().Add(-interval).Unix() > last.Unix() {
 		requestURL, err := xc.requester(*last, interval, xc.availableCPairs[xc.currencyPair])
 		if err != nil {
 			return err
@@ -197,7 +197,7 @@ func newCollector(ctx context.Context, store Store, exchange ExchangeData, curre
 		return nil, err
 	}
 
-	now := helpers.NowUtc()
+	now := helpers.NowUTC()
 	if lastShort == zeroTime {
 		lastShort = now.Add((-14) * oneDay)
 	}
@@ -221,7 +221,7 @@ func newCollector(ctx context.Context, store Store, exchange ExchangeData, curre
 }
 
 func NewPoloniexCollector(ctx context.Context, store Store) (Collector, error) {
-	return newCollector(ctx, store, poloniexData, btcdcrPair, time.Unix(apprxPoloniexStart, 0), new(poloniexAPIResponse))
+	return newCollector(ctx, store, poloniexData, btcdcrPair, helpers.UnixTime(apprxPoloniexStart), new(poloniexAPIResponse))
 }
 
 func NewBittrexCollector(ctx context.Context, store Store) (Collector, error) {
@@ -233,5 +233,5 @@ func NewBittrexUSDCollector(ctx context.Context, store Store) (Collector, error)
 }
 
 func NewBinanceCollector(ctx context.Context, store Store) (Collector, error) {
-	return newCollector(ctx, store, binanceData, btcdcrPair, time.Unix(apprxBinanceStart, 0), new(binanceAPIResponse))
+	return newCollector(ctx, store, binanceData, btcdcrPair, helpers.UnixTime(apprxBinanceStart), new(binanceAPIResponse))
 }

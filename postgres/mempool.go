@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
@@ -465,7 +466,7 @@ func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartDat
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
 	charts.PropagationHeight()
-	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(time.Unix(int64(charts.MempoolTime()), 0).UTC())).All(ctx, pg.db)
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTime())))).All(ctx, pg.db)
 	if err != nil {
 		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
 	}

@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/raedahgroup/dcrextdata/cache"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/volatiletech/null"
@@ -192,7 +193,7 @@ func (pg *PgDb) GetPowDistinctDates(ctx context.Context, sources []string) ([]ti
 		if err != nil {
 			return nil, err
 		}
-		dates = append(dates, time.Unix(date, 0).UTC())
+		dates = append(dates, helpers.UnixTime(date).UTC())
 	}
 	return dates, nil
 }
@@ -238,7 +239,7 @@ func (pg *PgDb) FetchPowChartData(ctx context.Context, source string, dataType s
 			return nil, err
 		}
 
-		rec.Date = time.Unix(unixDate, 0).UTC()
+		rec.Date = helpers.UnixTime(unixDate)
 		records = append(records, rec)
 	}
 
@@ -263,7 +264,7 @@ func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType 
 			return nil, fmt.Errorf("unsupported data type: %s", dataType)
 		}
 		powChartData := pow.PowChartData{
-			Date:   time.Unix(int64(item.Time), 0).UTC(),
+			Date:   helpers.UnixTime(int64(item.Time)),
 			Record: record,
 		}
 		result = append(result, powChartData)
@@ -289,7 +290,7 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 	}
 
 	return pow.PowDataDto{
-		Time:           time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
+		Time:           helpers.UnixTime(int64(item.Time)).Format(dateTemplate),
 		PoolHashrateTh: fmt.Sprintf("%.0f", poolHashRate),
 		Workers:        int64(item.Workers.Int),
 		Source:         item.Source,

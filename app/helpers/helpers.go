@@ -86,7 +86,7 @@ func AddParams(base string, params map[string]interface{}) (string, error) {
 		case reflect.Float64:
 			strBuilder.WriteString(strconv.FormatFloat(reflect.ValueOf(value).Float(), 'f', -1, 64))
 		default:
-			return strBuilder.String(), fmt.Errorf("Unsupported type: %v", vType.Kind())
+			return strBuilder.String(), fmt.Errorf("unsupported type: %v", vType.Kind())
 		}
 
 		strBuilder.WriteString("&")
@@ -96,12 +96,12 @@ func AddParams(base string, params map[string]interface{}) (string, error) {
 	return str[:len(str)-1], nil
 }
 
-func NowUtc() time.Time {
+func NowUTC() time.Time {
 	return time.Now().UTC()
 }
 
-func UnixTimeToString(t int64) string {
-	return time.Unix(t, 0).UTC().String()
+func UnixTime(t int64) time.Time {
+	return time.Unix(t, 0).UTC()
 }
 
 func DurationToString(duration time.Duration) string {

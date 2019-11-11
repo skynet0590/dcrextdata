@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/raedahgroup/dcrextdata/app"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 var coordinator *SyncCoordinator
@@ -90,7 +91,7 @@ func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 }
 
 func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName string, syncer Syncer) error {
-	startTime := time.Now()
+	startTime := helpers.NowUTC()
 	skip := 0
 	take := 1000
 	lastEntry, err := syncer.LastEntry(ctx, source.store)
@@ -122,7 +123,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 			if result.TotalCount == 0 {
 				return nil
 			}
-			duration := time.Now().Sub(startTime).Seconds()
+			duration := helpers.NowUTC().Sub(startTime).Seconds()
 			log.Infof("Synced %d %s records from %s in %.3f seconds", result.TotalCount, tableName,
 				source.url, math.Abs(duration))
 			return nil

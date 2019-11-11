@@ -8,6 +8,8 @@ import (
 	"context"
 	"strconv"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 type Collector interface {
@@ -121,7 +123,7 @@ func (resp poloniexAPIResponse) toTicks(start int64) []Tick {
 			Open:   v.Open,
 			Close:  v.Close,
 			Volume: v.Volume,
-			Time:   time.Unix(v.Time, 0).UTC(),
+			Time:   helpers.UnixTime(v.Time),
 		})
 	}
 	return dataTicks
@@ -203,7 +205,7 @@ func (resp binanceAPIResponse) toTicks(start int64) []Tick {
 	for _, j := range res {
 		// Converting unix time from milliseconds to seconds
 		secs := int64(j[0].(float64) / 1000)
-		t := time.Unix(secs, 0)
+		t := helpers.UnixTime(secs)
 
 		if secs < start {
 			continue
