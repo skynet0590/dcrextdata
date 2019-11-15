@@ -25,7 +25,7 @@ const (
 func GetResponse(ctx context.Context, client *http.Client, url string, destination interface{}) error {
 	// if client has no timeout, set one
 	if client.Timeout == time.Duration(0) {
-		client.Timeout = 5 * time.Second
+		client.Timeout = 10 * time.Second
 	}
 	resp := new(http.Response)
 	req, err := http.NewRequest(http.MethodGet, url, nil)

@@ -53,7 +53,7 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 
 		if contructor, ok := PowConstructors[pow]; ok {
 			lastEntryTime := store.LastPowEntryTime(pow)
-			in, err := contructor(&http.Client{Timeout: 5 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
+			in, err := contructor(&http.Client{Timeout: 10 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err
 			}
@@ -167,7 +167,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []PowData{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
