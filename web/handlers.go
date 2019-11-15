@@ -1771,6 +1771,7 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	chartType := getChartTypeCtx(r)
 	axis := r.URL.Query().Get("axis")
 	extras := r.URL.Query().Get("sources")
+
 	// the extra data passed for exchange chart is the exchange set key
 	if chartType == cache.Exchange {
 		selectedCurrencyPair := r.FormValue("selected-currency-pair")
