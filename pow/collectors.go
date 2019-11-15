@@ -53,7 +53,7 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 
 		if contructor, ok := PowConstructors[pow]; ok {
 			lastEntryTime := store.LastPowEntryTime(pow)
-			in, err := contructor(&http.Client{Timeout: 300 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
+			in, err := contructor(&http.Client{Timeout: 5 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err
 			}

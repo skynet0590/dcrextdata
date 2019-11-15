@@ -210,7 +210,7 @@ func newCollector(ctx context.Context, store Store, exchange ExchangeData, curre
 
 	return &commonExchange{
 		ExchangeData: &exchange,
-		client:       new(http.Client),
+		client:       &http.Client{Timeout: 3 * time.Second},
 		store:        store,
 		lastShort:    lastShort,
 		lastLong:     lastLong,

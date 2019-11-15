@@ -53,7 +53,7 @@ func (c *Collector) SetExplorerBestBlock(ctx context.Context) error {
 		Height uint32 `json:"height"`
 	}{}
 
-	err := helpers.GetResponse(ctx, &http.Client{}, explorerUrl, &bestBlock)
+	err := helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, explorerUrl, &bestBlock)
 	if err != nil {
 		return err
 	}
