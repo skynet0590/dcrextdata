@@ -455,7 +455,8 @@ func (pg *PgDb) fetchBlockReceiveTimeByHeight(ctx context.Context, height int32)
 	var chartData []mempool.BlockReceiveTime
 	for _, block := range blockSlice {
 		chartData = append(chartData, mempool.BlockReceiveTime{
-			BlockHeight: int64(block.Height), ReceiveTime: block.ReceiveTime.Time,
+			BlockHeight: int64(block.Height),
+			ReceiveTime: block.ReceiveTime.Time,
 		})
 	}
 

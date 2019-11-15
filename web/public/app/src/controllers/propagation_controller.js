@@ -42,6 +42,8 @@ export default class extends Controller {
     const syncSources = this.chartTypesWrapperTarget.dataset.syncSources
     if (syncSources) {
       this.syncSources = syncSources.split('|')
+    } else {
+      this.syncSources = []
     }
 
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionControlTargets)
@@ -403,7 +405,7 @@ export default class extends Controller {
   }
 
   fetchChartExtDataAndPlot () {
-    if (!this.syncSources) {
+    if (!this.syncSources || this.syncSources.length === 0) {
       const message = 'Add one or more sync sources to the configuration file to view propagation chart'
       this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${message}</p>`
       show(this.messageViewTarget)
@@ -415,7 +417,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/api/charts/${this.chartType}`).then(function (response) {
+    axios.get(`/api/charts/${this.chartType}?sources=${this.syncSources.join('|')}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (response.data.x === null || response.data.x.length === 0) {
         _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">
