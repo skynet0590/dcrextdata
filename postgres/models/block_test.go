@@ -427,7 +427,7 @@ func testBlocksSelect(t *testing.T) {
 }
 
 var (
-	blockDBTypes = map[string]string{`PropagationHeight`: `integer`, `ReceiveTime`: `timestamp without time zone`, `InternalTimestamp`: `timestamp without time zone`, `Hash`: `character varying`}
+	blockDBTypes = map[string]string{`Height`: `integer`, `ReceiveTime`: `timestamp without time zone`, `InternalTimestamp`: `timestamp without time zone`, `Hash`: `character varying`}
 	_            = bytes.MinRead
 )
 

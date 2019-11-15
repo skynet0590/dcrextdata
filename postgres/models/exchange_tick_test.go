@@ -536,7 +536,7 @@ func testExchangeTicksSelect(t *testing.T) {
 }
 
 var (
-	exchangeTickDBTypes = map[string]string{`ID`: `integer`, `ExchangeID`: `integer`, `Interval`: `integer`, `High`: `double precision`, `Low`: `double precision`, `Open`: `double precision`, `Close`: `double precision`, `Volume`: `double precision`, `CurrencyPair`: `text`, `PropagationTime`: `timestamp with time zone`}
+	exchangeTickDBTypes = map[string]string{`ID`: `integer`, `ExchangeID`: `integer`, `Interval`: `integer`, `High`: `double precision`, `Low`: `double precision`, `Open`: `double precision`, `Close`: `double precision`, `Volume`: `double precision`, `CurrencyPair`: `text`, `Time`: `timestamp with time zone`}
 	_                   = bytes.MinRead
 )
 

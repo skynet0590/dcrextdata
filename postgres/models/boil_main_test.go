@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 		os.Exit(-1)
 	}
 
-	rand.Seed(helpers.NowUtc().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 
 	flag.Parse()
 

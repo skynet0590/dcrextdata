@@ -120,7 +120,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				}
 
 				if voteInfo.Validation.Validity {
-					vote.Validity = "HasValue"
+					vote.Validity = "Valid"
 				} else {
 					vote.Validity = "Invalid"
 				}

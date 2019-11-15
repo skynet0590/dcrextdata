@@ -536,7 +536,7 @@ func testVSPTicksSelect(t *testing.T) {
 }
 
 var (
-	vspTickDBTypes = map[string]string{`ID`: `integer`, `VSPID`: `integer`, `Immature`: `integer`, `Live`: `integer`, `Voted`: `integer`, `Missed`: `integer`, `PoolFees`: `double precision`, `ProportionLive`: `double precision`, `ProportionMissed`: `double precision`, `UserCount`: `integer`, `UsersActive`: `integer`, `PropagationTime`: `timestamp with time zone`}
+	vspTickDBTypes = map[string]string{`ID`: `integer`, `VSPID`: `integer`, `Immature`: `integer`, `Live`: `integer`, `Voted`: `integer`, `Missed`: `integer`, `PoolFees`: `double precision`, `ProportionLive`: `double precision`, `ProportionMissed`: `double precision`, `UserCount`: `integer`, `UsersActive`: `integer`, `Time`: `timestamp with time zone`}
 	_              = bytes.MinRead
 )
 

@@ -427,7 +427,7 @@ func testMempoolsSelect(t *testing.T) {
 }
 
 var (
-	mempoolDBTypes = map[string]string{`PropagationTime`: `timestamp without time zone`, `FirstSeenTime`: `timestamp without time zone`, `NumberOfTransactions`: `integer`, `Voters`: `integer`, `Tickets`: `integer`, `Revocations`: `integer`, `Size`: `integer`, `TotalFee`: `double precision`, `Total`: `double precision`}
+	mempoolDBTypes = map[string]string{`Time`: `timestamp without time zone`, `FirstSeenTime`: `timestamp without time zone`, `NumberOfTransactions`: `integer`, `Voters`: `integer`, `Tickets`: `integer`, `Revocations`: `integer`, `Size`: `integer`, `TotalFee`: `double precision`, `Total`: `double precision`}
 	_              = bytes.MinRead
 )
 

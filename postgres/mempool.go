@@ -187,7 +187,9 @@ func (pg *PgDb) BlockCount(ctx context.Context) (int64, error) {
 }
 
 func (pg *PgDb) Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error) {
-	blockSlice, err := models.Blocks(qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)), qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+	blockSlice, err := models.Blocks(qm.OrderBy(fmt.Sprintf("%s DESC", models.BlockColumns.ReceiveTime)),
+		qm.Offset(offset), qm.Limit(limit)).All(ctx, pg.db)
+
 	if err != nil {
 		return nil, err
 	}
