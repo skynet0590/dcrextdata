@@ -121,7 +121,6 @@ export default class extends Controller {
       this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&records-per-page=${this.selectedNumberOfRowsberOfRows}&view-option=${this.selectedViewOption}`
     } else {
-      // url = `/mempoolcharts?chart-data-type=${this.dataType}&view-option=${this.selectedViewOption}`
       url = `/api/charts/${this.dataType}`
     }
 
@@ -288,6 +287,7 @@ export default class extends Controller {
           dateWindow: [minDate, maxDate],
           legendFormatter: legendFormatter,
           plotter: barChartPlotter,
+          strokeWidth: 1,
           digitsAfterDecimal: 8,
           labelsDiv: _this.labelsTarget,
           ylabel: _this.title,
