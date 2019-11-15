@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData, notifyFailure
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData
 } from '../utils'
 import dompurify from 'dompurify'
 
@@ -403,14 +403,23 @@ export default class extends Controller {
   }
 
   fetchChartExtDataAndPlot () {
+    if (!this.syncSources) {
+      const message = 'Add one or more sync sources to the configuration file to view propagation chart'
+      this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${message}</p>`
+      show(this.messageViewTarget)
+      hide(this.chartWrapperTarget)
+      return
+    }
+
     let elementsToToggle = [this.chartWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
     axios.get(`/api/charts/${this.chartType}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
-      if (response.data.error !== undefined) {
-        _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${response.data.error}</p>`
+      if (response.data.x === null || response.data.x.length === 0) {
+        _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">
+            No propagation data found, please add one sync source to the configuration and try again</p>`
         show(_this.messageViewTarget)
         hide(_this.chartWrapperTarget)
       } else {
@@ -448,10 +457,6 @@ export default class extends Controller {
   }
 
   plotExtDataGraph (data) {
-    if (!this.syncSources) {
-      notifyFailure('Sync sources required', 'Add one or more sync sources to the configuration file to view propagation chart')
-      return
-    }
     const _this = this
 
     const labels = ['Height']
