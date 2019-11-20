@@ -23,6 +23,7 @@ import (
 
 // NetworkPeer is an object representing the database table.
 type NetworkPeer struct {
+	ID              int    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Address         string `boil:"address" json:"address" toml:"address" yaml:"address"`
 	LastReceiveTime int64  `boil:"last_receive_time" json:"last_receive_time" toml:"last_receive_time" yaml:"last_receive_time"`
 	LastSendTime    int64  `boil:"last_send_time" json:"last_send_time" toml:"last_send_time" yaml:"last_send_time"`
@@ -37,6 +38,7 @@ type NetworkPeer struct {
 }
 
 var NetworkPeerColumns = struct {
+	ID              string
 	Address         string
 	LastReceiveTime string
 	LastSendTime    string
@@ -46,6 +48,7 @@ var NetworkPeerColumns = struct {
 	StartingHeight  string
 	CurrentHeight   string
 }{
+	ID:              "id",
 	Address:         "address",
 	LastReceiveTime: "last_receive_time",
 	LastSendTime:    "last_send_time",
@@ -75,6 +78,7 @@ func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
 }
 
 var NetworkPeerWhere = struct {
+	ID              whereHelperint
 	Address         whereHelperstring
 	LastReceiveTime whereHelperint64
 	LastSendTime    whereHelperint64
@@ -84,6 +88,7 @@ var NetworkPeerWhere = struct {
 	StartingHeight  whereHelperint
 	CurrentHeight   whereHelperint
 }{
+	ID:              whereHelperint{field: "\"network_peer\".\"id\""},
 	Address:         whereHelperstring{field: "\"network_peer\".\"address\""},
 	LastReceiveTime: whereHelperint64{field: "\"network_peer\".\"last_receive_time\""},
 	LastSendTime:    whereHelperint64{field: "\"network_peer\".\"last_send_time\""},
@@ -111,10 +116,10 @@ func (*networkPeerR) NewStruct() *networkPeerR {
 type networkPeerL struct{}
 
 var (
-	networkPeerAllColumns            = []string{"address", "last_receive_time", "last_send_time", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
+	networkPeerAllColumns            = []string{"id", "address", "last_receive_time", "last_send_time", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
 	networkPeerColumnsWithoutDefault = []string{"address", "last_receive_time", "last_send_time", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
-	networkPeerColumnsWithDefault    = []string{}
-	networkPeerPrimaryKeyColumns     = []string{"address"}
+	networkPeerColumnsWithDefault    = []string{"id"}
+	networkPeerPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
@@ -216,7 +221,7 @@ func NetworkPeers(mods ...qm.QueryMod) networkPeerQuery {
 
 // FindNetworkPeer retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindNetworkPeer(ctx context.Context, exec boil.ContextExecutor, address string, selectCols ...string) (*NetworkPeer, error) {
+func FindNetworkPeer(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*NetworkPeer, error) {
 	networkPeerObj := &NetworkPeer{}
 
 	sel := "*"
@@ -224,10 +229,10 @@ func FindNetworkPeer(ctx context.Context, exec boil.ContextExecutor, address str
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"network_peer\" where \"address\"=$1", sel,
+		"select %s from \"network_peer\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(query, address)
+	q := queries.Raw(query, iD)
 
 	err := q.Bind(ctx, exec, networkPeerObj)
 	if err != nil {
@@ -556,7 +561,7 @@ func (o *NetworkPeer) Delete(ctx context.Context, exec boil.ContextExecutor) (in
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), networkPeerPrimaryKeyMapping)
-	sql := "DELETE FROM \"network_peer\" WHERE \"address\"=$1"
+	sql := "DELETE FROM \"network_peer\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -633,7 +638,7 @@ func (o NetworkPeerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecut
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *NetworkPeer) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindNetworkPeer(ctx, exec, o.Address)
+	ret, err := FindNetworkPeer(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -672,16 +677,16 @@ func (o *NetworkPeerSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // NetworkPeerExists checks if the NetworkPeer row exists.
-func NetworkPeerExists(ctx context.Context, exec boil.ContextExecutor, address string) (bool, error) {
+func NetworkPeerExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"network_peer\" where \"address\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"network_peer\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, address)
+		fmt.Fprintln(writer, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, address)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

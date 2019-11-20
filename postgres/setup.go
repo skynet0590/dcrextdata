@@ -140,6 +140,7 @@ const (
 	);`
 
 	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
+		id SERIAL PRIMARY KEY,
 		address VARCHAR(32) NOT NULL,
 		last_receive_time INT8 NOT NULL,
 		last_send_time INT8 NOT NULL,
@@ -147,9 +148,9 @@ const (
 		protocol_version INT NOT NULL,
 		user_agent VARCHAR(256) NOT NULL,
 		starting_height INT NOT NULL,
-		current_height INT NOT NULL,
-		PRIMARY KEY (address)
+		current_height INT NOT NULL
 	);`
+
 )
 
 func (pg *PgDb) CreateExchangeTable() error {

@@ -149,7 +149,7 @@ func testNetworkPeersExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := NetworkPeerExists(ctx, tx, o.Address)
+	e, err := NetworkPeerExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if NetworkPeer exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testNetworkPeersFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	networkPeerFound, err := FindNetworkPeer(ctx, tx, o.Address)
+	networkPeerFound, err := FindNetworkPeer(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,7 +427,7 @@ func testNetworkPeersSelect(t *testing.T) {
 }
 
 var (
-	networkPeerDBTypes = map[string]string{`Address`: `character varying`, `LastReceiveTime`: `bigint`, `LastSendTime`: `bigint`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `StartingHeight`: `integer`, `CurrentHeight`: `integer`}
+	networkPeerDBTypes = map[string]string{`ID`: `integer`, `Address`: `character varying`, `LastReceiveTime`: `bigint`, `LastSendTime`: `bigint`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `StartingHeight`: `integer`, `CurrentHeight`: `integer`}
 	_                  = bytes.MinRead
 )
 
