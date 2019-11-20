@@ -30,8 +30,8 @@ type NetworkPeer struct {
 	ConnectionTime  int64  `boil:"connection_time" json:"connection_time" toml:"connection_time" yaml:"connection_time"`
 	ProtocolVersion int    `boil:"protocol_version" json:"protocol_version" toml:"protocol_version" yaml:"protocol_version"`
 	UserAgent       string `boil:"user_agent" json:"user_agent" toml:"user_agent" yaml:"user_agent"`
-	StartingHeight  int    `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
-	CurrentHeight   int    `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
+	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
+	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
 
 	R *networkPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkPeerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -85,8 +85,8 @@ var NetworkPeerWhere = struct {
 	ConnectionTime  whereHelperint64
 	ProtocolVersion whereHelperint
 	UserAgent       whereHelperstring
-	StartingHeight  whereHelperint
-	CurrentHeight   whereHelperint
+	StartingHeight  whereHelperint64
+	CurrentHeight   whereHelperint64
 }{
 	ID:              whereHelperint{field: "\"network_peer\".\"id\""},
 	Address:         whereHelperstring{field: "\"network_peer\".\"address\""},
@@ -95,8 +95,8 @@ var NetworkPeerWhere = struct {
 	ConnectionTime:  whereHelperint64{field: "\"network_peer\".\"connection_time\""},
 	ProtocolVersion: whereHelperint{field: "\"network_peer\".\"protocol_version\""},
 	UserAgent:       whereHelperstring{field: "\"network_peer\".\"user_agent\""},
-	StartingHeight:  whereHelperint{field: "\"network_peer\".\"starting_height\""},
-	CurrentHeight:   whereHelperint{field: "\"network_peer\".\"current_height\""},
+	StartingHeight:  whereHelperint64{field: "\"network_peer\".\"starting_height\""},
+	CurrentHeight:   whereHelperint64{field: "\"network_peer\".\"current_height\""},
 }
 
 // NetworkPeerRels is where relationship names are stored.

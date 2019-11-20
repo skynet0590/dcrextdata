@@ -126,6 +126,9 @@ type ConfigFileOptions struct {
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 
+	// Network Snapshot
+	DisableNetworkSnapshot bool `long:"disablesnapshot" description:"Disable network snapshot"`
+	
 	CommunityStatOptions
 }
 

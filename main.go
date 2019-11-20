@@ -25,6 +25,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -193,6 +194,7 @@ func _main(ctx context.Context) error {
 
 		collector = mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
 		collector.RegisterSyncer(syncCoordinator)
+
 		dcrClient, err = rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
@@ -270,6 +272,11 @@ func _main(ctx context.Context) error {
 		} else {
 			log.Error(err)
 		}
+	}
+
+	if !cfg.DisableNetworkSnapshot {
+		snapshotTaker := netsnapshot.NewTake(dcrClient, db)
+		go snapshotTaker.TakeSnapshot(ctx)
 	}
 
 	go syncCoordinator.StartSyncing(ctx)

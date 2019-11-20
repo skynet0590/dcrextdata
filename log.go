@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/raedahgroup/dcrextdata/datasync"
 	"os"
 	"sort"
 	"strings"
@@ -14,8 +13,10 @@ import (
 	"github.com/decred/slog"
 	"github.com/jrick/logrotate/rotator"
 	"github.com/raedahgroup/dcrextdata/commstats"
+	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -50,6 +51,7 @@ var (
 	redditLog  = backendLog.Logger("REDD")
 	webLog     = backendLog.Logger("WEBL")
 	syncLog    = backendLog.Logger("SYNC")
+	snapshotLog = backendLog.Logger("NETS")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -63,6 +65,7 @@ var subsystemLoggers = map[string]slog.Logger{
 	"REDD": redditLog,
 	"WEBL": webLog,
 	"SYNC": syncLog,
+	"NETS": snapshotLog,
 }
 
 func init() {
@@ -74,6 +77,7 @@ func init() {
 	commstats.UseLogger(redditLog)
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
+	netsnapshot.UseLogger(snapshotLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and

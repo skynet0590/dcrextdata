@@ -147,8 +147,8 @@ const (
 		connection_time INT8 NOT NULL,
 		protocol_version INT NOT NULL,
 		user_agent VARCHAR(256) NOT NULL,
-		starting_height INT NOT NULL,
-		current_height INT NOT NULL
+		starting_height INT8 NOT NULL,
+		current_height INT8 NOT NULL
 	);`
 
 )

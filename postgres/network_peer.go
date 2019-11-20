@@ -17,7 +17,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		LastReceiveTime: peer.LastReceiveTime,
 		LastSendTime:    peer.LastSendTime,
 		ConnectionTime:  peer.ConnectionTime,
-		ProtocolVersion: peer.ProtocolVersion,
+		ProtocolVersion: int(peer.ProtocolVersion),
 		UserAgent:       peer.UserAgent,
 		StartingHeight:  peer.StartingHeight,
 		CurrentHeight:   peer.CurrentHeight,
@@ -46,7 +46,12 @@ func (pg PgDb) NetworkPeers(ctx context.Context, q string, offset int, limit int
 		return nil, 0, err
 	}
 
-	query = append(query, qm.Limit(limit), qm.Offset(offset))
+	query = append(query,
+		qm.Limit(limit),
+		qm.Offset(offset),
+		qm.OrderBy(models.NetworkPeerColumns.LastReceiveTime),
+		qm.OrderBy(models.NetworkPeerColumns.LastSendTime),
+	)
 	peerSlice, err := models.NetworkPeers(query...).All(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
@@ -60,7 +65,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, q string, offset int, limit int
 			LastReceiveTime: peerModel.LastReceiveTime,
 			LastSendTime:    peerModel.LastSendTime,
 			ConnectionTime:  peerModel.ConnectionTime,
-			ProtocolVersion: peerModel.ProtocolVersion,
+			ProtocolVersion: uint32(peerModel.ProtocolVersion),
 			UserAgent:       peerModel.UserAgent,
 			StartingHeight:  peerModel.StartingHeight,
 			CurrentHeight:   peerModel.CurrentHeight,
