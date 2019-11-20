@@ -16,6 +16,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Mempools", testMempoolsUpsert)
 
+	t.Run("NetworkPeers", testNetworkPeersUpsert)
+
 	t.Run("PowData", testPowDataUpsert)
 
 	t.Run("Reddits", testRedditsUpsert)

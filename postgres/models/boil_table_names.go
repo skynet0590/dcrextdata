@@ -9,6 +9,7 @@ var TableNames = struct {
 	ExchangeTick string
 	Github       string
 	Mempool      string
+	NetworkPeer  string
 	PowData      string
 	Reddit       string
 	Twitter      string
@@ -22,6 +23,7 @@ var TableNames = struct {
 	ExchangeTick: "exchange_tick",
 	Github:       "github",
 	Mempool:      "mempool",
+	NetworkPeer:  "network_peer",
 	PowData:      "pow_data",
 	Reddit:       "reddit",
 	Twitter:      "twitter",

@@ -138,6 +138,18 @@ const (
 		channel VARCHAR(256) NOT NULL,
 		PRIMARY KEY (date)
 	);`
+
+	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
+		address VARCHAR(32) NOT NULL,
+		last_receive_time INT8 NOT NULL,
+		last_send_time INT8 NOT NULL,
+		connection_time INT8 NOT NULL,
+		protocol_version INT NOT NULL,
+		user_agent VARCHAR(256) NOT NULL,
+		starting_height INT NOT NULL,
+		current_height INT NOT NULL,
+		PRIMARY KEY (address)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -279,6 +291,17 @@ func (pg *PgDb) YoutubeTableExits() bool {
 	return exists
 }
 
+// network peer
+func (pg *PgDb) CreateNetworkPeerTable() error {
+	_, err := pg.db.Exec(createNetworkPeerTable)
+	return err
+}
+
+func (pg *PgDb) NetworkPeerTableExists() bool {
+	exists, _ := pg.tableExists("network_peer")
+	return exists
+}
+
 func (pg *PgDb) tableExists(name string) (bool, error) {
 	rows, err := pg.db.Query(`SELECT relname FROM pg_class WHERE relname = $1`, name)
 	if err == nil {
@@ -363,6 +386,11 @@ func (pg *PgDb) DropAllTables() error {
 
 	// comm_stat
 	if err := pg.dropTable("comm_stat"); err != nil {
+		return err
+	}
+
+	// network_peer
+	if err := pg.dropTable("network_peer"); err != nil {
 		return err
 	}
 

@@ -414,5 +414,12 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			return err
 		}
 	}
+
+	if exists := db.NetworkPeerTableExists(); !exists {
+		if err := db.CreateNetworkPeerTable(); err != nil {
+			log.Error("Error creating network peer table: ", err)
+			return err
+		}
+	}
 	return nil
 }
