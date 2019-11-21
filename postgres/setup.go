@@ -139,8 +139,15 @@ const (
 		PRIMARY KEY (date)
 	);`
 
+	createNetworkSnapshotTable = `CREATE TABLE If NOT EXISTS network_snapshot (
+		timestamp INT8 NOT NULL,
+		height INT8 NOT NULL,
+		nodes INT NOT NULL,
+		PRIMARY KEY (timestamp)
+	);`
+
 	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
-		id SERIAL PRIMARY KEY,
+		timestamp INT8 NOT NULL,
 		address VARCHAR(32) NOT NULL,
 		last_receive_time INT8 NOT NULL,
 		last_send_time INT8 NOT NULL,
@@ -148,7 +155,8 @@ const (
 		protocol_version INT NOT NULL,
 		user_agent VARCHAR(256) NOT NULL,
 		starting_height INT8 NOT NULL,
-		current_height INT8 NOT NULL
+		current_height INT8 NOT NULL,
+		PRIMARY KEY (timestamp, address)
 	);`
 
 )
@@ -292,6 +300,17 @@ func (pg *PgDb) YoutubeTableExits() bool {
 	return exists
 }
 
+// network snapshot
+func (pg *PgDb) CreateNetworkSnapshotTable() error {
+	_, err := pg.db.Exec(createNetworkSnapshotTable)
+	return err
+}
+
+func (pg *PgDb) NetworkSnapshotTableExists() bool {
+	exists, _ := pg.tableExists("network_snapshot")
+	return exists
+}
+
 // network peer
 func (pg *PgDb) CreateNetworkPeerTable() error {
 	_, err := pg.db.Exec(createNetworkPeerTable)
@@ -387,6 +406,11 @@ func (pg *PgDb) DropAllTables() error {
 
 	// comm_stat
 	if err := pg.dropTable("comm_stat"); err != nil {
+		return err
+	}
+
+	// network_snapshot
+	if err := pg.dropTable("network_snapshot"); err != nil {
 		return err
 	}
 

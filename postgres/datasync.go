@@ -58,6 +58,9 @@ func (pg *PgDb) LastEntry(ctx context.Context, tableName string, receiver interf
 	case models.TableNames.Youtube:
 		columnName = models.YoutubeColumns.Date
 		break
+	case models.TableNames.NetworkSnapshot:
+		columnName = models.NetworkSnapshotColumns.Timestamp
+		break
 
 	}
 

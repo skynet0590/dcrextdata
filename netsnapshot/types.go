@@ -2,13 +2,18 @@ package netsnapshot
 
 import (
 	"context"
-	
-	"github.com/decred/dcrd/chaincfg"
+
 	"github.com/decred/dcrd/rpcclient"
 )
 
+type SnapShot struct {
+	Timestamp int64 `json:"timestamp"`
+	Height    int64 `json:"height"`
+	Nodes     int   `json:"nodes"`
+}
+
 type NetworkPeer struct {
-	ID              int    `json:"id"`
+	Timestamp 		int64 `json:"timestamp"`
 	Address         string `json:"address"`
 	LastReceiveTime int64  `json:"last_receive_time"`
 	LastSendTime    int64  `json:"last_send_time"`
@@ -20,15 +25,14 @@ type NetworkPeer struct {
 }
 
 type DataStore interface {
+	LastSnapshotTime(ctx context.Context) (timestamp int64)
+	DeleteSnapshot(ctx context.Context, timestamp int64)
+	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
 	SaveNetworkPeer(ctx context.Context, peer NetworkPeer) error
-	NetworkPeers(ctx context.Context, q string, offset int, limit int) ([]NetworkPeer, int64, error)
-	TotalPeerCount(ctx context.Context) (int64, error)
-	TotalPeerCountByProtocol(ctx context.Context, protocolVersion int) (int64, error)
-	PeerCountByUserAgents(ctx context.Context) (counts map[string]int64, err error)
 }
 
 type taker struct {
-	dcrClient          *rpcclient.Client
-	dataStore          DataStore
-	activeChain        *chaincfg.Params
+	dcrClient *rpcclient.Client
+	dataStore DataStore
+	period    int
 }

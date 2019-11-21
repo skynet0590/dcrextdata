@@ -31,6 +31,7 @@ const (
 	defaultVSPInterval         = 300
 	defaultPowInterval         = 300
 	defaultSyncInterval        = 60
+	DefaultSnapshotInterval    = 5
 	defaultRedditInterval      = 60
 	defaultTwitterStatInterval = 60 * 24
 	defaultGithubStatInterval  = 60 * 24
@@ -57,6 +58,7 @@ func defaultFileOptions() ConfigFileOptions {
 		VSPInterval:     defaultVSPInterval,
 		PowInterval:     defaultPowInterval,
 		MempoolInterval: defaultMempoolInterval,
+		SnapshotInterval: DefaultSnapshotInterval,
 		DcrdNetworkType: defaultDcrdNetworkType,
 		DcrdRpcServer:   defaultDcrdServer,
 		DcrdRpcUser:     defaultDcrdUser,
@@ -128,7 +130,8 @@ type ConfigFileOptions struct {
 
 	// Network Snapshot
 	DisableNetworkSnapshot bool `long:"disablesnapshot" description:"Disable network snapshot"`
-	
+	SnapshotInterval	   int 	`long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
+
 	CommunityStatOptions
 }
 

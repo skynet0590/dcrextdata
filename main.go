@@ -275,8 +275,8 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableNetworkSnapshot {
-		snapshotTaker := netsnapshot.NewTake(dcrClient, db)
-		go snapshotTaker.TakeSnapshot(ctx)
+		snapshotTaker := netsnapshot.NewTaker(dcrClient, db, cfg.SnapshotInterval)
+		go snapshotTaker.Start(ctx)
 	}
 
 	go syncCoordinator.StartSyncing(ctx)
@@ -418,6 +418,13 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 	if exists := db.GithubTableExits(); !exists {
 		if err := db.CreateGithubTable(); err != nil {
 			log.Error("Error creating github table: ", err)
+			return err
+		}
+	}
+
+	if exists := db.NetworkSnapshotTableExists(); !exists {
+		if err := db.CreateNetworkSnapshotTable(); err != nil {
+			log.Error("Error creating network snapshot table: ", err)
 			return err
 		}
 	}

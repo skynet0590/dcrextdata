@@ -1593,7 +1593,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	}, resp)
 }
 
-// communitychat
+// /communitychat
 func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	plarform := req.FormValue("platform")
@@ -1667,6 +1667,48 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		"stats":  csv,
 		"ylabel": yLabel,
 	}, resp)
+}
+
+// /nodes
+func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	var timestamp, previousTimestamp, nextTimestamp int64
+
+	timestamp, _ = strconv.ParseInt(r.FormValue("timestamp"), 10, 64)
+	if timestamp == 0 {
+		timestamp = s.db.LastSnapshotTime(r.Context())
+		if timestamp == 0 {
+			s.renderError("No snapshot has been taken, please enable Network snapshot from the config file and try again.", w)
+			return
+		}
+	}
+
+	if snapshot, err := s.db.PreviousSnapshot(r.Context(), timestamp); err == nil {
+		previousTimestamp = snapshot.Timestamp
+	}
+
+	if snapshot, err := s.db.NextSnapshot(r.Context(), timestamp); err == nil {
+		nextTimestamp = snapshot.Timestamp
+	}
+
+	peerCount, err := s.db.TotalPeerCount(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot get node count, %s", err.Error()), w)
+		return
+	}
+
+	s.render("nodes.html", map[string]interface{}{
+		"page": page,
+		"timestamp": timestamp,
+		"previousTimestamp": previousTimestamp,
+		"nextTimestamp": nextTimestamp,
+		"peerCount": peerCount,
+	}, w)
 }
 
 // api/sync/{dataType}

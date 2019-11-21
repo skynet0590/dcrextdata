@@ -4,31 +4,33 @@
 package models
 
 var TableNames = struct {
-	Block        string
-	Exchange     string
-	ExchangeTick string
-	Github       string
-	Mempool      string
-	NetworkPeer  string
-	PowData      string
-	Reddit       string
-	Twitter      string
-	Vote         string
-	VSP          string
-	VSPTick      string
-	Youtube      string
+	Block           string
+	Exchange        string
+	ExchangeTick    string
+	Github          string
+	Mempool         string
+	NetworkPeer     string
+	NetworkSnapshot string
+	PowData         string
+	Reddit          string
+	Twitter         string
+	Vote            string
+	VSP             string
+	VSPTick         string
+	Youtube         string
 }{
-	Block:        "block",
-	Exchange:     "exchange",
-	ExchangeTick: "exchange_tick",
-	Github:       "github",
-	Mempool:      "mempool",
-	NetworkPeer:  "network_peer",
-	PowData:      "pow_data",
-	Reddit:       "reddit",
-	Twitter:      "twitter",
-	Vote:         "vote",
-	VSP:          "vsp",
-	VSPTick:      "vsp_tick",
-	Youtube:      "youtube",
+	Block:           "block",
+	Exchange:        "exchange",
+	ExchangeTick:    "exchange_tick",
+	Github:          "github",
+	Mempool:         "mempool",
+	NetworkPeer:     "network_peer",
+	NetworkSnapshot: "network_snapshot",
+	PowData:         "pow_data",
+	Reddit:          "reddit",
+	Twitter:         "twitter",
+	Vote:            "vote",
+	VSP:             "vsp",
+	VSPTick:         "vsp_tick",
+	Youtube:         "youtube",
 }

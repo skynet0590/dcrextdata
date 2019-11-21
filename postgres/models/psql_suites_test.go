@@ -18,6 +18,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("NetworkPeers", testNetworkPeersUpsert)
 
+	t.Run("NetworkSnapshots", testNetworkSnapshotsUpsert)
+
 	t.Run("PowData", testPowDataUpsert)
 
 	t.Run("Reddits", testRedditsUpsert)

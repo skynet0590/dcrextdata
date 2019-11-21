@@ -29,22 +29,22 @@ func (s *Server) render(tplName string, data map[string]interface{}, res http.Re
 	log.Errorf("Template %s is not registered", tplName)
 }
 
-func (routes *Server) renderError(errorMessage string, res http.ResponseWriter) {
+func (s *Server) renderError(errorMessage string, res http.ResponseWriter) {
 	data := map[string]interface{}{
 		"error": errorMessage,
 	}
-	routes.render("error.html", data, res)
+	s.render("error.html", data, res)
 }
 
-func (routes *Server) renderErrorJSON(errorMessage string, res http.ResponseWriter) {
+func (s *Server) renderErrorJSON(errorMessage string, res http.ResponseWriter) {
 	data := map[string]interface{}{
 		"error": errorMessage,
 	}
 
-	routes.renderJSON(data, res)
+	s.renderJSON(data, res)
 }
 
-func (routes *Server) renderJSON(data interface{}, res http.ResponseWriter) {
+func (s *Server) renderJSON(data interface{}, res http.ResponseWriter) {
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.Errorf("Error marshalling data: %s", err.Error())

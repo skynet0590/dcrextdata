@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"net"
 	"net/http"
 	"os"
@@ -70,6 +71,16 @@ type DataQuery interface {
 	CountGithubStat(ctx context.Context, repository string) (int64, error)
 	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
 	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
+
+	LastSnapshotTime(ctx context.Context) (timestamp int64)
+	FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+	PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+	NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+
+	TotalPeerCount(ctx context.Context, timestamp int64) (int64, error)
+	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
+	TotalPeerCountByProtocol(ctx context.Context, timestamp int64, protocolVersion int) (int64, error)
+	PeerCountByUserAgents(ctx context.Context, timestamp int64) (counts map[string]int64, err error)
 }
 
 type Server struct {
@@ -154,6 +165,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/community", s.community)
 	r.Get("/getCommunityStat", s.getCommunityStat)
 	r.Get("/communitychat", s.communityChat)
+
+	r.Get("/nodes", s.nodes)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }
