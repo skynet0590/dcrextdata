@@ -275,7 +275,7 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableNetworkSnapshot {
-		snapshotTaker := netsnapshot.NewTaker(dcrClient, db, cfg.SnapshotInterval)
+		snapshotTaker := netsnapshot.NewTaker(db, cfg.NetworkSnapshotOptions)
 		go snapshotTaker.Start(ctx)
 	}
 

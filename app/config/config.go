@@ -6,6 +6,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
@@ -31,11 +32,17 @@ const (
 	defaultVSPInterval         = 300
 	defaultPowInterval         = 300
 	defaultSyncInterval        = 60
-	DefaultSnapshotInterval    = 5
+	defaultSnapshotInterval    = 5
 	defaultRedditInterval      = 60
 	defaultTwitterStatInterval = 60 * 24
 	defaultGithubStatInterval  = 60 * 24
 	defaultYoutubeInterval     = 60 * 24
+	//dcrseeder
+	defaultSeederHostAddress     = "network-seed.example.com"
+	defaultSeederListonAddress = "localhost"
+	defaultSeederListenPort    = "5354"
+	defaultSeederNameServer      = "nameserver.example.com"
+	defaultSeeder              = "127.0.0.1"
 )
 
 var (
@@ -58,7 +65,6 @@ func defaultFileOptions() ConfigFileOptions {
 		VSPInterval:     defaultVSPInterval,
 		PowInterval:     defaultPowInterval,
 		MempoolInterval: defaultMempoolInterval,
-		SnapshotInterval: DefaultSnapshotInterval,
 		DcrdNetworkType: defaultDcrdNetworkType,
 		DcrdRpcServer:   defaultDcrdServer,
 		DcrdRpcUser:     defaultDcrdUser,
@@ -77,6 +83,12 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.YoutubeStatInterval = defaultYoutubeInterval
 	cfg.YoutubeChannelName = defaultYoutubeChannelNames
 	cfg.YoutubeChannelId = defaultYoutubeChannelId
+	cfg.SnapshotInterval = defaultSnapshotInterval
+	cfg.SeederHost = defaultSeederHostAddress
+	cfg.Nameserver = defaultSeederNameServer
+	cfg.Listen =  normalizeAddress(defaultSeederListonAddress, defaultSeederListenPort)
+	cfg.Seeder = defaultSeeder
+
 	return cfg
 }
 
@@ -128,11 +140,8 @@ type ConfigFileOptions struct {
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 
-	// Network Snapshot
-	DisableNetworkSnapshot bool `long:"disablesnapshot" description:"Disable network snapshot"`
-	SnapshotInterval	   int 	`long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
-
-	CommunityStatOptions
+	CommunityStatOptions   
+	NetworkSnapshotOptions 
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
@@ -155,6 +164,17 @@ type CommunityStatOptions struct {
 	YoutubeChannelId     []string `long:"youtubechannelid" description:"List of Youtube channel ID to be tracked"`
 	YoutubeStatInterval  int      `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
 	YoutubeDataApiKey    string   `long:"youtubedataapikey" description:"Youtube data API key gotten from google developer console"`
+}
+
+type NetworkSnapshotOptions struct {
+	DisableNetworkSnapshot bool   `long:"disablesnapshot" description:"Disable network snapshot"`
+	SnapshotInterval       int    `long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
+	SeederHost             string `short:"H" long:"host" description:"Seed DNS address"`
+	Listen                 string `long:"listen" short:"l" description:"Listen on address:port"`
+	Nameserver             string `short:"n" long:"nameserver" description:"hostname of nameserver"`
+	Seeder                 string `short:"s" long:"default seeder" description:"IP address of a working node"`
+	TestNet                bool   `long:"testnet" description:"Use testnet"`
+	ShowDetailedLog		   bool	  `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
 
 func defaultConfig() Config {
@@ -202,5 +222,36 @@ func LoadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
+	// network snapshot validation
+
+	if len(cfg.SeederHost) == 0 {
+		return nil, nil, fmt.Errorf("Please specify a hostname")
+	}
+
+	if len(cfg.Nameserver) == 0 {
+		return nil, nil, fmt.Errorf("Please specify a nameserver")
+	}
+
+	if len(cfg.Seeder) == 0 {
+		return nil, nil, fmt.Errorf("Please specify a seeder")
+	}
+
+	if net.ParseIP(cfg.Seeder) == nil {
+		str := "\"%s\" is not a valid textual representation of an IP address"
+		return nil, nil, fmt.Errorf(str, cfg.Seeder)
+	}
+
+	cfg.Listen = normalizeAddress(cfg.Listen, defaultSeederListenPort)
+
 	return &cfg, unknownArg, nil
+}
+
+// normalizeAddress returns addr with the passed default port appended if
+// there is not already a port specified.
+func normalizeAddress(addr, defaultPort string) string {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return net.JoinHostPort(addr, defaultPort)
+	}
+	return addr
 }

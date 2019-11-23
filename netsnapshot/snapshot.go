@@ -4,16 +4,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/app"
+	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
-func NewTaker(dcrClient *rpcclient.Client, store DataStore, period int) *taker {
+func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
 	return &taker{
-		dcrClient: dcrClient,
 		dataStore: store,
-		period: period,
+		cfg: cfg,
 	}
 }
 
@@ -25,18 +24,28 @@ func (t taker) Start(ctx context.Context) {
 	}
 	log.Info("Triggering network snapshot taker.")
 
+	go runSeeder(t.cfg)
+
 	lastCollectionDateUnix := t.dataStore.LastSnapshotTime(ctx)
 	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
 	timePassed := time.Since(lastCollectionDate)
-	period := time.Duration(t.period) * time.Minute
+	period := time.Duration(t.cfg.SnapshotInterval) * time.Minute
 
 	if lastCollectionDateUnix > 0 && timePassed < period {
 		timeLeft := period - timePassed
-		log.Infof("Taking network snapshot every %dm, took a snapshot %s ago, will take in %s.", t.period,
+		log.Infof("Taking network snapshot every %dm, took a snapshot %s ago, will take in %s.", t.cfg.SnapshotInterval,
 			helpers.DurationToString(timePassed), helpers.DurationToString(timeLeft))
 
 		app.ReleaseForNewModule()
 		time.Sleep(timeLeft)
+	}
+
+	// wait for the first node discovery trip to complete
+	for !seederIsReady {
+		if ctx.Err() != nil {
+			return
+		}
+		time.Sleep(2 * time.Second)
 	}
 
 	if lastCollectionDateUnix > 0 && timePassed < period {
@@ -47,6 +56,7 @@ func (t taker) Start(ctx context.Context) {
 			}
 		}
 	}
+
 	t.takeSnapshot(ctx)
 	app.ReleaseForNewModule()
 	go t.takeSnapshotAtIntervals(ctx)
@@ -57,7 +67,7 @@ func (t taker) takeSnapshotAtIntervals(ctx context.Context) {
 		return
 	}
 
-	ticker := time.NewTicker(time.Duration(t.period) * time.Minute)
+	ticker := time.NewTicker(time.Duration(t.cfg.SnapshotInterval) * time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -66,6 +76,14 @@ func (t taker) takeSnapshotAtIntervals(ctx context.Context) {
 			log.Infof("Stopping network snapshot taker.")
 			return
 		case <-ticker.C:
+			// wait for the first node discovery trip to complete
+			for !seederIsReady {
+				if ctx.Err() != nil {
+					return
+				}
+				time.Sleep(2 * time.Second)
+			}
+
 			// continually check the state of the app until its free to run this module
 			for {
 				if app.MarkBusyIfFree() {
@@ -84,24 +102,19 @@ func (t taker) takeSnapshot(ctx context.Context) {
 
 	timestamp := helpers.NowUtc().Unix()
 	var bestBlockHeight int64 = 0
-	peerInfo, err := t.dcrClient.GetPeerInfo()
-	if err != nil {
-		log.Errorf("Error in getting peer info, %s.", err.Error())
-		return
-	}
+	peers := nodes()
 
-	for _, peer := range peerInfo {
+	for _, peer := range peers {
 		if peer.CurrentHeight > bestBlockHeight {
 			bestBlockHeight = peer.CurrentHeight
 		}
 		err := t.dataStore.SaveNetworkPeer(ctx, NetworkPeer{
 			Timestamp:       timestamp,
-			Address:         peer.Addr,
-			LastReceiveTime: peer.LastRecv,
-			LastSendTime:    peer.LastSend,
-			ConnectionTime:  peer.ConnTime,
-			ProtocolVersion: peer.Version,
-			UserAgent:       peer.SubVer,
+			Address:         peer.IP.String(),
+			LastSeen:        peer.LastSeen.UTC().Unix(),
+			ConnectionTime:  peer.ConnectionTime,
+			ProtocolVersion: peer.ProtocolVersion,
+			UserAgent:       peer.UserAgent,
 			StartingHeight:  peer.StartingHeight,
 			CurrentHeight:   peer.CurrentHeight,
 		})
@@ -110,10 +123,10 @@ func (t taker) takeSnapshot(ctx context.Context) {
 		}
 	}
 
-	err = t.dataStore.SaveSnapshot(ctx, SnapShot{
+	err := t.dataStore.SaveSnapshot(ctx, SnapShot{
 		Timestamp: timestamp,
 		Height:    bestBlockHeight,
-		Nodes:     len(peerInfo),
+		Nodes:     len(peers),
 	})
 
 	if err != nil {
@@ -122,5 +135,5 @@ func (t taker) takeSnapshot(ctx context.Context) {
 		log.Errorf("Error in saving network snapshot, %s", err.Error())
 	}
 
-	log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", len(peerInfo))
+	log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", len(peers))
 }

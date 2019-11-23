@@ -81,8 +81,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 	peerModel := models.NetworkPeer{
 		Timestamp:       peer.Timestamp,
 		Address:         peer.Address,
-		LastReceiveTime: peer.LastReceiveTime,
-		LastSendTime:    peer.LastSendTime,
+		LastSeen:        peer.LastSeen,
 		ConnectionTime:  peer.ConnectionTime,
 		ProtocolVersion: int(peer.ProtocolVersion),
 		UserAgent:       peer.UserAgent,
@@ -115,8 +114,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	query = append(query,
 		qm.Limit(limit),
 		qm.Offset(offset),
-		qm.OrderBy(models.NetworkPeerColumns.LastReceiveTime),
-		qm.OrderBy(models.NetworkPeerColumns.LastSendTime),
+		qm.OrderBy(models.NetworkPeerColumns.LastSeen),
 	)
 	peerSlice, err := models.NetworkPeers(query...).All(ctx, pg.db)
 	if err != nil {
@@ -126,10 +124,9 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	var peers []netsnapshot.NetworkPeer
 	for _, peerModel := range peerSlice {
 		peers = append(peers, netsnapshot.NetworkPeer{
-			Timestamp: 		 peerModel.Timestamp,
+			Timestamp:       peerModel.Timestamp,
 			Address:         peerModel.Address,
-			LastReceiveTime: peerModel.LastReceiveTime,
-			LastSendTime:    peerModel.LastSendTime,
+			LastSeen:        peerModel.LastSeen,
 			ConnectionTime:  peerModel.ConnectionTime,
 			ProtocolVersion: uint32(peerModel.ProtocolVersion),
 			UserAgent:       peerModel.UserAgent,

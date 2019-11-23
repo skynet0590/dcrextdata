@@ -148,9 +148,8 @@ const (
 
 	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
 		timestamp INT8 NOT NULL,
-		address VARCHAR(32) NOT NULL,
-		last_receive_time INT8 NOT NULL,
-		last_send_time INT8 NOT NULL,
+		address VARCHAR(256) NOT NULL,
+		last_seen INT8 NOT NULL,
 		connection_time INT8 NOT NULL,
 		protocol_version INT NOT NULL,
 		user_agent VARCHAR(256) NOT NULL,
