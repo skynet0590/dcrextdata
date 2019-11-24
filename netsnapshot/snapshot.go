@@ -2,17 +2,21 @@ package netsnapshot
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg/v2"
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
-	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
 	return &taker{
 		dataStore: store,
-		cfg: cfg,
+		cfg:       cfg,
 	}
 }
 
@@ -24,116 +28,109 @@ func (t taker) Start(ctx context.Context) {
 	}
 	log.Info("Triggering network snapshot taker.")
 
-	go runSeeder(t.cfg)
-
-	lastCollectionDateUnix := t.dataStore.LastSnapshotTime(ctx)
-	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
-	timePassed := time.Since(lastCollectionDate)
-	period := time.Duration(t.cfg.SnapshotInterval) * time.Minute
-
-	if lastCollectionDateUnix > 0 && timePassed < period {
-		timeLeft := period - timePassed
-		log.Infof("Taking network snapshot every %dm, took a snapshot %s ago, will take in %s.", t.cfg.SnapshotInterval,
-			helpers.DurationToString(timePassed), helpers.DurationToString(timeLeft))
-
-		app.ReleaseForNewModule()
-		time.Sleep(timeLeft)
+	var netParams = chaincfg.MainNetParams()
+	if t.cfg.TestNet {
+		netParams = chaincfg.TestNet3Params()
 	}
 
-	// wait for the first node discovery trip to complete
-	for !seederIsReady {
-		if ctx.Err() != nil {
-			return
-		}
-		time.Sleep(2 * time.Second)
+	// defaultStaleTimeout = time.Minute * time.Duration(t.cfg.SnapshotInterval)
+	// pruneExpireTimeout = defaultStaleTimeout * 2
+
+	var err error
+	amgr, err = NewManager(filepath.Join(defaultHomeDir,
+		netParams.Name))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "NewManager: %v\n", err)
+		os.Exit(1)
 	}
 
-	if lastCollectionDateUnix > 0 && timePassed < period {
-		// continually check the state of the app until its free to run this module
-		for {
-			if app.MarkBusyIfFree() {
-				break
-			}
-		}
+	go runSeeder(t.cfg, netParams)
+
+	var mtx sync.Mutex
+	var bestBlockHeight int64
+	var count int
+	var timestamp = time.Now().UTC().Unix()
+
+	snapshot := SnapShot{
+		Timestamp: timestamp,
+		Height:    bestBlockHeight,
+		Nodes:     count,
 	}
+	err = t.dataStore.SaveSnapshot(ctx, snapshot)
 
-	t.takeSnapshot(ctx)
-	app.ReleaseForNewModule()
-	go t.takeSnapshotAtIntervals(ctx)
-}
-
-func (t taker) takeSnapshotAtIntervals(ctx context.Context) {
-	if ctx.Err() != nil {
-		return
+	if err != nil {
+		// todo delete all the related node info
+		t.dataStore.DeleteSnapshot(ctx, timestamp)
+		log.Errorf("Error in saving network snapshot, %s", err.Error())
 	}
 
 	ticker := time.NewTicker(time.Duration(t.cfg.SnapshotInterval) * time.Minute)
 	defer ticker.Stop()
 
 	for {
+		// start listening for node heartbeat
 		select {
-		case <-ctx.Done():
-			log.Infof("Stopping network snapshot taker.")
-			return
 		case <-ticker.C:
-			// wait for the first node discovery trip to complete
-			for !seederIsReady {
-				if ctx.Err() != nil {
-					return
-				}
-				time.Sleep(2 * time.Second)
+			err := t.dataStore.SaveSnapshot(ctx, SnapShot{
+				Timestamp: timestamp,
+				Height:    bestBlockHeight,
+				Nodes:     count,
+			})
+
+			if err != nil {
+				// todo delete all the related node info
+				t.dataStore.DeleteSnapshot(ctx, timestamp)
+				log.Errorf("Error in saving network snapshot, %s", err.Error())
 			}
 
-			// continually check the state of the app until its free to run this module
-			for {
-				if app.MarkBusyIfFree() {
-					break
+			mtx.Lock()
+			count = 0
+			log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", count)
+			timestamp = time.Now().UTC().Unix()
+			mtx.Unlock()
+
+		case node := <-amgr.goodPeer:
+			err := t.dataStore.SaveNetworkPeer(ctx, NetworkPeer{
+				Timestamp:       timestamp,
+				Address:         node.IP.String(),
+				LastSeen:        node.LastSeen.UTC().Unix(),
+				ConnectionTime:  node.ConnectionTime,
+				ProtocolVersion: node.ProtocolVersion,
+				UserAgent:       node.UserAgent,
+				StartingHeight:  node.StartingHeight,
+				CurrentHeight:   node.CurrentHeight,
+			})
+			if err != nil {
+				log.Errorf("Error in saving node info, %s.", err.Error())
+			} else {
+				mtx.Lock()
+				count++
+				if node.CurrentHeight > bestBlockHeight {
+					bestBlockHeight = node.CurrentHeight
 				}
+				snapshot.Nodes = count
+				snapshot.Height = bestBlockHeight
+
+				snapshot := SnapShot{
+					Timestamp: timestamp,
+					Height:    bestBlockHeight,
+					Nodes:     count,
+				}
+
+				err = t.dataStore.SaveSnapshot(ctx, snapshot)
+				if err != nil {
+					// todo delete all the related node info
+					t.dataStore.DeleteSnapshot(ctx, timestamp)
+					log.Errorf("Error in saving network snapshot, %s", err.Error())
+				}
+
+				mtx.Unlock()
+				log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), node.UserAgent, node.ProtocolVersion)
 			}
-
-			t.takeSnapshot(ctx)
-			app.ReleaseForNewModule()
+		case <-ctx.Done():
+			log.Info("Shutting down network seeder")
+			amgr.quit <- struct{}{}
+			return
 		}
 	}
-}
-
-func (t taker) takeSnapshot(ctx context.Context) {
-	log.Info("Taking a new network snapshot.")
-
-	timestamp := helpers.NowUtc().Unix()
-	var bestBlockHeight int64 = 0
-	peers := nodes()
-
-	for _, peer := range peers {
-		if peer.CurrentHeight > bestBlockHeight {
-			bestBlockHeight = peer.CurrentHeight
-		}
-		err := t.dataStore.SaveNetworkPeer(ctx, NetworkPeer{
-			Timestamp:       timestamp,
-			Address:         peer.IP.String(),
-			LastSeen:        peer.LastSeen.UTC().Unix(),
-			ConnectionTime:  peer.ConnectionTime,
-			ProtocolVersion: peer.ProtocolVersion,
-			UserAgent:       peer.UserAgent,
-			StartingHeight:  peer.StartingHeight,
-			CurrentHeight:   peer.CurrentHeight,
-		})
-		if err != nil {
-			log.Errorf("Error in saving peer info, %s.", err.Error())
-		}
-	}
-
-	err := t.dataStore.SaveSnapshot(ctx, SnapShot{
-		Timestamp: timestamp,
-		Height:    bestBlockHeight,
-		Nodes:     len(peers),
-	})
-
-	if err != nil {
-		// todo delete all the related peer info
-		t.dataStore.DeleteSnapshot(ctx, timestamp)
-		log.Errorf("Error in saving network snapshot, %s", err.Error())
-	}
-
-	log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", len(peers))
 }

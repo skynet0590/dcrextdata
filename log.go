@@ -41,16 +41,16 @@ var (
 
 	// logRotator is one of the logging outputs.  It should be closed on
 	// application shutdown.
-	logRotator *rotator.Rotator
-	log        = backendLog.Logger("DEXD")
-	excLog     = backendLog.Logger("EXCH")
-	pqLog      = backendLog.Logger("PSQL")
-	vspLog     = backendLog.Logger("VSPC")
-	powLog     = backendLog.Logger("POWL")
-	mempoolLog = backendLog.Logger("MEMP")
-	redditLog  = backendLog.Logger("REDD")
-	webLog     = backendLog.Logger("WEBL")
-	syncLog    = backendLog.Logger("SYNC")
+	logRotator  *rotator.Rotator
+	log         = backendLog.Logger("DEXD")
+	excLog      = backendLog.Logger("EXCH")
+	pqLog       = backendLog.Logger("PSQL")
+	vspLog      = backendLog.Logger("VSPC")
+	powLog      = backendLog.Logger("POWL")
+	mempoolLog  = backendLog.Logger("MEMP")
+	redditLog   = backendLog.Logger("REDD")
+	webLog      = backendLog.Logger("WEBL")
+	syncLog     = backendLog.Logger("SYNC")
 	snapshotLog = backendLog.Logger("NETS")
 )
 

@@ -1451,7 +1451,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 		channel = commstats.YoutubeChannels()[0]
 	}
 
-		selectedNum, _ := strconv.Atoi(selectedNumStr)
+	selectedNum, _ := strconv.Atoi(selectedNumStr)
 	if selectedNum == 0 {
 		selectedNum = 20
 	}
@@ -1703,11 +1703,11 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render("nodes.html", map[string]interface{}{
-		"page": page,
-		"timestamp": timestamp,
+		"page":              page,
+		"timestamp":         timestamp,
 		"previousTimestamp": previousTimestamp,
-		"nextTimestamp": nextTimestamp,
-		"peerCount": peerCount,
+		"nextTimestamp":     nextTimestamp,
+		"peerCount":         peerCount,
 	}, w)
 }
 

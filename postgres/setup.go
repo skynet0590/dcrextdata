@@ -157,7 +157,6 @@ const (
 		current_height INT8 NOT NULL,
 		PRIMARY KEY (timestamp, address)
 	);`
-
 )
 
 func (pg *PgDb) CreateExchangeTable() error {

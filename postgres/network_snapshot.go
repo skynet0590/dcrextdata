@@ -12,7 +12,15 @@ import (
 )
 
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
-	snapshotModel := models.NetworkSnapshot{Timestamp:snapshot.Timestamp, Height:snapshot.Height, Nodes: snapshot.Nodes}
+	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
+	if err == nil {
+		existingSnapshot.Nodes = snapshot.Nodes
+		existingSnapshot.Height = snapshot.Height
+		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
+		return err
+	}
+
+	snapshotModel := models.NetworkSnapshot{Timestamp: snapshot.Timestamp, Height: snapshot.Height, Nodes: snapshot.Nodes}
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return err
@@ -78,6 +86,20 @@ func (pg PgDb) DeleteSnapshot(ctx context.Context, timestamp int64) {
 }
 
 func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer) error {
+	existingNode, err := models.NetworkPeers(models.NetworkPeerWhere.Timestamp.EQ(peer.Timestamp),
+		models.NetworkPeerWhere.Address.EQ(peer.Address)).One(ctx, pg.db)
+	if err == nil {
+		existingNode.LastSeen = peer.LastSeen
+		existingNode.ConnectionTime = peer.ConnectionTime
+		existingNode.ProtocolVersion = int(peer.ProtocolVersion)
+		existingNode.UserAgent = peer.UserAgent
+		existingNode.StartingHeight = peer.StartingHeight
+		existingNode.CurrentHeight = peer.CurrentHeight
+
+		_, err = existingNode.Update(ctx, pg.db, boil.Infer())
+
+		return err
+	}
 	peerModel := models.NetworkPeer{
 		Timestamp:       peer.Timestamp,
 		Address:         peer.Address,
@@ -89,12 +111,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		CurrentHeight:   peer.CurrentHeight,
 	}
 
-	err := peerModel.Insert(ctx, pg.db, boil.Infer())
-	if err != nil && !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
-		return err
-	}
-
-	return nil
+	return peerModel.Insert(ctx, pg.db, boil.Infer())
 }
 
 func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error) {

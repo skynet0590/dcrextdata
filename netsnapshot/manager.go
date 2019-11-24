@@ -15,33 +15,34 @@ import (
 
 	"github.com/decred/dcrd/peer/v2"
 	"github.com/decred/dcrd/wire"
-	"github.com/miekg/dns"
 )
 
 type Node struct {
-	IP             net.IP
-	Services       wire.ServiceFlag
-	LastAttempt    time.Time
-	LastSuccess    time.Time
-	LastSeen       time.Time
+	IP           net.IP
+	Services     wire.ServiceFlag
+	LastAttempt  time.Time
+	AttemptCount int
+	LastSuccess  time.Time
+	LastSeen     time.Time
 
 	ConnectionTime  int64
 	ProtocolVersion uint32
-	UserAgent      string
-	StartingHeight int64
-	CurrentHeight  int64
+	UserAgent       string
+	StartingHeight  int64
+	CurrentHeight   int64
 }
 
 type Manager struct {
 	mtx sync.RWMutex
 
 	nodes     map[string]*Node
+	goodPeer  chan *Node
 	wg        sync.WaitGroup
 	quit      chan struct{}
 	peersFile string
 }
 
-const (
+var (
 	// defaultMaxAddresses is the maximum number of addresses to return.
 	defaultMaxAddresses = 16
 
@@ -62,7 +63,7 @@ const (
 
 	// pruneExpireTimeout is the expire time in which a node is
 	// considered dead.
-	pruneExpireTimeout = time.Hour * 8
+	pruneExpireTimeout = time.Hour * 5
 )
 
 var (
@@ -127,6 +128,7 @@ func NewManager(dataDir string) (*Manager, error) {
 
 	amgr := Manager{
 		nodes:     make(map[string]*Node),
+		goodPeer:  make(chan *Node),
 		peersFile: filepath.Join(dataDir, peersFilename),
 		quit:      make(chan struct{}),
 	}
@@ -188,48 +190,8 @@ func (m *Manager) Addresses() []net.IP {
 		if i == 0 {
 			break
 		}
-		if now.Sub(node.LastSuccess) < defaultStaleTimeout ||
-			now.Sub(node.LastAttempt) < defaultStaleTimeout {
-			continue
-		}
-		addrs = append(addrs, node.IP)
-		i--
-	}
-	m.mtx.RUnlock()
-
-	return addrs
-}
-
-// GoodAddresses returns good working IPs that match both the
-// passed DNS query type and have the requested services.
-func (m *Manager) GoodAddresses(qtype uint16, services wire.ServiceFlag) []net.IP {
-	addrs := make([]net.IP, 0, defaultMaxAddresses)
-	i := defaultMaxAddresses
-
-	if qtype != dns.TypeA && qtype != dns.TypeAAAA {
-		return addrs
-	}
-
-	now := time.Now()
-	m.mtx.RLock()
-	for _, node := range m.nodes {
-		if i == 0 {
-			break
-		}
-
-		if qtype == dns.TypeA && node.IP.To4() == nil {
-			continue
-		} else if qtype == dns.TypeAAAA && node.IP.To4() != nil {
-			continue
-		}
-
-		if node.LastSuccess.IsZero() ||
-			now.Sub(node.LastSuccess) > defaultStaleTimeout {
-			continue
-		}
-
-		// Does the node have the requested services?
-		if node.Services&services != services {
+		if (now.Sub(node.LastSuccess) < defaultStaleTimeout || now.Sub(node.LastAttempt) < defaultStaleTimeout) &&
+			!(node.StartingHeight == 0 && node.AttemptCount < 3) {
 			continue
 		}
 		addrs = append(addrs, node.IP)
@@ -245,6 +207,7 @@ func (m *Manager) Attempt(ip net.IP) {
 	node, exists := m.nodes[ip.String()]
 	if exists {
 		node.LastAttempt = time.Now()
+		node.AttemptCount++
 	}
 	m.mtx.Unlock()
 }
@@ -336,7 +299,6 @@ func (m *Manager) deserializePeers() error {
 	m.mtx.Unlock()
 
 	log.Infof("%d nodes loaded from %s", l, filePath)
-	seederIsReady = true
 	return nil
 }
 

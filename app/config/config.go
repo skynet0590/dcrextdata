@@ -38,19 +38,19 @@ const (
 	defaultGithubStatInterval  = 60 * 24
 	defaultYoutubeInterval     = 60 * 24
 	//dcrseeder
-	defaultSeederHostAddress     = "network-seed.example.com"
+	defaultSeederHostAddress   = "network-seed.example.com"
 	defaultSeederListonAddress = "localhost"
 	defaultSeederListenPort    = "5354"
-	defaultSeederNameServer      = "nameserver.example.com"
+	defaultSeederNameServer    = "nameserver.example.com"
 	defaultSeeder              = "127.0.0.1"
 )
 
 var (
-	defaultSubreddits         	= []string{"decred"}
-	defaultTwitterHandles     	= []string{"decredproject"}
-	defaultGithubRepositories 	= []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
-	defaultYoutubeChannelNames 	= []string{"Decred"}
-	defaultYoutubeChannelId		= []string{"UCJ2bYDaPYHpSmJPh_M5dNSg"}
+	defaultSubreddits          = []string{"decred"}
+	defaultTwitterHandles      = []string{"decredproject"}
+	defaultGithubRepositories  = []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
+	defaultYoutubeChannelNames = []string{"Decred"}
+	defaultYoutubeChannelId    = []string{"UCJ2bYDaPYHpSmJPh_M5dNSg"}
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -86,7 +86,7 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.SnapshotInterval = defaultSnapshotInterval
 	cfg.SeederHost = defaultSeederHostAddress
 	cfg.Nameserver = defaultSeederNameServer
-	cfg.Listen =  normalizeAddress(defaultSeederListonAddress, defaultSeederListenPort)
+	cfg.Listen = normalizeAddress(defaultSeederListonAddress, defaultSeederListenPort)
 	cfg.Seeder = defaultSeeder
 
 	return cfg
@@ -174,7 +174,7 @@ type NetworkSnapshotOptions struct {
 	Nameserver             string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder                 string `short:"s" long:"default seeder" description:"IP address of a working node"`
 	TestNet                bool   `long:"testnet" description:"Use testnet"`
-	ShowDetailedLog		   bool	  `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
+	ShowDetailedLog        bool   `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
 
 func defaultConfig() Config {

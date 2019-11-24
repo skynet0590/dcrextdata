@@ -5,10 +5,7 @@
 package netsnapshot
 
 import (
-	"fmt"
 	"net"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -26,23 +23,15 @@ const (
 
 	// defaultNodeTimeout defines the timeout time waiting for
 	// a response from a node.
-	defaultNodeTimeout = time.Second * 3
+	defaultNodeTimeout = time.Second * 10
 )
 
 var (
-	defaultHomeDir    = dcrutil.AppDataDir("dcrextdata", false)
+	defaultHomeDir = dcrutil.AppDataDir("dcrextdata", false)
 
-	amgr *Manager
-	wg   sync.WaitGroup
-	seederIsReadyMtx sync.Mutex
-	seederIsReady bool
+	amgr             *Manager
+	wg               sync.WaitGroup
 )
-
-func setSeederIsReady (val bool) {
-	seederIsReadyMtx.Lock()
-	defer seederIsReadyMtx.Unlock()
-	seederIsReady = val
-}
 
 func creep(netParams *chaincfg.Params) {
 	defer wg.Done()
@@ -67,7 +56,6 @@ func creep(netParams *chaincfg.Params) {
 				onaddr <- struct{}{}
 			},
 			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
-				setSeederIsReady(false)
 				log.Infof("Adding peer %v with services %v",
 					p.NA().IP.String(), p.Services())
 
@@ -80,7 +68,6 @@ func creep(netParams *chaincfg.Params) {
 	for {
 		ips := amgr.Addresses()
 		if len(ips) == 0 {
-			seederIsReady = true
 			log.Infof("No stale addresses -- sleeping for %v",
 				defaultAddressTimeout)
 			time.Sleep(defaultAddressTimeout)
@@ -115,6 +102,18 @@ func creep(netParams *chaincfg.Params) {
 				case <-verack:
 					// Mark this peer as a good node.
 					amgr.Good(p)
+					amgr.goodPeer <- &Node{
+						IP:              ip,
+						Services:        p.Services(),
+						LastAttempt:     time.Now().UTC(),
+						LastSuccess:     time.Now().UTC(),
+						LastSeen:        time.Now().UTC(),
+						ConnectionTime:  p.TimeConnected().Unix(),
+						ProtocolVersion: p.ProtocolVersion(),
+						UserAgent:       p.UserAgent(),
+						StartingHeight:  p.StartingHeight(),
+						CurrentHeight:   p.LastBlock(),
+					}
 
 					// Ask peer for some addresses.
 					p.QueueMessage(wire.NewMsgGetAddr(), nil)
@@ -122,6 +121,25 @@ func creep(netParams *chaincfg.Params) {
 				case <-time.After(defaultNodeTimeout):
 					log.Infof("verack timeout on peer %v",
 						p.Addr())
+					if p.ProtocolVersion() > 0 && p.UserAgent() != "" && !p.TimeConnected().IsZero() && p.StartingHeight() > 0 {
+						log.Infof("verack timeout for %s but still have recordable parameter", ip.String())
+						currHeight := p.LastBlock()
+						if currHeight == 0 {
+							currHeight = p.StartingHeight()
+						}
+						amgr.goodPeer <- &Node{
+							IP:              ip,
+							Services:        p.Services(),
+							LastAttempt:     time.Now().UTC(),
+							LastSuccess:     p.TimeConnected(),
+							LastSeen:        p.TimeConnected(),
+							ConnectionTime:  p.TimeConnected().Unix(),
+							ProtocolVersion: p.ProtocolVersion(),
+							UserAgent:       p.UserAgent(),
+							StartingHeight:  p.StartingHeight(),
+							CurrentHeight:   currHeight,
+						}
+					}
 					p.Disconnect()
 					return
 				}
@@ -141,34 +159,11 @@ func creep(netParams *chaincfg.Params) {
 	}
 }
 
-func runSeeder(cfg config.NetworkSnapshotOptions) {
-	var netParams = chaincfg.MainNetParams()
-	if cfg.TestNet {
-		netParams = chaincfg.TestNet3Params()
-	}
-
-	var err error
-	amgr, err = NewManager(filepath.Join(defaultHomeDir,
-		netParams.Name))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "NewManager: %v\n", err)
-		os.Exit(1)
-	}
-
+func runSeeder(cfg config.NetworkSnapshotOptions, netParams *chaincfg.Params) {
 	amgr.AddAddresses([]net.IP{net.ParseIP(cfg.Seeder)})
 
 	wg.Add(1)
 	go creep(netParams)
 
-	// todo remove dns related feature
-	/*dnsServer := NewDNSServer(cfg.SeederHost, cfg.Nameserver, cfg.Listen)
-	go dnsServer.Start()*/
-
 	wg.Wait()
-}
-
-func nodes() map[string]*Node {
-	amgr.mtx.RLock()
-	defer amgr.mtx.RUnlock()
-	return amgr.nodes
 }

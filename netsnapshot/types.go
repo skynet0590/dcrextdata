@@ -21,7 +21,7 @@ type NetworkPeer struct {
 	CurrentHeight   int64  `json:"current_height"`
 	ConnectionTime  int64  `json:"connection_time"`
 	ProtocolVersion uint32 `json:"protocol_version"`
-	LastSeen        int64 `json:"last_seen"`
+	LastSeen        int64  `json:"last_seen"`
 }
 
 type DataStore interface {
