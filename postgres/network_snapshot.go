@@ -121,12 +121,15 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 
 func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error) {
 	query := []qm.QueryMod{models.NetworkPeerWhere.Timestamp.EQ(timestamp)}
+	where := models.NetworkPeerColumns.Timestamp + " = ? "
+	args := []interface{}{timestamp}
 	if q != "" {
-		query = append(query,
-			models.NetworkPeerWhere.Address.EQ(q),
-			qm.Or2(models.NetworkPeerWhere.UserAgent.EQ(q)),
-		)
+		where += fmt.Sprintf(" AND (%s = ? OR %s = ? OR %s = ?)", models.NetworkPeerColumns.Address, 
+			models.NetworkPeerColumns.UserAgent, models.NetworkPeerColumns.Country)
+		args = append(args, q, q, q)
 	}
+
+	query = []qm.QueryMod{qm.Where(where, args...)}
 
 	totalCount, err := models.NetworkPeers(query...).Count(ctx, pg.db)
 	if err != nil {
@@ -183,11 +186,11 @@ func (pg PgDb) TotalPeerCountByProtocol(ctx context.Context, timestamp int64, pr
 	).Count(ctx, pg.db)
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64, offset int, limit int) (userAgents []netsnapshot.UserAgentInfo, err error) {
-	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number OFFSET %d LIMIT %d",
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error) {
+	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number",
 		models.NetworkPeerColumns.UserAgent, models.NetworkPeerColumns.UserAgent,
 		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
-		models.NetworkPeerColumns.UserAgent, offset, limit)
+		models.NetworkPeerColumns.UserAgent)
 
 	var result []struct {
 		UserAgent string `json:"user_agent"`
@@ -227,11 +230,11 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64, offse
 	return
 }
 
-func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64, offset int, limit int) (countries []netsnapshot.CountryInfo, err error) {
-	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number OFFSET %d LIMIT %d",
+func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo, err error) {
+	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number",
 		models.NetworkPeerColumns.Country, models.NetworkPeerColumns.Country,
 		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
-		models.NetworkPeerColumns.Country, offset, limit)
+		models.NetworkPeerColumns.Country)
 
 	var result []struct {
 		Country string `json:"country"`

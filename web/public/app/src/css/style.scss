@@ -1070,6 +1070,18 @@ table.collapsible tbody.clickable:hover {
 
 /* /tab control */
 
+.form-control-borderless {
+  border: none;
+}
+
+.form-control-borderless:hover,
+.form-control-borderless:active,
+.form-control-borderless:focus {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
 @media screen and (min-width: 768px) {
   .side-vsp-panel {
     .form-check-inline {

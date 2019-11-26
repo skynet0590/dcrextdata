@@ -1670,8 +1670,8 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	}, resp)
 }
 
-// /nodes
-func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
+// /snapshot
+func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	page, _ := strconv.Atoi(r.FormValue("page"))
 	if page < 1 {
@@ -1697,22 +1697,19 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 		nextTimestamp = snapshot.Timestamp
 	}
 
-	peerCount, err := s.db.TotalPeerCount(r.Context(), timestamp)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot get node count, %s", err.Error()), w)
-		return
-	}
-
 	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot find snapshot to the specified timestamp, %s", err.Error()), w)
 		return
 	}
 
-	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp, 0, 6)
+	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp)
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot retrieve peer count by user agents, %s", err.Error()), w)
 		return
+	}
+	if len(userAgents) > 6 {
+		userAgents = userAgents[:6]
 	}
 
 	ipv4Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 4)
@@ -1727,14 +1724,25 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp, 0, 6)
+	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp)
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
 	}
 
+	if len(countries) > 6 {
+		countries = countries[:6]
+	}
+
+	peerCount, err := s.db.TotalPeerCount(r.Context(), timestamp)
+	if err != nil {
+		s.renderErrorf("Cannot get total peer count, %s", w, err.Error())
+		return
+	}
+
 	s.render("nodes.html", map[string]interface{}{
 		"page":              page,
+		"pageCount":		 0,
 		"snapshot":          snapshot,
 		"userAgents":        userAgents,
 		"countries":         countries,
@@ -1743,6 +1751,45 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 		"previousTimestamp": previousTimestamp,
 		"nextTimestamp":     nextTimestamp,
 		"peerCount":         peerCount,
+		"query":			 r.FormValue("q"),
+	}, w)
+}
+
+// /api/snapshot/{timestamp}/nodes
+func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
+	r.ParseForm()
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	offset := (page - 1) * 20
+	query := r.FormValue("q")
+
+	var timestamp int64
+
+	timestamp = getTitmestampCtx(r)
+	if timestamp == 0 {
+		s.renderErrorJSON("timestamp is required and cannot be zero", w)
+		return
+	}
+
+	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, recordsPerPage)
+	if err != nil {
+		s.renderErrorf("Error in fetching network nodes, %s", w, err.Error())
+	}
+
+	rem := peerCount%recordsPerPage
+	pageCount := (peerCount - rem) / recordsPerPage
+	if rem > 0 {
+		pageCount += 1
+	}
+
+	s.renderJSON(map[string]interface{}{
+		"page":      page,
+		"pageCount": pageCount,
+		"peerCount": peerCount,
+		"nodes": 	 nodes,
 	}, w)
 }
 

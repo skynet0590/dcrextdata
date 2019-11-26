@@ -59,6 +59,12 @@ func templateFuncMap() template.FuncMap {
 		"timestamp": func() int64 {
 			return time.Now().Unix()
 		},
+		"timeSince": func(timestamp int64) string {
+			return time.Since(time.Unix(timestamp, 0).UTC()).String()
+		},
+		"formatUnixTime": func(timestamp int64) string {
+			return time.Unix(timestamp, 0).Format(time.UnixDate)
+		},
 		"strListContains": func(stringList []string, needle string) bool {
 			for _, value := range stringList {
 				if value == needle {
@@ -98,8 +104,8 @@ func templateFuncMap() template.FuncMap {
 			}
 			return pair
 		},
-		"formatUnixTime": func(timestamp int64) string {
-			return time.Unix(timestamp, 0).Format(time.UnixDate)
+		"percentage": func(total int64, actual int64) float64 {
+			return 100 * float64(actual)/float64(total)
 		},
 	}
 }

@@ -365,7 +365,7 @@ func (pg *PgDb) votesByBlock(ctx context.Context, blockHeight int64) ([]mempool.
 		return nil, err
 	}
 
-	var votes = make([]mempool.VoteDto, len(voteSlice))
+	var votes []mempool.VoteDto
 	for _, vote := range voteSlice {
 		votes = append(votes, pg.voteModelToDto(vote))
 	}

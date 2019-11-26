@@ -10,9 +10,29 @@ export const hide = (el) => {
   el.classList.add('d-hide')
 }
 
+export const hideAll = (els) => {
+  els.forEach(el => {
+    el.classList.add('d-none')
+    el.classList.add('d-hide')
+  })
+}
+
 export const show = (el) => {
   el.classList.remove('d-none')
   el.classList.remove('d-hide')
+}
+
+export const showAll = (els) => {
+  els.forEach(el => {
+    el.classList.remove('d-none')
+    el.classList.remove('d-hide')
+  })
+}
+
+export const setAllValues = (targets, value) => {
+  targets.forEach(el => {
+    el.innerHTML = value
+  })
 }
 
 export const showLoading = (loadingTarget, elementsToHide) => {

@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -32,6 +33,13 @@ func (s *Server) render(tplName string, data map[string]interface{}, res http.Re
 func (s *Server) renderError(errorMessage string, res http.ResponseWriter) {
 	data := map[string]interface{}{
 		"error": errorMessage,
+	}
+	s.render("error.html", data, res)
+}
+
+func (s *Server) renderErrorf(format string, res http.ResponseWriter, args ...interface{}) {
+	data := map[string]interface{}{
+		"error": fmt.Sprintf(format, args...),
 	}
 	s.render("error.html", data, res)
 }

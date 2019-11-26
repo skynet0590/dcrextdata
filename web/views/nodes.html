@@ -7,97 +7,198 @@
     {{ template "header" }}
     <div class="content" data-controller="nodes">
         <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-10 mx-auto">
 
-
-            <div class="row">
-                <div class="col-md-12 text-center">
-                    <h3>
-                        <a href="#network-snapshot">Network Snapshot</a>
-                    </h3>
-                    <p>Snapshot of reachable nodes as of
-                        <span class="timestamp">{{ formatUnixTime .snapshot.Timestamp}}</span>.
-                    </p>
-                </div>
-            </div>
-
+            {{$height := .snapshot.Height}}
 
             <div class="row">
-                <div class="big col-md-2 text-center"><br>
-                    <h3>{{.snapshot.Nodes}}</h3>
-                    <p class="text-muted">Nodes</p>
-                    <h3>{{.ipv4Count}}</h3>
-                    <p class="text-muted">IPv4</p>
-                    <h3>{{.ipv6Count}}</h3>
-                    <p class="text-muted">IPv6</p>
-                    <h3>{{.snapshot.Height}}</h3>
-                    <p class="text-muted">Height</p><br>
-                    <a href="/nodes/1574631667/" title="Previous snapshot" rel="nofollow"><i class="fa fa-chevron-left fa-2x"></i>
-                    </a>
-                </div>
+                <div class="col-md-8 mx-auto">
 
-                <div class="col-md-10">
-                    <nav>
-                        <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
-                            <a class="nav-item nav-link active" id="nav-user-agents-tab" data-toggle="tab" href="#nav-user-agents" role="tab"
-                               aria-controls="nav-home" aria-selected="true">User Agents</a>
-                            <a class="nav-item nav-link" id="nav-countries-tab" data-toggle="tab" href="#nav-countries" role="tab"
-                               aria-controls="nav-profile" aria-selected="false">Countries</a>
+                    <div class="row">
+                        <div class="col-md-12 text-center">
+                            <h3>
+                                <a href="#network-snapshot">Network Snapshot</a>
+                            </h3>
+                            <p>
+                                <a href="/snapshot/{{.previousTimestamp}}" data-target="nodes.previousSnapshotButton"
+                                    data-previous-timestamp="{.previousTimestamp}"
+                                    data-action="click->nodes#loadPreviousSnapshot"
+                                    class="mr-2 {{ if eq .previousTimestamp 0 }}d-none{{ end }}">&lt;Previous </a>
+                                Snapshot of reachable nodes as of
+                                <span class="timestamp" 
+                                    data-target="nodes.timestamp" 
+                                    data-initial-value="{{.snapshot.Timestamp}}">{{ formatUnixTime .snapshot.Timestamp}}</span>.
+                                <a href="/snapshot/{{.nextTimestamp}}" data-target="nodes.nextSnapshotButton"
+                                    data-action="click->nodes#loadNextSnapshot"
+                                    class="ml-2 {{ if eq .nextTimestamp 0 }}d-none{{ end }}"> Next&gt;</a>
+                            </p>
                         </div>
-                    </nav>
-                    <div class="tab-content" id="nav-tabContent">
-
-                        <div class="tab-pane fade active show" id="nav-user-agents" role="tabpanel" aria-labelledby="nav-user-agents-tab">
-                            <div class="table-responsive">
-                                <table class="table" cellspacing="0" style="width: 100% !important;">
-                                    <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>User Agent</th>
-                                        <th>Nodes</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {{$timestamp := .snapshot.Timestamp}}
-                                    {{range $index, $userAgent := .userAgents}}
-                                     <tr>
-                                        <td>{{(incByOne $index)}}</td>
-                                        <td><a href="?timestamp={{$timestamp}}&user-agent={{$userAgent.UserAgent}}">{{$userAgent.UserAgent}}</a></td>
-                                        <td>{{$userAgent.Nodes}}({{$userAgent.Percentage}}%)</td>
-                                    </tr>
-                                    {{end}}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="tab-pane fade" id="nav-countries" role="tabpanel" aria-labelledby="nav-countries-tab">
-                            <div class="table-responsive">
-                                <table class="table" cellspacing="0" style="width: 100% !important;">
-                                    <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>Country</th>
-                                        <th>Nodes</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {{range $index, $country := .countries}}
-                                     <tr>
-                                        <td>{{(incByOne $index)}}</td>
-                                        <td><a href="?timestamp={{$timestamp}}&country={{$country.Country}}">{{$country.Country}}</a></td>
-                                        <td>{{$country.Nodes}}({{$country.Percentage}}%)</td>
-                                    </tr>
-                                    {{end}}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
                     </div>
-                </div>
-            </div>
+                    {{/* end highlight */}}
+
+                    <div class="row">
+                        <div class="big col-md-2 text-center"><br>
+                            <h3>{{.snapshot.Nodes}}</h3>
+                            <p class="text-muted">Nodes</p>
+                            <h3>{{.ipv4Count}}</h3>
+                            <p class="text-muted">IPv4</p>
+                            <h3>{{.ipv6Count}}</h3>
+                            <p class="text-muted">IPv6</p>
+                            <h3 data-target="nodes.height" data-initial-value="{{.snapshot.Height}}">{{.snapshot.Height}}</h3>
+                            <p class="text-muted">Height</p><br>
+                        </div>
+
+                        <div class="col-md-10">
+                            <nav>
+                                <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
+                                    <a class="nav-item nav-link active" id="nav-user-agents-tab" data-toggle="tab" href="#nav-user-agents" role="tab"
+                                    aria-controls="nav-home" aria-selected="true">User Agents</a>
+                                    <a class="nav-item nav-link" id="nav-countries-tab" data-toggle="tab" href="#nav-countries" role="tab"
+                                    aria-controls="nav-profile" aria-selected="false">Countries</a>
+                                </div>
+                            </nav>
+                            <div class="tab-content" id="nav-tabContent">
+
+                                <div class="tab-pane fade active show" id="nav-user-agents" role="tabpanel" aria-labelledby="nav-user-agents-tab">
+                                    <div class="table-responsive">
+                                        <table class="table" cellspacing="0" style="width: 100% !important;">
+                                            <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>User Agent</th>
+                                                <th>Nodes</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {{$timestamp := .snapshot.Timestamp}}
+                                            {{range $index, $userAgent := .userAgents}}
+                                            <tr>
+                                                <td>{{(incByOne $index)}}</td>
+                                                <td><a data-query="{{$userAgent.UserAgent}}" data-action="click->nodes#queryLinkClicked" 
+                                                href="#networp-snapshot">{{$userAgent.UserAgent}}</a></td>
+                                                <td>{{$userAgent.Nodes}}({{$userAgent.Percentage}}%)</td>
+                                            </tr>
+                                            {{end}}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade" id="nav-countries" role="tabpanel" aria-labelledby="nav-countries-tab">
+                                    <div class="table-responsive">
+                                        <table class="table" cellspacing="0" style="width: 100% !important;">
+                                            <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Country</th>
+                                                <th>Nodes</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {{range $index, $country := .countries}}
+                                            <tr>
+                                                <td>{{(incByOne $index)}}</td>
+                                                <td><a data-query="{{$country.Country}}" data-action="click->nodes#queryLinkClicked" 
+                                                href="#networp-snapshot">{{$country.Country}}</a></td>
+                                                <td>{{$country.Nodes}}({{$country.Percentage}}%)</td>
+                                            </tr>
+                                            {{end}}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    {{/* end summary */}}
+
+                    <div class="row justify-content-center" id="network-snapshot">
+                        <div class="col-12 col-md-10 col-lg-8">
+                            <form class="card card-sm" data-action="submit->nodes#search">
+                                <div class="card-body row no-gutters align-items-center">
+                                    <div class="col-auto">
+                                        <i class="fas fa-search h4 text-body"></i>
+                                    </div>
+                                    <div class="col">
+                                        <input data-target="nodes.queryInput" name="q" value="{{.query}}"
+                                        class="form-control form-control-lg form-control-borderless" type="search" 
+                                        style="font-size:21px;"
+                                        placeholder="e.g. Nigeria or /dcrwire:0.3.0/dcrd:1.3.0/ or 111.111.111.111">
+                                    </div>
+                                    <div class="col-auto">
+                                        <button data-action="click->nodes#search" class="btn btn-lg btn-success" type="submit">Search</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {{/* end serch form */}}
+
+                    <div class="row mt-5">
+                        <div class="col-md-12">
+                            <p class="paginator text-center">
+                            <a href="#network-snapshot" data-target="nodes.previousPageButton"
+                                    data-action="click->nodes#loadPreviousPage"
+                                    class="mr-2 {{ if eq .page 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                                Page <span data-target="nodes.currentPage">{{.page}}</span> of 
+                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span> 
+                                <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
+                                
+                                <a href="#network-snapshot" data-target="nodes.nextPageButton"
+                                    data-action="click->nodes#laodNextPage"
+                                    class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
+                            </p>
+                        </div>
+                    </div>
+                    {{/* end pagination info */}}
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table" style="width: 100% !important;">
+                                <thead>
+                                    <tr>
+                                        <th class="hidden-xs">ADDRESS</th>
+                                        <th class="hidden-xs">USER AGENT</th>
+                                        <th class="hidden-xs">HEIGHT</th>
+                                        <th class="hidden-xs">LOCATION</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody data-target="nodes.tableBody">
+                                    
+                                </tbody>
+                            </table>
+
+                            <template data-target="nodes.rowTemplate">
+                                <tr>
+                                    <td class="visible-xs"></td>
+                                    <td class="hidden-xs"></td>
+                                    <td class="hidden-xs"></td>
+                                    <td class="hidden-xs"></td>
+                                    </tr>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <p class="paginator text-center">
+                            <a href="#network-snapshot" data-target="nodes.previousPageButton"
+                                    data-action="click->nodes#loadPreviousPage"
+                                    class="mr-2 {{ if eq .page 1 }}d-none{{ end }}">&lt;Previous </a>
+
+                                Page <span data-target="nodes.currentPage">{{.page}}</span> of 
+                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span> 
+                                <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
+                                
+                                <a href="#network-snapshot" data-target="nodes.nextPageButton"
+                                    data-action="click->nodes#laodNextPage"
+                                    class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
+                            </p>
+                        </div>
+                    </div>
+                    {{/* end pagination info */}}
 
                 </div>
             </div>
