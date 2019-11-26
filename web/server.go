@@ -78,6 +78,7 @@ type DataQuery interface {
 	NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	TotalPeerCount(ctx context.Context, timestamp int64) (int64, error)
 	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
+	LastSnapshotForNode(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
 	TotalPeerCountByProtocol(ctx context.Context, timestamp int64, protocolVersion int) (int64, error)
 	PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error)
 	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)

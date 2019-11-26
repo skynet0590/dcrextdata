@@ -167,6 +167,30 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	return peers, totalCount, nil
 }
 
+func (pg PgDb) LastSnapshotForNode(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error) {
+	peerModel, err := models.NetworkPeers(models.NetworkPeerWhere.Address.EQ(address), 
+						qm.OrderBy(models.NetworkPeerColumns.Timestamp + " desc"), qm.Limit(1)).One(ctx, pg.db)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var node = netsnapshot.NetworkPeer{
+		Timestamp:       peerModel.Timestamp,
+		Address:         peerModel.Address,
+		Country: 		 peerModel.Country,
+		LastSeen:        peerModel.LastSeen,
+		ConnectionTime:  peerModel.ConnectionTime,
+		ProtocolVersion: uint32(peerModel.ProtocolVersion),
+		UserAgent:       peerModel.UserAgent,
+		StartingHeight:  peerModel.StartingHeight,
+		CurrentHeight:   peerModel.CurrentHeight,
+		Services: 		 peerModel.Services,
+	}
+
+	return &node, nil
+}
+
 func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, error) {
 	node, err := models.NetworkPeers(
 		models.NetworkPeerWhere.Address.EQ(ip),
