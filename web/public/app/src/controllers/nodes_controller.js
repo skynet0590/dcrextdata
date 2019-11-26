@@ -53,6 +53,9 @@ export default class extends Controller {
   }
 
   search () {
+    if (this.query === 'Unkown') {
+      this.query = ''
+    }
     insertOrUpdateQueryParam('q', this.query)
     this.currentPage = 1
     insertOrUpdateQueryParam('page', 1)
@@ -87,7 +90,10 @@ export default class extends Controller {
   displayNodes (nodes) {
     const _this = this
     this.tableBodyTarget.innerHTML = ''
-
+    if (!nodes) {
+      // todo show error message
+      return
+    }
     nodes.forEach(node => {
       const exRow = document.importNode(_this.rowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
@@ -95,12 +101,25 @@ export default class extends Controller {
       fields[0].innerHTML = `<a href="/nodes/view/${node.address}" title="Node status">${node.address}</a><br>
         <span class="text-muted">Since ${moment.unix(node.last_seen).fromNow()}</span><br>`
       fields[1].innerHTML = `${node.user_agent} (${node.protocol_version})<br>
-        <span class="text-muted">services</span>`
+        <span class="text-muted">${node.services}</span>`
       fields[2].innerHTML = `${node.current_height}
         <div class="progress"><div class="progress-bar" style="width: ${(100 * node.current_height / _this.height).toFixed(2)}%;"></div></div>`
       fields[3].innerHTML = node.country
 
       _this.tableBodyTarget.appendChild(exRow)
     })
+  }
+
+  loadUserAgents () {
+    const _this = this
+    const url = `/api/snapshot/${this.timestamp}/user-agents`
+    axios.get(url).then(response => {
+      const result = response.data
+      _this.displayUserAgents(result)
+    })
+  }
+
+  displayUserAgents () {
+
   }
 }

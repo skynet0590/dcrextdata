@@ -427,7 +427,7 @@ func testNetworkPeersSelect(t *testing.T) {
 }
 
 var (
-	networkPeerDBTypes = map[string]string{`Timestamp`: `bigint`, `Address`: `character varying`, `IPVersion`: `integer`, `Country`: `character varying`, `LastSeen`: `bigint`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `StartingHeight`: `bigint`, `CurrentHeight`: `bigint`}
+	networkPeerDBTypes = map[string]string{`Timestamp`: `bigint`, `Address`: `character varying`, `IPVersion`: `integer`, `Country`: `character varying`, `LastSeen`: `bigint`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `StartingHeight`: `bigint`, `CurrentHeight`: `bigint`, `Services`: `character varying`}
 	_                  = bytes.MinRead
 )
 

@@ -96,6 +96,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		existingNode.ConnectionTime = peer.ConnectionTime
 		existingNode.ProtocolVersion = int(peer.ProtocolVersion)
 		existingNode.UserAgent = peer.UserAgent
+		existingNode.Services = peer.Services
 		existingNode.StartingHeight = peer.StartingHeight
 		existingNode.CurrentHeight = peer.CurrentHeight
 
@@ -114,6 +115,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		UserAgent:       peer.UserAgent,
 		StartingHeight:  peer.StartingHeight,
 		CurrentHeight:   peer.CurrentHeight,
+		Services:		 peer.Services,
 	}
 
 	return peerModel.Insert(ctx, pg.db, boil.Infer())
@@ -158,6 +160,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 			UserAgent:       peerModel.UserAgent,
 			StartingHeight:  peerModel.StartingHeight,
 			CurrentHeight:   peerModel.CurrentHeight,
+			Services: 		 peerModel.Services,
 		})
 	}
 

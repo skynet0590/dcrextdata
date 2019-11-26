@@ -124,6 +124,7 @@ func (t taker) Start(ctx context.Context) {
 				UserAgent:       node.UserAgent,
 				StartingHeight:  node.StartingHeight,
 				CurrentHeight:   node.CurrentHeight,
+				Services: 		 node.Services.String(),
 			}
 
 			geoLoc, err := t.geolocation(ctx, node.IP)

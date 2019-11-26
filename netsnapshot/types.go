@@ -36,6 +36,7 @@ type NetworkPeer struct {
 	ProtocolVersion uint32 `json:"protocol_version"`
 	LastSeen        int64  `json:"last_seen"`
 	IPVersion       int    `json:"ip_version"`
+	Services		string `json:"services"`
 }
 
 type geoIP struct {

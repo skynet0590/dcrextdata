@@ -33,6 +33,7 @@ type NetworkPeer struct {
 	UserAgent       string `boil:"user_agent" json:"user_agent" toml:"user_agent" yaml:"user_agent"`
 	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
 	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
+	Services        string `boil:"services" json:"services" toml:"services" yaml:"services"`
 
 	R *networkPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkPeerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -49,6 +50,7 @@ var NetworkPeerColumns = struct {
 	UserAgent       string
 	StartingHeight  string
 	CurrentHeight   string
+	Services        string
 }{
 	Timestamp:       "timestamp",
 	Address:         "address",
@@ -60,6 +62,7 @@ var NetworkPeerColumns = struct {
 	UserAgent:       "user_agent",
 	StartingHeight:  "starting_height",
 	CurrentHeight:   "current_height",
+	Services:        "services",
 }
 
 // Generated where
@@ -91,6 +94,7 @@ var NetworkPeerWhere = struct {
 	UserAgent       whereHelperstring
 	StartingHeight  whereHelperint64
 	CurrentHeight   whereHelperint64
+	Services        whereHelperstring
 }{
 	Timestamp:       whereHelperint64{field: "\"network_peer\".\"timestamp\""},
 	Address:         whereHelperstring{field: "\"network_peer\".\"address\""},
@@ -102,6 +106,7 @@ var NetworkPeerWhere = struct {
 	UserAgent:       whereHelperstring{field: "\"network_peer\".\"user_agent\""},
 	StartingHeight:  whereHelperint64{field: "\"network_peer\".\"starting_height\""},
 	CurrentHeight:   whereHelperint64{field: "\"network_peer\".\"current_height\""},
+	Services:        whereHelperstring{field: "\"network_peer\".\"services\""},
 }
 
 // NetworkPeerRels is where relationship names are stored.
@@ -121,9 +126,9 @@ func (*networkPeerR) NewStruct() *networkPeerR {
 type networkPeerL struct{}
 
 var (
-	networkPeerAllColumns            = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
+	networkPeerAllColumns            = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height", "services"}
 	networkPeerColumnsWithoutDefault = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
-	networkPeerColumnsWithDefault    = []string{}
+	networkPeerColumnsWithDefault    = []string{"services"}
 	networkPeerPrimaryKeyColumns     = []string{"timestamp", "address"}
 )
 
