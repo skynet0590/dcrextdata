@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/raedahgroup/dcrextdata/netsnapshot"
@@ -38,6 +40,7 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 	return &netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		Nodes:     snapshotModel.Nodes,
 	}, nil
 }
 
@@ -103,6 +106,8 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 	peerModel := models.NetworkPeer{
 		Timestamp:       peer.Timestamp,
 		Address:         peer.Address,
+		Country:		 peer.Country,
+		IPVersion:       peer.IPVersion,
 		LastSeen:        peer.LastSeen,
 		ConnectionTime:  peer.ConnectionTime,
 		ProtocolVersion: int(peer.ProtocolVersion),
@@ -143,6 +148,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 		peers = append(peers, netsnapshot.NetworkPeer{
 			Timestamp:       peerModel.Timestamp,
 			Address:         peerModel.Address,
+			Country: 		 peerModel.Country,
 			LastSeen:        peerModel.LastSeen,
 			ConnectionTime:  peerModel.ConnectionTime,
 			ProtocolVersion: uint32(peerModel.ProtocolVersion),
@@ -153,6 +159,17 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	}
 
 	return peers, totalCount, nil
+}
+
+func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, error) {
+	node, err := models.NetworkPeers(
+		models.NetworkPeerWhere.Address.EQ(ip),
+	).One(ctx, pg.db)
+	if err != nil {
+		return "", err
+	}
+
+	return node.Country, nil
 }
 
 func (pg PgDb) TotalPeerCount(ctx context.Context, timestamp int64) (int64, error) {
@@ -166,11 +183,11 @@ func (pg PgDb) TotalPeerCountByProtocol(ctx context.Context, timestamp int64, pr
 	).Count(ctx, pg.db)
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (counts map[string]int64, err error) {
-	sql := fmt.Sprintf("select %s, count(%s) as no from %s WHERE %s = %d GROUP BY %s",
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64, offset int, limit int) (userAgents []netsnapshot.UserAgentInfo, err error) {
+	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number OFFSET %d LIMIT %d",
 		models.NetworkPeerColumns.UserAgent, models.NetworkPeerColumns.UserAgent,
 		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
-		models.NetworkPeerColumns.UserAgent)
+		models.NetworkPeerColumns.UserAgent, offset, limit)
 
 	var result []struct {
 		UserAgent string `json:"user_agent"`
@@ -178,14 +195,94 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (coun
 	}
 
 	err = models.NetworkPeers(qm.SQL(sql)).Bind(ctx, pg.db, &result)
-	counts = map[string]int64{}
-	for _, item := range result {
-		counts[item.UserAgent] = item.Number
+	if err != nil {
+		return nil, err
 	}
+
+	var total int64
+	for _, item := range result {
+		total += item.Number
+	}
+
+	if total == 0 {
+		return nil, errors.New("No records found")
+	}
+
+	for _, item := range result {
+		userAgent := item.UserAgent
+		if strings.Trim(userAgent, " ") == "" {
+			userAgent = "Unkown"
+		}
+		userAgents = append(userAgents, netsnapshot.UserAgentInfo{
+			UserAgent:  userAgent,
+			Nodes:      item.Number,
+			Percentage: float64(100 * item.Number / total),
+		})
+	}
+
+	sort.Slice(userAgents, func(i, j int) bool {
+		return userAgents[i].Nodes > userAgents[j].Nodes
+	})
+
 	return
+}
+
+func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64, offset int, limit int) (countries []netsnapshot.CountryInfo, err error) {
+	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number OFFSET %d LIMIT %d",
+		models.NetworkPeerColumns.Country, models.NetworkPeerColumns.Country,
+		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
+		models.NetworkPeerColumns.Country, offset, limit)
+
+	var result []struct {
+		Country string `json:"country"`
+		Number    int64  `json:"number"`
+	}
+
+	err = models.NetworkPeers(qm.SQL(sql)).Bind(ctx, pg.db, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	var total int64
+	for _, item := range result {
+		total += item.Number
+	}
+
+	if total == 0 {
+		return nil, errors.New("No records found")
+	}
+
+	for _, item := range result {
+		country := item.Country
+		if strings.Trim(country, " ") == "" {
+			country = "Unkown"
+		}
+		countries = append(countries, netsnapshot.CountryInfo{
+			Country:  item.Country,
+			Nodes:      item.Number,
+			Percentage: float64(100 * item.Number / total),
+		})
+	}
+
+	sort.Slice(countries, func(i, j int) bool {
+		return countries[i].Nodes > countries[j].Nodes
+	})
+
+	return
+}
+
+func (pg PgDb) PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error) {
+	return models.NetworkPeers(
+		models.NetworkPeerWhere.Timestamp.EQ(timestamp), 
+		models.NetworkPeerWhere.IPVersion.EQ(iPVersion),
+	).Count(ctx, pg.db)
 }
 
 func (pg PgDb) LastSnapshotTime(ctx context.Context) (timestamp int64) {
 	_ = pg.LastEntry(ctx, models.TableNames.NetworkSnapshot, &timestamp)
 	return
+}
+
+func (pg PgDb) LastSnapshot(ctx context.Context) (*netsnapshot.SnapShot, error) {
+	return pg.FindNetworkSnapshot(ctx, pg.LastSnapshotTime(ctx))
 }

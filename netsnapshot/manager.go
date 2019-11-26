@@ -30,6 +30,7 @@ type Node struct {
 	UserAgent       string
 	StartingHeight  int64
 	CurrentHeight   int64
+	IPVersion       int
 }
 
 type Manager struct {

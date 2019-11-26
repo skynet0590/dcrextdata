@@ -3,6 +3,9 @@ package netsnapshot
 import (
 	"context"
 	"fmt"
+	"math"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -11,6 +14,7 @@ import (
 	"github.com/decred/dcrd/chaincfg/v2"
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
@@ -48,14 +52,23 @@ func (t taker) Start(ctx context.Context) {
 
 	var mtx sync.Mutex
 	var bestBlockHeight int64
+
 	var count int
 	var timestamp = time.Now().UTC().Unix()
-
 	snapshot := SnapShot{
 		Timestamp: timestamp,
 		Height:    bestBlockHeight,
 		Nodes:     count,
 	}
+
+	lastSnapshot, err := t.dataStore.LastSnapshot(ctx)
+	if err == nil {
+		minutesPassed := math.Abs(time.Since(time.Unix(lastSnapshot.Timestamp, 0)).Minutes())
+		if minutesPassed < float64(t.cfg.SnapshotInterval)/2 {
+			snapshot = *lastSnapshot
+		}
+	}
+
 	err = t.dataStore.SaveSnapshot(ctx, snapshot)
 
 	if err != nil {
@@ -90,16 +103,35 @@ func (t taker) Start(ctx context.Context) {
 			mtx.Unlock()
 
 		case node := <-amgr.goodPeer:
-			err := t.dataStore.SaveNetworkPeer(ctx, NetworkPeer{
+			var ipVersion int
+			if node.IP.To16() != nil {
+				ipVersion = 6
+			} else if node.IP.To16() != nil {
+				ipVersion = 4
+			}
+
+			if node.IP.String() == "127.0.0.1" { // do not add the local IP
+				break
+			}
+
+			networkPeer := NetworkPeer{
 				Timestamp:       timestamp,
 				Address:         node.IP.String(),
+				IPVersion:       ipVersion,
 				LastSeen:        node.LastSeen.UTC().Unix(),
 				ConnectionTime:  node.ConnectionTime,
 				ProtocolVersion: node.ProtocolVersion,
 				UserAgent:       node.UserAgent,
 				StartingHeight:  node.StartingHeight,
 				CurrentHeight:   node.CurrentHeight,
-			})
+			}
+
+			geoLoc, err := t.geolocation(ctx, node.IP)
+			if err == nil {
+				networkPeer.Country = geoLoc.CountryName
+			}
+
+			err = t.dataStore.SaveNetworkPeer(ctx, networkPeer)
 			if err != nil {
 				log.Errorf("Error in saving node info, %s.", err.Error())
 			} else {
@@ -133,4 +165,15 @@ func (t taker) Start(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (t taker) geolocation(ctx context.Context, ip net.IP) (*geoIP, error) {
+	countryName, err := t.dataStore.GetIPLocation(ctx, ip.String())
+	if err == nil {
+		return &geoIP{CountryName: countryName}, nil
+	}
+	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=fcd33d8814206ce1f0a255a2204ad71e&format=1", ip.String())
+	var geo geoIP
+	err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, &geo)
+	return &geo, err
 }

@@ -98,5 +98,8 @@ func templateFuncMap() template.FuncMap {
 			}
 			return pair
 		},
+		"formatUnixTime": func(timestamp int64) string {
+			return time.Unix(timestamp, 0).Format(time.UnixDate)
+		},
 	}
 }

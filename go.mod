@@ -2,6 +2,7 @@ module github.com/raedahgroup/dcrextdata
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/decred/dcrd/chaincfg v1.5.1
 	github.com/decred/dcrd/chaincfg/chainhash v1.0.2
 	github.com/decred/dcrd/chaincfg/v2 v2.3.0
@@ -27,6 +28,7 @@ require (
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.6.0+incompatible
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 )
 
 go 1.13

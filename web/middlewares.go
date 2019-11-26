@@ -3,12 +3,14 @@ package web
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
 )
 
 const (
 	ctxSyncDataType = iota
+	ctxTimestamp
 )
 
 func syncDataType(next http.Handler) http.Handler {
@@ -28,4 +30,21 @@ func getSyncDataTypeCtx(r *http.Request) string {
 		return ""
 	}
 	return syncType
+}
+
+func addTimestampToCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), ctxTimestamp,
+			chi.URLParam(r, "timestamp"))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getTitmestampCtx(r *http.Request) int64 {
+	timestampStr, ok := r.Context().Value(ctxTimestamp).(string)
+	if !ok {
+		return 0
+	}
+	timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+	return timestamp
 }

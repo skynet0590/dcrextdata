@@ -15,6 +15,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
@@ -1679,7 +1680,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 
 	var timestamp, previousTimestamp, nextTimestamp int64
 
-	timestamp, _ = strconv.ParseInt(r.FormValue("timestamp"), 10, 64)
+	timestamp = getTitmestampCtx(r)
 	if timestamp == 0 {
 		timestamp = s.db.LastSnapshotTime(r.Context())
 		if timestamp == 0 {
@@ -1702,9 +1703,43 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot find snapshot to the specified timestamp, %s", err.Error()), w)
+		return
+	}
+
+	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp, 0, 6)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by user agents, %s", err.Error()), w)
+		return
+	}
+
+	ipv4Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 4)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by ipv4, %s", err.Error()), w)
+		return
+	}
+
+	ipv6Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 6)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by ipv6, %s", err.Error()), w)
+		return
+	}
+
+	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp, 0, 6)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
+		return
+	}
+
 	s.render("nodes.html", map[string]interface{}{
 		"page":              page,
-		"timestamp":         timestamp,
+		"snapshot":          snapshot,
+		"userAgents":        userAgents,
+		"countries":         countries,
+		"ipv4Count":         ipv4Count,
+		"ipv6Count":         ipv6Count,
 		"previousTimestamp": previousTimestamp,
 		"nextTimestamp":     nextTimestamp,
 		"peerCount":         peerCount,

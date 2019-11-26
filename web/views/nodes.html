@@ -7,9 +7,101 @@
     {{ template "header" }}
     <div class="content" data-controller="nodes">
         <div class="container-fluid">
-            <div class="row justify-content-center">
+            <div class="row">
+                <div class="col-md-10 mx-auto">
 
+
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <h3>
+                        <a href="#network-snapshot">Network Snapshot</a>
+                    </h3>
+                    <p>Snapshot of reachable nodes as of
+                        <span class="timestamp">{{ formatUnixTime .snapshot.Timestamp}}</span>.
+                    </p>
+                </div>
             </div>
+
+
+            <div class="row">
+                <div class="big col-md-2 text-center"><br>
+                    <h3>{{.snapshot.Nodes}}</h3>
+                    <p class="text-muted">Nodes</p>
+                    <h3>{{.ipv4Count}}</h3>
+                    <p class="text-muted">IPv4</p>
+                    <h3>{{.ipv6Count}}</h3>
+                    <p class="text-muted">IPv6</p>
+                    <h3>{{.snapshot.Height}}</h3>
+                    <p class="text-muted">Height</p><br>
+                    <a href="/nodes/1574631667/" title="Previous snapshot" rel="nofollow"><i class="fa fa-chevron-left fa-2x"></i>
+                    </a>
+                </div>
+
+                <div class="col-md-10">
+                    <nav>
+                        <div class="nav nav-tabs nav-fill" id="nav-tab" role="tablist">
+                            <a class="nav-item nav-link active" id="nav-user-agents-tab" data-toggle="tab" href="#nav-user-agents" role="tab"
+                               aria-controls="nav-home" aria-selected="true">User Agents</a>
+                            <a class="nav-item nav-link" id="nav-countries-tab" data-toggle="tab" href="#nav-countries" role="tab"
+                               aria-controls="nav-profile" aria-selected="false">Countries</a>
+                        </div>
+                    </nav>
+                    <div class="tab-content" id="nav-tabContent">
+
+                        <div class="tab-pane fade active show" id="nav-user-agents" role="tabpanel" aria-labelledby="nav-user-agents-tab">
+                            <div class="table-responsive">
+                                <table class="table" cellspacing="0" style="width: 100% !important;">
+                                    <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>User Agent</th>
+                                        <th>Nodes</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {{$timestamp := .snapshot.Timestamp}}
+                                    {{range $index, $userAgent := .userAgents}}
+                                     <tr>
+                                        <td>{{(incByOne $index)}}</td>
+                                        <td><a href="?timestamp={{$timestamp}}&user-agent={{$userAgent.UserAgent}}">{{$userAgent.UserAgent}}</a></td>
+                                        <td>{{$userAgent.Nodes}}({{$userAgent.Percentage}}%)</td>
+                                    </tr>
+                                    {{end}}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="nav-countries" role="tabpanel" aria-labelledby="nav-countries-tab">
+                            <div class="table-responsive">
+                                <table class="table" cellspacing="0" style="width: 100% !important;">
+                                    <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Country</th>
+                                        <th>Nodes</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {{range $index, $country := .countries}}
+                                     <tr>
+                                        <td>{{(incByOne $index)}}</td>
+                                        <td><a href="?timestamp={{$timestamp}}&country={{$country.Country}}">{{$country.Country}}</a></td>
+                                        <td>{{$country.Nodes}}({{$country.Percentage}}%)</td>
+                                    </tr>
+                                    {{end}}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

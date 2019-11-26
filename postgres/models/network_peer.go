@@ -25,6 +25,8 @@ import (
 type NetworkPeer struct {
 	Timestamp       int64  `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
 	Address         string `boil:"address" json:"address" toml:"address" yaml:"address"`
+	IPVersion       int    `boil:"ip_version" json:"ip_version" toml:"ip_version" yaml:"ip_version"`
+	Country         string `boil:"country" json:"country" toml:"country" yaml:"country"`
 	LastSeen        int64  `boil:"last_seen" json:"last_seen" toml:"last_seen" yaml:"last_seen"`
 	ConnectionTime  int64  `boil:"connection_time" json:"connection_time" toml:"connection_time" yaml:"connection_time"`
 	ProtocolVersion int    `boil:"protocol_version" json:"protocol_version" toml:"protocol_version" yaml:"protocol_version"`
@@ -39,6 +41,8 @@ type NetworkPeer struct {
 var NetworkPeerColumns = struct {
 	Timestamp       string
 	Address         string
+	IPVersion       string
+	Country         string
 	LastSeen        string
 	ConnectionTime  string
 	ProtocolVersion string
@@ -48,6 +52,8 @@ var NetworkPeerColumns = struct {
 }{
 	Timestamp:       "timestamp",
 	Address:         "address",
+	IPVersion:       "ip_version",
+	Country:         "country",
 	LastSeen:        "last_seen",
 	ConnectionTime:  "connection_time",
 	ProtocolVersion: "protocol_version",
@@ -77,6 +83,8 @@ func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
 var NetworkPeerWhere = struct {
 	Timestamp       whereHelperint64
 	Address         whereHelperstring
+	IPVersion       whereHelperint
+	Country         whereHelperstring
 	LastSeen        whereHelperint64
 	ConnectionTime  whereHelperint64
 	ProtocolVersion whereHelperint
@@ -86,6 +94,8 @@ var NetworkPeerWhere = struct {
 }{
 	Timestamp:       whereHelperint64{field: "\"network_peer\".\"timestamp\""},
 	Address:         whereHelperstring{field: "\"network_peer\".\"address\""},
+	IPVersion:       whereHelperint{field: "\"network_peer\".\"ip_version\""},
+	Country:         whereHelperstring{field: "\"network_peer\".\"country\""},
 	LastSeen:        whereHelperint64{field: "\"network_peer\".\"last_seen\""},
 	ConnectionTime:  whereHelperint64{field: "\"network_peer\".\"connection_time\""},
 	ProtocolVersion: whereHelperint{field: "\"network_peer\".\"protocol_version\""},
@@ -111,8 +121,8 @@ func (*networkPeerR) NewStruct() *networkPeerR {
 type networkPeerL struct{}
 
 var (
-	networkPeerAllColumns            = []string{"timestamp", "address", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
-	networkPeerColumnsWithoutDefault = []string{"timestamp", "address", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
+	networkPeerAllColumns            = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
+	networkPeerColumnsWithoutDefault = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
 	networkPeerColumnsWithDefault    = []string{}
 	networkPeerPrimaryKeyColumns     = []string{"timestamp", "address"}
 )

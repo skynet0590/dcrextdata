@@ -13,15 +13,34 @@ type SnapShot struct {
 	Nodes     int   `json:"nodes"`
 }
 
+type UserAgentInfo struct {
+	UserAgent  string  `json:"user_agent"`
+	Nodes 	   int64   `json:"nodes"`
+	Percentage float64 `json:"percentage"`
+}
+
+type CountryInfo struct {
+	Country    string  `json:"country"`
+	Nodes 	   int64   `json:"nodes"`
+	Percentage float64 `json:"percentage"`
+}
+
 type NetworkPeer struct {
 	Timestamp       int64  `json:"timestamp"`
 	Address         string `json:"address"`
+	Country			string `json:"country"`
 	UserAgent       string `json:"user_agent"`
 	StartingHeight  int64  `json:"starting_height"`
 	CurrentHeight   int64  `json:"current_height"`
 	ConnectionTime  int64  `json:"connection_time"`
 	ProtocolVersion uint32 `json:"protocol_version"`
 	LastSeen        int64  `json:"last_seen"`
+	IPVersion       int    `json:"ip_version"`
+}
+
+type geoIP struct {
+	CountryCode string  `json:"country_code"`
+	CountryName string  `json:"country_name"`
 }
 
 type DataStore interface {
@@ -29,6 +48,8 @@ type DataStore interface {
 	DeleteSnapshot(ctx context.Context, timestamp int64)
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
 	SaveNetworkPeer(ctx context.Context, peer NetworkPeer) error
+	LastSnapshot(ctx context.Context) (*SnapShot, error)
+	GetIPLocation(ctx context.Context, ip string) (string, error)
 }
 
 type taker struct {
