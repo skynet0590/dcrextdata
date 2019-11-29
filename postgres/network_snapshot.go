@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -213,8 +212,10 @@ func (pg PgDb) TotalPeerCountByProtocol(ctx context.Context, timestamp int64, pr
 	).Count(ctx, pg.db)
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error) {
-	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number",
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo,
+	 err error) {
+
+	sql := fmt.Sprintf("SELECT %s, COUNT(%s) AS number from %s WHERE %s = %d GROUP BY %s ORDER BY number DESC",
 		models.NetworkPeerColumns.UserAgent, models.NetworkPeerColumns.UserAgent,
 		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
 		models.NetworkPeerColumns.UserAgent)
@@ -234,10 +235,6 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (user
 		total += item.Number
 	}
 
-	if total == 0 {
-		return nil, errors.New("No records found")
-	}
-
 	for _, item := range result {
 		userAgent := item.UserAgent
 		if strings.Trim(userAgent, " ") == "" {
@@ -246,7 +243,7 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (user
 		userAgents = append(userAgents, netsnapshot.UserAgentInfo{
 			UserAgent:  userAgent,
 			Nodes:      item.Number,
-			Percentage: float64(100 * item.Number / total),
+			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
 		})
 	}
 
@@ -257,8 +254,10 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (user
 	return
 }
 
-func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo, err error) {
-	sql := fmt.Sprintf("select %s, count(%s) as number from %s WHERE %s = %d GROUP BY %s ORDER BY number",
+func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo,
+	 err error) {
+
+	sql := fmt.Sprintf("SELECT %s, COUNT(%s) AS number from %s WHERE %s = %d GROUP BY %s ORDER BY number DESC",
 		models.NetworkPeerColumns.Country, models.NetworkPeerColumns.Country,
 		models.TableNames.NetworkPeer, models.NetworkPeerColumns.Timestamp, timestamp,
 		models.NetworkPeerColumns.Country)
@@ -278,10 +277,6 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (count
 		total += item.Number
 	}
 
-	if total == 0 {
-		return nil, errors.New("No records found")
-	}
-
 	for _, item := range result {
 		country := item.Country
 		if strings.Trim(country, " ") == "" {
@@ -290,7 +285,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (count
 		countries = append(countries, netsnapshot.CountryInfo{
 			Country:  item.Country,
 			Nodes:      item.Number,
-			Percentage: float64(100 * item.Number / total),
+			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
 		})
 	}
 

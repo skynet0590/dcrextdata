@@ -16,13 +16,13 @@ type SnapShot struct {
 type UserAgentInfo struct {
 	UserAgent  string  `json:"user_agent"`
 	Nodes 	   int64   `json:"nodes"`
-	Percentage float64 `json:"percentage"`
+	Percentage int64 `json:"percentage"`
 }
 
 type CountryInfo struct {
 	Country    string  `json:"country"`
 	Nodes 	   int64   `json:"nodes"`
-	Percentage float64 `json:"percentage"`
+	Percentage int64   `json:"percentage"`
 }
 
 type NetworkPeer struct {

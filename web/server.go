@@ -171,6 +171,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.With().Get("/snapshot", s.snapshot)
 	r.With(addTimestampToCtx).Get("/snapshot/{timestamp}", s.snapshot)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
+	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountbUserAgents)
+	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

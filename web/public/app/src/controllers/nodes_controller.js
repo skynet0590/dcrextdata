@@ -2,27 +2,38 @@ import { Controller } from 'stimulus'
 import axios from 'axios'
 import moment from 'moment'
 import {
-  setAllValues, insertOrUpdateQueryParam, hideAll, showAll
+  setAllValues, insertOrUpdateQueryParam, hideAll, showAll, hide, show, getNumberOfPages
 } from '../utils'
 
 export default class extends Controller {
   timestamp
   height
   currentPage
+  userAgentsPage
   query
 
   static get targets () {
     return [
-      'timestamp', 'height', 'queryInput', 'peerCount',
+      'timestamp', 'height', 'queryInput', 'peerCount', 'userAgents', 'previousUserAgentsButton', 'nextUserAgentsButton',
+      'userAgentRowTemplate', 'nextCountriesButton', 'previousCountriesButton', 'countries', 'countryRowTemplate',
       'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate', 'totalPageCount', 'currentPage', 'loadingData'
     ]
   }
 
-  initialize () {
+  async initialize () {
     this.timestamp = parseInt(this.timestampTarget.dataset.initialValue)
     this.height = parseInt(this.heightTarget.dataset.initialValue)
     this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
     this.query = this.queryInputTarget.value
+
+    this.userAgentsPage = 1
+    await this.loadUserAgents()
+    this.displayUserAgents()
+
+    this.countriesPage = 1
+    await this.loadCountries()
+    this.displayCountries()
+
     this.loadNetworkPeers()
   }
 
@@ -33,7 +44,7 @@ export default class extends Controller {
     insertOrUpdateQueryParam('page', this.currentPage)
   }
 
-  laodNextPage (e) {
+  loadNextPage (e) {
     e.preventDefault()
     this.currentPage = this.currentPage + 1
     this.loadNetworkPeers()
@@ -42,7 +53,7 @@ export default class extends Controller {
 
   queryLinkClicked (e) {
     e.preventDefault()
-    this.query = e.currentTarget.dataset.query
+    this.query = this.queryInputTarget.value = e.currentTarget.dataset.query
     this.search()
   }
 
@@ -110,16 +121,101 @@ export default class extends Controller {
     })
   }
 
-  loadUserAgents () {
-    const _this = this
+  loadPreviousUserAgents () {
+    this.userAgentsPage -= 1
+    this.displayUserAgents()
+  }
+
+  loadNextUserAgents () {
+    this.userAgentsPage += 1
+    this.displayUserAgents()
+  }
+
+  async loadUserAgents () {
+    const that = this
     const url = `/api/snapshot/${this.timestamp}/user-agents`
-    axios.get(url).then(response => {
-      const result = response.data
-      _this.displayUserAgents(result)
-    })
+    const response = await axios.get(url)
+    that.userAgents = response.data.userAgents
+  }
+
+  loadPreviousCountries () {
+    this.countriesPage -= 1
+    this.displayCountries()
+  }
+
+  loadNextCountries () {
+    this.countriesPage += 1
+    this.displayCountries()
   }
 
   displayUserAgents () {
+    if (!this.userAgents) return
+    let pageCount = getNumberOfPages(this.userAgents.length, 6)
+    if (this.userAgentsPage >= pageCount) {
+      hide(this.nextUserAgentsButtonTarget)
+    } else {
+      show(this.nextUserAgentsButtonTarget)
+    }
 
+    if (this.userAgentsPage <= 1) {
+      hide(this.previousUserAgentsButtonTarget)
+    } else {
+      show(this.previousUserAgentsButtonTarget)
+    }
+
+    this.userAgentsTarget.innerHTML = ''
+    const that = this
+    const offset = (this.userAgentsPage - 1) * 6
+    const userAgents = this.userAgents.slice(offset, offset + 6)
+    userAgents.forEach((userAgent, i) => {
+      const exRow = document.importNode(that.userAgentRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerHTML = 1 + i + offset
+      fields[1].innerHTML = `<a data-query="${userAgent.user_agent}" data-action="click->nodes#queryLinkClicked" 
+                                  href="#network-snapshot">${userAgent.user_agent}</a>`
+      fields[2].innerHTML = `${userAgent.nodes}(${userAgent.percentage}%)`
+
+      that.userAgentsTarget.appendChild(exRow)
+    })
+  }
+
+  async loadCountries () {
+    const that = this
+    const url = `/api/snapshot/${this.timestamp}/countries`
+    const response = await axios.get(url)
+    that.countries = response.data.countries
+  }
+
+  displayCountries () {
+    if (!this.countries) return
+    let pageCount = getNumberOfPages(this.countries.length, 6)
+    if (this.countriesPage >= pageCount) {
+      hide(this.nextCountriesButtonTarget)
+    } else {
+      show(this.nextCountriesButtonTarget)
+    }
+
+    if (this.countriesPage <= 1) {
+      hide(this.previousCountriesButtonTarget)
+    } else {
+      show(this.previousCountriesButtonTarget)
+    }
+
+    this.countriesTarget.innerHTML = ''
+    const that = this
+    const offset = (this.countriesPage - 1) * 6
+    const countries = this.countries.slice(offset, offset + 6)
+    countries.forEach((country, i) => {
+      const exRow = document.importNode(that.countryRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerHTML = 1 + i + offset
+      fields[1].innerHTML = `<a data-query="${country.country}" data-action="click->nodes#queryLinkClicked" 
+                                href="#network-snapshot">${country.country}</a>`
+      fields[2].innerHTML = `${country.nodes}(${country.percentage}%)`
+
+      that.countriesTarget.appendChild(exRow)
+    })
   }
 }

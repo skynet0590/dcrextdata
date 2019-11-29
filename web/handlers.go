@@ -1703,15 +1703,6 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by user agents, %s", err.Error()), w)
-		return
-	}
-	if len(userAgents) > 6 {
-		userAgents = userAgents[:6]
-	}
-
 	ipv4Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 4)
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot retrieve peer count by ipv4, %s", err.Error()), w)
@@ -1724,16 +1715,6 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
-		return
-	}
-
-	if len(countries) > 6 {
-		countries = countries[:6]
-	}
-
 	peerCount, err := s.db.TotalPeerCount(r.Context(), timestamp)
 	if err != nil {
 		s.renderErrorf("Cannot get total peer count, %s", w, err.Error())
@@ -1744,8 +1725,6 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		"page":              page,
 		"pageCount":		 0,
 		"snapshot":          snapshot,
-		"userAgents":        userAgents,
-		"countries":         countries,
 		"ipv4Count":         ipv4Count,
 		"ipv6Count":         ipv6Count,
 		"previousTimestamp": previousTimestamp,
@@ -1753,6 +1732,30 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		"peerCount":         peerCount,
 		"query":			 r.FormValue("q"),
 	}, w)
+}
+
+// /api/snapshot/{timestamp}/user-agents
+func (s *Server) nodesCountbUserAgents(w http.ResponseWriter, r *http.Request) {
+	timestamp := getTitmestampCtx(r)
+	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by user agents, %s", err.Error()), w)
+		return
+	}
+
+	s.renderJSON(map[string]interface{}{"userAgents": userAgents}, w)
+}
+
+// /api/snapshot/{timestamp}/countries
+func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
+	timestamp := getTitmestampCtx(r)
+	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
+		return
+	}
+
+	s.renderJSON(map[string]interface{}{"countries": countries}, w)
 }
 
 // /api/snapshot/{timestamp}/nodes

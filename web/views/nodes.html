@@ -68,18 +68,30 @@
                                                 <th>Nodes</th>
                                             </tr>
                                             </thead>
-                                            <tbody>
-                                            {{$timestamp := .snapshot.Timestamp}}
-                                            {{range $index, $userAgent := .userAgents}}
-                                            <tr>
-                                                <td>{{(incByOne $index)}}</td>
-                                                <td><a data-query="{{$userAgent.UserAgent}}" data-action="click->nodes#queryLinkClicked" 
-                                                href="#networp-snapshot">{{$userAgent.UserAgent}}</a></td>
-                                                <td>{{$userAgent.Nodes}}({{$userAgent.Percentage}}%)</td>
-                                            </tr>
-                                            {{end}}
+                                            <tbody data-target="nodes.userAgents">
                                             </tbody>
+                                            <tfoot>
+                                                <tr>
+                                                    <td colspan="3" class="text-center">
+                                                        <button data-target="nodes.previousUserAgentsButton" 
+                                                                data-action="click->nodes#loadPreviousUserAgents"
+                                                        class="btn-link d-node">Previous</button>
+                                                        <button data-target="nodes.nextUserAgentsButton"
+                                                                data-action="click->nodes#loadNextUserAgents"
+                                                         class="btn-link d-node">Next</button>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
+                                        
+                                        <template data-target="nodes.userAgentRowTemplate">
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </template>
+                                        
                                     </div>
                                 </div>
 
@@ -93,17 +105,28 @@
                                                 <th>Nodes</th>
                                             </tr>
                                             </thead>
-                                            <tbody>
-                                            {{range $index, $country := .countries}}
-                                            <tr>
-                                                <td>{{(incByOne $index)}}</td>
-                                                <td><a data-query="{{$country.Country}}" data-action="click->nodes#queryLinkClicked" 
-                                                href="#networp-snapshot">{{$country.Country}}</a></td>
-                                                <td>{{$country.Nodes}}({{$country.Percentage}}%)</td>
-                                            </tr>
-                                            {{end}}
+                                            <tbody data-target="nodes.countries">
                                             </tbody>
+                                             <tfoot>
+                                                <tr>
+                                                    <td colspan="3" class="text-center">
+                                                        <button data-target="nodes.previousCountriesButton" 
+                                                                data-action="click->nodes#loadPreviousCountries"
+                                                        class="btn-link d-node">Previous</button>
+                                                        <button data-target="nodes.nextCountriesButton"
+                                                                data-action="click->nodes#loadNextCountries"
+                                                         class="btn-link d-node">Next</button>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
+                                        <template data-target="nodes.countryRowTemplate">
+                                             <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        </template>
                                     </div>
                                 </div>
 
@@ -146,7 +169,7 @@
                                 <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
                                 
                                 <a href="#network-snapshot" data-target="nodes.nextPageButton"
-                                    data-action="click->nodes#laodNextPage"
+                                    data-action="click->nodes#loadNextPage"
                                     class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
                             </p>
                         </div>
@@ -193,7 +216,7 @@
                                 <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
                                 
                                 <a href="#network-snapshot" data-target="nodes.nextPageButton"
-                                    data-action="click->nodes#laodNextPage"
+                                    data-action="click->nodes#loadNextPage"
                                     class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
                             </p>
                         </div>
