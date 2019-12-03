@@ -89,11 +89,30 @@ func creep(netParams *chaincfg.Params) {
 					return
 				}
 				amgr.Attempt(ip)
+				t := time.Now()
 				conn, err := net.DialTimeout("tcp", p.Addr(),
 					defaultNodeTimeout)
 				if err != nil {
+					currHeight := p.LastBlock()
+					if currHeight == 0 {
+						currHeight = p.StartingHeight()
+					}
+					amgr.goodPeer <- &Node{
+						IP:              ip,
+						Services:        p.Services(),
+						LastAttempt:     time.Now().UTC(),
+						LastSuccess:     p.TimeConnected(),
+						LastSeen:        p.TimeConnected(),
+						Latency:		 -1, // peer is down
+						ConnectionTime:  p.TimeConnected().Unix(),
+						ProtocolVersion: p.ProtocolVersion(),
+						UserAgent:       p.UserAgent(),
+						StartingHeight:  p.StartingHeight(),
+						CurrentHeight:   currHeight,
+					}
 					return
 				}
+				latency := time.Since(t).Milliseconds()
 				p.AssociateConnection(conn)
 
 				// Wait for the verack message or timeout in case of
@@ -108,6 +127,7 @@ func creep(netParams *chaincfg.Params) {
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     time.Now().UTC(),
 						LastSeen:        time.Now().UTC(),
+						Latency:		 latency,
 						ConnectionTime:  p.TimeConnected().Unix(),
 						ProtocolVersion: p.ProtocolVersion(),
 						UserAgent:       p.UserAgent(),
@@ -121,8 +141,6 @@ func creep(netParams *chaincfg.Params) {
 				case <-time.After(defaultNodeTimeout):
 					log.Infof("verack timeout on peer %v",
 						p.Addr())
-					if p.ProtocolVersion() > 0 && p.UserAgent() != "" && !p.TimeConnected().IsZero() && p.StartingHeight() > 0 {
-						log.Infof("verack timeout for %s but still have recordable parameter", ip.String())
 						currHeight := p.LastBlock()
 						if currHeight == 0 {
 							currHeight = p.StartingHeight()
@@ -133,13 +151,13 @@ func creep(netParams *chaincfg.Params) {
 							LastAttempt:     time.Now().UTC(),
 							LastSuccess:     p.TimeConnected(),
 							LastSeen:        p.TimeConnected(),
+							Latency:		 latency,
 							ConnectionTime:  p.TimeConnected().Unix(),
 							ProtocolVersion: p.ProtocolVersion(),
 							UserAgent:       p.UserAgent(),
 							StartingHeight:  p.StartingHeight(),
 							CurrentHeight:   currHeight,
 						}
-					}
 					p.Disconnect()
 					return
 				}

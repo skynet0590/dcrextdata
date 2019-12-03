@@ -146,12 +146,31 @@ const (
 		PRIMARY KEY (timestamp)
 	);`
 
+	createNodeTable = `CREATE TABLE If NOT EXISTS node (
+		address VARCHAR(256) NOT NULL PRIMARY KEY,
+		ip_version INT NOT NULL,
+		country VARCHAR(256) NOT NULL,
+		state VARCHAR(256) NOT NULL,
+		city VARCHAR(256) NOT NULL,
+		locality VARCHAR(256) NOT NULL,
+		last_attempt INT8 NOT NULL,
+		last_seen INT8 NOT NULL,
+		is_dead BOOLEAN NOT NULL,
+		connection_time INT8 NOT NULL,
+		protocol_version INT NOT NULL,
+		user_agent VARCHAR(256) NOT NULL,
+		services VARCHAR(256) NOT NULL,
+		starting_height INT8 NOT NULL,
+		current_height INT8 NOT NULL,
+	);`
+
 	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
 		timestamp INT8 NOT NULL,
 		address VARCHAR(256) NOT NULL,
 		ip_version INT NOT NULL,
 		country VARCHAR(256) NOT NULL,
 		last_seen INT8 NOT NULL,
+		latency INT NOT NULL,
 		connection_time INT8 NOT NULL,
 		protocol_version INT NOT NULL,
 		user_agent VARCHAR(256) NOT NULL,

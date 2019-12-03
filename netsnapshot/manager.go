@@ -24,6 +24,7 @@ type Node struct {
 	AttemptCount int
 	LastSuccess  time.Time
 	LastSeen     time.Time
+	Latency		 int64
 
 	ConnectionTime  int64
 	ProtocolVersion uint32
