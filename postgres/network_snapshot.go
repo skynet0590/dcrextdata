@@ -108,6 +108,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		Address:         peer.Address,
 		Country:		 peer.Country,
 		IPVersion:       peer.IPVersion,
+		Latency:		 peer.Latency,
 		LastSeen:        peer.LastSeen,
 		ConnectionTime:  peer.ConnectionTime,
 		ProtocolVersion: int(peer.ProtocolVersion),
@@ -190,15 +191,15 @@ func (pg PgDb) LastSnapshotForNode(ctx context.Context, address string) (*netsna
 	return &node, nil
 }
 
-func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, error) {
+func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, int, error) {
 	node, err := models.NetworkPeers(
 		models.NetworkPeerWhere.Address.EQ(ip),
 	).One(ctx, pg.db)
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 
-	return node.Country, nil
+	return node.Country, node.IPVersion, nil
 }
 
 func (pg PgDb) TotalPeerCount(ctx context.Context, timestamp int64) (int64, error) {

@@ -103,13 +103,6 @@ func (t taker) Start(ctx context.Context) {
 			mtx.Unlock()
 
 		case node := <-amgr.goodPeer:
-			var ipVersion int
-			if node.IP.To16() != nil {
-				ipVersion = 6
-			} else if node.IP.To16() != nil {
-				ipVersion = 4
-			}
-
 			if node.IP.String() == "127.0.0.1" { // do not add the local IP
 				break
 			}
@@ -117,7 +110,6 @@ func (t taker) Start(ctx context.Context) {
 			networkPeer := NetworkPeer{
 				Timestamp:       timestamp,
 				Address:         node.IP.String(),
-				IPVersion:       ipVersion,
 				LastSeen:        node.LastSeen.UTC().Unix(),
 				ConnectionTime:  node.ConnectionTime,
 				ProtocolVersion: node.ProtocolVersion,
@@ -125,11 +117,18 @@ func (t taker) Start(ctx context.Context) {
 				StartingHeight:  node.StartingHeight,
 				CurrentHeight:   node.CurrentHeight,
 				Services: 		 node.Services.String(),
+				Latency: 		 int(node.Latency),	
+				
 			}
 
 			geoLoc, err := t.geolocation(ctx, node.IP)
 			if err == nil {
 				networkPeer.Country = geoLoc.CountryName
+				if geoLoc.Type == "ipv4" {
+					networkPeer.IPVersion = 4
+				} else if geoLoc.Type == "ipv6" {
+					networkPeer.IPVersion = 6
+				}
 			}
 
 			err = t.dataStore.SaveNetworkPeer(ctx, networkPeer)
@@ -169,9 +168,15 @@ func (t taker) Start(ctx context.Context) {
 }
 
 func (t taker) geolocation(ctx context.Context, ip net.IP) (*geoIP, error) {
-	countryName, err := t.dataStore.GetIPLocation(ctx, ip.String())
+	countryName, ipv, err := t.dataStore.GetIPLocation(ctx, ip.String())
 	if err == nil {
-		return &geoIP{CountryName: countryName}, nil
+		var v string
+		if ipv == 4 {
+			v = "ipv4"
+		} else if ipv == 6 {
+			v = "ipv6"
+		}
+		return &geoIP{CountryName: countryName, Type: v}, nil
 	}
 	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=fcd33d8814206ce1f0a255a2204ad71e&format=1", ip.String())
 	var geo geoIP

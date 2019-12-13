@@ -35,6 +35,7 @@ type NetworkPeer struct {
 	ConnectionTime  int64  `json:"connection_time"`
 	ProtocolVersion uint32 `json:"protocol_version"`
 	LastSeen        int64  `json:"last_seen"`
+	Latency			int  `json:"latency"`
 	IPVersion       int    `json:"ip_version"`
 	Services		string `json:"services"`
 }
@@ -42,6 +43,7 @@ type NetworkPeer struct {
 type geoIP struct {
 	CountryCode string  `json:"country_code"`
 	CountryName string  `json:"country_name"`
+	Type 		string  `json:"type"`
 }
 
 type DataStore interface {
@@ -50,7 +52,7 @@ type DataStore interface {
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
 	SaveNetworkPeer(ctx context.Context, peer NetworkPeer) error
 	LastSnapshot(ctx context.Context) (*SnapShot, error)
-	GetIPLocation(ctx context.Context, ip string) (string, error)
+	GetIPLocation(ctx context.Context, ip string) (string, int, error)
 }
 
 type taker struct {

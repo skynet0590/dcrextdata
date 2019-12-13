@@ -28,12 +28,13 @@ type NetworkPeer struct {
 	IPVersion       int    `boil:"ip_version" json:"ip_version" toml:"ip_version" yaml:"ip_version"`
 	Country         string `boil:"country" json:"country" toml:"country" yaml:"country"`
 	LastSeen        int64  `boil:"last_seen" json:"last_seen" toml:"last_seen" yaml:"last_seen"`
+	Latency         int    `boil:"latency" json:"latency" toml:"latency" yaml:"latency"`
 	ConnectionTime  int64  `boil:"connection_time" json:"connection_time" toml:"connection_time" yaml:"connection_time"`
 	ProtocolVersion int    `boil:"protocol_version" json:"protocol_version" toml:"protocol_version" yaml:"protocol_version"`
 	UserAgent       string `boil:"user_agent" json:"user_agent" toml:"user_agent" yaml:"user_agent"`
+	Services        string `boil:"services" json:"services" toml:"services" yaml:"services"`
 	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
 	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
-	Services        string `boil:"services" json:"services" toml:"services" yaml:"services"`
 
 	R *networkPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkPeerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,24 +46,26 @@ var NetworkPeerColumns = struct {
 	IPVersion       string
 	Country         string
 	LastSeen        string
+	Latency         string
 	ConnectionTime  string
 	ProtocolVersion string
 	UserAgent       string
+	Services        string
 	StartingHeight  string
 	CurrentHeight   string
-	Services        string
 }{
 	Timestamp:       "timestamp",
 	Address:         "address",
 	IPVersion:       "ip_version",
 	Country:         "country",
 	LastSeen:        "last_seen",
+	Latency:         "latency",
 	ConnectionTime:  "connection_time",
 	ProtocolVersion: "protocol_version",
 	UserAgent:       "user_agent",
+	Services:        "services",
 	StartingHeight:  "starting_height",
 	CurrentHeight:   "current_height",
-	Services:        "services",
 }
 
 // Generated where
@@ -89,24 +92,26 @@ var NetworkPeerWhere = struct {
 	IPVersion       whereHelperint
 	Country         whereHelperstring
 	LastSeen        whereHelperint64
+	Latency         whereHelperint
 	ConnectionTime  whereHelperint64
 	ProtocolVersion whereHelperint
 	UserAgent       whereHelperstring
+	Services        whereHelperstring
 	StartingHeight  whereHelperint64
 	CurrentHeight   whereHelperint64
-	Services        whereHelperstring
 }{
 	Timestamp:       whereHelperint64{field: "\"network_peer\".\"timestamp\""},
 	Address:         whereHelperstring{field: "\"network_peer\".\"address\""},
 	IPVersion:       whereHelperint{field: "\"network_peer\".\"ip_version\""},
 	Country:         whereHelperstring{field: "\"network_peer\".\"country\""},
 	LastSeen:        whereHelperint64{field: "\"network_peer\".\"last_seen\""},
+	Latency:         whereHelperint{field: "\"network_peer\".\"latency\""},
 	ConnectionTime:  whereHelperint64{field: "\"network_peer\".\"connection_time\""},
 	ProtocolVersion: whereHelperint{field: "\"network_peer\".\"protocol_version\""},
 	UserAgent:       whereHelperstring{field: "\"network_peer\".\"user_agent\""},
+	Services:        whereHelperstring{field: "\"network_peer\".\"services\""},
 	StartingHeight:  whereHelperint64{field: "\"network_peer\".\"starting_height\""},
 	CurrentHeight:   whereHelperint64{field: "\"network_peer\".\"current_height\""},
-	Services:        whereHelperstring{field: "\"network_peer\".\"services\""},
 }
 
 // NetworkPeerRels is where relationship names are stored.
@@ -126,9 +131,9 @@ func (*networkPeerR) NewStruct() *networkPeerR {
 type networkPeerL struct{}
 
 var (
-	networkPeerAllColumns            = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height", "services"}
-	networkPeerColumnsWithoutDefault = []string{"timestamp", "address", "ip_version", "country", "last_seen", "connection_time", "protocol_version", "user_agent", "starting_height", "current_height"}
-	networkPeerColumnsWithDefault    = []string{"services"}
+	networkPeerAllColumns            = []string{"timestamp", "address", "ip_version", "country", "last_seen", "latency", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	networkPeerColumnsWithoutDefault = []string{"timestamp", "address", "ip_version", "country", "last_seen", "latency", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	networkPeerColumnsWithDefault    = []string{}
 	networkPeerPrimaryKeyColumns     = []string{"timestamp", "address"}
 )
 
