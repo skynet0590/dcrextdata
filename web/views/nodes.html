@@ -21,14 +21,12 @@
                             <p>
                                 <a href="/snapshot/{{.previousTimestamp}}" data-target="nodes.previousSnapshotButton"
                                     data-previous-timestamp="{.previousTimestamp}"
-                                    data-action="click->nodes#loadPreviousSnapshot"
                                     class="mr-2 {{ if eq .previousTimestamp 0 }}d-none{{ end }}">&lt;Previous </a>
                                 Snapshot of reachable nodes as of
-                                <span class="timestamp" 
-                                    data-target="nodes.timestamp" 
+                                <span class="timestamp"
+                                    data-target="nodes.timestamp"
                                     data-initial-value="{{.snapshot.Timestamp}}">{{ formatUnixTime .snapshot.Timestamp}}</span>.
                                 <a href="/snapshot/{{.nextTimestamp}}" data-target="nodes.nextSnapshotButton"
-                                    data-action="click->nodes#loadNextSnapshot"
                                     class="ml-2 {{ if eq .nextTimestamp 0 }}d-none{{ end }}"> Next&gt;</a>
                             </p>
                         </div>
@@ -73,7 +71,7 @@
                                             <tfoot>
                                                 <tr>
                                                     <td colspan="3" class="text-center">
-                                                        <button data-target="nodes.previousUserAgentsButton" 
+                                                        <button data-target="nodes.previousUserAgentsButton"
                                                                 data-action="click->nodes#loadPreviousUserAgents"
                                                         class="btn-link d-node">Previous</button>
                                                         <button data-target="nodes.nextUserAgentsButton"
@@ -83,7 +81,7 @@
                                                 </tr>
                                             </tfoot>
                                         </table>
-                                        
+
                                         <template data-target="nodes.userAgentRowTemplate">
                                             <tr>
                                                 <td></td>
@@ -91,7 +89,7 @@
                                                 <td></td>
                                             </tr>
                                         </template>
-                                        
+
                                     </div>
                                 </div>
 
@@ -110,7 +108,7 @@
                                              <tfoot>
                                                 <tr>
                                                     <td colspan="3" class="text-center">
-                                                        <button data-target="nodes.previousCountriesButton" 
+                                                        <button data-target="nodes.previousCountriesButton"
                                                                 data-action="click->nodes#loadPreviousCountries"
                                                         class="btn-link d-node">Previous</button>
                                                         <button data-target="nodes.nextCountriesButton"
@@ -144,7 +142,7 @@
                                     </div>
                                     <div class="col">
                                         <input data-target="nodes.queryInput" name="q" value="{{.query}}"
-                                        class="form-control form-control-lg form-control-borderless" type="search" 
+                                        class="form-control form-control-lg form-control-borderless" type="search"
                                         style="font-size:18px; padding:5px;"
                                         placeholder="e.g. Nigeria or /dcrwire:0.3.0/dcrd:1.3.0/ or 111.111.111.111">
                                     </div>
@@ -164,10 +162,10 @@
                                     data-action="click->nodes#loadPreviousPage"
                                     class="mr-2 {{ if eq .page 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                Page <span data-target="nodes.currentPage">{{.page}}</span> of 
-                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span> 
+                                Page <span data-target="nodes.currentPage">{{.page}}</span> of
+                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span>
                                 <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
-                                
+
                                 <a href="#network-snapshot" data-target="nodes.nextPageButton"
                                     data-action="click->nodes#loadNextPage"
                                     class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
@@ -189,7 +187,7 @@
                                 </thead>
 
                                 <tbody data-target="nodes.tableBody">
-                                    
+
                                 </tbody>
                             </table>
 
@@ -211,10 +209,10 @@
                                     data-action="click->nodes#loadPreviousPage"
                                     class="mr-2 {{ if eq .page 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                Page <span data-target="nodes.currentPage">{{.page}}</span> of 
-                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span> 
+                                Page <span data-target="nodes.currentPage">{{.page}}</span> of
+                                <span data-target="nodes.totalPageCount">{{.pageCount}}</span>
                                 <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
-                                
+
                                 <a href="#network-snapshot" data-target="nodes.nextPageButton"
                                     data-action="click->nodes#loadNextPage"
                                     class="ml-2 {{ if lt .page .pageCount }}d-none{{ end }}"> Next&gt;</a>
@@ -228,7 +226,7 @@
 
         </div>
     </div>
-    
+
 </div>
 
 

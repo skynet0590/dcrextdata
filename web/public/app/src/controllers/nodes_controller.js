@@ -113,7 +113,7 @@ export default class extends Controller {
         <span class="text-muted">Since ${moment.unix(node.last_seen).fromNow()}</span><br>`
       fields[1].innerHTML = `${node.user_agent} (${node.protocol_version})<br>
         <span class="text-muted">${node.services}</span>`
-      fields[2].innerHTML = `${node.current_height}
+      fields[2].innerHTML = `${node.current_height || 'Unknown'}
         <div class="progress"><div class="progress-bar" style="width: ${(100 * node.current_height / _this.height).toFixed(2)}%;"></div></div>`
       fields[3].innerHTML = node.country
 

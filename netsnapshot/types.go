@@ -2,6 +2,7 @@ package netsnapshot
 
 import (
 	"context"
+	"net"
 
 	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/app/config"

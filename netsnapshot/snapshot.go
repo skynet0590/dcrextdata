@@ -117,8 +117,8 @@ func (t taker) Start(ctx context.Context) {
 				StartingHeight:  node.StartingHeight,
 				CurrentHeight:   node.CurrentHeight,
 				Services: 		 node.Services.String(),
-				Latency: 		 int(node.Latency),	
-				
+				Latency: 		 int(node.Latency),
+
 			}
 
 			geoLoc, err := t.geolocation(ctx, node.IP)

@@ -52,6 +52,14 @@ func (s *Server) renderErrorJSON(errorMessage string, res http.ResponseWriter) {
 	s.renderJSON(data, res)
 }
 
+func (s *Server) renderErrorfJSON(errorMessage string, res http.ResponseWriter, args ...interface{}) {
+	data := map[string]interface{}{
+		"error": fmt.Sprintf(errorMessage, args...),
+	}
+
+	s.renderJSON(data, res)
+}
+
 func (s *Server) renderJSON(data interface{}, res http.ResponseWriter) {
 	d, err := json.Marshal(data)
 	if err != nil {

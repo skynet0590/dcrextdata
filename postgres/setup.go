@@ -161,23 +161,16 @@ const (
 		user_agent VARCHAR(256) NOT NULL,
 		services VARCHAR(256) NOT NULL,
 		starting_height INT8 NOT NULL,
-		current_height INT8 NOT NULL,
+		current_height INT8 NOT NULL
 	);`
 
-	createNetworkPeerTable = `CREATE TABLE If NOT EXISTS network_peer (
+	createHeartbeatTable = `CREATE TABLE If NOT EXISTS heartbeat (
 		timestamp INT8 NOT NULL,
-		address VARCHAR(256) NOT NULL,
-		ip_version INT NOT NULL,
-		country VARCHAR(256) NOT NULL,
+		node_id VARCHAR(256) NOT NULL REFERENCES node(address),
 		last_seen INT8 NOT NULL,
 		latency INT NOT NULL,
-		connection_time INT8 NOT NULL,
-		protocol_version INT NOT NULL,
-		user_agent VARCHAR(256) NOT NULL,
-		services VARCHAR(256) NOT NULL,
-		starting_height INT8 NOT NULL,
 		current_height INT8 NOT NULL,
-		PRIMARY KEY (timestamp, address)
+		PRIMARY KEY (timestamp, node_id)
 	);`
 )
 
@@ -331,14 +324,25 @@ func (pg *PgDb) NetworkSnapshotTableExists() bool {
 	return exists
 }
 
-// network peer
-func (pg *PgDb) CreateNetworkPeerTable() error {
-	_, err := pg.db.Exec(createNetworkPeerTable)
+// network node
+func (pg *PgDb) CreateNetworkNodeTable() error {
+	_, err := pg.db.Exec(createNodeTable)
 	return err
 }
 
-func (pg *PgDb) NetworkPeerTableExists() bool {
-	exists, _ := pg.tableExists("network_peer")
+func (pg *PgDb) NetworkNodeTableExists() bool {
+	exists, _ := pg.tableExists("node")
+	return exists
+}
+
+// network peer
+func (pg *PgDb) CreateHeartbeatTable() error {
+	_, err := pg.db.Exec(createHeartbeatTable)
+	return err
+}
+
+func (pg *PgDb) HeartbeatTableExists() bool {
+	exists, _ := pg.tableExists("heartbeat")
 	return exists
 }
 
@@ -434,8 +438,13 @@ func (pg *PgDb) DropAllTables() error {
 		return err
 	}
 
-	// network_peer
-	if err := pg.dropTable("network_peer"); err != nil {
+	// node
+	if err := pg.dropTable("node"); err != nil {
+		return err
+	}
+
+	// heartbeat
+	if err := pg.dropTable("heartbeat"); err != nil {
 		return err
 	}
 

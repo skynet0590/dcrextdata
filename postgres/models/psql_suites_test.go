@@ -14,11 +14,13 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Githubs", testGithubsUpsert)
 
+	t.Run("Heartbeats", testHeartbeatsUpsert)
+
 	t.Run("Mempools", testMempoolsUpsert)
 
-	t.Run("NetworkPeers", testNetworkPeersUpsert)
-
 	t.Run("NetworkSnapshots", testNetworkSnapshotsUpsert)
+
+	t.Run("Nodes", testNodesUpsert)
 
 	t.Run("PowData", testPowDataUpsert)
 

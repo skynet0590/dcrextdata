@@ -429,8 +429,15 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		}
 	}
 
-	if exists := db.NetworkPeerTableExists(); !exists {
-		if err := db.CreateNetworkPeerTable(); err != nil {
+	if exists := db.NetworkNodeTableExists(); !exists {
+		if err := db.CreateNetworkNodeTable(); err != nil {
+			log.Error("Error creating network node table: ", err)
+			return err
+		}
+	}
+
+	if exists := db.HeartbeatTableExists(); !exists {
+		if err := db.CreateHeartbeatTable(); err != nil {
 			log.Error("Error creating network peer table: ", err)
 			return err
 		}

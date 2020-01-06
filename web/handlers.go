@@ -1779,7 +1779,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 
 	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, recordsPerPage)
 	if err != nil {
-		s.renderErrorf("Error in fetching network nodes, %s", w, err.Error())
+		s.renderErrorfJSON("Error in fetching network nodes, %s", w, err.Error())
 	}
 
 	rem := peerCount%recordsPerPage
