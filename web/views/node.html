@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+{{ template "html-head" }}
+
+<body>
+<div class="body" data-controller="node">
+    {{ template "header" }}
+    <div class="content">
+        <div class="container-fluid">
+
+            {{$height := .snapshot.Height}}
+
+            <div class="row">
+                <div class="col-md-8 mx-auto">
+
+                    <div class="row">
+                        <div class="col-md-12 text-center">
+                            <h3>
+                                <a href="#network-snapshot">Node Status</a>
+                            </h3>
+                            <p>
+                                Node information is updated every 15 minutes. Last updated
+                                <span data-target="node.moment" data-value="{{.node.LastSeen}}">{{formatUnixTime .node.LastSeen}}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 offset-md-2">
+                            <div class="card">
+                                <ul class="list-group list-group-flush text-center big">
+                                    <li class="list-group-item">
+                                        <h3>{{.node.Address}}</h3>
+                                    </li>
+                                    <li class="list-group-item">
+                                        {{ if .node.IsDead }}
+                                            <h4>Down</h4>
+                                        {{ else }}
+                                            <h4>UP</h4>
+                                            <span class="field">Connected Since <span data-target="node.moment" data-value="{{.node.ConnectionTime}}">{{ unixTimeAgo .node.ConnectionTime }}</span></span>
+                                        {{ end }}
+                                        <h4>{{.node.Latency}}</h4>
+                                        <span class="field">Average Latency</span>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <h4>{{ .node.UserAgent }}</h4>
+                                        <span class="field">User agent</span>
+                                        <h4>{{ .node.ProtocolVersion }}</h4>
+                                        <span class="field">Protocol version</span>
+                                        <h4>{{ .node.Services }}</h4>
+                                        <span class="field">Services</span>
+                                        <h4>{{ .node.CurrentHeight }} ({{ percentage .node.CurrentHeight .bestBlockHeight}}%)</h4>
+                                        <span class="field">Height</span>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <h4>{{ .node.Country}}</h4>
+                                        <span class="field">Location</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+
+{{ template "footer" }}
+</body>
+
+</html>

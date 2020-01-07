@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	
+
 	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/volatiletech/sqlboiler/boil"
@@ -15,13 +15,14 @@ import (
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
 	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
 	if err == nil {
-		existingSnapshot.Nodes = snapshot.Nodes
 		existingSnapshot.Height = snapshot.Height
 		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
 		return err
 	}
 
-	snapshotModel := models.NetworkSnapshot{Timestamp: snapshot.Timestamp, Height: snapshot.Height, Nodes: snapshot.Nodes}
+	snapshotModel := models.NetworkSnapshot{
+		Timestamp: snapshot.Timestamp, Height: snapshot.Height,
+	}
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return err
@@ -39,7 +40,6 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 	return &netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
-		Nodes:     snapshotModel.Nodes,
 	}, nil
 }
 
@@ -88,14 +88,14 @@ func (pg PgDb) DeleteSnapshot(ctx context.Context, timestamp int64) {
 }
 
 func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer) error {
-	tx, err := pg.db.Begin()
-	if err != nil {
-		return fmt.Errorf("error in starting db transaction %s", err.Error())
-	}
-	existingNode, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).One(ctx, tx)
+	existingNode, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).One(ctx, pg.db)
 	if err == nil {
 		existingNode.LastSeen = peer.LastSeen
 		existingNode.LastAttempt = peer.LastSeen
+		if peer.LastSuccess > 0 {
+			existingNode.LastSuccess = peer.LastSuccess
+		}
+
 		if existingNode.Services == "" {
 			existingNode.Services = peer.Services
 		}
@@ -116,7 +116,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 			existingNode.ConnectionTime = peer.ConnectionTime
 		}
 
-		if _, err = existingNode.Update(ctx, tx, boil.Infer()); err != nil {
+		if _, err = existingNode.Update(ctx, pg.db, boil.Infer()); err != nil {
 			return fmt.Errorf("error in updating existing node information %s", err.Error())
 		}
 	} else {
@@ -129,6 +129,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 			Locality:        "",
 			LastAttempt:     peer.LastSeen,
 			LastSeen:        peer.LastSeen,
+			LastSuccess: 	 peer.LastSuccess,
 			ConnectionTime:  peer.ConnectionTime,
 			ProtocolVersion: int(peer.ProtocolVersion),
 			UserAgent:       peer.UserAgent,
@@ -137,8 +138,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 			CurrentHeight:   peer.CurrentHeight,
 			IsDead:          false,
 		}
-		if err := newNode.Insert(ctx, tx, boil.Infer()); err != nil {
-			_ = tx.Rollback()
+		if err := newNode.Insert(ctx, pg.db, boil.Infer()); err != nil {
 			return fmt.Errorf("cannot save heartbeat, error in saving new node information, %s", err.Error())
 		}
 	}
@@ -146,7 +146,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 	// TODO: check with @raedah
 	heartbeat, err := models.Heartbeats(
 		models.HeartbeatWhere.NodeID.EQ(peer.Address),
-		models.HeartbeatWhere.Timestamp.EQ(peer.Timestamp)).One(ctx, tx)
+		models.HeartbeatWhere.Timestamp.EQ(peer.Timestamp)).One(ctx, pg.db)
 	if err == nil {
 		if peer.CurrentHeight > 0 {
 			heartbeat.CurrentHeight = peer.CurrentHeight
@@ -160,8 +160,7 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 			heartbeat.LastSeen = peer.LastSeen
 		}
 
-		if _, err = heartbeat.Update(ctx, tx, boil.Infer()); err != nil {
-			_ = tx.Rollback()
+		if _, err = heartbeat.Update(ctx, pg.db, boil.Infer()); err != nil {
 			return fmt.Errorf("error in saving heartbeat, %s", err.Error())
 		}
 		return nil
@@ -175,11 +174,8 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		CurrentHeight:   peer.CurrentHeight,
 	}
 
-	if err = newHeartbeat.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = newHeartbeat.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		return fmt.Errorf("error in saving hearbeat, %s", err.Error())
-	}
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("error in saving heartbeat, %s", err.Error())
 	}
 	return nil
 }
@@ -194,7 +190,8 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 
 	sql := `SELECT node.address, node.country, node.last_seen, node.connection_time, node.protocol_version,
 			node.user_agent, node.starting_height, node.current_height, node.services FROM heartbeat 
-			INNER JOIN node on node.address = heartbeat.node_id WHERE ` + where + fmt.Sprintf("LIMIT %d OFFSET %d", limit, offset)
+			INNER JOIN node on node.address = heartbeat.node_id WHERE ` + where +
+			fmt.Sprintf(" ORDER BY node.last_seen DESC LIMIT %d OFFSET %d", limit, offset)
 
 	var peerSlice models.NodeSlice
 	err := models.NewQuery(qm.SQL(sql)).Bind(ctx, pg.db, &peerSlice)
@@ -225,6 +222,28 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	}
 
 	return peers, countResult.Total, nil
+}
+
+func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error) {
+	node, err := models.FindNode(ctx, pg.db, address)
+	if err != nil {
+		return nil, err
+	}
+	peer := netsnapshot.NetworkPeer{
+		Address:         node.Address,
+		Country:         node.Country,
+		UserAgent:       node.UserAgent,
+		StartingHeight:  node.StartingHeight,
+		CurrentHeight:   node.CurrentHeight,
+		ConnectionTime:  node.ConnectionTime,
+		ProtocolVersion: uint32(node.ProtocolVersion),
+		LastSeen:        node.LastSeen,
+		Latency:         0,
+		IPVersion:       node.IPVersion,
+		Services:        node.Services,
+	}
+
+	return &peer, nil
 }
 
 func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, int, error) {

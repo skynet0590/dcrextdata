@@ -25,7 +25,6 @@ import (
 type NetworkSnapshot struct {
 	Timestamp int64 `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
 	Height    int64 `boil:"height" json:"height" toml:"height" yaml:"height"`
-	Nodes     int   `boil:"nodes" json:"nodes" toml:"nodes" yaml:"nodes"`
 
 	R *networkSnapshotR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkSnapshotL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -34,11 +33,9 @@ type NetworkSnapshot struct {
 var NetworkSnapshotColumns = struct {
 	Timestamp string
 	Height    string
-	Nodes     string
 }{
 	Timestamp: "timestamp",
 	Height:    "height",
-	Nodes:     "nodes",
 }
 
 // Generated where
@@ -46,11 +43,9 @@ var NetworkSnapshotColumns = struct {
 var NetworkSnapshotWhere = struct {
 	Timestamp whereHelperint64
 	Height    whereHelperint64
-	Nodes     whereHelperint
 }{
 	Timestamp: whereHelperint64{field: "\"network_snapshot\".\"timestamp\""},
 	Height:    whereHelperint64{field: "\"network_snapshot\".\"height\""},
-	Nodes:     whereHelperint{field: "\"network_snapshot\".\"nodes\""},
 }
 
 // NetworkSnapshotRels is where relationship names are stored.
@@ -70,8 +65,8 @@ func (*networkSnapshotR) NewStruct() *networkSnapshotR {
 type networkSnapshotL struct{}
 
 var (
-	networkSnapshotAllColumns            = []string{"timestamp", "height", "nodes"}
-	networkSnapshotColumnsWithoutDefault = []string{"timestamp", "height", "nodes"}
+	networkSnapshotAllColumns            = []string{"timestamp", "height"}
+	networkSnapshotColumnsWithoutDefault = []string{"timestamp", "height"}
 	networkSnapshotColumnsWithDefault    = []string{}
 	networkSnapshotPrimaryKeyColumns     = []string{"timestamp"}
 )

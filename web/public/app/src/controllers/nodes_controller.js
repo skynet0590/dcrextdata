@@ -109,8 +109,12 @@ export default class extends Controller {
       const exRow = document.importNode(_this.rowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
+      let lastSeen = node.last_seen > 0 ? moment.unix(node.last_seen).fromNow() : 'N/A'
+      let connectionTime = node.connection_time > 0 ? moment.unix(node.connection_time).fromNow() : 'N/A'
+
       fields[0].innerHTML = `<a href="/nodes/view/${node.address}" title="Node status">${node.address}</a><br>
-        <span class="text-muted">Since ${moment.unix(node.last_seen).fromNow()}</span><br>`
+        <span class="text-muted">Connected ${connectionTime}</span> | 
+        <span class="text-muted">Seen ${lastSeen}</span><br>`
       fields[1].innerHTML = `${node.user_agent} (${node.protocol_version})<br>
         <span class="text-muted">${node.services}</span>`
       fields[2].innerHTML = `${node.current_height || 'Unknown'}

@@ -142,7 +142,6 @@ const (
 	createNetworkSnapshotTable = `CREATE TABLE If NOT EXISTS network_snapshot (
 		timestamp INT8 NOT NULL,
 		height INT8 NOT NULL,
-		nodes INT NOT NULL,
 		PRIMARY KEY (timestamp)
 	);`
 
@@ -155,6 +154,7 @@ const (
 		locality VARCHAR(256) NOT NULL,
 		last_attempt INT8 NOT NULL,
 		last_seen INT8 NOT NULL,
+		last_success INT8 NOT NULL,
 		is_dead BOOLEAN NOT NULL,
 		connection_time INT8 NOT NULL,
 		protocol_version INT NOT NULL,

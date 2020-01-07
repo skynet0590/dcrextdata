@@ -16,4 +16,7 @@ web/public/dist/js/app.bundle.js.map
 web/public/dist/js/vendors~app.bundle.js
 web/public/dist/js/vendors~app.bundle.js.map
 cached
+cpu.prof
+mem.prof
+profile*.png
 .DS_Store

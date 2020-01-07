@@ -58,7 +58,6 @@ func (t taker) Start(ctx context.Context) {
 	snapshot := SnapShot{
 		Timestamp: timestamp,
 		Height:    bestBlockHeight,
-		Nodes:     count,
 	}
 
 	lastSnapshot, err := t.dataStore.LastSnapshot(ctx)
@@ -87,7 +86,6 @@ func (t taker) Start(ctx context.Context) {
 			err := t.dataStore.SaveSnapshot(ctx, SnapShot{
 				Timestamp: timestamp,
 				Height:    bestBlockHeight,
-				Nodes:     count,
 			})
 
 			if err != nil {
@@ -111,6 +109,7 @@ func (t taker) Start(ctx context.Context) {
 				Timestamp:       timestamp,
 				Address:         node.IP.String(),
 				LastSeen:        node.LastSeen.UTC().Unix(),
+				LastSuccess: 	 node.LastSuccess.UTC().Unix(),
 				ConnectionTime:  node.ConnectionTime,
 				ProtocolVersion: node.ProtocolVersion,
 				UserAgent:       node.UserAgent,
@@ -140,13 +139,10 @@ func (t taker) Start(ctx context.Context) {
 				if node.CurrentHeight > bestBlockHeight {
 					bestBlockHeight = node.CurrentHeight
 				}
-				snapshot.Nodes = count
-				snapshot.Height = bestBlockHeight
 
 				snapshot := SnapShot{
 					Timestamp: timestamp,
 					Height:    bestBlockHeight,
-					Nodes:     count,
 				}
 
 				err = t.dataStore.SaveSnapshot(ctx, snapshot)

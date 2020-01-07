@@ -2,7 +2,6 @@ package netsnapshot
 
 import (
 	"context"
-	"net"
 
 	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/app/config"
@@ -11,7 +10,6 @@ import (
 type SnapShot struct {
 	Timestamp int64 `json:"timestamp"`
 	Height    int64 `json:"height"`
-	Nodes     int   `json:"nodes"`
 }
 
 type UserAgentInfo struct {
@@ -29,16 +27,18 @@ type CountryInfo struct {
 type NetworkPeer struct {
 	Timestamp       int64  `json:"timestamp"`
 	Address         string `json:"address"`
-	Country			string `json:"country"`
+	Country         string `json:"country"`
 	UserAgent       string `json:"user_agent"`
 	StartingHeight  int64  `json:"starting_height"`
 	CurrentHeight   int64  `json:"current_height"`
 	ConnectionTime  int64  `json:"connection_time"`
 	ProtocolVersion uint32 `json:"protocol_version"`
 	LastSeen        int64  `json:"last_seen"`
-	Latency			int  `json:"latency"`
+	LastSuccess     int64  `json:"last_success"`
+	IsDead          bool   `json:"is_dead"`
+	Latency         int    `json:"latency"`
 	IPVersion       int    `json:"ip_version"`
-	Services		string `json:"services"`
+	Services        string `json:"services"`
 }
 
 type geoIP struct {

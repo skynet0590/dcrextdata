@@ -1094,3 +1094,26 @@ table.collapsible tbody.clickable:hover {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* node-detail */
+.big {
+  h3 {
+    color: #333;
+    font-size: 1.6em;
+    font-weight: normal;
+    text-transform: none;
+  }
+
+  h4 {
+    color: #333;
+    font-size: 1.2em;
+    text-transform: none;
+    margin-top: 0.5em;
+  }
+}
+
+.field {
+  color: #555;
+  font-size: 0.85em;
+  text-transform: uppercase;
+}

@@ -1734,8 +1734,31 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	}, w)
 }
 
+// /nodes/view{ip}
+func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
+	address := getNodeIPFromCtx(r)
+	if address == "" {
+		s.renderError("Address is required", w)
+		return
+	}
+
+	node, err := s.db.NetworkPeer(r.Context(), address)
+	if err != nil {
+		s.renderErrorf("Cannot get not details, %s", w, err.Error())
+		return
+	}
+
+	bestBlockHeight, err := s.getExplorerBestBlock(r.Context())
+	if err != nil {
+		s.renderErrorf("Cannot load detail, error in getting best block height, %s", w, err.Error())
+		return
+	}
+
+	s.render("node.html", map[string]interface{}{"node": node, "bestBlockHeight": int64(bestBlockHeight)}, w)
+}
+
 // /api/snapshot/{timestamp}/user-agents
-func (s *Server) nodesCountbUserAgents(w http.ResponseWriter, r *http.Request) {
+func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 	timestamp := getTitmestampCtx(r)
 	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp)
 	if err != nil {
@@ -1780,6 +1803,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, recordsPerPage)
 	if err != nil {
 		s.renderErrorfJSON("Error in fetching network nodes, %s", w, err.Error())
+		return
 	}
 
 	rem := peerCount%recordsPerPage

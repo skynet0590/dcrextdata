@@ -113,6 +113,11 @@ type ConfigFileOptions struct {
 	// Http Server
 	HTTPHost string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
 	HTTPPort string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
+
+	// pprof
+	Cpuprofile string `long:"cpuprofile" description:"write cpu profile to file"`
+	Memprofile string `long:"memprofile" description:"write memory profile to file"`
+
 	// Exchange collector
 	DisableExchangeTicks bool     `long:"disablexcticks" description:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`

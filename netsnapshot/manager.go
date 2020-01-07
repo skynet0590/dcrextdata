@@ -249,7 +249,7 @@ out:
 		}
 	}
 	m.savePeers()
-	m.wg.Done()
+	//m.wg.Done()
 }
 
 func (m *Manager) prunePeers() {

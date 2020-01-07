@@ -8,9 +8,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/decred/dcrd/chaincfg"
@@ -58,6 +60,18 @@ func _main(ctx context.Context) error {
 	cfg, args, err := config.LoadConfig()
 	if err != nil {
 		return err
+	}
+
+	if cfg.Cpuprofile != "" {
+		f, err := os.Create(cfg.Cpuprofile)
+		if err != nil {
+			log.Critical("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Critical("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	// Initialize log rotation.  After log rotation has been initialized, the
@@ -170,7 +184,7 @@ func _main(ctx context.Context) error {
 			}
 			return db, nil
 		}
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, extDbFactory)
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, netParams(cfg.DcrdNetworkType), extDbFactory)
 	}
 
 	var dcrClient *rpcclient.Client
@@ -283,6 +297,18 @@ func _main(ctx context.Context) error {
 
 	// wait for shutdown signal
 	<-ctx.Done()
+
+	if cfg.Memprofile != "" {
+		f, err := os.Create(cfg.Memprofile)
+		if err != nil {
+			log.Critical("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Critical("could not write memory profile: ", err)
+		}
+	}
 
 	return ctx.Err()
 }

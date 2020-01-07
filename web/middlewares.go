@@ -11,6 +11,7 @@ import (
 const (
 	ctxSyncDataType = iota
 	ctxTimestamp
+	ctxNodeIp
 )
 
 func syncDataType(next http.Handler) http.Handler {
@@ -47,4 +48,20 @@ func getTitmestampCtx(r *http.Request) int64 {
 	}
 	timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
 	return timestamp
+}
+
+func addNodeIPToCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), ctxNodeIp,
+			chi.URLParam(r, "address"))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getNodeIPFromCtx(r *http.Request) string {
+	address, ok := r.Context().Value(ctxNodeIp).(string)
+	if !ok {
+		return ""
+	}
+	return address
 }

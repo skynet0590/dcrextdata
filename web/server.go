@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"fmt"
-	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"net"
 	"net/http"
 	"os"
@@ -13,10 +12,13 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -78,6 +80,7 @@ type DataQuery interface {
 	NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	TotalPeerCount(ctx context.Context, timestamp int64) (int64, error)
 	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
+	NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
 	PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error)
 	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)
 	PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo, err error)
@@ -87,13 +90,17 @@ type Server struct {
 	templates    map[string]*template.Template
 	lock         sync.RWMutex
 	db           DataQuery
+	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery, extDbFactory func(name string) (DataQuery, error)) {
+func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain  *chaincfg.Params,
+	extDbFactory func(name string) (DataQuery, error)) {
+
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db:           db,
+		activeChain:  activeChain,
 		extDbFactory: extDbFactory,
 	}
 
@@ -166,11 +173,35 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getCommunityStat", s.getCommunityStat)
 	r.Get("/communitychat", s.communityChat)
 
-	r.With().Get("/snapshot", s.snapshot)
+	r.Get("/snapshot", s.snapshot)
+	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
 	r.With(addTimestampToCtx).Get("/snapshot/{timestamp}", s.snapshot)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
-	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountbUserAgents)
+	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountUserAgents)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
+}
+
+func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {
+	var explorerUrl string
+	switch s.activeChain.Name {
+	case chaincfg.MainNetParams.Name:
+		explorerUrl = "https://explorer.dcrdata.org/api/block/best"
+		break
+	case chaincfg.TestNet3Params.Name:
+		explorerUrl = "https://testnet.dcrdata.org/api/block/best"
+		break
+	}
+
+	var bestBlock = struct {
+		Height uint32 `json:"height"`
+	}{}
+
+	err := helpers.GetResponse(ctx, &http.Client{}, explorerUrl, &bestBlock)
+	if err != nil {
+		return 0, err
+	}
+
+	return bestBlock.Height, nil
 }

@@ -65,6 +65,9 @@ func templateFuncMap() template.FuncMap {
 		"formatUnixTime": func(timestamp int64) string {
 			return time.Unix(timestamp, 0).Format(time.UnixDate)
 		},
+		"unixTimeAgo": func(timestamp int64) string {
+			return time.Since(time.Unix(timestamp, 0)).String()
+		},
 		"strListContains": func(stringList []string, needle string) bool {
 			for _, value := range stringList {
 				if value == needle {

@@ -35,7 +35,7 @@
 
                     <div class="row">
                         <div class="big col-md-2 text-center"><br>
-                            <h3>{{.snapshot.Nodes}}</h3>
+                            <h3>{{.peerCount}}</h3>
                             <p class="text-muted">Nodes</p>
                             <h3>{{.ipv4Count}}</h3>
                             <p class="text-muted">IPv4</p>
@@ -162,7 +162,7 @@
                                     data-action="click->nodes#loadPreviousPage"
                                     class="mr-2 {{ if eq .page 1 }}d-none{{ end }}">&lt;Previous </a>
 
-                                Page <span data-target="nodes.currentPage">{{.page}}</span> of
+                                Page <span data-target="nodes.currentPage" data-initial-value="{{.page}}">{{.page}}</span> of
                                 <span data-target="nodes.totalPageCount">{{.pageCount}}</span>
                                 <span class="text-muted">&nbsp;&nbsp;(<span data-target="nodes.peerCount">{{.peerCount}}</span> nodes)&nbsp;&nbsp;</span>
 
