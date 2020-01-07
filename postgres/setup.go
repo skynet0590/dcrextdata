@@ -151,7 +151,7 @@ const (
 		country VARCHAR(256) NOT NULL,
 		state VARCHAR(256) NOT NULL,
 		city VARCHAR(256) NOT NULL,
-		locality VARCHAR(256) NOT NULL,
+		zip VARCHAR(256) NOT NULL,
 		last_attempt INT8 NOT NULL,
 		last_seen INT8 NOT NULL,
 		last_success INT8 NOT NULL,

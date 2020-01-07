@@ -27,7 +27,6 @@ type CountryInfo struct {
 type NetworkPeer struct {
 	Timestamp       int64  `json:"timestamp"`
 	Address         string `json:"address"`
-	Country         string `json:"country"`
 	UserAgent       string `json:"user_agent"`
 	StartingHeight  int64  `json:"starting_height"`
 	CurrentHeight   int64  `json:"current_height"`
@@ -39,12 +38,17 @@ type NetworkPeer struct {
 	Latency         int    `json:"latency"`
 	IPVersion       int    `json:"ip_version"`
 	Services        string `json:"services"`
+	IPInfo
 }
 
-type geoIP struct {
-	CountryCode string  `json:"country_code"`
-	CountryName string  `json:"country_name"`
-	Type 		string  `json:"type"`
+type IPInfo struct {
+	Type        string `json:"type"`
+	CountryCode string `json:"country_code"`
+	CountryName string `json:"country_name"`
+	RegionCode  string `json:"region_code"`
+	RegionName  string `json:"region_name"`
+	City        string `json:"city"`
+	Zip         string `json:"zip"`
 }
 
 type DataStore interface {

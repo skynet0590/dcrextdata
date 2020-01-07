@@ -26,9 +26,8 @@ type Node struct {
 	Address         string `boil:"address" json:"address" toml:"address" yaml:"address"`
 	IPVersion       int    `boil:"ip_version" json:"ip_version" toml:"ip_version" yaml:"ip_version"`
 	Country         string `boil:"country" json:"country" toml:"country" yaml:"country"`
-	State           string `boil:"state" json:"state" toml:"state" yaml:"state"`
+	Region          string `boil:"region" json:"region" toml:"region" yaml:"region"`
 	City            string `boil:"city" json:"city" toml:"city" yaml:"city"`
-	Locality        string `boil:"locality" json:"locality" toml:"locality" yaml:"locality"`
 	LastAttempt     int64  `boil:"last_attempt" json:"last_attempt" toml:"last_attempt" yaml:"last_attempt"`
 	LastSeen        int64  `boil:"last_seen" json:"last_seen" toml:"last_seen" yaml:"last_seen"`
 	IsDead          bool   `boil:"is_dead" json:"is_dead" toml:"is_dead" yaml:"is_dead"`
@@ -39,6 +38,8 @@ type Node struct {
 	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
 	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
 	LastSuccess     int64  `boil:"last_success" json:"last_success" toml:"last_success" yaml:"last_success"`
+	TimeZone        string `boil:"time_zone" json:"time_zone" toml:"time_zone" yaml:"time_zone"`
+	Zip             string `boil:"zip" json:"zip" toml:"zip" yaml:"zip"`
 
 	R *nodeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L nodeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -48,9 +49,8 @@ var NodeColumns = struct {
 	Address         string
 	IPVersion       string
 	Country         string
-	State           string
+	Region          string
 	City            string
-	Locality        string
 	LastAttempt     string
 	LastSeen        string
 	IsDead          string
@@ -61,13 +61,14 @@ var NodeColumns = struct {
 	StartingHeight  string
 	CurrentHeight   string
 	LastSuccess     string
+	TimeZone        string
+	Zip             string
 }{
 	Address:         "address",
 	IPVersion:       "ip_version",
 	Country:         "country",
-	State:           "state",
+	Region:          "region",
 	City:            "city",
-	Locality:        "locality",
 	LastAttempt:     "last_attempt",
 	LastSeen:        "last_seen",
 	IsDead:          "is_dead",
@@ -78,6 +79,8 @@ var NodeColumns = struct {
 	StartingHeight:  "starting_height",
 	CurrentHeight:   "current_height",
 	LastSuccess:     "last_success",
+	TimeZone:        "time_zone",
+	Zip:             "zip",
 }
 
 // Generated where
@@ -95,9 +98,8 @@ var NodeWhere = struct {
 	Address         whereHelperstring
 	IPVersion       whereHelperint
 	Country         whereHelperstring
-	State           whereHelperstring
+	Region          whereHelperstring
 	City            whereHelperstring
-	Locality        whereHelperstring
 	LastAttempt     whereHelperint64
 	LastSeen        whereHelperint64
 	IsDead          whereHelperbool
@@ -108,13 +110,14 @@ var NodeWhere = struct {
 	StartingHeight  whereHelperint64
 	CurrentHeight   whereHelperint64
 	LastSuccess     whereHelperint64
+	TimeZone        whereHelperstring
+	Zip             whereHelperstring
 }{
 	Address:         whereHelperstring{field: "\"node\".\"address\""},
 	IPVersion:       whereHelperint{field: "\"node\".\"ip_version\""},
 	Country:         whereHelperstring{field: "\"node\".\"country\""},
-	State:           whereHelperstring{field: "\"node\".\"state\""},
+	Region:          whereHelperstring{field: "\"node\".\"region\""},
 	City:            whereHelperstring{field: "\"node\".\"city\""},
-	Locality:        whereHelperstring{field: "\"node\".\"locality\""},
 	LastAttempt:     whereHelperint64{field: "\"node\".\"last_attempt\""},
 	LastSeen:        whereHelperint64{field: "\"node\".\"last_seen\""},
 	IsDead:          whereHelperbool{field: "\"node\".\"is_dead\""},
@@ -125,6 +128,8 @@ var NodeWhere = struct {
 	StartingHeight:  whereHelperint64{field: "\"node\".\"starting_height\""},
 	CurrentHeight:   whereHelperint64{field: "\"node\".\"current_height\""},
 	LastSuccess:     whereHelperint64{field: "\"node\".\"last_success\""},
+	TimeZone:        whereHelperstring{field: "\"node\".\"time_zone\""},
+	Zip:             whereHelperstring{field: "\"node\".\"zip\""},
 }
 
 // NodeRels is where relationship names are stored.
@@ -148,9 +153,9 @@ func (*nodeR) NewStruct() *nodeR {
 type nodeL struct{}
 
 var (
-	nodeAllColumns            = []string{"address", "ip_version", "country", "state", "city", "locality", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height", "last_success"}
-	nodeColumnsWithoutDefault = []string{"address", "ip_version", "country", "state", "city", "locality", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
-	nodeColumnsWithDefault    = []string{"last_success"}
+	nodeAllColumns            = []string{"address", "ip_version", "country", "region", "city", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height", "last_success", "time_zone", "zip"}
+	nodeColumnsWithoutDefault = []string{"address", "ip_version", "country", "region", "city", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	nodeColumnsWithDefault    = []string{"last_success", "time_zone", "zip"}
 	nodePrimaryKeyColumns     = []string{"address"}
 )
 

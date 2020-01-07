@@ -123,10 +123,10 @@ func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer
 		newNode := models.Node{
 			Address:         peer.Address,
 			IPVersion:       peer.IPVersion,
-			Country:         peer.Country,
-			State:           "",
-			City:            "",
-			Locality:        "",
+			Country:         peer.CountryName,
+			Region:          peer.RegionName,
+			City:            peer.City,
+			Zip: 			 peer.Zip,
 			LastAttempt:     peer.LastSeen,
 			LastSeen:        peer.LastSeen,
 			LastSuccess: 	 peer.LastSuccess,
@@ -201,17 +201,24 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 
 	var peers []netsnapshot.NetworkPeer
 	for _, node := range peerSlice {
-		peers = append(peers, netsnapshot.NetworkPeer{
+		peer := netsnapshot.NetworkPeer{
 			Address:         node.Address,
-			Country: 		 node.Country,
 			LastSeen:        node.LastSeen,
 			ConnectionTime:  node.ConnectionTime,
 			ProtocolVersion: uint32(node.ProtocolVersion),
 			UserAgent:       node.UserAgent,
 			StartingHeight:  node.StartingHeight,
 			CurrentHeight:   node.CurrentHeight,
-			Services: 		 node.Services,
-		})
+			Services:        node.Services,
+		}
+
+		peer.IPInfo = netsnapshot.IPInfo{
+			CountryName: node.Country,
+			RegionName:  node.Region,
+			City:        node.City,
+			Zip:         node.Zip,
+		}
+		peers = append(peers, peer)
 	}
 
 	sql = "SELECT COUNT(heartbeat.node_id) as total FROM heartbeat INNER JOIN node on node.address = heartbeat.node_id WHERE " + where
@@ -231,16 +238,20 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 	}
 	peer := netsnapshot.NetworkPeer{
 		Address:         node.Address,
-		Country:         node.Country,
+		LastSeen:        node.LastSeen,
+		ConnectionTime:  node.ConnectionTime,
+		ProtocolVersion: uint32(node.ProtocolVersion),
 		UserAgent:       node.UserAgent,
 		StartingHeight:  node.StartingHeight,
 		CurrentHeight:   node.CurrentHeight,
-		ConnectionTime:  node.ConnectionTime,
-		ProtocolVersion: uint32(node.ProtocolVersion),
-		LastSeen:        node.LastSeen,
-		Latency:         0,
-		IPVersion:       node.IPVersion,
 		Services:        node.Services,
+	}
+
+	peer.IPInfo = netsnapshot.IPInfo{
+		CountryName: node.Country,
+		RegionName:  node.Region,
+		City:        node.City,
+		Zip:         node.Zip,
 	}
 
 	return &peer, nil

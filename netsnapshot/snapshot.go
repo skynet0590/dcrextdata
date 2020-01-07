@@ -122,12 +122,14 @@ func (t taker) Start(ctx context.Context) {
 
 			geoLoc, err := t.geolocation(ctx, node.IP)
 			if err == nil {
-				networkPeer.Country = geoLoc.CountryName
+				networkPeer.IPInfo = *geoLoc
+				// networkPeer.Country = geoLoc.CountryName
 				if geoLoc.Type == "ipv4" {
 					networkPeer.IPVersion = 4
 				} else if geoLoc.Type == "ipv6" {
 					networkPeer.IPVersion = 6
 				}
+
 			}
 
 			err = t.dataStore.SaveNetworkPeer(ctx, networkPeer)
@@ -163,7 +165,7 @@ func (t taker) Start(ctx context.Context) {
 	}
 }
 
-func (t taker) geolocation(ctx context.Context, ip net.IP) (*geoIP, error) {
+func (t taker) geolocation(ctx context.Context, ip net.IP) (*IPInfo, error) {
 	countryName, ipv, err := t.dataStore.GetIPLocation(ctx, ip.String())
 	if err == nil {
 		var v string
@@ -172,10 +174,10 @@ func (t taker) geolocation(ctx context.Context, ip net.IP) (*geoIP, error) {
 		} else if ipv == 6 {
 			v = "ipv6"
 		}
-		return &geoIP{CountryName: countryName, Type: v}, nil
+		return &IPInfo{CountryName: countryName, Type: v}, nil
 	}
 	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=fcd33d8814206ce1f0a255a2204ad71e&format=1", ip.String())
-	var geo geoIP
+	var geo IPInfo
 	err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, &geo)
 	return &geo, err
 }
