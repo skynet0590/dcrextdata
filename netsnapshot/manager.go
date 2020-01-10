@@ -37,11 +37,12 @@ type Node struct {
 type Manager struct {
 	mtx sync.RWMutex
 
-	nodes     map[string]*Node
-	goodPeer  chan *Node
-	wg        sync.WaitGroup
-	quit      chan struct{}
-	peersFile string
+	nodes       map[string]*Node
+	liveNodeIPs []net.IP
+	goodPeer    chan *Node
+	wg          sync.WaitGroup
+	quit        chan struct{}
+	peersFile   string
 }
 
 var (
@@ -180,6 +181,11 @@ func (m *Manager) AddAddresses(addrs []net.IP) int {
 
 // Addresses returns IPs that need to be tested again.
 func (m *Manager) Addresses() []net.IP {
+	if addrs := m.liveNodes(); len(addrs) > 0 {
+		log.Infof("returned %d IPs from live nodes", len(addrs))
+		return addrs
+	}
+
 	addrs := make([]net.IP, 0, defaultMaxAddresses*8)
 	now := time.Now()
 	i := defaultMaxAddresses
@@ -202,6 +208,29 @@ func (m *Manager) Addresses() []net.IP {
 	m.mtx.RUnlock()
 
 	return addrs
+}
+
+func (m *Manager) liveNodes() []net.IP {
+	if m == nil {
+		panic("m can't nil")
+	}
+	m.mtx.RLock()
+	m.mtx.RUnlock()
+
+	if len(m.liveNodeIPs) == 0 {
+		return nil
+	}
+
+	var addrs []net.IP
+	copy(m.liveNodeIPs, addrs)
+	m.liveNodeIPs = nil
+	return addrs
+}
+
+func (m *Manager) setLiveNodes(nodes []net.IP) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+	m.liveNodeIPs = nodes
 }
 
 func (m *Manager) Attempt(ip net.IP) {

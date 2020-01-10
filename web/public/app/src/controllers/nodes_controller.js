@@ -120,11 +120,11 @@ export default class extends Controller {
       fields[2].innerHTML = `${node.current_height || 'Unknown'}
         <div class="progress"><div class="progress-bar" style="width: ${(100 * node.current_height / _this.height).toFixed(2)}%;"></div></div>`
       let location = node.city
-      if (node.region_name) {
-        location = location ? `,${node.region_name}` : node.region_name
+      if (node.region_name.length > 0) {
+        location = location.length > 0 ? `,${node.region_name}` : node.region_name
       }
-      if (node.country_name) {
-        location = location ? `,${node.country_name}` : node.country_name
+      if (node.country_name.length > 0) {
+        location = location.length > 0 ? `,${node.country_name}` : node.country_name
       }
       fields[3].innerHTML = location
 

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 
@@ -87,97 +88,83 @@ func (pg PgDb) DeleteSnapshot(ctx context.Context, timestamp int64) {
 	_, _ = models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp)).DeleteAll(ctx, pg.db)
 }
 
-func (pg PgDb) SaveNetworkPeer(ctx context.Context, peer netsnapshot.NetworkPeer) error {
-	existingNode, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).One(ctx, pg.db)
+func (pg PgDb) SaveHeartbeat(ctx context.Context, heartbeat netsnapshot.Heartbeat) error {
+	heartbeatModel, err := models.Heartbeats(
+		models.HeartbeatWhere.NodeID.EQ(heartbeat.Address),
+		models.HeartbeatWhere.Timestamp.EQ(heartbeat.Timestamp)).One(ctx, pg.db)
 	if err == nil {
-		existingNode.LastSeen = peer.LastSeen
-		existingNode.LastAttempt = peer.LastSeen
-		if peer.LastSuccess > 0 {
-			existingNode.LastSuccess = peer.LastSuccess
+		if heartbeat.CurrentHeight > 0 {
+			heartbeatModel.CurrentHeight = heartbeat.CurrentHeight
 		}
 
-		if existingNode.Services == "" {
-			existingNode.Services = peer.Services
+		if heartbeat.Latency > 0 {
+			heartbeatModel.Latency = heartbeat.Latency
 		}
 
-		if existingNode.StartingHeight == 0 {
-			existingNode.StartingHeight = peer.StartingHeight
+		if heartbeat.LastSeen > 0 {
+			heartbeatModel.LastSeen = heartbeat.LastSeen
 		}
 
-		if existingNode.UserAgent == "" {
-			existingNode.UserAgent = peer.UserAgent
-		}
-
-		if peer.CurrentHeight > 0 {
-			existingNode.CurrentHeight = peer.CurrentHeight
-		}
-
-		if existingNode.ConnectionTime == 0 {
-			existingNode.ConnectionTime = peer.ConnectionTime
-		}
-
-		if _, err = existingNode.Update(ctx, pg.db, boil.Infer()); err != nil {
-			return fmt.Errorf("error in updating existing node information %s", err.Error())
-		}
-	} else {
-		newNode := models.Node{
-			Address:         peer.Address,
-			IPVersion:       peer.IPVersion,
-			Country:         peer.CountryName,
-			Region:          peer.RegionName,
-			City:            peer.City,
-			Zip: 			 peer.Zip,
-			LastAttempt:     peer.LastSeen,
-			LastSeen:        peer.LastSeen,
-			LastSuccess: 	 peer.LastSuccess,
-			ConnectionTime:  peer.ConnectionTime,
-			ProtocolVersion: int(peer.ProtocolVersion),
-			UserAgent:       peer.UserAgent,
-			Services:        peer.Services,
-			StartingHeight:  peer.StartingHeight,
-			CurrentHeight:   peer.CurrentHeight,
-			IsDead:          false,
-		}
-		if err := newNode.Insert(ctx, pg.db, boil.Infer()); err != nil {
-			return fmt.Errorf("cannot save heartbeat, error in saving new node information, %s", err.Error())
-		}
-	}
-	// TODO: don't save heartbeat that is not within this snapshot timestamp
-	// TODO: check with @raedah
-	heartbeat, err := models.Heartbeats(
-		models.HeartbeatWhere.NodeID.EQ(peer.Address),
-		models.HeartbeatWhere.Timestamp.EQ(peer.Timestamp)).One(ctx, pg.db)
-	if err == nil {
-		if peer.CurrentHeight > 0 {
-			heartbeat.CurrentHeight = peer.CurrentHeight
-		}
-
-		if peer.Latency > 0 {
-			heartbeat.Latency = peer.Latency
-		}
-
-		if peer.LastSeen > 0 {
-			heartbeat.LastSeen = peer.LastSeen
-		}
-
-		if _, err = heartbeat.Update(ctx, pg.db, boil.Infer()); err != nil {
-			return fmt.Errorf("error in saving heartbeat, %s", err.Error())
+		if _, err = heartbeatModel.Update(ctx, pg.db, boil.Infer()); err != nil {
+			return fmt.Errorf("error in saving heartbeatModel, %s", err.Error())
 		}
 		return nil
 	}
 
 	newHeartbeat := models.Heartbeat{
-		Timestamp:       peer.Timestamp,
-		NodeID:         peer.Address,
-		LastSeen:        peer.LastSeen,
-		Latency:         peer.Latency,
-		CurrentHeight:   peer.CurrentHeight,
+		Timestamp:     heartbeat.Timestamp,
+		NodeID:        heartbeat.Address,
+		LastSeen:      heartbeat.LastSeen,
+		Latency:       heartbeat.Latency,
+		CurrentHeight: heartbeat.CurrentHeight,
 	}
 
 	if err = newHeartbeat.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		return fmt.Errorf("error in saving hearbeat, %s", err.Error())
 	}
 	return nil
+}
+
+func (pg PgDb) NodeExists(ctx context.Context, address string) (bool, error) {
+	return models.NodeExists(ctx, pg.db, address)
+}
+
+func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error  {
+	newNode := models.Node{
+		Address:         peer.Address,
+		IPVersion:       peer.IPVersion,
+		Country:         peer.CountryName,
+		Region:          peer.RegionName,
+		City:            peer.City,
+		Zip: 			 peer.Zip,
+		LastAttempt:     peer.LastSeen,
+		LastSeen:        peer.LastSeen,
+		LastSuccess: 	 peer.LastSuccess,
+		ConnectionTime:  peer.ConnectionTime,
+		ProtocolVersion: int(peer.ProtocolVersion),
+		UserAgent:       peer.UserAgent,
+		Services:        peer.Services,
+		StartingHeight:  peer.StartingHeight,
+		CurrentHeight:   peer.CurrentHeight,
+		IsDead:          false,
+	}
+	err := newNode.Insert(ctx, pg.db, boil.Infer())
+	return err
+}
+
+func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
+	var cols = models.M{
+		models.NodeColumns.LastAttempt: peer.LastAttempt,
+		models.NodeColumns.LastSeen: peer.LastSeen,
+		models.NodeColumns.LastSuccess: peer.LastSuccess,
+		models.NodeColumns.Services: peer.Services,
+		models.NodeColumns.StartingHeight: peer.StartingHeight,
+		models.NodeColumns.UserAgent: peer.UserAgent,
+		models.NodeColumns.CurrentHeight: peer.CurrentHeight,
+		models.NodeColumns.ConnectionTime: peer.ConnectionTime,
+	}
+	 _, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).UpdateAll(ctx, pg.db, cols)
+	 return err
 }
 
 func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error) {
@@ -229,6 +216,21 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	}
 
 	return peers, countResult.Total, nil
+}
+
+func (pg PgDb) GetAvailableNodes(ctx context.Context) ([]net.IP, error) {
+	peerSlice, err := models.Nodes(models.NodeWhere.IsDead.EQ(false), qm.Select(models.NodeColumns.Address)).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var peers []net.IP
+	for _, node := range peerSlice {
+		peer := net.ParseIP(node.Address)
+		peers = append(peers, peer)
+	}
+
+	return peers, nil
 }
 
 func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error) {

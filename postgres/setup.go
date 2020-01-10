@@ -149,7 +149,7 @@ const (
 		address VARCHAR(256) NOT NULL PRIMARY KEY,
 		ip_version INT NOT NULL,
 		country VARCHAR(256) NOT NULL,
-		state VARCHAR(256) NOT NULL,
+		region VARCHAR(256) NOT NULL,
 		city VARCHAR(256) NOT NULL,
 		zip VARCHAR(256) NOT NULL,
 		last_attempt INT8 NOT NULL,

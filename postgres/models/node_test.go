@@ -581,7 +581,7 @@ func testNodesSelect(t *testing.T) {
 }
 
 var (
-	nodeDBTypes = map[string]string{`Address`: `character varying`, `IPVersion`: `integer`, `Country`: `character varying`, `Region`: `character varying`, `City`: `character varying`, `LastAttempt`: `bigint`, `LastSeen`: `bigint`, `IsDead`: `boolean`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `Services`: `character varying`, `StartingHeight`: `bigint`, `CurrentHeight`: `bigint`, `LastSuccess`: `bigint`, `TimeZone`: `character varying`, `Zip`: `character varying`}
+	nodeDBTypes = map[string]string{`Address`: `character varying`, `IPVersion`: `integer`, `Country`: `character varying`, `Region`: `character varying`, `City`: `character varying`, `Zip`: `character varying`, `LastAttempt`: `bigint`, `LastSeen`: `bigint`, `LastSuccess`: `bigint`, `IsDead`: `boolean`, `ConnectionTime`: `bigint`, `ProtocolVersion`: `integer`, `UserAgent`: `character varying`, `Services`: `character varying`, `StartingHeight`: `bigint`, `CurrentHeight`: `bigint`}
 	_           = bytes.MinRead
 )
 

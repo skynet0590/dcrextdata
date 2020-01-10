@@ -28,8 +28,10 @@ type Node struct {
 	Country         string `boil:"country" json:"country" toml:"country" yaml:"country"`
 	Region          string `boil:"region" json:"region" toml:"region" yaml:"region"`
 	City            string `boil:"city" json:"city" toml:"city" yaml:"city"`
+	Zip             string `boil:"zip" json:"zip" toml:"zip" yaml:"zip"`
 	LastAttempt     int64  `boil:"last_attempt" json:"last_attempt" toml:"last_attempt" yaml:"last_attempt"`
 	LastSeen        int64  `boil:"last_seen" json:"last_seen" toml:"last_seen" yaml:"last_seen"`
+	LastSuccess     int64  `boil:"last_success" json:"last_success" toml:"last_success" yaml:"last_success"`
 	IsDead          bool   `boil:"is_dead" json:"is_dead" toml:"is_dead" yaml:"is_dead"`
 	ConnectionTime  int64  `boil:"connection_time" json:"connection_time" toml:"connection_time" yaml:"connection_time"`
 	ProtocolVersion int    `boil:"protocol_version" json:"protocol_version" toml:"protocol_version" yaml:"protocol_version"`
@@ -37,9 +39,6 @@ type Node struct {
 	Services        string `boil:"services" json:"services" toml:"services" yaml:"services"`
 	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
 	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
-	LastSuccess     int64  `boil:"last_success" json:"last_success" toml:"last_success" yaml:"last_success"`
-	TimeZone        string `boil:"time_zone" json:"time_zone" toml:"time_zone" yaml:"time_zone"`
-	Zip             string `boil:"zip" json:"zip" toml:"zip" yaml:"zip"`
 
 	R *nodeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L nodeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -51,8 +50,10 @@ var NodeColumns = struct {
 	Country         string
 	Region          string
 	City            string
+	Zip             string
 	LastAttempt     string
 	LastSeen        string
+	LastSuccess     string
 	IsDead          string
 	ConnectionTime  string
 	ProtocolVersion string
@@ -60,17 +61,16 @@ var NodeColumns = struct {
 	Services        string
 	StartingHeight  string
 	CurrentHeight   string
-	LastSuccess     string
-	TimeZone        string
-	Zip             string
 }{
 	Address:         "address",
 	IPVersion:       "ip_version",
 	Country:         "country",
 	Region:          "region",
 	City:            "city",
+	Zip:             "zip",
 	LastAttempt:     "last_attempt",
 	LastSeen:        "last_seen",
+	LastSuccess:     "last_success",
 	IsDead:          "is_dead",
 	ConnectionTime:  "connection_time",
 	ProtocolVersion: "protocol_version",
@@ -78,9 +78,6 @@ var NodeColumns = struct {
 	Services:        "services",
 	StartingHeight:  "starting_height",
 	CurrentHeight:   "current_height",
-	LastSuccess:     "last_success",
-	TimeZone:        "time_zone",
-	Zip:             "zip",
 }
 
 // Generated where
@@ -100,8 +97,10 @@ var NodeWhere = struct {
 	Country         whereHelperstring
 	Region          whereHelperstring
 	City            whereHelperstring
+	Zip             whereHelperstring
 	LastAttempt     whereHelperint64
 	LastSeen        whereHelperint64
+	LastSuccess     whereHelperint64
 	IsDead          whereHelperbool
 	ConnectionTime  whereHelperint64
 	ProtocolVersion whereHelperint
@@ -109,17 +108,16 @@ var NodeWhere = struct {
 	Services        whereHelperstring
 	StartingHeight  whereHelperint64
 	CurrentHeight   whereHelperint64
-	LastSuccess     whereHelperint64
-	TimeZone        whereHelperstring
-	Zip             whereHelperstring
 }{
 	Address:         whereHelperstring{field: "\"node\".\"address\""},
 	IPVersion:       whereHelperint{field: "\"node\".\"ip_version\""},
 	Country:         whereHelperstring{field: "\"node\".\"country\""},
 	Region:          whereHelperstring{field: "\"node\".\"region\""},
 	City:            whereHelperstring{field: "\"node\".\"city\""},
+	Zip:             whereHelperstring{field: "\"node\".\"zip\""},
 	LastAttempt:     whereHelperint64{field: "\"node\".\"last_attempt\""},
 	LastSeen:        whereHelperint64{field: "\"node\".\"last_seen\""},
+	LastSuccess:     whereHelperint64{field: "\"node\".\"last_success\""},
 	IsDead:          whereHelperbool{field: "\"node\".\"is_dead\""},
 	ConnectionTime:  whereHelperint64{field: "\"node\".\"connection_time\""},
 	ProtocolVersion: whereHelperint{field: "\"node\".\"protocol_version\""},
@@ -127,9 +125,6 @@ var NodeWhere = struct {
 	Services:        whereHelperstring{field: "\"node\".\"services\""},
 	StartingHeight:  whereHelperint64{field: "\"node\".\"starting_height\""},
 	CurrentHeight:   whereHelperint64{field: "\"node\".\"current_height\""},
-	LastSuccess:     whereHelperint64{field: "\"node\".\"last_success\""},
-	TimeZone:        whereHelperstring{field: "\"node\".\"time_zone\""},
-	Zip:             whereHelperstring{field: "\"node\".\"zip\""},
 }
 
 // NodeRels is where relationship names are stored.
@@ -153,9 +148,9 @@ func (*nodeR) NewStruct() *nodeR {
 type nodeL struct{}
 
 var (
-	nodeAllColumns            = []string{"address", "ip_version", "country", "region", "city", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height", "last_success", "time_zone", "zip"}
-	nodeColumnsWithoutDefault = []string{"address", "ip_version", "country", "region", "city", "last_attempt", "last_seen", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
-	nodeColumnsWithDefault    = []string{"last_success", "time_zone", "zip"}
+	nodeAllColumns            = []string{"address", "ip_version", "country", "region", "city", "zip", "last_attempt", "last_seen", "last_success", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	nodeColumnsWithoutDefault = []string{"address", "ip_version", "country", "region", "city", "zip", "last_attempt", "last_seen", "last_success", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	nodeColumnsWithDefault    = []string{}
 	nodePrimaryKeyColumns     = []string{"address"}
 )
 

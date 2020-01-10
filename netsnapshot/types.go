@@ -2,6 +2,7 @@ package netsnapshot
 
 import (
 	"context"
+	"net"
 
 	"github.com/decred/dcrd/rpcclient"
 	"github.com/raedahgroup/dcrextdata/app/config"
@@ -38,7 +39,17 @@ type NetworkPeer struct {
 	Latency         int    `json:"latency"`
 	IPVersion       int    `json:"ip_version"`
 	Services        string `json:"services"`
+	LastAttempt     int64  `json:"last_attempt"`
+
 	IPInfo
+}
+
+type Heartbeat struct {
+	Timestamp     int64  `json:"timestamp"`
+	Address       string `json:"address"`
+	LastSeen      int64  `json:"last_seen"`
+	Latency       int    `json:"latency"`
+	CurrentHeight int64  `json:"current_height"`
 }
 
 type IPInfo struct {
@@ -55,9 +66,13 @@ type DataStore interface {
 	LastSnapshotTime(ctx context.Context) (timestamp int64)
 	DeleteSnapshot(ctx context.Context, timestamp int64)
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
-	SaveNetworkPeer(ctx context.Context, peer NetworkPeer) error
+	SaveHeartbeat(ctx context.Context, peer Heartbeat) error
+	SaveNode(ctx context.Context, peer NetworkPeer) error
+	UpdateNode(ctx context.Context, peer NetworkPeer) error
+	GetAvailableNodes(ctx context.Context) ([]net.IP, error)
 	LastSnapshot(ctx context.Context) (*SnapShot, error)
 	GetIPLocation(ctx context.Context, ip string) (string, int, error)
+	NodeExists(ctx context.Context, address string) (bool, error)
 }
 
 type taker struct {
