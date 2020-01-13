@@ -2,21 +2,35 @@ import { Controller } from 'stimulus'
 import axios from 'axios'
 import moment from 'moment'
 import {
-  setAllValues, insertOrUpdateQueryParam, hideAll, showAll, hide, show, getNumberOfPages
+  getNumberOfPages,
+  hide,
+  hideAll, hideLoading,
+  insertOrUpdateQueryParam, legendFormatter, options,
+  setActiveOptionBtn,
+  setAllValues,
+  show,
+  showAll, showLoading,
+  updateQueryParam
 } from '../utils'
+
+const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
 export default class extends Controller {
   timestamp
   height
   currentPage
+  pageSize
   userAgentsPage
   query
+  selectedViewOption
 
   static get targets () {
     return [
+      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType', 'numPageWrapper', 'selectedNumberOfRows',
+      'messageView', 'chartWrapper', 'chartsView', 'labels',
       'timestamp', 'height', 'queryInput', 'peerCount', 'userAgents', 'previousUserAgentsButton', 'nextUserAgentsButton',
       'userAgentRowTemplate', 'nextCountriesButton', 'previousCountriesButton', 'countries', 'countryRowTemplate',
-      'nextPageButton', 'previousPageButton', 'tableBody', 'rowTemplate', 'totalPageCount', 'currentPage', 'loadingData'
+      'nextPageButton', 'previousPageButton', 'tableWrapper', 'tableBody', 'rowTemplate', 'totalPageCount', 'currentPage', 'loadingData'
     ]
   }
 
@@ -24,6 +38,8 @@ export default class extends Controller {
     this.timestamp = parseInt(this.timestampTarget.dataset.initialValue)
     this.height = parseInt(this.heightTarget.dataset.initialValue)
     this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
+    this.pageSize = parseInt(this.data.get('pageSize')) || 20
+    this.selectedViewOption = this.data.get('viewOption')
     this.query = this.queryInputTarget.value
 
     this.userAgentsPage = 1
@@ -34,6 +50,40 @@ export default class extends Controller {
     await this.loadCountries()
     this.displayCountries()
 
+    this.loadNetworkPeers()
+
+    if (this.selectedViewOption === 'table') {
+      this.setTable()
+    } else {
+      this.setChart()
+    }
+  }
+
+  setTable () {
+    this.selectedViewOption = 'table'
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    hide(this.chartWrapperTarget)
+    hide(this.messageViewTarget)
+    show(this.tableWrapperTarget)
+    show(this.numPageWrapperTarget)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+  }
+
+  setChart () {
+    this.selectedViewOption = 'chart'
+    hide(this.tableWrapperTarget)
+    hide(this.messageViewTarget)
+    setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
+    hide(this.numPageWrapperTarget)
+    show(this.chartWrapperTarget)
+    updateQueryParam('view-option', this.selectedViewOption)
+    this.fetchDataAndPlotGraph()
+  }
+
+  changePageSize (e) {
+    this.pageSize = parseInt(e.currentTarget.value)
+    updateQueryParam('page-size', this.pageSize)
     this.loadNetworkPeers()
   }
 
@@ -74,8 +124,9 @@ export default class extends Controller {
   }
 
   loadNetworkPeers () {
+    showLoading(this.loadingDataTarget)
     const _this = this
-    const url = `/api/snapshot/${this.timestamp}/nodes?q=${this.query}&page=${this.currentPage}`
+    const url = `/api/snapshot/${this.timestamp}/nodes?q=${this.query}&page=${this.currentPage}&page-size=${this.pageSize}`
     axios.get(url).then(response => {
       let result = response.data
       if (_this.currentPage <= 1) {
@@ -95,6 +146,7 @@ export default class extends Controller {
       setAllValues(_this.peerCountTargets, result.peerCount)
 
       _this.displayNodes(result.nodes)
+      hideLoading(this.loadingDataTarget)
     })
   }
 
@@ -192,10 +244,9 @@ export default class extends Controller {
   }
 
   async loadCountries () {
-    const that = this
     const url = `/api/snapshot/${this.timestamp}/countries`
     const response = await axios.get(url)
-    that.countries = response.data.countries
+    this.countries = response.data.countries
   }
 
   displayCountries () {
@@ -228,5 +279,86 @@ export default class extends Controller {
 
       that.countriesTarget.appendChild(exRow)
     })
+  }
+
+  // chart
+  async fetchDataAndPlotGraph () {
+    this.drawInitialGraph()
+    showLoading(this.loadingDataTarget)
+    const response = await axios.get('/api/snapshot/nodes/count-by-timestamp')
+    const result = response.data
+    if (result.error) {
+      this.messageViewTarget.innerHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`
+      show(this.messageViewTarget)
+      hideLoading(this.loadingDataTarget)
+      return
+    }
+    hide(this.messageViewTarget)
+
+    let minDate, maxDate, csv
+
+    result.forEach(record => {
+      let date = new Date(record.timestamp * 1000)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+      csv += `${date},${record.count}\n`
+    })
+
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      csv,
+      {
+        legend: 'always',
+        includeZero: true,
+        dateWindow: [minDate, maxDate],
+        legendFormatter: legendFormatter,
+        digitsAfterDecimal: 8,
+        labelsDiv: this.labelsTarget,
+        ylabel: 'Node Count',
+        xlabel: 'Date',
+        labels: ['Date', 'Node Count'],
+        labelsUTC: true,
+        labelsKMB: true,
+        maxNumberWidth: 10,
+        showRangeSelector: true,
+        axes: {
+          x: {
+            drawGrid: false
+          },
+          y: {
+            axisLabelWidth: 90
+          }
+        }
+      }
+    )
+    hideLoading(this.loadingDataTarget)
+  }
+
+  drawInitialGraph () {
+    var extra = {
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: 'Node Count',
+      xlabel: 'Date',
+      labels: ['Date', 'Node Count'],
+      labelsUTC: true,
+      labelsKMB: true,
+      axes: {
+        x: {
+          drawGrid: false
+        }
+      }
+    }
+
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      [[0, 0]],
+      { ...options, ...extra }
+    )
   }
 }

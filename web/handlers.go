@@ -25,7 +25,7 @@ const (
 	defaultViewOption           = chartViewOption
 	mempoolDefaultChartDataType = "size"
 	maxPageSize                 = 250
-	recordsPerPage              = 20
+	defaultPageSize             = 20
 	defaultInterval             = 1440 // All
 	noDataMessage               = "does not have data for the selected query option(s)."
 
@@ -167,7 +167,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -391,7 +391,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -625,7 +625,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -641,7 +641,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 		selectedPow = "All"
 	}
 
-	offset := (pageToLoad - 1) * recordsPerPage
+	offset := (pageToLoad - 1) * defaultPageSize
 
 	ctx := req.Context()
 
@@ -693,7 +693,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	data["powData"] = allPowDataSlice
-	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(recordsPerPage)))
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(defaultPageSize)))
 
 	totalTxLoaded := offset + len(allPowDataSlice)
 	if int64(totalTxLoaded) < totalCount {
@@ -858,7 +858,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -988,7 +988,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1253,7 +1253,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1350,7 +1350,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1678,6 +1678,16 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		page = 1
 	}
 
+	pageSize, _ := strconv.Atoi(r.FormValue("page-size"))
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+
+	viewOption := r.FormValue("view-option")
+	if viewOption == "" {
+		viewOption = defaultViewOption
+	}
+
 	var timestamp, previousTimestamp, nextTimestamp int64
 
 	timestamp = getTitmestampCtx(r)
@@ -1722,15 +1732,18 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.render("nodes.html", map[string]interface{}{
-		"page":              page,
-		"pageCount":		 0,
-		"snapshot":          snapshot,
-		"ipv4Count":         ipv4Count,
-		"ipv6Count":         ipv6Count,
-		"previousTimestamp": previousTimestamp,
-		"nextTimestamp":     nextTimestamp,
-		"peerCount":         peerCount,
-		"query":			 r.FormValue("q"),
+		"selectedViewOption": viewOption,
+		"pageSizeSelector":   pageSizeSelector,
+		"page":               page,
+		"pageSize":           pageSize,
+		"pageCount":          0,
+		"snapshot":           snapshot,
+		"ipv4Count":          ipv4Count,
+		"ipv6Count":          ipv6Count,
+		"previousTimestamp":  previousTimestamp,
+		"nextTimestamp":      nextTimestamp,
+		"peerCount":          peerCount,
+		"query":              r.FormValue("q"),
 	}, w)
 }
 
@@ -1781,6 +1794,16 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 	s.renderJSON(map[string]interface{}{"countries": countries}, w)
 }
 
+// /api/snapshot/nodes/count-by-timestamp
+func (s *Server) nodeCountByTimestamp(w http.ResponseWriter, r *http.Request) {
+	result, err := s.db.SeenNodesByTimestamp(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node count: %s", w, err.Error())
+		return
+	}
+	s.renderJSON(result, w)
+}
+
 // /api/snapshot/{timestamp}/nodes
 func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 	r.ParseForm()
@@ -1789,7 +1812,12 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 		page = 1
 	}
 
-	offset := (page - 1) * 20
+	pageSize, _ := strconv.Atoi(r.FormValue("page-size"))
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+
+	offset := (page - 1) * pageSize
 	query := r.FormValue("q")
 
 	var timestamp int64
@@ -1800,14 +1828,14 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, recordsPerPage)
+	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, pageSize)
 	if err != nil {
 		s.renderErrorfJSON("Error in fetching network nodes, %s", w, err.Error())
 		return
 	}
 
-	rem := peerCount%recordsPerPage
-	pageCount := (peerCount - rem) / recordsPerPage
+	rem := peerCount% defaultPageSize
+	pageCount := (peerCount - rem) / defaultPageSize
 	if rem > 0 {
 		pageCount += 1
 	}

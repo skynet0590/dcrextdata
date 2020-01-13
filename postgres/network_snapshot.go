@@ -274,6 +274,14 @@ func (pg PgDb) TotalPeerCount(ctx context.Context, timestamp int64) (int64, erro
 	return models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp)).Count(ctx, pg.db)
 }
 
+func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCount, error) {
+	var result []netsnapshot.NodeCount
+	err := models.NewQuery(
+		qm.SQL("SELECT heartbeat.timestamp, COUNT(*) FROM heartbeat group by heartbeat.timestamp order by timestamp"),
+	).Bind(ctx, pg.db, &result)
+	return result, err
+}
+
 func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo,
 	 err error) {
 

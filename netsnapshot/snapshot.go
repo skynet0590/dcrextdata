@@ -157,38 +157,35 @@ func (t taker) Start(ctx context.Context) {
 				}
 			}
 
-			// if this node is reachable within the current timestamp, save heartbeat
-			if networkPeer.LastSuccess >= timestamp {
-				err = t.dataStore.SaveHeartbeat(ctx, Heartbeat{
-					Timestamp: timestamp,
-					Address:   node.IP.String(),
-					LastSeen:  node.LastSeen.UTC().Unix(),
-					Latency:   int(node.Latency),
-				})
-				if err != nil {
-					log.Errorf("Error in saving node info, %s.", err.Error())
-				} else {
-					mtx.Lock()
-					count++
-					if node.CurrentHeight > bestBlockHeight {
-						bestBlockHeight = node.CurrentHeight
-					}
-
-					snapshot := SnapShot{
-						Timestamp: timestamp,
-						Height:    bestBlockHeight,
-					}
-
-					err = t.dataStore.SaveSnapshot(ctx, snapshot)
-					if err != nil {
-						// todo delete all the related node info
-						t.dataStore.DeleteSnapshot(ctx, timestamp)
-						log.Errorf("Error in saving network snapshot, %s", err.Error())
-					}
-
-					mtx.Unlock()
-					log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), node.UserAgent, node.ProtocolVersion)
+			err = t.dataStore.SaveHeartbeat(ctx, Heartbeat{
+				Timestamp: timestamp,
+				Address:   node.IP.String(),
+				LastSeen:  node.LastSeen.UTC().Unix(),
+				Latency:   int(node.Latency),
+			})
+			if err != nil {
+				log.Errorf("Error in saving node info, %s.", err.Error())
+			} else {
+				mtx.Lock()
+				count++
+				if node.CurrentHeight > bestBlockHeight {
+					bestBlockHeight = node.CurrentHeight
 				}
+
+				snapshot := SnapShot{
+					Timestamp: timestamp,
+					Height:    bestBlockHeight,
+				}
+
+				err = t.dataStore.SaveSnapshot(ctx, snapshot)
+				if err != nil {
+					// todo delete all the related node info
+					t.dataStore.DeleteSnapshot(ctx, timestamp)
+					log.Errorf("Error in saving network snapshot, %s", err.Error())
+				}
+
+				mtx.Unlock()
+				log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), node.UserAgent, node.ProtocolVersion)
 			}
 		case <-ctx.Done():
 			log.Info("Shutting down network seeder")

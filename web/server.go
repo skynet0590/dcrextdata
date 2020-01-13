@@ -79,6 +79,7 @@ type DataQuery interface {
 	PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	TotalPeerCount(ctx context.Context, timestamp int64) (int64, error)
+	SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCount, error)
 	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
 	NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
 	PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error)
@@ -173,12 +174,13 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getCommunityStat", s.getCommunityStat)
 	r.Get("/communitychat", s.communityChat)
 
-	r.Get("/snapshot", s.snapshot)
+	r.Get("/nodes", s.snapshot)
+	r.With(addTimestampToCtx).Get("/nodes/{timestamp}", s.snapshot)
 	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
-	r.With(addTimestampToCtx).Get("/snapshot/{timestamp}", s.snapshot)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountUserAgents)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)
+	r.Get("/api/snapshot/nodes/count-by-timestamp", s.nodeCountByTimestamp)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

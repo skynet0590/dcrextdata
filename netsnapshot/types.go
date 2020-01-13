@@ -13,6 +13,11 @@ type SnapShot struct {
 	Height    int64 `json:"height"`
 }
 
+type NodeCount struct {
+	Timestamp int64 `json:"timestamp"`
+	Count     int64 `json:"count"`
+}
+
 type UserAgentInfo struct {
 	UserAgent  string  `json:"user_agent"`
 	Nodes 	   int64   `json:"nodes"`
