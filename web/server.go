@@ -74,6 +74,7 @@ type DataQuery interface {
 	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
 	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
 
+	Snapshots(ctx context.Context) ([]netsnapshot.SnapShot, error)
 	LastSnapshotTime(ctx context.Context) (timestamp int64)
 	FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
@@ -177,6 +178,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/nodes", s.snapshot)
 	r.With(addTimestampToCtx).Get("/nodes/{timestamp}", s.snapshot)
 	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
+	r.Get("/api/snapshots", s.snapshots)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountUserAgents)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)

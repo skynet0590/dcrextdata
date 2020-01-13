@@ -43,14 +43,7 @@ export default class extends Controller {
     this.query = this.queryInputTarget.value
 
     this.userAgentsPage = 1
-    await this.loadUserAgents()
-    this.displayUserAgents()
-
     this.countriesPage = 1
-    await this.loadCountries()
-    this.displayCountries()
-
-    this.loadNetworkPeers()
 
     if (this.selectedViewOption === 'table') {
       this.setTable()
@@ -59,7 +52,7 @@ export default class extends Controller {
     }
   }
 
-  setTable () {
+  async setTable () {
     this.selectedViewOption = 'table'
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
@@ -67,6 +60,11 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    await this.loadCountries()
+    this.displayCountries()
+    await this.loadUserAgents()
+    this.displayUserAgents()
+    this.loadNetworkPeers()
   }
 
   setChart () {
@@ -113,8 +111,11 @@ export default class extends Controller {
     this.search()
   }
 
-  search () {
-    if (this.query === 'Unkown') {
+  search (e) {
+    if (e) {
+      e.preventDefault()
+    }
+    if (this.query === 'Unknown') {
       this.query = ''
     }
     insertOrUpdateQueryParam('q', this.query)
@@ -285,7 +286,7 @@ export default class extends Controller {
   async fetchDataAndPlotGraph () {
     this.drawInitialGraph()
     showLoading(this.loadingDataTarget)
-    const response = await axios.get('/api/snapshot/nodes/count-by-timestamp')
+    const response = await axios.get('/api/snapshots')
     const result = response.data
     if (result.error) {
       this.messageViewTarget.innerHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`
@@ -306,7 +307,7 @@ export default class extends Controller {
       if (maxDate === undefined || date > maxDate) {
         maxDate = date
       }
-      csv += `${date},${record.count}\n`
+      csv += `${date},${record.node_count}\n`
     })
 
     this.chartsView = new Dygraph(

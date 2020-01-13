@@ -142,6 +142,7 @@ const (
 	createNetworkSnapshotTable = `CREATE TABLE If NOT EXISTS network_snapshot (
 		timestamp INT8 NOT NULL,
 		height INT8 NOT NULL,
+		node_count INT NOT NULL,
 		PRIMARY KEY (timestamp)
 	);`
 

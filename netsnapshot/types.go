@@ -11,6 +11,7 @@ import (
 type SnapShot struct {
 	Timestamp int64 `json:"timestamp"`
 	Height    int64 `json:"height"`
+	NodeCount int   `json:"node_count"`
 }
 
 type NodeCount struct {

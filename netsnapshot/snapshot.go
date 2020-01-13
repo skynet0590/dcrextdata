@@ -81,6 +81,7 @@ func (t taker) Start(ctx context.Context) {
 		}
 	}
 
+	snapshot.NodeCount = len(amgr.nodes)
 	err = t.dataStore.SaveSnapshot(ctx, snapshot)
 
 	if err != nil {
@@ -99,6 +100,7 @@ func (t taker) Start(ctx context.Context) {
 			err := t.dataStore.SaveSnapshot(ctx, SnapShot{
 				Timestamp: timestamp,
 				Height:    bestBlockHeight,
+				NodeCount: len(amgr.nodes),
 			})
 
 			if err != nil {
@@ -177,6 +179,7 @@ func (t taker) Start(ctx context.Context) {
 					Height:    bestBlockHeight,
 				}
 
+				snapshot.NodeCount = len(amgr.nodes)
 				err = t.dataStore.SaveSnapshot(ctx, snapshot)
 				if err != nil {
 					// todo delete all the related node info

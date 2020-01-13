@@ -14,15 +14,19 @@ import (
 )
 
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
+	if snapshot.NodeCount == 0 {
+		panic("this cannot be")
+	}
 	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
 	if err == nil {
 		existingSnapshot.Height = snapshot.Height
+		existingSnapshot.NodeCount = snapshot.NodeCount
 		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
 		return err
 	}
 
 	snapshotModel := models.NetworkSnapshot{
-		Timestamp: snapshot.Timestamp, Height: snapshot.Height,
+		Timestamp: snapshot.Timestamp, Height: snapshot.Height, NodeCount: snapshot.NodeCount,
 	}
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
@@ -60,6 +64,24 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 	}
 
 	return &snapshot, err
+}
+
+func (pg PgDb) Snapshots(ctx context.Context) ([]netsnapshot.SnapShot, error) {
+	snapshotSlice, err := models.NetworkSnapshots(qm.OrderBy("timestamp")).All(ctx, pg.db)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshots := make([]netsnapshot.SnapShot, len(snapshotSlice))
+	for i, m := range snapshotSlice {
+		snapshots[i] = netsnapshot.SnapShot {
+			Timestamp: m.Timestamp,
+			Height: m.Height,
+			NodeCount: m.NodeCount,
+		}
+	}
+
+	return snapshots, nil
 }
 
 func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error) {

@@ -1747,6 +1747,16 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	}, w)
 }
 
+// /api/snapshots
+func (s *Server) snapshots(w http.ResponseWriter, r *http.Request)  {
+	result, err := s.db.Snapshots(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
+		return
+	}
+	s.renderJSON(result, w)
+}
+
 // /nodes/view{ip}
 func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	address := getNodeIPFromCtx(r)
