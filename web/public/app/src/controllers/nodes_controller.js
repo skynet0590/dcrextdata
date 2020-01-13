@@ -6,12 +6,16 @@ import {
   hide,
   hideAll, hideLoading,
   insertOrUpdateQueryParam, legendFormatter, options,
+  selectedOption,
   setActiveOptionBtn,
   setAllValues,
   show,
   showAll, showLoading,
   updateQueryParam
 } from '../utils'
+
+import { animationFrame } from '../helpers/animation_helper'
+import Zoom from '../helpers/zoom_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -41,6 +45,9 @@ export default class extends Controller {
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
     this.query = this.queryInputTarget.value
+
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
 
     this.userAgentsPage = 1
     this.countriesPage = 1
@@ -283,6 +290,65 @@ export default class extends Controller {
   }
 
   // chart
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
+  }
+
   async fetchDataAndPlotGraph () {
     this.drawInitialGraph()
     showLoading(this.loadingDataTarget)
