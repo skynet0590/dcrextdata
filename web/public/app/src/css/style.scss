@@ -100,6 +100,14 @@ header {
       }
     }
 
+    .nav-control {
+      display: none;
+
+      img {
+        width: 30px;
+      }
+    }
+
     .menu-dropdown {
       position: absolute;
       top: 50px;
@@ -733,7 +741,7 @@ select.form-control:not([size]):not([multiple]) {
 
 .legend {
   background: #ececec;
-  z-index: 10000;
+  z-index: 1;
   padding: 0 2px 0 5px;
   font-size: 14px;
 }
@@ -1136,4 +1144,88 @@ table.collapsible tbody.clickable:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Responsiveness */
+
+@media (max-width: 768px) {
+  main {
+    .container {
+      padding: 30px;
+      padding-top: 70px;
+    }
+
+    .cards {
+      display: block;
+      margin-bottom: 0;
+
+      .info-card {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+    }
+  }
+
+  header {
+    #header-nav {
+      position: absolute;
+      top: 50px;
+      right: 30px;
+      width: 165px;
+      background-color: #fff;
+      padding-left: 20px;
+      z-index: 100000000;
+      box-shadow: 0 4px 20px rgba(226, 226, 226, 0.5);
+
+      li {
+        display: block;
+        color: #aaa;
+        margin-bottom: 15px;
+        transition: 0.3s all;
+
+        a {
+          color: #aaa;
+          transition: 0.3s all;
+
+          &:hover {
+            color: #007bff;
+          }
+        }
+
+        &:hover {
+          color: #007bff;
+        }
+
+        &.active {
+          color: #007bff;
+
+          a {
+            color: #007bff;
+          }
+        }
+
+        &:first-child {
+          margin-top: 20px;
+        }
+      }
+
+      &.mobile-show {
+        display: none;
+      }
+    }
+
+    #menu {
+      .menu-bar {
+        margin-left: 30px;
+      }
+
+      .nav-control {
+        display: block;
+        position: absolute;
+        right: 30px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+    }
+  }
 }

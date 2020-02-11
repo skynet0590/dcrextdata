@@ -29,8 +29,13 @@
                 <img src="/static/images/logo.png" class="logo" />
             </a>
         </div>
+        <div class="nav-control">
+            <a href="javascript:;">
+                <img src="/static/images/menu.png" class="logo" />
+            </a>
+        </div>
     </div>
-    <nav id="header-nav">
+    <nav id="header-nav" class="mobile-show">
         <ul>
             <li id="nav-nodes">
                 <a href="/nodes">Nodes</a id="nav-mempool">
@@ -70,9 +75,10 @@
         $(currentNavItem).addClass("active");
     });
     $(function () {
-        $(".menu-bar").click(function() {
-            $(".menu-dropdown").toggleClass("d-hide");
+        $(".nav-control").click(function() {
+            $("#header-nav").toggleClass("mobile-show");
         });
+        $
     });
 </script>
 {{ end }}
