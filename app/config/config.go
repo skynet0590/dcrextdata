@@ -162,11 +162,26 @@ func defaultConfig() Config {
 
 func LoadConfig() (*Config, []string, error) {
 	cfg := defaultConfig()
+
+	// Pre-parse the command line options to see if an alternative config file
+	// or the version flag was specified. Override any environment variables
+	// with parsed command line flags.
+	preCfg := cfg
+	preParser := flags.NewParser(&preCfg, flags.HelpFlag|flags.PassDoubleDash)
+	_, flagerr := preParser.Parse()
+
+	if flagerr != nil {
+		e, ok := flagerr.(*flags.Error)
+		if ok && e.Type != flags.ErrHelp {
+			return nil, nil, flagerr
+		}
+	}
+
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
-	err := flags.NewIniParser(parser).ParseFile(cfg.ConfigFile)
+	err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); ok {
-			fmt.Printf("Missing Config file %s in current directory\n", cfg.ConfigFile)
+			fmt.Printf("Missing Config file %s in current directory\n", preCfg.ConfigFile)
 		} else {
 			return nil, nil, err
 		}
