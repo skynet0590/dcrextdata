@@ -28,8 +28,8 @@ const (
 
 	redditPlatform  = "Reddit"
 	twitterPlatform = "Twitter"
-	githubPlatform  = "Github"
-	youtubePlatform = "Youtube"
+	githubPlatform  = "GitHub"
+	youtubePlatform = "YouTube"
 )
 
 var (
@@ -1506,7 +1506,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks")
+		columnHeaders = append(columnHeaders, "Date", "Stars", "Forks")
 		break
 	case youtubePlatform:
 		channel := req.FormValue("channel")
@@ -1550,7 +1550,11 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	yLabel := ""
 	switch plarform {
 	case githubPlatform:
-		yLabel = "Folks"
+		if dataType == models.GithubColumns.Folks {
+			yLabel = "Forks"
+		} else {
+			yLabel = "Stars"
+		}
 		plarform = models.TableNames.Github
 		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
 		break

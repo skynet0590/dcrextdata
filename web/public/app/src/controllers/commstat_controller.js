@@ -182,15 +182,15 @@ export default class extends Controller {
         addDataTypeOption('active_accounts', 'Active Accounts')
         show(_this.dataTypeWrapperTarget)
         break
-      case 'Github':
+      case 'GitHub':
         if (this.dataType !== 'folks' && this.dataType !== 'stars') {
           this.dataType = 'folks'
         }
-        addDataTypeOption('folks', 'Folks')
+        addDataTypeOption('folks', 'Forks')
         addDataTypeOption('stars', 'Stars')
         show(_this.dataTypeWrapperTarget)
         break
-      case 'Youtube':
+      case 'YouTube':
         if (this.dataType !== 'subscribers' && this.dataType !== 'view_count') {
           this.dataType = 'subscribers'
         }
@@ -310,10 +310,10 @@ export default class extends Controller {
         case 'Twitter':
           _this.displayTwitterStat(stat, fields)
           break
-        case 'Github':
+        case 'GitHub':
           _this.displayGithubData(stat, fields)
           break
-        case 'Youtube':
+        case 'YouTube':
           _this.displayYoutubeData(stat, fields)
           break
       }
