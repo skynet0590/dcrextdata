@@ -33,6 +33,11 @@ func (s *Server) loadTemplates() {
 	}
 }
 
+var pairMap = map[string]string{
+	"BTC/DCR": "DCR/BTC",
+	"USD/BTC": "BTC/USD",
+}
+
 func templateFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"incByOne": func(number int) int {
@@ -82,6 +87,12 @@ func templateFuncMap() template.FuncMap {
 				r2 = r2 + string(r1[i])
 			}
 			return r2
+		},
+		"commonPair": func(pair string) string {
+			if v, f := pairMap[pair]; f {
+				return v
+			}
+			return pair
 		},
 	}
 }
