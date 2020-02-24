@@ -1,4 +1,5 @@
 import dompurify from 'dompurify'
+import humanize from './helpers/humanize_helper'
 
 const Dygraph = require('../../dist/js/dygraphs.min.js')
 
@@ -66,8 +67,13 @@ export function legendFormatter (data) {
       return `${nodes} <div class="pr-2">${series.dashHTML} ${series.labelHTML}: ${yVal}</div>`
     }, '')
 
+    let xHTML = data.xHTML
+    if (data.dygraph.getLabels()[0] === 'Date') {
+      xHTML = humanize.date(data.x, false, false)
+    }
+
     html = `<div class="d-flex flex-wrap justify-content-center align-items-center">
-                <div class="pr-3">${this.getLabels()[0]}: ${data.xHTML}</div>
+                <div class="pr-3">${this.getLabels()[0]}: ${xHTML}</div>
                 <div class="d-flex flex-wrap"> ${yVals}</div>
             </div>${extraHTML}`
   }
