@@ -51,18 +51,18 @@ header {
 
   #header-nav {
     position: absolute;
-    right: 80px;
+    right: 100px;
     top: 13px;
 
     li {
       display: inline;
       padding-right: 30px;
-      color: #aaa;
+      color: #777;
       font-size: 15px;
       transition: 0.3s all;
 
       a {
-        color: #aaa;
+        color: #777;
         transition: 0.3s all;
 
         &:hover {
@@ -91,7 +91,7 @@ header {
   #menu {
     .menu-bar {
       position: absolute;
-      margin-left: 80px;
+      margin-left: 100px;
       margin-top: 10px;
       cursor: pointer;
 
@@ -163,6 +163,24 @@ main {
     width: 100%;
     padding: 80px;
     padding-top: 100px;
+  }
+
+  .main-container {
+    padding: 100px;
+  }
+}
+
+.item-info {
+  margin-bottom: 50px;
+
+  h2 {
+    color: #007bff;
+    font-weight: bold;
+  }
+
+  p {
+    font-size: 1.2em;
+    color: #777;
   }
 }
 
