@@ -260,7 +260,11 @@ export default class extends Controller {
       fields[5].innerHTML = ex.close
       fields[6].innerHTML = ex.volume
       fields[7].innerText = ex.interval
-      fields[8].innerHTML = ex.currency_pair
+      if (ex.currency_pair === 'BTC/DCR') {
+        fields[8].innerHTML = 'DCR/BTC'
+      } else if (ex.currency_pair === 'USD/BTC') {
+        fields[8].innerHTML = 'BTC/USD'
+      }
 
       _this.exchangeTableTarget.appendChild(exRow)
     })

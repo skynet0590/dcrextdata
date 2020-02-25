@@ -28,8 +28,8 @@ const (
 
 	redditPlatform  = "Reddit"
 	twitterPlatform = "Twitter"
-	githubPlatform  = "Github"
-	youtubePlatform = "Youtube"
+	githubPlatform  = "GitHub"
+	youtubePlatform = "YouTube"
 )
 
 var (
@@ -185,8 +185,17 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		pageToLoad = 1
 	}
 
+	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot fetch currency pair, %s", err.Error())
+	}
+
 	if selectedCurrencyPair == "" {
-		selectedCurrencyPair = "All"
+		if viewOption == "table" {
+			selectedCurrencyPair = "All"
+		} else if len(currencyPairs) > 0 {
+			selectedCurrencyPair = currencyPairs[0].CurrencyPair
+		}
 	}
 
 	offset := (pageToLoad - 1) * pageSize
@@ -214,11 +223,6 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 		return nil, fmt.Errorf("No exchange source data. Try running dcrextdata then try again.")
 	}
 	data["allExData"] = allExchangeSlice
-
-	currencyPairs, err := s.db.AllExchangeTicksCurrencyPair(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("Cannot fetch currency pair, %s", err.Error())
-	}
 
 	if len(currencyPairs) == 0 {
 		return nil, fmt.Errorf("No currency pairs found. Try running dcrextdata then try again.")
@@ -1502,7 +1506,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		columnHeaders = append(columnHeaders, "Date", "Stars", "Folks")
+		columnHeaders = append(columnHeaders, "Date", "Stars", "Forks")
 		break
 	case youtubePlatform:
 		channel := req.FormValue("channel")
@@ -1546,7 +1550,11 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	yLabel := ""
 	switch plarform {
 	case githubPlatform:
-		yLabel = "Folks"
+		if dataType == models.GithubColumns.Folks {
+			yLabel = "Forks"
+		} else {
+			yLabel = "Stars"
+		}
 		plarform = models.TableNames.Github
 		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
 		break

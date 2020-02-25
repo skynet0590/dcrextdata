@@ -33,7 +33,7 @@
                                 class="form-control" style="width: 105px;">
                                 <option data-target="exchange.currencyPairHideOption" class="{{ if .chartView }}d-none{{ end }}" value="All">All</option>
                                 {{ range $index, $cpair := .currencyPairs}}
-                                <option value="{{$cpair.CurrencyPair}}" {{ if eq $cpair.CurrencyPair $selectedCurrencyPair}} selected {{ end }}>{{$cpair.CurrencyPair}}</option>
+                                <option value="{{$cpair.CurrencyPair}}" {{ if eq $cpair.CurrencyPair $selectedCurrencyPair}} selected {{ end }}>{{commonPair $cpair.CurrencyPair}}</option>
                                 {{ end }}
                             </select>
                         </div>
