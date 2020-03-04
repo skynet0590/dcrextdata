@@ -34,6 +34,12 @@ a:hover {
   font-family: $primary;
 }
 
+.project-tab a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+}
+
 header {
   position: fixed;
   background-color: #fff;
@@ -219,6 +225,29 @@ footer {
   display: inline-block;
   height: 100%;
   font-size: 18px;
+}
+
+/* node-detail */
+.big {
+  h3 {
+    color: #333;
+    font-size: 1.6em;
+    font-weight: normal;
+    text-transform: none;
+  }
+
+  h4 {
+    color: #333;
+    font-size: 1.2em;
+    text-transform: none;
+    margin-top: 0.5em;
+  }
+}
+
+.field {
+  color: #555;
+  font-size: 0.85em;
+  text-transform: uppercase;
 }
 
 .content {
@@ -1082,12 +1111,6 @@ table.collapsible tbody.clickable:hover {
   color: #333;
 }
 
-.project-tab a {
-  text-decoration: none;
-  color: #333;
-  font-weight: 600;
-}
-
 /* /tab control */
 
 .form-control-borderless {
@@ -1113,27 +1136,4 @@ table.collapsible tbody.clickable:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-/* node-detail */
-.big {
-  h3 {
-    color: #333;
-    font-size: 1.6em;
-    font-weight: normal;
-    text-transform: none;
-  }
-
-  h4 {
-    color: #333;
-    font-size: 1.2em;
-    text-transform: none;
-    margin-top: 0.5em;
-  }
-}
-
-.field {
-  color: #555;
-  font-size: 0.85em;
-  text-transform: uppercase;
 }
