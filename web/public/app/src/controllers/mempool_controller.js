@@ -166,7 +166,7 @@ export default class extends Controller {
         _this.plotGraph(result)
       }
     }).catch(function (e) {
-      // hideLoading(_this.loadingDataTarget, elementsToToggle)
+      hideLoading(_this.loadingDataTarget)
       console.log(e) // todo: handle error
     })
   }
