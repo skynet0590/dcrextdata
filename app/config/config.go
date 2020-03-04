@@ -138,6 +138,7 @@ type ConfigFileOptions struct {
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
 	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
+	DisableTLS		bool	`long:"dcrdisabletls" description:"DisableTLS specifies whether transport layer security should be disabled"`
 
 	// sync
 	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`

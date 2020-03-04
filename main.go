@@ -15,7 +15,6 @@ import (
 	"runtime/pprof"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
@@ -194,7 +193,6 @@ func _main(ctx context.Context) error {
 	// if mempool is not disable, check that a dcrclient can be created before showing app version
 	if !cfg.DisableMempool {
 		dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
-		spew.Dump(filepath.Join(dcrdHomeDir, "rpc.cert"))
 		certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
 		if err != nil {
 			log.Error("Error in reading dcrd cert: ", err)
@@ -205,6 +203,7 @@ func _main(ctx context.Context) error {
 			Endpoint:     "ws",
 			User:         cfg.DcrdRpcUser,
 			Pass:         cfg.DcrdRpcPassword,
+			DisableTLS:   cfg.DisableTLS,
 			Certificates: certs,
 		}
 
