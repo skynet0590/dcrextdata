@@ -15,7 +15,7 @@ import (
 
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
 	if snapshot.NodeCount == 0 {
-		panic("this cannot be")
+		log.Critical("this cannot be")
 	}
 	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
 	if err == nil {
