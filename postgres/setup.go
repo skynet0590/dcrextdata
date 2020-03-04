@@ -439,13 +439,13 @@ func (pg *PgDb) DropAllTables() error {
 		return err
 	}
 
-	// node
-	if err := pg.dropTable("node"); err != nil {
+	// heartbeat
+	if err := pg.dropTable("heartbeat"); err != nil {
 		return err
 	}
 
-	// heartbeat
-	if err := pg.dropTable("heartbeat"); err != nil {
+	// node
+	if err := pg.dropTable("node"); err != nil {
 		return err
 	}
 
