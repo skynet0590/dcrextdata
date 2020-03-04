@@ -43,6 +43,9 @@ type Manager struct {
 	wg          sync.WaitGroup
 	quit        chan struct{}
 	peersFile   string
+
+	Seeder 	   string
+	SeederPort string
 }
 
 var (

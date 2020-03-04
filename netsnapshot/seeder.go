@@ -80,8 +80,12 @@ func creep(netParams *chaincfg.Params) {
 			go func(ip net.IP) {
 				defer wg.Done()
 
+				port := netParams.DefaultPort
+				if ip.String() == amgr.Seeder && amgr.SeederPort != "" {
+					port = amgr.SeederPort
+				}
 				host := net.JoinHostPort(ip.String(),
-					netParams.DefaultPort)
+					port)
 				p, err := peer.NewOutboundPeer(&peerConfig, host)
 				if err != nil {
 					log.Infof("NewOutboundPeer on %v: %v",
@@ -179,6 +183,8 @@ func creep(netParams *chaincfg.Params) {
 
 func runSeeder(cfg config.NetworkSnapshotOptions, netParams *chaincfg.Params) {
 	amgr.AddAddresses([]net.IP{net.ParseIP(cfg.Seeder)})
+	amgr.Seeder = cfg.Seeder
+	amgr.SeederPort = cfg.SeederPort
 
 	wg.Add(1)
 	go creep(netParams)
