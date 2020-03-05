@@ -16,6 +16,33 @@
 
             <div class="control-wrapper">
                 <div class="d-flex flex-row bottom-ctl">
+                    <div class="mr-auto my-2">
+                        <div class="chart-control-wrapper control-div p-0"
+                             data-target="nodes.dataTypeSelector">
+                            <div class="chart-control mempool-control mx-auto">
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item">
+                                        <a data-target="nodes.dataType"
+                                           data-action="click->nodes#setDataType" class="nav-link active"
+                                           href="javascript:void(0);" data-option="nodes"
+                                           >Nodes</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a data-target="nodes.dataType"
+                                           data-action="click->nodes#setDataType" class="nav-link"
+                                           href="javascript:void(0);" data-option="version"
+                                           >Version</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a data-target="nodes.dataType"
+                                           data-action="click->nodes#setDataType" class="nav-link"
+                                           href="javascript:void(0);" data-option="location"
+                                           >Location</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="chart-control ml-auto mr-3 my-2" data-target="nodes.viewOptionControl"
                          data-initial-value="{{ .selectedViewOption }}">
@@ -31,37 +58,9 @@
                             </li>
                         </ul>
                     </div>
-
-                    <div class="mr-auto my-2">
-                        <div class="chart-control-wrapper control-div p-0"
-                             data-target="nodes.dataTypeSelector">
-                            <div class="chart-control mempool-control mx-auto">
-                                <ul class="nav nav-pills">
-                                    <li class="nav-item">
-                                        <a data-target="nodes.dataType"
-                                           data-action="click->nodes#setDataType" class="nav-link active"
-                                           href="javascript:void(0);" data-option="snapshot"
-                                           >Snapshot</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a data-target="nodes.dataType"
-                                           data-action="click->nodes#setDataType" class="nav-link"
-                                           href="javascript:void(0);" data-option="user-agents"
-                                           >User Agents</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a data-target="nodes.dataType"
-                                           data-action="click->nodes#setDataType" class="nav-link"
-                                           href="javascript:void(0);" data-option="countries"
-                                           >Countries</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
-                <div>
+                <div class="col-8 offset-2">
                     <div class="inner-content d-hide" data-target="nodes.tableWrapper">
                         <div class="table-details">
                             <h3 data-target="nodes.tableTitle">Network Snapshots</h3>

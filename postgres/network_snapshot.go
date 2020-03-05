@@ -363,7 +363,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context) (countries []netsnapsho
 	err error) {
 
 	sql := `SELECT node.country, COUNT(node.country) AS number from node 
-		GROUP BY node.country`
+		GROUP BY number`
 
 	var result []struct {
 		Country string `json:"country"`

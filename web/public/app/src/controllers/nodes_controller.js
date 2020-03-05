@@ -19,9 +19,9 @@ import humanize from '../helpers/humanize_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
-const dataTypeSnapshot = 'snapshot'
-const dataTypeUserAgents = 'user-agents'
-const dataTypeCountries = 'countries'
+const dataTypeNodes = 'nodes'
+const dataTypeVersion = 'version'
+const dataTypeLocation = 'location'
 
 export default class extends Controller {
   timestamp
@@ -46,7 +46,7 @@ export default class extends Controller {
     this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
-    this.dataType = this.data.get('dataType') || dataTypeSnapshot
+    this.dataType = this.data.get('dataType') || dataTypeNodes
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
 
     this.zoomCallback = this._zoomCallback.bind(this)
@@ -119,15 +119,15 @@ export default class extends Controller {
     let url
     let displayFn
     switch (this.dataType) {
-      case dataTypeUserAgents:
+      case dataTypeVersion:
         url = '/api/snapshots/user-agents'
         displayFn = this.displayUserAgents
         break
-      case dataTypeCountries:
+      case dataTypeLocation:
         url = '/api/snapshots/countries'
         displayFn = this.displayCountries
         break
-      case dataTypeSnapshot:
+      case dataTypeNodes:
       default:
         url = '/api/snapshots'
         displayFn = this.displaySnapshotTable
@@ -174,7 +174,7 @@ export default class extends Controller {
 
   displayUserAgents (result) {
     this.tableTitleTarget.innerHTML = 'User Agents'
-    this.showHeader(dataTypeUserAgents)
+    this.showHeader(dataTypeVersion)
     this.tableBodyTarget.innerHTML = ''
 
     const _this = this
@@ -195,7 +195,7 @@ export default class extends Controller {
 
   displayCountries (result) {
     this.tableTitleTarget.innerHTML = 'Countries'
-    this.showHeader(dataTypeCountries)
+    this.showHeader(dataTypeLocation)
     this.tableBodyTarget.innerHTML = ''
 
     const _this = this
@@ -216,7 +216,7 @@ export default class extends Controller {
 
   displaySnapshotTable (result) {
     this.tableTitleTarget.innerHTML = 'Network Snapshots'
-    this.showHeader(dataTypeSnapshot)
+    this.showHeader(dataTypeNodes)
     this.tableBodyTarget.innerHTML = ''
 
     const _this = this
@@ -312,15 +312,15 @@ export default class extends Controller {
     let drawChartFn
 
     switch (this.dataType) {
-      case dataTypeUserAgents:
+      case dataTypeVersion:
         url = '/api/snapshots/user-agents?chart=1'
         drawChartFn = this.drawUserAgentsChart
         break
-      case dataTypeCountries:
+      case dataTypeLocation:
         url = '/api/snapshots/countries?chart=1'
         drawChartFn = this.drawCountriesChart
         break
-      case dataTypeSnapshot:
+      case dataTypeNodes:
       default:
         url = '/api/snapshots/chart'
         drawChartFn = this.drawSnapshotChart
