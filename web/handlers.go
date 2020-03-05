@@ -1790,28 +1790,52 @@ func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	s.render("node.html", map[string]interface{}{"node": node, "bestBlockHeight": int64(bestBlockHeight)}, w)
 }
 
-// /api/snapshot/{timestamp}/user-agents
+// /api/snapshots/user-agents
 func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
-	timestamp := getTitmestampCtx(r)
-	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), timestamp)
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
 	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by user agents, %s", err.Error()), w)
+		pageSize = defaultPageSize
+	}
+
+	userAgents, err := s.db.PeerCountByUserAgents(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
 		return
 	}
 
-	s.renderJSON(map[string]interface{}{"userAgents": userAgents}, w)
+	total := len(userAgents)
+	var totalPages int
+	if total % pageSize == 0 {
+		totalPages = total / pageSize
+	} else {
+		totalPages = 1 + (total - total % pageSize) / pageSize
+	}
+
+	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
 }
 
-// /api/snapshot/{timestamp}/countries
+// /api/snapshots/countries
 func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
-	timestamp := getTitmestampCtx(r)
-	countries, err := s.db.PeerCountByCountries(r.Context(), timestamp)
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+
+	countries, err := s.db.PeerCountByCountries(r.Context())
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
 	}
 
-	s.renderJSON(map[string]interface{}{"countries": countries}, w)
+	total := len(countries)
+	var totalPages int
+	if total % pageSize == 0 {
+		totalPages = total / pageSize
+	} else {
+		totalPages = 1 + (total - total % pageSize) / pageSize
+	}
+
+	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
 }
 
 // /api/snapshot/nodes/count-by-timestamp

@@ -36,7 +36,7 @@ export default class extends Controller {
       'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType', 'numPageWrapper', 'pageSize',
       'messageView', 'chartWrapper', 'chartsView', 'labels',
       'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
-      'snapshotRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
+      'snapshotRowTemplate', 'userAgentRowTemplate', 'countriesRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
       'dataTypeSelector', 'dataType'
     ]
   }
@@ -46,13 +46,17 @@ export default class extends Controller {
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
     this.dataType = this.data.get('dataType') || dataTypeSnapshot
+    setActiveOptionBtn(this.dataType, this.dataTypeTargets)
 
     this.zoomCallback = this._zoomCallback.bind(this)
     this.drawCallback = this._drawCallback.bind(this)
 
     this.userAgentsPage = 1
     this.countriesPage = 1
+    this.updateView()
+  }
 
+  updateView () {
     if (this.selectedViewOption === 'table') {
       this.setTable()
     } else {
@@ -95,6 +99,7 @@ export default class extends Controller {
     this.dataType = e.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
     insertOrUpdateQueryParam('data-type', this.dataType)
+    this.updateView()
   }
 
   loadNextPage () {
@@ -117,8 +122,12 @@ export default class extends Controller {
     let displayFn
     switch (this.dataType) {
       case dataTypeUserAgents:
+        url = '/api/snapshots/user-agents'
+        displayFn = this.displayUserAgents
         break
       case dataTypeCountries:
+        url = '/api/snapshots/countries'
+        displayFn = this.displayCountries
         break
       case dataTypeSnapshot:
       default:
@@ -163,6 +172,48 @@ export default class extends Controller {
       hideLoading(_this.loadingDataTarget)
       console.log(e) // todo: handle error
     })
+  }
+
+  displayUserAgents (result) {
+    this.tableTitleTarget.innerHTML = 'User Agents'
+    this.showHeader(dataTypeUserAgents)
+    this.tableBodyTarget.innerHTML = ''
+
+    const _this = this
+    let offset = (_this.currentPage - 1) * _this.pageSize
+    let top = Math.min(offset + this.pageSize, result.userAgents.length)
+    for (let i = offset; i < top; i++) {
+      let item = result.userAgents[i]
+      const exRow = document.importNode(_this.userAgentRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerText = i + offset
+      fields[1].innerText = item.user_agent
+      fields[2].innerText = item.nodes
+
+      _this.tableBodyTarget.appendChild(exRow)
+    }
+  }
+
+  displayCountries (result) {
+    this.tableTitleTarget.innerHTML = 'Countries'
+    this.showHeader(dataTypeCountries)
+    this.tableBodyTarget.innerHTML = ''
+
+    const _this = this
+    let offset = (_this.currentPage - 1) * _this.pageSize
+    let top = Math.min(offset + this.pageSize, result.countries.length)
+    for (let i = offset; i < top; i++) {
+      let item = result.countries[i]
+      const exRow = document.importNode(_this.countriesRowTemplateTarget.content, true)
+      const fields = exRow.querySelectorAll('td')
+
+      fields[0].innerText = i + offset
+      fields[1].innerText = item.country || 'Unknown'
+      fields[2].innerText = item.nodes
+
+      _this.tableBodyTarget.appendChild(exRow)
+    }
   }
 
   displaySnapshotTable (result) {

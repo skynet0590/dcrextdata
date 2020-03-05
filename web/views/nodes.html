@@ -8,7 +8,7 @@
     <div class="content" data-controller="nodes"
          data-nodes-page-size="{{ .pageSize }}"
          data-nodes-view-option="{{ .selectedViewOption }}"
-         data-nodes-data-type=""
+         data-nodes-data-type="{{ .dataType }}"
     >
         <div class="container-fluid">
 
@@ -96,9 +96,19 @@
                         </div>
                         <table class="table mx-auto">
                             <thead>
-                            <tr data-target="nodes.tableHeader" data-for="snapshot">
+                            <tr class="d-hide" data-target="nodes.tableHeader" data-for="snapshot">
                                 <th>Date (UTC)</th>
                                 <th>Height</th>
+                                <th># of Nodes</th>
+                            </tr>
+                            <tr class="d-hide" data-target="nodes.tableHeader" data-for="user-agents">
+                                <th>Rank</th>
+                                <th>User Agent</th>
+                                <th># of Nodes</th>
+                            </tr>
+                            <tr class="d-hide" data-target="nodes.tableHeader" data-for="countries">
+                                <th>Rank</th>
+                                <th>Country</th>
                                 <th># of Nodes</th>
                             </tr>
                             </thead>
@@ -107,6 +117,22 @@
                         </table>
 
                         <template data-target="nodes.snapshotRowTemplate">
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </template>
+
+                        <template data-target="nodes.userAgentRowTemplate">
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </template>
+
+                        <template data-target="nodes.countriesRowTemplate">
                             <tr>
                                 <td></td>
                                 <td></td>

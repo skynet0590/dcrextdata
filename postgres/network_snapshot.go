@@ -96,7 +96,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 		}
 	}
 
-	total, err := pg.SnapshotCount(ctx)
+	total, err := models.NetworkSnapshots(models.NetworkSnapshotWhere.Height.GT(0)).Count(ctx, pg.db)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -324,12 +324,11 @@ func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCoun
 	return result, err
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo,
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context) (userAgents []netsnapshot.UserAgentInfo,
 	err error) {
 
-	sql := fmt.Sprintf(`SELECT node.user_agent, COUNT(node.user_agent) AS number from node 
-			INNER JOIN heartbeat ON node.address = heartbeat.node_id
-		WHERE heartbeat.timestamp = %d GROUP BY node.user_agent ORDER BY number DESC`, timestamp)
+	sql := `SELECT node.user_agent, COUNT(node.user_agent) AS number from node 
+						GROUP BY node.user_agent ORDER BY number DESC`
 
 	var result []struct {
 		UserAgent string `json:"user_agent"`
@@ -365,12 +364,11 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (user
 	return
 }
 
-func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo,
+func (pg PgDb) PeerCountByCountries(ctx context.Context) (countries []netsnapshot.CountryInfo,
 	err error) {
 
-	sql := fmt.Sprintf(`SELECT node.country, COUNT(node.country) AS number from node 
-		INNER JOIN heartbeat on heartbeat.node_id = node.address WHERE heartbeat.timestamp = %d 
-		GROUP BY node.country ORDER BY number DESC`, timestamp)
+	sql := `SELECT node.country, COUNT(node.country) AS number from node 
+		GROUP BY node.country ORDER BY number DESC`
 
 	var result []struct {
 		Country string `json:"country"`

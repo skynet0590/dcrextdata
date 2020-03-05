@@ -84,9 +84,9 @@ type DataQuery interface {
 	SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCount, error)
 	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
 	NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
-	PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error)
+	PeerCountByUserAgents(ctx context.Context) (userAgents []netsnapshot.UserAgentInfo, err error)
 	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)
-	PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo, err error)
+	PeerCountByCountries(ctx context.Context) (countries []netsnapshot.CountryInfo, err error)
 }
 
 type Server struct {
@@ -181,9 +181,9 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
 	r.Get("/api/snapshots", s.snapshots)
 	r.Get("/api/snapshots/chart", s.snapshotsChart)
+	r.Get("/api/snapshots/user-agents", s.nodesCountUserAgents)
+	r.Get("/api/snapshots/countries", s.nodesCountByCountries)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
-	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountUserAgents)
-	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)
 	r.Get("/api/snapshot/nodes/count-by-timestamp", s.nodeCountByTimestamp)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
