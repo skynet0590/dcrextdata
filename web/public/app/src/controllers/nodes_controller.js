@@ -9,7 +9,8 @@ import {
   show,
   showLoading,
   updateQueryParam,
-  hideAll
+  hideAll,
+  barChartPlotter
 } from '../utils'
 
 import { animationFrame } from '../helpers/animation_helper'
@@ -312,12 +313,12 @@ export default class extends Controller {
 
     switch (this.dataType) {
       case dataTypeUserAgents:
-        url = '/api/snapshots/user-agents'
+        url = '/api/snapshots/user-agents?chart=1'
         drawChartFn = this.drawUserAgentsChart
         break
       case dataTypeCountries:
-        url = '/api/snapshots/countries'
-        drawChartFn = this.drawSnapshotChart
+        url = '/api/snapshots/countries?chart=1'
+        drawChartFn = this.drawCountriesChart
         break
       case dataTypeSnapshot:
       default:
@@ -403,11 +404,57 @@ export default class extends Controller {
         legend: 'always',
         includeZero: true,
         legendFormatter: legendFormatter,
+        plotter: barChartPlotter,
         digitsAfterDecimal: 8,
         labelsDiv: this.labelsTarget,
         ylabel: 'Node Count',
         xlabel: 'User Agent',
         labels: ['User Agent', 'Node Count'],
+        labelsUTC: true,
+        labelsKMB: true,
+        maxNumberWidth: 10,
+        showRangeSelector: true,
+        axes: {
+          x: {
+            valueFormatter: (x) => {
+              return labelMap[parseInt(x)]
+            },
+            axisLabelFormatter: (x) => {
+              return labelMap[parseInt(x)]
+            }
+          },
+          y: {
+            axisLabelWidth: 90
+          }
+        }
+      }
+    )
+    hideLoading(this.loadingDataTarget)
+  }
+
+  drawCountriesChart (result) {
+    let csv = '0,0\n1,0\n'
+    let i = 2
+    let labelMap = [0, 0]
+    result.countries.forEach(record => {
+      csv += `${i},${record.nodes}\n`
+      labelMap.push(record.country)
+      i++
+    })
+
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      csv,
+      {
+        legend: 'always',
+        includeZero: true,
+        legendFormatter: legendFormatter,
+        plotter: barChartPlotter,
+        digitsAfterDecimal: 8,
+        labelsDiv: this.labelsTarget,
+        ylabel: 'Node Count',
+        xlabel: 'Country',
+        labels: ['Country', 'Node Count'],
         labelsUTC: true,
         labelsKMB: true,
         maxNumberWidth: 10,

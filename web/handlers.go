@@ -1803,6 +1803,12 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.FormValue("chart") != "1" {
+		sort.Slice(userAgents, func(i, j int) bool {
+			return userAgents[i].Nodes > userAgents[j].Nodes
+		})
+	}
+
 	total := len(userAgents)
 	var totalPages int
 	if total % pageSize == 0 {
@@ -1825,6 +1831,12 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
+	}
+
+	if r.FormValue("chart") != "1" {
+		sort.Slice(countries, func(i, j int) bool {
+			return countries[i].Nodes > countries[j].Nodes
+		})
 	}
 
 	total := len(countries)

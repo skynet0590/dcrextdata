@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sort"
 	"strings"
 
 	"github.com/raedahgroup/dcrextdata/netsnapshot"
@@ -328,7 +327,7 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context) (userAgents []netsnaps
 	err error) {
 
 	sql := `SELECT node.user_agent, COUNT(node.user_agent) AS number from node 
-						GROUP BY node.user_agent ORDER BY number DESC`
+						GROUP BY node.user_agent`
 
 	var result []struct {
 		UserAgent string `json:"user_agent"`
@@ -357,10 +356,6 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context) (userAgents []netsnaps
 		})
 	}
 
-	sort.Slice(userAgents, func(i, j int) bool {
-		return userAgents[i].Nodes > userAgents[j].Nodes
-	})
-
 	return
 }
 
@@ -368,7 +363,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context) (countries []netsnapsho
 	err error) {
 
 	sql := `SELECT node.country, COUNT(node.country) AS number from node 
-		GROUP BY node.country ORDER BY number DESC`
+		GROUP BY node.country`
 
 	var result []struct {
 		Country string `json:"country"`
@@ -396,10 +391,6 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context) (countries []netsnapsho
 			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
 		})
 	}
-
-	sort.Slice(countries, func(i, j int) bool {
-		return countries[i].Nodes > countries[j].Nodes
-	})
 
 	return
 }
