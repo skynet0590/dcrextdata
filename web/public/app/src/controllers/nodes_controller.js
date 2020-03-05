@@ -134,7 +134,7 @@ export default class extends Controller {
         break
     }
     const _this = this
-
+    showLoading(this.loadingDataTarget, [_this.tableWrapperTarget])
     url += `?page=${this.currentPage}&page-size=${this.pageSize}`
     axios.get(url).then(function (response) {
       let result = response.data
