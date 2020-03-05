@@ -66,22 +66,42 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 	return &snapshot, err
 }
 
-func (pg PgDb) Snapshots(ctx context.Context) ([]netsnapshot.SnapShot, error) {
-	snapshotSlice, err := models.NetworkSnapshots(qm.OrderBy("timestamp")).All(ctx, pg.db)
+func (pg PgDb) SnapshotCount(ctx context.Context) (int64, error) {
+	return models.NetworkSnapshots().Count(ctx, pg.db)
+}
+
+func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) ([]netsnapshot.SnapShot, int64, error) {
+	var queries = []qm.QueryMod{
+		models.NetworkSnapshotWhere.Height.GT(0),
+		qm.Offset(offset),
+	}
+	if !forChart {
+		queries = append(queries, qm.Limit(limit))
+		queries = append(queries, qm.OrderBy("timestamp desc"))
+	} else {
+		queries = append(queries, qm.OrderBy("timestamp"))
+	}
+
+	snapshotSlice, err := models.NetworkSnapshots(queries...).All(ctx, pg.db)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	snapshots := make([]netsnapshot.SnapShot, len(snapshotSlice))
 	for i, m := range snapshotSlice {
-		snapshots[i] = netsnapshot.SnapShot {
+		snapshots[i] = netsnapshot.SnapShot{
 			Timestamp: m.Timestamp,
-			Height: m.Height,
+			Height:    m.Height,
 			NodeCount: m.NodeCount,
 		}
 	}
 
-	return snapshots, nil
+	total, err := pg.SnapshotCount(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return snapshots, total, nil
 }
 
 func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error) {
@@ -151,17 +171,17 @@ func (pg PgDb) NodeExists(ctx context.Context, address string) (bool, error) {
 	return models.NodeExists(ctx, pg.db, address)
 }
 
-func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error  {
+func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
 	newNode := models.Node{
 		Address:         peer.Address,
 		IPVersion:       peer.IPVersion,
 		Country:         peer.CountryName,
 		Region:          peer.RegionName,
 		City:            peer.City,
-		Zip: 			 peer.Zip,
+		Zip:             peer.Zip,
 		LastAttempt:     peer.LastSeen,
 		LastSeen:        peer.LastSeen,
-		LastSuccess: 	 peer.LastSuccess,
+		LastSuccess:     peer.LastSuccess,
 		ConnectionTime:  peer.ConnectionTime,
 		ProtocolVersion: int(peer.ProtocolVersion),
 		UserAgent:       peer.UserAgent,
@@ -176,17 +196,17 @@ func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error
 
 func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
 	var cols = models.M{
-		models.NodeColumns.LastAttempt: peer.LastAttempt,
-		models.NodeColumns.LastSeen: peer.LastSeen,
-		models.NodeColumns.LastSuccess: peer.LastSuccess,
-		models.NodeColumns.Services: peer.Services,
+		models.NodeColumns.LastAttempt:    peer.LastAttempt,
+		models.NodeColumns.LastSeen:       peer.LastSeen,
+		models.NodeColumns.LastSuccess:    peer.LastSuccess,
+		models.NodeColumns.Services:       peer.Services,
 		models.NodeColumns.StartingHeight: peer.StartingHeight,
-		models.NodeColumns.UserAgent: peer.UserAgent,
-		models.NodeColumns.CurrentHeight: peer.CurrentHeight,
+		models.NodeColumns.UserAgent:      peer.UserAgent,
+		models.NodeColumns.CurrentHeight:  peer.CurrentHeight,
 		models.NodeColumns.ConnectionTime: peer.ConnectionTime,
 	}
-	 _, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).UpdateAll(ctx, pg.db, cols)
-	 return err
+	_, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).UpdateAll(ctx, pg.db, cols)
+	return err
 }
 
 func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error) {
@@ -200,7 +220,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	sql := `SELECT node.address, node.country, node.last_seen, node.connection_time, node.protocol_version,
 			node.user_agent, node.starting_height, node.current_height, node.services FROM heartbeat 
 			INNER JOIN node on node.address = heartbeat.node_id WHERE ` + where +
-			fmt.Sprintf(" ORDER BY node.last_seen DESC LIMIT %d OFFSET %d", limit, offset)
+		fmt.Sprintf(" ORDER BY node.last_seen DESC LIMIT %d OFFSET %d", limit, offset)
 
 	var peerSlice models.NodeSlice
 	err := models.NewQuery(qm.SQL(sql)).Bind(ctx, pg.db, &peerSlice)
@@ -231,7 +251,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 	}
 
 	sql = "SELECT COUNT(heartbeat.node_id) as total FROM heartbeat INNER JOIN node on node.address = heartbeat.node_id WHERE " + where
-	var countResult struct{Total int64}
+	var countResult struct{ Total int64 }
 	err = models.NewQuery(qm.SQL(sql)).Bind(ctx, pg.db, &countResult)
 	if err != nil {
 		return nil, 0, err
@@ -305,7 +325,7 @@ func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCoun
 }
 
 func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo,
-	 err error) {
+	err error) {
 
 	sql := fmt.Sprintf(`SELECT node.user_agent, COUNT(node.user_agent) AS number from node 
 			INNER JOIN heartbeat ON node.address = heartbeat.node_id
@@ -346,7 +366,7 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) (user
 }
 
 func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo,
-	 err error) {
+	err error) {
 
 	sql := fmt.Sprintf(`SELECT node.country, COUNT(node.country) AS number from node 
 		INNER JOIN heartbeat on heartbeat.node_id = node.address WHERE heartbeat.timestamp = %d 
@@ -354,7 +374,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (count
 
 	var result []struct {
 		Country string `json:"country"`
-		Number    int64  `json:"number"`
+		Number  int64  `json:"number"`
 	}
 
 	err = models.Heartbeats(qm.SQL(sql)).Bind(ctx, pg.db, &result)
@@ -373,7 +393,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (count
 			country = "Unknown"
 		}
 		countries = append(countries, netsnapshot.CountryInfo{
-			Country:  item.Country,
+			Country:    item.Country,
 			Nodes:      item.Number,
 			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
 		})
@@ -387,7 +407,7 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) (count
 }
 
 func (pg PgDb) PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error) {
-	var result struct{Total int64}
+	var result struct{ Total int64 }
 	err := models.NewQuery(
 		qm.Select("COUNT(h.node_id) as total"),
 		qm.From(fmt.Sprintf("%s as h", models.TableNames.Heartbeat)),

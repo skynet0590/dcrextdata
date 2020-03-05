@@ -116,7 +116,6 @@ func (t taker) Start(ctx context.Context) {
 			// update all reachable nodes
 			loadLiveNodes()
 
-
 		case node := <-amgr.goodPeer:
 			if node.IP.String() == "127.0.0.1" { // do not add the local IP
 				break
@@ -126,14 +125,14 @@ func (t taker) Start(ctx context.Context) {
 				Timestamp:       timestamp,
 				Address:         node.IP.String(),
 				LastSeen:        node.LastSeen.UTC().Unix(),
-				LastSuccess: 	 node.LastSuccess.UTC().Unix(),
+				LastSuccess:     node.LastSuccess.UTC().Unix(),
 				ConnectionTime:  node.ConnectionTime,
 				ProtocolVersion: node.ProtocolVersion,
 				UserAgent:       node.UserAgent,
 				StartingHeight:  node.StartingHeight,
 				CurrentHeight:   node.CurrentHeight,
-				Services: 		 node.Services.String(),
-				Latency: 		 int(node.Latency),
+				Services:        node.Services.String(),
+				Latency:         int(node.Latency),
 			}
 
 			if exists, _ := t.dataStore.NodeExists(ctx, networkPeer.Address); exists {

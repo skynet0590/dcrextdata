@@ -1688,70 +1688,78 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		viewOption = defaultViewOption
 	}
 
-	var timestamp, previousTimestamp, nextTimestamp int64
+	dataType := r.FormValue("data-type")
+	if dataType == "" {
+		dataType = "snapshot"
+	}
 
-	timestamp = getTitmestampCtx(r)
-	if timestamp == 0 {
-		timestamp = s.db.LastSnapshotTime(r.Context())
-		if timestamp == 0 {
-			s.renderError("No snapshot has been taken, please enable Network snapshot from the config file and try again.", w)
+	//
+	var totalCount, pageCount int64
+	var err error
+	switch dataType {
+	case "snapshot":
+	default:
+		totalCount, err = s.db.SnapshotCount(r.Context())
+		if err != nil {
+			s.renderError(err.Error(), w)
 			return
 		}
 	}
 
-	if snapshot, err := s.db.PreviousSnapshot(r.Context(), timestamp); err == nil {
-		previousTimestamp = snapshot.Timestamp
+	if totalCount%int64(pageSize) == 0 {
+		pageCount = totalCount / int64(pageSize)
+	} else {
+		pageCount = 1 + (totalCount-totalCount%int64(pageSize))/int64(pageSize)
 	}
 
-	if snapshot, err := s.db.NextSnapshot(r.Context(), timestamp); err == nil {
-		nextTimestamp = snapshot.Timestamp
-	}
-
-	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot find snapshot to the specified timestamp, %s", err.Error()), w)
-		return
-	}
-
-	ipv4Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 4)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by ipv4, %s", err.Error()), w)
-		return
-	}
-
-	ipv6Count, err := s.db.PeerCountByIPVersion(r.Context(), timestamp, 6)
-	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by ipv6, %s", err.Error()), w)
-		return
-	}
-
-	peerCount, err := s.db.TotalPeerCount(r.Context(), timestamp)
-	if err != nil {
-		s.renderErrorf("Cannot get total peer count, %s", w, err.Error())
-		return
-	}
+	var previousPage int = page - 1
+	var nextPage int = page + 1
 
 	data := map[string]interface{}{
 		"selectedViewOption": viewOption,
+		"dataType":           dataType,
 		"pageSizeSelector":   pageSizeSelector,
-		"page":               page,
+		"previousPage":       previousPage,
+		"currentPage":        page,
+		"nextPage":           nextPage,
 		"pageSize":           pageSize,
-		"pageCount":          0,
-		"snapshot":           snapshot,
-		"ipv4Count":          ipv4Count,
-		"ipv6Count":          ipv6Count,
-		"previousTimestamp":  previousTimestamp,
-		"nextTimestamp":      nextTimestamp,
-		"peerCount":          peerCount,
-		"query":              r.FormValue("q"),
+		"totalPages":         pageCount,
 	}
 
 	s.render("nodes.html", data, w)
 }
 
 // /api/snapshots
-func (s *Server) snapshots(w http.ResponseWriter, r *http.Request)  {
-	result, err := s.db.Snapshots(r.Context())
+func (s *Server) snapshots(w http.ResponseWriter, r *http.Request) {
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+
+	page, err := strconv.Atoi(r.FormValue("page"))
+	if err != nil {
+		page = 1
+	}
+
+	offset := (page - 1) * pageSize
+
+	result, total, err := s.db.Snapshots(r.Context(), offset, pageSize, false)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
+		return
+	}
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
+	} else {
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+	}
+	s.renderJSON(map[string]interface{}{"data": result, "total": total, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/chart
+func (s *Server) snapshotsChart(w http.ResponseWriter, r *http.Request) {
+	result, _, err := s.db.Snapshots(r.Context(), 0, -1, true)
 	if err != nil {
 		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
 		return
@@ -1817,7 +1825,7 @@ func (s *Server) nodeCountByTimestamp(w http.ResponseWriter, r *http.Request) {
 }
 
 // /api/snapshot/{timestamp}/nodes
-func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
+func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	page, _ := strconv.Atoi(r.FormValue("page"))
 	if page < 1 {
@@ -1846,7 +1854,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	rem := peerCount% defaultPageSize
+	rem := peerCount % defaultPageSize
 	pageCount := (peerCount - rem) / defaultPageSize
 	if rem > 0 {
 		pageCount += 1
@@ -1856,7 +1864,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request)  {
 		"page":      page,
 		"pageCount": pageCount,
 		"peerCount": peerCount,
-		"nodes": 	 nodes,
+		"nodes":     nodes,
 	}, w)
 }
 

@@ -193,11 +193,11 @@ func _main(ctx context.Context) error {
 	// if mempool is not disable, check that a dcrclient can be created before showing app version
 	if !cfg.DisableMempool {
 		connCfg := &rpcclient.ConnConfig{
-			Host:         cfg.DcrdRpcServer,
-			Endpoint:     "ws",
-			User:         cfg.DcrdRpcUser,
-			Pass:         cfg.DcrdRpcPassword,
-			DisableTLS:   cfg.DisableTLS,
+			Host:       cfg.DcrdRpcServer,
+			Endpoint:   "ws",
+			User:       cfg.DcrdRpcUser,
+			Pass:       cfg.DcrdRpcPassword,
+			DisableTLS: cfg.DisableTLS,
 		}
 
 		if !cfg.DisableTLS {
@@ -205,7 +205,7 @@ func _main(ctx context.Context) error {
 			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
 			if err != nil {
 				log.Error("Error in reading dcrd cert: ", err)
-				return nil 
+				return nil
 			}
 			connCfg.Certificates = certs
 		}

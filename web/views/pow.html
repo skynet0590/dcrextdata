@@ -135,7 +135,7 @@
                                         {{ end }}
                                     </select>
                                 </div>
-                                <div data-target="pow.pageSizeWrapper" class="page-size d-flex {{ if .pow.chartView }}d-none{{ end }}">
+                                <div data-target="pow.pageSizeWrapper" class="page-size d-flex mt-1 {{ if .pow.chartView }}d-none{{ end }}">
                                     <a href="javascript:void(0)" data-target="pow.previousPageButton" data-action="click->pow#loadPreviousPage" class="mr-2 {{ if lt .pow.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
         
                                     <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="pow.currentPage" class="text-muted" data-current-page="{{ .pow.currentPage }}"> {{ .pow.currentPage }}</span> of <span data-target="pow.totalPageCount" class="text-muted">{{ .pow.totalPages }}</span>

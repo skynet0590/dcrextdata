@@ -138,7 +138,7 @@ type ConfigFileOptions struct {
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
 	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
-	DisableTLS		bool	`long:"dcrdisabletls" description:"DisableTLS specifies whether transport layer security should be disabled"`
+	DisableTLS      bool    `long:"dcrdisabletls" description:"DisableTLS specifies whether transport layer security should be disabled"`
 
 	// sync
 	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`
@@ -146,8 +146,8 @@ type ConfigFileOptions struct {
 	SyncSources   []string `long:"syncsource" description:"Address of remote instance to sync data from"`
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 
-	CommunityStatOptions   
-	NetworkSnapshotOptions 
+	CommunityStatOptions
+	NetworkSnapshotOptions
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu

@@ -1,23 +1,26 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import moment from 'moment'
 import {
-  getNumberOfPages,
   hide,
-  hideAll, hideLoading,
+  hideLoading,
   insertOrUpdateQueryParam, legendFormatter, options,
   selectedOption,
   setActiveOptionBtn,
-  setAllValues,
   show,
-  showAll, showLoading,
-  updateQueryParam
+  showLoading,
+  updateQueryParam,
+  hideAll
 } from '../utils'
 
 import { animationFrame } from '../helpers/animation_helper'
 import Zoom from '../helpers/zoom_helper'
+import humanize from '../helpers/humanize_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
+
+const dataTypeSnapshot = 'snapshot'
+const dataTypeUserAgents = 'user-agents'
+const dataTypeCountries = 'countries'
 
 export default class extends Controller {
   timestamp
@@ -30,21 +33,19 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType', 'numPageWrapper', 'selectedNumberOfRows',
+      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType', 'numPageWrapper', 'pageSize',
       'messageView', 'chartWrapper', 'chartsView', 'labels',
-      'timestamp', 'height', 'queryInput', 'peerCount', 'userAgents', 'previousUserAgentsButton', 'nextUserAgentsButton',
-      'userAgentRowTemplate', 'nextCountriesButton', 'previousCountriesButton', 'countries', 'countryRowTemplate',
-      'nextPageButton', 'previousPageButton', 'tableWrapper', 'tableBody', 'rowTemplate', 'totalPageCount', 'currentPage', 'loadingData'
+      'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
+      'snapshotRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
+      'dataTypeSelector', 'dataType'
     ]
   }
 
   async initialize () {
-    this.timestamp = parseInt(this.timestampTarget.dataset.initialValue)
-    this.height = parseInt(this.heightTarget.dataset.initialValue)
     this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
-    this.query = this.queryInputTarget.value
+    this.dataType = this.data.get('dataType') || dataTypeSnapshot
 
     this.zoomCallback = this._zoomCallback.bind(this)
     this.drawCallback = this._drawCallback.bind(this)
@@ -67,11 +68,7 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption)
-    await this.loadCountries()
-    this.displayCountries()
-    await this.loadUserAgents()
-    this.displayUserAgents()
-    this.loadNetworkPeers()
+    this.reloadTable()
   }
 
   setChart () {
@@ -83,210 +80,122 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     updateQueryParam('view-option', this.selectedViewOption)
-    this.fetchDataAndPlotGraph()
-  }
-
-  changePageSize (e) {
-    this.pageSize = parseInt(e.currentTarget.value)
-    updateQueryParam('page-size', this.pageSize)
-    this.loadNetworkPeers()
-  }
-
-  loadPreviousPage (e) {
-    e.preventDefault()
-    this.currentPage = this.currentPage - 1
-    this.loadNetworkPeers()
-    insertOrUpdateQueryParam('page', this.currentPage)
-  }
-
-  loadNextPage (e) {
-    e.preventDefault()
-    this.currentPage = this.currentPage + 1
-    this.loadNetworkPeers()
-    insertOrUpdateQueryParam('page', this.currentPage)
-  }
-
-  queryLinkClicked (e) {
-    e.preventDefault()
-    this.query = this.queryInputTarget.value = e.currentTarget.dataset.query
-    this.search()
-  }
-
-  searchFormSubmitted (e) {
-    e.preventDefault()
-    this.query = this.queryInputTarget.value
-    this.search()
-  }
-
-  search (e) {
-    if (e) {
-      e.preventDefault()
+    switch (this.dataType) {
+      case dataTypeUserAgents:
+        break
+      case dataTypeCountries:
+        break
+      case dataTypeSnapshot:
+      default:
+        this.fetchDataAndPlotGraph()
     }
-    this.query = this.queryInputTarget.value
-    if (this.query === 'Unknown') {
-      this.query = ''
-    }
-    insertOrUpdateQueryParam('q', this.query)
-    this.currentPage = 1
-    insertOrUpdateQueryParam('page', 1)
-    this.loadNetworkPeers()
   }
 
-  loadNetworkPeers () {
-    showLoading(this.loadingDataTarget)
+  setDataType (e) {
+    this.dataType = e.currentTarget.getAttribute('data-option')
+    setActiveOptionBtn(this.dataType, this.dataTypeTargets)
+    insertOrUpdateQueryParam('data-type', this.dataType)
+  }
+
+  loadNextPage () {
+    this.currentPage += 1
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
+    this.reloadTable()
+  }
+
+  loadPreviousPage () {
+    this.currentPage -= 1
+    if (this.currentPage < 1) {
+      this.currentPage = 1
+    }
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
+    this.reloadTable()
+  }
+
+  reloadTable () {
+    let url
+    let displayFn
+    switch (this.dataType) {
+      case dataTypeUserAgents:
+        break
+      case dataTypeCountries:
+        break
+      case dataTypeSnapshot:
+      default:
+        url = '/api/snapshots'
+        displayFn = this.displaySnapshotTable
+        break
+    }
     const _this = this
-    const url = `/api/snapshot/${this.timestamp}/nodes?q=${this.query}&page=${this.currentPage}&page-size=${this.pageSize}`
-    axios.get(url).then(response => {
+
+    url += `?page=${this.currentPage}&page-size=${this.pageSize}`
+    axios.get(url).then(function (response) {
       let result = response.data
+      if (result.error) {
+        let messageHTML = `<div class="alert alert-primary"><strong>${result.message}</strong></div>`
+        _this.messageViewTarget.innerHTML = messageHTML
+        show(_this.messageViewTarget)
+        hide(_this.tableBodyTarget)
+        hide(_this.btnWrapperTarget)
+        return
+      }
+      hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
+      hide(_this.messageViewTarget)
+      show(_this.tableBodyTarget)
+      show(_this.btnWrapperTarget)
+      _this.totalPageCountTarget.textContent = result.totalPages
+      _this.currentPageTarget.textContent = _this.currentPage
+
       if (_this.currentPage <= 1) {
-        hideAll(_this.previousPageButtonTargets)
+        hide(_this.previousPageButtonTarget)
       } else {
-        showAll(_this.previousPageButtonTargets)
+        show(_this.previousPageButtonTarget)
       }
 
-      if (_this.currentPage >= result.pageCount) {
-        hideAll(_this.nextPageButtonTargets)
+      if (_this.currentPage >= result.totalPages) {
+        hide(_this.nextPageButtonTarget)
       } else {
-        showAll(_this.nextPageButtonTargets)
+        show(_this.nextPageButtonTarget)
       }
-
-      setAllValues(_this.currentPageTargets, result.page)
-      setAllValues(_this.totalPageCountTargets, result.pageCount)
-      setAllValues(_this.peerCountTargets, result.peerCount)
-
-      _this.displayNodes(result.nodes)
-      hideLoading(this.loadingDataTarget)
+      displayFn = displayFn.bind(_this)
+      displayFn(result)
+    }).catch(function (e) {
+      hideLoading(_this.loadingDataTarget)
+      console.log(e) // todo: handle error
     })
   }
 
-  displayNodes (nodes) {
-    const _this = this
+  displaySnapshotTable (result) {
+    this.tableTitleTarget.innerHTML = 'Network Snapshots'
+    this.showHeader(dataTypeSnapshot)
     this.tableBodyTarget.innerHTML = ''
-    if (!nodes) {
-      // todo show error message
-      return
-    }
-    nodes.forEach(node => {
-      const exRow = document.importNode(_this.rowTemplateTarget.content, true)
+
+    const _this = this
+    result.data.forEach(item => {
+      const exRow = document.importNode(_this.snapshotRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      let lastSeen = node.last_seen > 0 ? moment.unix(node.last_seen).fromNow() : 'N/A'
-      // let connectionTime = node.connection_time > 0 ? moment.unix(node.connection_time).fromNow() : 'N/A'
-
-      fields[0].innerHTML = `<a href="/nodes/view/${node.address}" title="Node status">${node.address}</a><br>
-        <span class="text-muted">Seen ${lastSeen}</span><br>`
-      fields[1].innerHTML = `${node.user_agent} (${node.protocol_version})<br>
-        <span class="text-muted">${node.services}</span>`
-      fields[2].innerHTML = `${node.current_height || 'Unknown'}
-        <div class="progress"><div class="progress-bar" style="width: ${(100 * node.current_height / _this.height).toFixed(2)}%;"></div></div>`
-      let location = node.city
-      if (node.region_name.length > 0) {
-        location = location.length > 0 ? `,${node.region_name}` : node.region_name
-      }
-      if (node.country_name.length > 0) {
-        location = location.length > 0 ? `,${node.country_name}` : node.country_name
-      }
-      fields[3].innerHTML = location
+      fields[0].innerText = humanize.date(item.timestamp * 1000)
+      fields[1].innerText = item.height
+      fields[2].innerText = item.node_count
 
       _this.tableBodyTarget.appendChild(exRow)
     })
   }
 
-  loadPreviousUserAgents () {
-    this.userAgentsPage -= 1
-    this.displayUserAgents()
-  }
-
-  loadNextUserAgents () {
-    this.userAgentsPage += 1
-    this.displayUserAgents()
-  }
-
-  async loadUserAgents () {
-    const that = this
-    const url = `/api/snapshot/${this.timestamp}/user-agents`
-    const response = await axios.get(url)
-    that.userAgents = response.data.userAgents
-  }
-
-  loadPreviousCountries () {
-    this.countriesPage -= 1
-    this.displayCountries()
-  }
-
-  loadNextCountries () {
-    this.countriesPage += 1
-    this.displayCountries()
-  }
-
-  displayUserAgents () {
-    if (!this.userAgents) return
-    let pageCount = getNumberOfPages(this.userAgents.length, 6)
-    if (this.userAgentsPage >= pageCount) {
-      hide(this.nextUserAgentsButtonTarget)
-    } else {
-      show(this.nextUserAgentsButtonTarget)
-    }
-
-    if (this.userAgentsPage <= 1) {
-      hide(this.previousUserAgentsButtonTarget)
-    } else {
-      show(this.previousUserAgentsButtonTarget)
-    }
-
-    this.userAgentsTarget.innerHTML = ''
-    const that = this
-    const offset = (this.userAgentsPage - 1) * 6
-    const userAgents = this.userAgents.slice(offset, offset + 6)
-    userAgents.forEach((userAgent, i) => {
-      const exRow = document.importNode(that.userAgentRowTemplateTarget.content, true)
-      const fields = exRow.querySelectorAll('td')
-
-      fields[0].innerHTML = 1 + i + offset
-      fields[1].innerHTML = `<a data-query="${userAgent.user_agent}" data-action="click->nodes#queryLinkClicked" 
-                                  href="#network-snapshot">${userAgent.user_agent}</a>`
-      fields[2].innerHTML = `${userAgent.nodes}(${userAgent.percentage}%)`
-
-      that.userAgentsTarget.appendChild(exRow)
+  showHeader (dataType) {
+    hideAll(this.tableHeaderTargets)
+    this.tableHeaderTargets.forEach(el => {
+      if (el.getAttribute('data-for') === dataType) {
+        show(el)
+      }
     })
   }
 
-  async loadCountries () {
-    const url = `/api/snapshot/${this.timestamp}/countries`
-    const response = await axios.get(url)
-    this.countries = response.data.countries
-  }
-
-  displayCountries () {
-    if (!this.countries) return
-    let pageCount = getNumberOfPages(this.countries.length, 6)
-    if (this.countriesPage >= pageCount) {
-      hide(this.nextCountriesButtonTarget)
-    } else {
-      show(this.nextCountriesButtonTarget)
-    }
-
-    if (this.countriesPage <= 1) {
-      hide(this.previousCountriesButtonTarget)
-    } else {
-      show(this.previousCountriesButtonTarget)
-    }
-
-    this.countriesTarget.innerHTML = ''
-    const that = this
-    const offset = (this.countriesPage - 1) * 6
-    const countries = this.countries.slice(offset, offset + 6)
-    countries.forEach((country, i) => {
-      const exRow = document.importNode(that.countryRowTemplateTarget.content, true)
-      const fields = exRow.querySelectorAll('td')
-
-      fields[0].innerHTML = 1 + i + offset
-      fields[1].innerHTML = `<a data-query="${country.country}" data-action="click->nodes#queryLinkClicked" 
-                                href="#network-snapshot">${country.country}</a>`
-      fields[2].innerHTML = `${country.nodes}(${country.percentage}%)`
-
-      that.countriesTarget.appendChild(exRow)
-    })
+  changePageSize (e) {
+    this.pageSize = parseInt(e.currentTarget.value)
+    insertOrUpdateQueryParam('page-size', this.pageSize, 20)
+    this.reloadTable()
   }
 
   // chart
@@ -352,7 +261,7 @@ export default class extends Controller {
   async fetchDataAndPlotGraph () {
     this.drawInitialGraph()
     showLoading(this.loadingDataTarget)
-    const response = await axios.get('/api/snapshots')
+    const response = await axios.get('/api/snapshots/chart')
     const result = response.data
     if (result.error) {
       this.messageViewTarget.innerHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`

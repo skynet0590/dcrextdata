@@ -127,7 +127,7 @@
                                 {{ end }}
                             </select>
                         </div>
-                        <div data-target="mempool.btnWrapper" class="page-size d-flex {{ if .mempool.chartView }}d-none{{ end }}">
+                        <div data-target="mempool.btnWrapper" class="page-size d-flex mt-1 {{ if .mempool.chartView }}d-none{{ end }}">
                             <a href="javascript:void(0)" data-target="mempool.previousPageButton"
                             data-action="click->mempool#loadPreviousPage"
                             class="mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>

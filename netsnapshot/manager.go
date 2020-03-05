@@ -24,7 +24,7 @@ type Node struct {
 	AttemptCount int
 	LastSuccess  time.Time
 	LastSeen     time.Time
-	Latency		 int64
+	Latency      int64
 
 	ConnectionTime  int64
 	ProtocolVersion uint32
@@ -44,7 +44,7 @@ type Manager struct {
 	quit        chan struct{}
 	peersFile   string
 
-	Seeder 	   string
+	Seeder     string
 	SeederPort string
 }
 

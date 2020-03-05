@@ -65,16 +65,17 @@ type DataQuery interface {
 	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
-	RedditStats(ctx context.Context, subreddit string, offtset int, limit int) ([]commstats.Reddit, error)
+	RedditStats(ctx context.Context, subreddit string, offset int, limit int) ([]commstats.Reddit, error)
 	CountTwitterStat(ctx context.Context, handle string) (int64, error)
-	TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error)
+	TwitterStats(ctx context.Context, handle string, offset int, limit int) ([]commstats.Twitter, error)
 	CountYoutubeStat(ctx context.Context, channel string) (int64, error)
-	YoutubeStat(ctx context.Context, channel string, offtset int, limit int) ([]commstats.Youtube, error)
+	YoutubeStat(ctx context.Context, channel string, offset int, limit int) ([]commstats.Youtube, error)
 	CountGithubStat(ctx context.Context, repository string) (int64, error)
-	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
+	GithubStat(ctx context.Context, repository string, offset int, limit int) ([]commstats.Github, error)
 	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
 
-	Snapshots(ctx context.Context) ([]netsnapshot.SnapShot, error)
+	Snapshots(ctx context.Context, offset, limit int, forChart bool) ([]netsnapshot.SnapShot, int64, error)
+	SnapshotCount(ctx context.Context) (int64, error)
 	LastSnapshotTime(ctx context.Context) (timestamp int64)
 	FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
 	PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
@@ -96,7 +97,7 @@ type Server struct {
 	extDbFactory func(name string) (DataQuery, error)
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain  *chaincfg.Params,
+func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain *chaincfg.Params,
 	extDbFactory func(name string) (DataQuery, error)) {
 
 	server := &Server{
@@ -179,6 +180,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.With(addTimestampToCtx).Get("/nodes/{timestamp}", s.snapshot)
 	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
 	r.Get("/api/snapshots", s.snapshots)
+	r.Get("/api/snapshots/chart", s.snapshotsChart)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/user-agents", s.nodesCountUserAgents)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/countries", s.nodesCountByCountries)

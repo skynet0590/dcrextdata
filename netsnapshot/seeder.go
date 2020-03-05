@@ -29,8 +29,8 @@ const (
 var (
 	defaultHomeDir = dcrutil.AppDataDir("dcrextdata", false)
 
-	amgr             *Manager
-	wg               sync.WaitGroup
+	amgr *Manager
+	wg   sync.WaitGroup
 )
 
 func creep(netParams *chaincfg.Params) {
@@ -107,7 +107,7 @@ func creep(netParams *chaincfg.Params) {
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     p.TimeConnected(),
 						LastSeen:        p.TimeConnected(),
-						Latency:		 -1, // peer is down
+						Latency:         -1, // peer is down
 						ConnectionTime:  p.TimeConnected().Unix(),
 						ProtocolVersion: p.ProtocolVersion(),
 						UserAgent:       p.UserAgent(),
@@ -131,7 +131,7 @@ func creep(netParams *chaincfg.Params) {
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     time.Now().UTC(),
 						LastSeen:        time.Now().UTC(),
-						Latency:		 latency,
+						Latency:         latency,
 						ConnectionTime:  p.TimeConnected().Unix(),
 						ProtocolVersion: p.ProtocolVersion(),
 						UserAgent:       p.UserAgent(),
@@ -145,23 +145,23 @@ func creep(netParams *chaincfg.Params) {
 				case <-time.After(defaultNodeTimeout):
 					log.Infof("verack timeout on peer %v",
 						p.Addr())
-						currHeight := p.LastBlock()
-						if currHeight == 0 {
-							currHeight = p.StartingHeight()
-						}
-						amgr.goodPeer <- &Node{
-							IP:              ip,
-							Services:        p.Services(),
-							LastAttempt:     time.Now().UTC(),
-							LastSuccess:     p.TimeConnected(),
-							LastSeen:        p.TimeConnected(),
-							Latency:		 latency,
-							ConnectionTime:  p.TimeConnected().Unix(),
-							ProtocolVersion: p.ProtocolVersion(),
-							UserAgent:       p.UserAgent(),
-							StartingHeight:  p.StartingHeight(),
-							CurrentHeight:   currHeight,
-						}
+					currHeight := p.LastBlock()
+					if currHeight == 0 {
+						currHeight = p.StartingHeight()
+					}
+					amgr.goodPeer <- &Node{
+						IP:              ip,
+						Services:        p.Services(),
+						LastAttempt:     time.Now().UTC(),
+						LastSuccess:     p.TimeConnected(),
+						LastSeen:        p.TimeConnected(),
+						Latency:         latency,
+						ConnectionTime:  p.TimeConnected().Unix(),
+						ProtocolVersion: p.ProtocolVersion(),
+						UserAgent:       p.UserAgent(),
+						StartingHeight:  p.StartingHeight(),
+						CurrentHeight:   currHeight,
+					}
 					p.Disconnect()
 					return
 				}
