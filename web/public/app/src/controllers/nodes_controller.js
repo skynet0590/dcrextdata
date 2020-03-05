@@ -97,6 +97,11 @@ export default class extends Controller {
 
   setDataType (e) {
     this.dataType = e.currentTarget.getAttribute('data-option')
+    if (this.dataType === selectedOption(this.dataTypeTargets)) {
+      return
+    }
+    this.currentPage = 1
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
     insertOrUpdateQueryParam('data-type', this.dataType)
     this.updateView()
@@ -187,7 +192,7 @@ export default class extends Controller {
       const exRow = document.importNode(_this.userAgentRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerText = i + offset
+      fields[0].innerText = i + offset + 1
       fields[1].innerText = item.user_agent
       fields[2].innerText = item.nodes
 
@@ -208,7 +213,7 @@ export default class extends Controller {
       const exRow = document.importNode(_this.countriesRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerText = i + offset
+      fields[0].innerText = i + offset + 1
       fields[1].innerText = item.country || 'Unknown'
       fields[2].innerText = item.nodes
 
