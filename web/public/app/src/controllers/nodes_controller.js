@@ -84,15 +84,7 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     updateQueryParam('view-option', this.selectedViewOption)
-    switch (this.dataType) {
-      case dataTypeUserAgents:
-        break
-      case dataTypeCountries:
-        break
-      case dataTypeSnapshot:
-      default:
-        this.fetchDataAndPlotGraph()
-    }
+    this.reloadChat()
   }
 
   setDataType (e) {
@@ -314,10 +306,29 @@ export default class extends Controller {
     this._zoomCallback(start, end)
   }
 
-  async fetchDataAndPlotGraph () {
+  async reloadChat () {
+    let url
+    let drawChartFn
+
+    switch (this.dataType) {
+      case dataTypeUserAgents:
+        url = '/api/snapshots/user-agents'
+        drawChartFn = this.drawUserAgentsChart
+        break
+      case dataTypeCountries:
+        url = '/api/snapshots/countries'
+        drawChartFn = this.drawSnapshotChart
+        break
+      case dataTypeSnapshot:
+      default:
+        url = '/api/snapshots/chart'
+        drawChartFn = this.drawSnapshotChart
+        break
+    }
+
     this.drawInitialGraph()
     showLoading(this.loadingDataTarget)
-    const response = await axios.get('/api/snapshots/chart')
+    const response = await axios.get(url)
     const result = response.data
     if (result.error) {
       this.messageViewTarget.innerHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`
@@ -326,7 +337,11 @@ export default class extends Controller {
       return
     }
     hide(this.messageViewTarget)
+    drawChartFn = drawChartFn.bind(this)
+    drawChartFn(result)
+  }
 
+  drawSnapshotChart (result) {
     let minDate, maxDate, csv
 
     result.forEach(record => {
@@ -361,6 +376,50 @@ export default class extends Controller {
         axes: {
           x: {
             drawGrid: false
+          },
+          y: {
+            axisLabelWidth: 90
+          }
+        }
+      }
+    )
+    hideLoading(this.loadingDataTarget)
+  }
+
+  drawUserAgentsChart (result) {
+    let csv = ''
+    let i = 0
+    let labelMap = []
+    result.userAgents.forEach(record => {
+      csv += `${i},${record.nodes}\n`
+      labelMap.push(record.user_agent)
+      i++
+    })
+
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      csv,
+      {
+        legend: 'always',
+        includeZero: true,
+        legendFormatter: legendFormatter,
+        digitsAfterDecimal: 8,
+        labelsDiv: this.labelsTarget,
+        ylabel: 'Node Count',
+        xlabel: 'User Agent',
+        labels: ['User Agent', 'Node Count'],
+        labelsUTC: true,
+        labelsKMB: true,
+        maxNumberWidth: 10,
+        showRangeSelector: true,
+        axes: {
+          x: {
+            valueFormatter: (x) => {
+              return labelMap[parseInt(x)]
+            },
+            axisLabelFormatter: (x) => {
+              return labelMap[parseInt(x)]
+            }
           },
           y: {
             axisLabelWidth: 90
