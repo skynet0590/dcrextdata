@@ -388,9 +388,9 @@ export default class extends Controller {
   }
 
   drawUserAgentsChart (result) {
-    let csv = ''
-    let i = 0
-    let labelMap = []
+    let csv = '0,0\n1,0\n'
+    let i = 2
+    let labelMap = [0, 0]
     result.userAgents.forEach(record => {
       csv += `${i},${record.nodes}\n`
       labelMap.push(record.user_agent)
