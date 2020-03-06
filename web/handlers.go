@@ -1711,7 +1711,7 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 
 	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
 	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot find snapshot to the specified timestamp, %s", err.Error()), w)
+		s.renderError(fmt.Sprintf("Cannot find a snapshot of the specified timestamp, %s", err.Error()), w)
 		return
 	}
 

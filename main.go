@@ -429,6 +429,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating reddit table: ", err)
 			return err
 		}
+		log.Info("reddit table created successfully.")
 	}
 
 	if exists := db.TwitterTableExits(); !exists {
@@ -436,6 +437,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating twitter table: ", err)
 			return err
 		}
+		log.Info("twitter table created successfully.")
 	}
 
 	if exists := db.YoutubeTableExits(); !exists {
@@ -443,6 +445,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating youtube table: ", err)
 			return err
 		}
+		log.Info("youtube table created successfully.")
 	}
 
 	if exists := db.GithubTableExits(); !exists {
@@ -450,6 +453,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating github table: ", err)
 			return err
 		}
+		log.Info("github table created successfully.")
 	}
 
 	if exists := db.NetworkSnapshotTableExists(); !exists {
@@ -457,20 +461,23 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating network snapshot table: ", err)
 			return err
 		}
+		log.Info("snapshot table created successfully.")
 	}
 
 	if exists := db.NetworkNodeTableExists(); !exists {
 		if err := db.CreateNetworkNodeTable(); err != nil {
-			log.Error("Error creating network node table: ", err)
+			log.Error("Error creating node table: ", err)
 			return err
 		}
+		log.Info("node table created successfully.")
 	}
 
 	if exists := db.HeartbeatTableExists(); !exists {
 		if err := db.CreateHeartbeatTable(); err != nil {
-			log.Error("Error creating network peer table: ", err)
+			log.Error("Error creating heartbeat table: ", err)
 			return err
 		}
+		log.Info("heartbeat table created successfully.")
 	}
 	return nil
 }
