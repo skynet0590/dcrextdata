@@ -19,6 +19,7 @@ import (
 
 type Node struct {
 	IP           net.IP
+	Port 		 uint16
 	Services     wire.ServiceFlag
 	LastAttempt  time.Time
 	AttemptCount int
@@ -34,6 +35,11 @@ type Node struct {
 	IPVersion       int
 }
 
+type peerAddress struct {
+	IP   net.IP
+	Port uint16
+}
+
 type Manager struct {
 	mtx sync.RWMutex
 
@@ -43,9 +49,6 @@ type Manager struct {
 	wg          sync.WaitGroup
 	quit        chan struct{}
 	peersFile   string
-
-	Seeder     string
-	SeederPort string
 }
 
 var (
@@ -155,15 +158,15 @@ func NewManager(dataDir string) (*Manager, error) {
 	return &amgr, nil
 }
 
-func (m *Manager) AddAddresses(addrs []net.IP) int {
+func (m *Manager) AddAddresses(addrs []peerAddress) int {
 	var count int
 
 	m.mtx.Lock()
 	for _, addr := range addrs {
-		if !isRoutable(addr) {
+		if !isRoutable(addr.IP) {
 			continue
 		}
-		addrStr := addr.String()
+		addrStr := addr.IP.String()
 
 		_, exists := m.nodes[addrStr]
 		if exists {
@@ -171,7 +174,8 @@ func (m *Manager) AddAddresses(addrs []net.IP) int {
 			continue
 		}
 		node := Node{
-			IP:       addr,
+			IP:       addr.IP,
+			Port: 	  addr.Port,
 			LastSeen: time.Now(),
 		}
 		m.nodes[addrStr] = &node
@@ -183,19 +187,16 @@ func (m *Manager) AddAddresses(addrs []net.IP) int {
 }
 
 // Addresses returns IPs that need to be tested again.
-func (m *Manager) Addresses() []net.IP {
+func (m *Manager) Addresses() []peerAddress {
 	if addrs := m.liveNodes(); len(addrs) > 0 {
 		log.Infof("returned %d IPs from live nodes", len(addrs))
-		return addrs
+		// return addrs
 	}
 
-	addrs := make([]net.IP, 0, defaultMaxAddresses*8)
+	addrs := make([]peerAddress, 0, defaultMaxAddresses*8)
 	now := time.Now()
 	i := defaultMaxAddresses
 
-	if m == nil {
-		panic("m can't nil")
-	}
 	m.mtx.RLock()
 	for _, node := range m.nodes {
 		if i == 0 {
@@ -205,7 +206,7 @@ func (m *Manager) Addresses() []net.IP {
 			!(node.StartingHeight == 0 && node.AttemptCount < 3) {
 			continue
 		}
-		addrs = append(addrs, node.IP)
+		addrs = append(addrs, peerAddress{node.IP, node.Port})
 		i--
 	}
 	m.mtx.RUnlock()

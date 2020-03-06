@@ -6,6 +6,7 @@ package netsnapshot
 
 import (
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -46,9 +47,9 @@ func creep(netParams *chaincfg.Params) {
 
 		Listeners: peer.MessageListeners{
 			OnAddr: func(p *peer.Peer, msg *wire.MsgAddr) {
-				n := make([]net.IP, 0, len(msg.AddrList))
+				n := make([]peerAddress, 0, len(msg.AddrList))
 				for _, addr := range msg.AddrList {
-					n = append(n, addr.IP)
+					n = append(n, peerAddress{addr.IP, addr.Port})
 				}
 				added := amgr.AddAddresses(n)
 				log.Infof("Peer %v sent %v addresses, %d new",
@@ -66,33 +67,34 @@ func creep(netParams *chaincfg.Params) {
 
 	var wg sync.WaitGroup
 	for {
-		ips := amgr.Addresses()
-		if len(ips) == 0 {
+		peerAddrs := amgr.Addresses()
+		if len(peerAddrs) == 0 {
 			log.Infof("No stale addresses -- sleeping for %v",
 				defaultAddressTimeout)
 			time.Sleep(defaultAddressTimeout)
 			continue
 		}
 
-		wg.Add(len(ips))
+		wg.Add(len(peerAddrs))
 
-		for _, ip := range ips {
-			go func(ip net.IP) {
+		for _, addr := range peerAddrs {
+			go func(addr peerAddress) {
 				defer wg.Done()
 
-				port := netParams.DefaultPort
-				if ip.String() == amgr.Seeder && amgr.SeederPort != "" {
-					port = amgr.SeederPort
+				port := strconv.Itoa(int(addr.Port))
+				if addr.Port == 0 {
+					port = netParams.DefaultPort
 				}
-				host := net.JoinHostPort(ip.String(),
+				host := net.JoinHostPort(addr.IP.String(),
 					port)
+					
 				p, err := peer.NewOutboundPeer(&peerConfig, host)
 				if err != nil {
 					log.Infof("NewOutboundPeer on %v: %v",
 						host, err)
 					return
 				}
-				amgr.Attempt(ip)
+				amgr.Attempt(addr.IP)
 				t := time.Now()
 				conn, err := net.DialTimeout("tcp", p.Addr(),
 					defaultNodeTimeout)
@@ -102,7 +104,8 @@ func creep(netParams *chaincfg.Params) {
 						currHeight = p.StartingHeight()
 					}
 					amgr.goodPeer <- &Node{
-						IP:              ip,
+						IP:              addr.IP,
+						Port: 			 addr.Port,
 						Services:        p.Services(),
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     p.TimeConnected(),
@@ -126,7 +129,8 @@ func creep(netParams *chaincfg.Params) {
 					// Mark this peer as a good node.
 					amgr.Good(p)
 					amgr.goodPeer <- &Node{
-						IP:              ip,
+						IP:              addr.IP,
+						Port: 			 addr.Port,
 						Services:        p.Services(),
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     time.Now().UTC(),
@@ -150,7 +154,8 @@ func creep(netParams *chaincfg.Params) {
 						currHeight = p.StartingHeight()
 					}
 					amgr.goodPeer <- &Node{
-						IP:              ip,
+						IP:              addr.IP,
+						Port: 			 addr.Port,
 						Services:        p.Services(),
 						LastAttempt:     time.Now().UTC(),
 						LastSuccess:     p.TimeConnected(),
@@ -175,16 +180,14 @@ func creep(netParams *chaincfg.Params) {
 					return
 				}
 				p.Disconnect()
-			}(ip)
+			}(addr)
 		}
 		wg.Wait()
 	}
 }
 
 func runSeeder(cfg config.NetworkSnapshotOptions, netParams *chaincfg.Params) {
-	amgr.AddAddresses([]net.IP{net.ParseIP(cfg.Seeder)})
-	amgr.Seeder = cfg.Seeder
-	amgr.SeederPort = cfg.SeederPort
+	amgr.AddAddresses([]peerAddress{peerAddress{net.ParseIP(cfg.Seeder), cfg.SeederPort},})
 
 	wg.Add(1)
 	go creep(netParams)

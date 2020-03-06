@@ -179,7 +179,7 @@ type NetworkSnapshotOptions struct {
 	Listen                 string `long:"listen" short:"l" description:"Listen on address:port"`
 	Nameserver             string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder                 string `short:"s" long:"seeder" description:"IP address of a working node"`
-	SeederPort             string `short:"p" long:"seederport" description:"Port of a working node"`
+	SeederPort             uint16 `short:"p" long:"seederport" description:"Port of a working node"`
 	TestNet                bool   `long:"testnet" description:"Use testnet"`
 	ShowDetailedLog        bool   `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
