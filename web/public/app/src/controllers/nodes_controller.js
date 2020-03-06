@@ -56,7 +56,7 @@ export default class extends Controller {
     }
     this.previousTimestamp = parseInt(this.data.get('previousTimestamp'))
     if (this.previousTimestamp === 0) {
-      hide(this.previousTimestampBtn)
+      hide(this.previousTimestampBtnTarget)
     }
 
     this.height = parseInt(this.data.get('height'))
