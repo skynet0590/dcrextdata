@@ -1688,14 +1688,40 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		viewOption = defaultViewOption
 	}
 
+	var timestamp, previousTimestamp, nextTimestamp int64
+
+	t, _ := strconv.Atoi(r.FormValue("timestamp"))
+	timestamp = int64(t)
+	
+	if timestamp == 0 {
+		timestamp = s.db.LastSnapshotTime(r.Context())
+		if timestamp == 0 {
+			s.renderError("No snapshot has been taken, please enable Network snapshot from the config file and try again.", w)
+			return
+		}
+	}
+
+	if snapshot, err := s.db.PreviousSnapshot(r.Context(), timestamp); err == nil {
+		previousTimestamp = snapshot.Timestamp
+	}
+
+	if snapshot, err := s.db.NextSnapshot(r.Context(), timestamp); err == nil {
+		nextTimestamp = snapshot.Timestamp
+	}
+
+	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot find snapshot to the specified timestamp, %s", err.Error()), w)
+		return
+	}
+
 	dataType := r.FormValue("data-type")
 	if dataType == "" {
-		dataType = "snapshot"
+		dataType = "nodes"
 	}
 
 	//
 	var totalCount, pageCount int64
-	var err error
 	switch dataType {
 	case "snapshot":
 	default:
@@ -1724,6 +1750,10 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		"nextPage":           nextPage,
 		"pageSize":           pageSize,
 		"totalPages":         pageCount,
+		"timestamp":		  timestamp,
+		"height":			  snapshot.Height,
+		"previousTimestamp":  previousTimestamp,
+		"nextTimestamp":	  nextTimestamp,
 	}
 
 	s.render("nodes.html", data, w)
@@ -1797,9 +1827,15 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 		pageSize = defaultPageSize
 	}
 
-	userAgents, err := s.db.PeerCountByUserAgents(r.Context())
+	timestamp, err := strconv.Atoi(r.FormValue("timestamp"))
 	if err != nil {
-		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
+		s.renderErrorfJSON("Cannot fetch data. Timestamp is required: %s", w, err.Error())
+		return
+	}
+
+	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), int64(timestamp))
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
 	}
 
@@ -1827,9 +1863,15 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 		pageSize = defaultPageSize
 	}
 
-	countries, err := s.db.PeerCountByCountries(r.Context())
+	timestamp, err := strconv.Atoi(r.FormValue("timestamp"))
 	if err != nil {
-		s.renderError(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
+		s.renderErrorfJSON("Cannot fetch data. Timestamp is required: %s", w, err.Error())
+		return
+	}
+
+	countries, err := s.db.PeerCountByCountries(r.Context(), int64(timestamp))
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
 	}
 

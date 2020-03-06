@@ -9,6 +9,10 @@
          data-nodes-page-size="{{ .pageSize }}"
          data-nodes-view-option="{{ .selectedViewOption }}"
          data-nodes-data-type="{{ .dataType }}"
+         data-nodes-timestamp="{{ .timestamp }}"
+         data-nodes-previous-timestamp="{{ .previousTimestamp }}"
+         data-nodes-next-timestamp="{{ .nextTimestamp }}"
+         data-nodes-height="{{ .height }}"
     >
         <div class="container-fluid">
 
@@ -16,11 +20,10 @@
 
             <div class="control-wrapper">
                 <div class="d-flex flex-row bottom-ctl">
-                    <div class="mr-auto my-2">
-                        <div class="chart-control-wrapper control-div p-0"
-                             data-target="nodes.dataTypeSelector">
-                            <div class="chart-control mempool-control mx-auto">
-                                <ul class="nav nav-pills">
+                    <div class="chart-control ml-auto mr-3 my-2" data-target="nodes.viewOptionControl"
+                         data-initial-value="{{ .selectedViewOption }}">
+                        
+                        <ul class="nav nav-pills">
                                     <li class="nav-item">
                                         <a data-target="nodes.dataType"
                                            data-action="click->nodes#setDataType" class="nav-link active"
@@ -40,28 +43,50 @@
                                            >Location</a>
                                     </li>
                                 </ul>
+
+                    </div>
+
+                    <div class="mr-auto my-2">
+                        <div class="chart-control-wrapper control-div p-0"
+                             data-target="nodes.dataTypeSelector">
+                            <div class="chart-control mempool-control mx-auto">
+
+                                <ul class="nav nav-pills">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" href="javascript:void(0);" data-target="nodes.viewOption"
+                                        data-action="click->nodes#setChart" data-option="chart">Chart</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="javascript:void(0);"
+                                        data-target="nodes.viewOption" data-action="click->nodes#setTable"
+                                        data-option="table">Table</a>
+                                    </li>
+                                </ul>
+                                
                             </div>
                         </div>
                     </div>
 
-                    <div class="chart-control ml-auto mr-3 my-2" data-target="nodes.viewOptionControl"
-                         data-initial-value="{{ .selectedViewOption }}">
-                        <ul class="nav nav-pills">
-                            <li class="nav-item">
-                                <a class="nav-link active" href="javascript:void(0);" data-target="nodes.viewOption"
-                                   data-action="click->nodes#setChart" data-option="chart">Chart</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="javascript:void(0);"
-                                   data-target="nodes.viewOption" data-action="click->nodes#setTable"
-                                   data-option="table">Table</a>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
 
-                <div class="col-8 offset-2">
-                    <div class="inner-content d-hide" data-target="nodes.tableWrapper">
+                <div>
+                    <div data-target="nodes.snapshotHeader" class="d-flex mb-2 mt-2 col-6 offset-3">
+                        <div class="col-5">
+                            <h6>Timestamp: <small data-target="nodes.timestamp"></small></h6>
+                        </div>
+                        <div class="col-4">
+                            <h6>Height: <small>{{ .height }}</small></h6>
+                        </div>
+                        <div class="col-3">
+                            <button class="btn btn-sm btn-primary" data-target="nodes.previousTimestampBtn"
+                                 data-action="click->nodes#gotoPreviousTimestamp">Previous</button>
+                            <button class="btn btn-sm btn-primary" data-target="nodes.nextTimestampBtn"
+                                 data-action="click->nodes#gotoNextTimestamp">Next</button>
+                        </div>
+                    </div>
+
+                    <div class="inner-content d-hide col-8 offset-2" data-target="nodes.tableWrapper">
+
                         <div class="table-details">
                             <h3 data-target="nodes.tableTitle">Network Snapshots</h3>
                             <div class="pagination">

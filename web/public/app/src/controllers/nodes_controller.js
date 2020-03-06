@@ -25,6 +25,8 @@ const dataTypeLocation = 'location'
 
 export default class extends Controller {
   timestamp
+  nextTimestamp
+  previousTimestamp
   height
   currentPage
   pageSize
@@ -34,8 +36,9 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType', 'numPageWrapper', 'pageSize',
-      'messageView', 'chartWrapper', 'chartsView', 'labels',
+      'timestamp', 'snapshotHeader', 'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType',
+      'numPageWrapper', 'pageSize', 'messageView', 'chartWrapper', 'chartsView', 'labels', 'previousTimestampBtn',
+      'nextTimestampBtn',
       'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
       'snapshotRowTemplate', 'userAgentRowTemplate', 'countriesRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
       'dataTypeSelector', 'dataType'
@@ -43,6 +46,20 @@ export default class extends Controller {
   }
 
   async initialize () {
+    this.timestamp = parseInt(this.data.get('timestamp'))
+    this.timestampTargets.forEach(el => {
+      el.innerHTML = humanize.date(this.timestamp * 1000)
+    })
+    this.nextTimestamp = parseInt(this.data.get('nextTimestamp'))
+    if (this.nextTimestamp === 0) {
+      hide(this.nextTimestampBtnTarget)
+    }
+    this.previousTimestamp = parseInt(this.data.get('previousTimestamp'))
+    if (this.previousTimestamp === 0) {
+      hide(this.previousTimestampBtn)
+    }
+
+    this.height = parseInt(this.data.get('height'))
     this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
@@ -57,7 +74,34 @@ export default class extends Controller {
     this.updateView()
   }
 
+  gotoPreviousTimestamp () {
+    const urlParams = new URLSearchParams(window.location.search)
+    const baseUrl = window.location.href.replace(window.location.search, '')
+    if (urlParams.has('timestamp')) {
+      urlParams.set('timestamp', this.previousTimestamp)
+    } else {
+      urlParams.append('timestamp', this.previousTimestamp)
+    }
+    window.location.href = `${baseUrl}?${urlParams.toString()}`
+  }
+
+  gotoNextTimestamp () {
+    const urlParams = new URLSearchParams(window.location.search)
+    const baseUrl = window.location.href.replace(window.location.search, '')
+    if (urlParams.has('timestamp')) {
+      urlParams.set('timestamp', this.nextTimestamp)
+    } else {
+      urlParams.append('timestamp', this.nextTimestamp)
+    }
+    window.location.href = `${baseUrl}?${urlParams.toString()}`
+  }
+
   updateView () {
+    if (this.dataType === dataTypeNodes) {
+      hide(this.snapshotHeaderTarget)
+    } else {
+      show(this.snapshotHeaderTarget)
+    }
     if (this.selectedViewOption === 'table') {
       this.setTable()
     } else {
@@ -135,18 +179,18 @@ export default class extends Controller {
     }
     const _this = this
     showLoading(this.loadingDataTarget, [_this.tableWrapperTarget])
-    url += `?page=${this.currentPage}&page-size=${this.pageSize}`
+    url += `?page=${this.currentPage}&page-size=${this.pageSize}&timestamp=${this.timestamp}`
     axios.get(url).then(function (response) {
       let result = response.data
+      hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
       if (result.error) {
-        let messageHTML = `<div class="alert alert-primary"><strong>${result.message}</strong></div>`
+        let messageHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`
         _this.messageViewTarget.innerHTML = messageHTML
         show(_this.messageViewTarget)
         hide(_this.tableBodyTarget)
         hide(_this.btnWrapperTarget)
         return
       }
-      hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
       hide(_this.messageViewTarget)
       show(_this.tableBodyTarget)
       show(_this.btnWrapperTarget)
@@ -313,11 +357,11 @@ export default class extends Controller {
 
     switch (this.dataType) {
       case dataTypeVersion:
-        url = '/api/snapshots/user-agents?chart=1'
+        url = `/api/snapshots/user-agents?chart=1&timestamp=${this.timestamp}`
         drawChartFn = this.drawUserAgentsChart
         break
       case dataTypeLocation:
-        url = '/api/snapshots/countries?chart=1'
+        url = `/api/snapshots/countries?chart=1&timestamp=${this.timestamp}`
         drawChartFn = this.drawCountriesChart
         break
       case dataTypeNodes:
