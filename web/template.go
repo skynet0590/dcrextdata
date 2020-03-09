@@ -2,35 +2,39 @@ package web
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
 )
 
+var templateDirs = []string{"web/views"}
+var templates *template.Template
+
 func (s *Server) loadTemplates() {
 	layout := "web/views/layout.html"
-	tpls := map[string]string{
-		"error.html":       "web/views/error.html",
-		"home.html":        "web/views/home.html",
-		"exchange.html":    "web/views/exchange.html",
-		"vsp.html":         "web/views/vsp.html",
-		"pow.html":         "web/views/pow.html",
-		"mempool.html":     "web/views/mempool.html",
-		"propagation.html": "web/views/propagation.html",
-		"community.html":   "web/views/community.html",
-	}
+    for _, dir := range templateDirs {
+        files2, _ := ioutil.ReadDir(dir)
+        for _, file := range files2 {
+			filename := file.Name()
+			if !strings.HasSuffix(filename, ".html") {
+				continue
+			}
+			var files = []string{"web/views/" + filename}
+			if !strings.HasPrefix(filename, "_") {
+				files = append(files, layout)
+			}
+			tpl, err := template.New(filename).Funcs(templateFuncMap()).ParseFiles(files...)
+			if err != nil {
+				log.Errorf("Error loading templates: %s", err.Error())
+			}
 
-	for i, v := range tpls {
-		tpl, err := template.New(i).Funcs(templateFuncMap()).ParseFiles(v, layout)
-		if err != nil {
-			log.Errorf("Error loading templates: %s", err.Error())
-		}
-
-		s.lock.Lock()
-		s.templates[i] = tpl
-		s.lock.Unlock()
-	}
+			s.lock.Lock()
+			s.templates[filename] = tpl
+			s.lock.Unlock()
+        }
+    }
 }
 
 var pairMap = map[string]string{
