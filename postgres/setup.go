@@ -143,6 +143,7 @@ const (
 		timestamp INT8 NOT NULL,
 		height INT8 NOT NULL,
 		node_count INT NOT NULL,
+		oldest_node_timestamp INT8 NOT NULL DEFAULT 0,
 		PRIMARY KEY (timestamp)
 	);`
 

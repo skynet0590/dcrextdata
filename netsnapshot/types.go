@@ -9,9 +9,10 @@ import (
 )
 
 type SnapShot struct {
-	Timestamp int64 `json:"timestamp"`
-	Height    int64 `json:"height"`
-	NodeCount int   `json:"node_count"`
+	Timestamp 			int64 `json:"timestamp"`
+	Height    			int64 `json:"height"`
+	NodeCount 			int   `json:"node_count"`
+	OldestNodeTimestamp int64 `json:"oldest_node_timestamp"`
 }
 
 type NodeCount struct {
@@ -72,6 +73,7 @@ type DataStore interface {
 	LastSnapshotTime(ctx context.Context) (timestamp int64)
 	DeleteSnapshot(ctx context.Context, timestamp int64)
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
+	GetOldestNodeTimestamp(ctx context.Context, timestamp int64) (int64, error)
 	SaveHeartbeat(ctx context.Context, peer Heartbeat) error
 	SaveNode(ctx context.Context, peer NetworkPeer) error
 	UpdateNode(ctx context.Context, peer NetworkPeer) error

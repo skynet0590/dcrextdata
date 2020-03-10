@@ -271,6 +271,7 @@ export default class extends Controller {
       fields[0].innerText = humanize.date(item.timestamp * 1000)
       fields[1].innerText = item.height
       fields[2].innerText = item.node_count
+      fields[3].innerText = item.oldest_node_timestamp <= 0 ? 'N/A' : humanize.timeSince(item.oldest_node_timestamp)
 
       _this.tableBodyTarget.appendChild(exRow)
     })

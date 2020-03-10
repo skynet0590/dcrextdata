@@ -24,7 +24,7 @@ const (
 
 	// defaultNodeTimeout defines the timeout time waiting for
 	// a response from a node.
-	defaultNodeTimeout = time.Second * 10
+	defaultNodeTimeout = time.Second * 20
 )
 
 var (
@@ -94,9 +94,15 @@ func creep(netParams *chaincfg.Params) {
 						host, err)
 					return
 				}
+
+				network := "tcp"
+				if addr.IP.To4() == nil {
+					network = "tcp6"
+				}
+
 				amgr.Attempt(addr.IP)
 				t := time.Now()
-				conn, err := net.DialTimeout("tcp", p.Addr(),
+				conn, err := net.DialTimeout(network, p.Addr(),
 					defaultNodeTimeout)
 				if err != nil {
 					currHeight := p.LastBlock()
@@ -117,6 +123,7 @@ func creep(netParams *chaincfg.Params) {
 						StartingHeight:  p.StartingHeight(),
 						CurrentHeight:   currHeight,
 					}
+					log.Errorf("DialTimeout failed for %s using %s, %s", p.Addr(), network, err.Error())
 					return
 				}
 				latency := time.Since(t).Milliseconds()

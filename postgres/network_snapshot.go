@@ -2,12 +2,14 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net"
 	"strings"
 
 	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
@@ -24,9 +26,25 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		return err
 	}
 
-	snapshotModel := models.NetworkSnapshot{
-		Timestamp: snapshot.Timestamp, Height: snapshot.Height, NodeCount: snapshot.NodeCount,
+	if snapshot.OldestNodeTimestamp == 0 {
+		oldestTimestamp, err := pg.GetOldestNodeTimestamp(ctx, snapshot.Timestamp)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				oldestTimestamp = 0
+			} else {
+				return err
+			}
+		}
+		snapshot.OldestNodeTimestamp = oldestTimestamp
 	}
+
+	snapshotModel := models.NetworkSnapshot{
+		Timestamp: snapshot.Timestamp, 
+		Height: snapshot.Height, 
+		NodeCount: snapshot.NodeCount,
+		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
+	}
+
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
 			return err
@@ -44,6 +62,7 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 	return &netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}, nil
 }
 
@@ -60,6 +79,7 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 	snapshot := netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}
 
 	return &snapshot, err
@@ -92,6 +112,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 			Timestamp: m.Timestamp,
 			Height:    m.Height,
 			NodeCount: m.NodeCount,
+			OldestNodeTimestamp: m.OldestNodeTimestamp,
 		}
 	}
 
@@ -116,6 +137,7 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 	snapshot := netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}
 
 	return &snapshot, err
@@ -127,6 +149,27 @@ func (pg PgDb) DeleteSnapshot(ctx context.Context, timestamp int64) {
 		_, _ = snapshot.Delete(ctx, pg.db)
 	}
 	_, _ = models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp)).DeleteAll(ctx, pg.db)
+}
+
+func (pg PgDb) GetOldestNodeTimestamp(ctx context.Context, timestamp int64) (int64, error) {
+	sql := fmt.Sprintf(`SELECT node.connection_time from node 
+			INNER JOIN heartbeat ON node.address = heartbeat.node_id
+		WHERE heartbeat.timestamp = %d ORDER BY node.connection_time DESC LIMIT 1`, timestamp)
+
+	var result struct {
+		ConnectionTime    null.Int64  `json:"connection_time"`
+	}
+
+	err := models.Nodes(qm.SQL(sql)).Bind(ctx, pg.db, &result)
+	if err != nil {
+		return 0, err
+	}
+
+	if result.ConnectionTime.Valid {
+		return result.ConnectionTime.Int64, nil
+	}
+	
+	return 0, nil
 }
 
 func (pg PgDb) SaveHeartbeat(ctx context.Context, heartbeat netsnapshot.Heartbeat) error {

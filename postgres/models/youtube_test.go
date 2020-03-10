@@ -427,7 +427,7 @@ func testYoutubesSelect(t *testing.T) {
 }
 
 var (
-	youtubeDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Subscribers`: `integer`, `Channel`: `text`, `ViewCount`: `integer`}
+	youtubeDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Subscribers`: `integer`, `ViewCount`: `integer`, `Channel`: `character varying`}
 	_              = bytes.MinRead
 )
 
