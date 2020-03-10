@@ -87,6 +87,7 @@ type DataQuery interface {
 	PeerCountByUserAgents(ctx context.Context, timestamp int64) (userAgents []netsnapshot.UserAgentInfo, err error)
 	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)
 	PeerCountByCountries(ctx context.Context, timestamp int64) (countries []netsnapshot.CountryInfo, err error)
+	GetIPLocation(ctx context.Context, ip string) (string, int, error)
 }
 
 type Server struct {
@@ -185,6 +186,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/snapshots/countries", s.nodesCountByCountries)
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
 	r.Get("/api/snapshot/nodes/count-by-timestamp", s.nodeCountByTimestamp)
+	r.Get("/api/snapshots/ip-info", s.ipInfo)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

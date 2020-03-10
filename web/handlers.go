@@ -1946,6 +1946,22 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 	}, w)
 }
 
+// /api/snapshots/ip-info
+func (s *Server) ipInfo(w http.ResponseWriter, r *http.Request) {
+	address := r.FormValue("ip")
+	if address == "" {
+		s.renderErrorJSON("please specify a valid IP", w)
+		return
+	}
+	country, version, err := s.db.GetIPLocation(r.Context(), address)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), w)
+		return
+	}
+
+	s.renderJSON(map[string]interface{}{"country" : country, "ip_version" : version}, w)
+}
+
 // api/sync/{dataType}
 func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	dataType := getSyncDataTypeCtx(req)

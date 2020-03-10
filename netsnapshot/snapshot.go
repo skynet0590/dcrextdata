@@ -200,7 +200,7 @@ func (t taker) Start(ctx context.Context) {
 }
 
 func (t taker) geolocation(ctx context.Context, ip net.IP) (*IPInfo, error) {
-	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=fcd33d8814206ce1f0a255a2204ad71e&format=1", ip.String())
+	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s&format=1", ip.String(), t.cfg.IpStackAccessKey)
 	var geo IPInfo
 	err := helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, &geo)
 	return &geo, err

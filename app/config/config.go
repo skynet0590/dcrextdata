@@ -180,6 +180,8 @@ type NetworkSnapshotOptions struct {
 	Nameserver             string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder                 string `short:"s" long:"seeder" description:"IP address of a working node"`
 	SeederPort             uint16 `short:"p" long:"seederport" description:"Port of a working node"`
+	IpStackAccessKey	   string `long:"ipStackAccessKey" description:"IP stack access key https://ipstack.com/"`
+	IpLocationProvidingPeer string `long:"ipLocationProvidingPeer" description:"An optional peer address for getting IP info"`
 	TestNet                bool   `long:"testnet" description:"Use testnet"`
 	ShowDetailedLog        bool   `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
