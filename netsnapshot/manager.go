@@ -45,7 +45,7 @@ type Manager struct {
 
 	nodes       map[string]*Node
 	liveNodeIPs []net.IP
-	goodPeer    chan *Node
+	peerNtfn    chan *Node
 	wg          sync.WaitGroup
 	quit        chan struct{}
 	peersFile   string
@@ -137,7 +137,7 @@ func NewManager(dataDir string) (*Manager, error) {
 
 	amgr := Manager{
 		nodes:     make(map[string]*Node),
-		goodPeer:  make(chan *Node),
+		peerNtfn:  make(chan *Node),
 		peersFile: filepath.Join(dataDir, peersFilename),
 		quit:      make(chan struct{}),
 	}

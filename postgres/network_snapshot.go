@@ -17,11 +17,19 @@ import (
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
 	if snapshot.NodeCount == 0 {
 		log.Critical("this cannot be")
+		// todo don't save empty snapshot
 	}
+	goodNode, err := models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(snapshot.Timestamp)).Count(ctx, pg.db);
+	if err != nil {
+		return err
+	}
+	snapshot.ReachableNodeCount = int(goodNode)
+
 	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
 	if err == nil {
 		existingSnapshot.Height = snapshot.Height
 		existingSnapshot.NodeCount = snapshot.NodeCount
+		existingSnapshot.ReachableNodes = snapshot.ReachableNodeCount
 		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
 		return err
 	}
@@ -42,8 +50,11 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		Timestamp: snapshot.Timestamp, 
 		Height: snapshot.Height, 
 		NodeCount: snapshot.NodeCount,
+		ReachableNodes: snapshot.ReachableNodeCount,
 		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
 	}
+
+	//
 
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
@@ -62,6 +73,8 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 	return &netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		NodeCount: snapshotModel.NodeCount,
+		ReachableNodeCount: snapshotModel.ReachableNodes,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}, nil
 }
@@ -79,6 +92,8 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 	snapshot := netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		NodeCount: snapshotModel.NodeCount,
+		ReachableNodeCount: snapshotModel.ReachableNodes,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}
 
@@ -112,6 +127,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 			Timestamp: m.Timestamp,
 			Height:    m.Height,
 			NodeCount: m.NodeCount,
+			ReachableNodeCount: m.ReachableNodes,
 			OldestNodeTimestamp: m.OldestNodeTimestamp,
 		}
 	}
@@ -137,6 +153,8 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 	snapshot := netsnapshot.SnapShot{
 		Timestamp: snapshotModel.Timestamp,
 		Height:    snapshotModel.Height,
+		NodeCount: snapshotModel.NodeCount,
+		ReachableNodeCount: snapshotModel.ReachableNodes,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 	}
 

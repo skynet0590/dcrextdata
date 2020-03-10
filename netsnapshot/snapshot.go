@@ -116,7 +116,7 @@ func (t taker) Start(ctx context.Context) {
 			// update all reachable nodes
 			loadLiveNodes()
 
-		case node := <-amgr.goodPeer:
+		case node := <-amgr.peerNtfn:
 			if node.IP.String() == "127.0.0.1" { // do not add the local IP
 				break
 			}
@@ -150,6 +150,8 @@ func (t taker) Start(ctx context.Context) {
 					} else if geoLoc.Type == "ipv6" {
 						networkPeer.IPVersion = 6
 					}
+				} else {
+					log.Error(err)
 				}
 
 				err = t.dataStore.SaveNode(ctx, networkPeer)

@@ -271,7 +271,8 @@ export default class extends Controller {
       fields[0].innerText = humanize.date(item.timestamp * 1000)
       fields[1].innerText = item.height
       fields[2].innerText = item.node_count
-      fields[3].innerText = item.oldest_node_timestamp <= 0 ? 'N/A' : humanize.timeSince(item.oldest_node_timestamp)
+      fields[3].innerText = item.reachable_node_code
+      fields[4].innerText = item.oldest_node_timestamp <= 0 ? 'N/A' : humanize.timeSince(item.oldest_node_timestamp)
 
       _this.tableBodyTarget.appendChild(exRow)
     })
@@ -399,7 +400,7 @@ export default class extends Controller {
       if (maxDate === undefined || date > maxDate) {
         maxDate = date
       }
-      csv += `${date},${record.node_count}\n`
+      csv += `${date},${record.reachable_node_code},${record.node_count}\n`
     })
 
     this.chartsView = new Dygraph(
@@ -413,8 +414,9 @@ export default class extends Controller {
         digitsAfterDecimal: 8,
         labelsDiv: this.labelsTarget,
         ylabel: 'Node Count',
+        y2label: 'Reachable Nodes',
         xlabel: 'Date',
-        labels: ['Date', 'Node Count'],
+        labels: ['Date', 'Reachable Nodes', 'Node Count'],
         labelsUTC: true,
         labelsKMB: true,
         maxNumberWidth: 10,

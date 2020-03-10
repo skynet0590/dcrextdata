@@ -95,35 +95,12 @@ func creep(netParams *chaincfg.Params) {
 					return
 				}
 
-				network := "tcp"
-				if addr.IP.To4() == nil {
-					network = "tcp6"
-				}
-
 				amgr.Attempt(addr.IP)
 				t := time.Now()
-				conn, err := net.DialTimeout(network, p.Addr(),
+				conn, err := net.DialTimeout("tcp", p.Addr(),
 					defaultNodeTimeout)
 				if err != nil {
-					currHeight := p.LastBlock()
-					if currHeight == 0 {
-						currHeight = p.StartingHeight()
-					}
-					amgr.goodPeer <- &Node{
-						IP:              addr.IP,
-						Port: 			 addr.Port,
-						Services:        p.Services(),
-						LastAttempt:     time.Now().UTC(),
-						LastSuccess:     p.TimeConnected(),
-						LastSeen:        p.TimeConnected(),
-						Latency:         -1, // peer is down
-						ConnectionTime:  p.TimeConnected().Unix(),
-						ProtocolVersion: p.ProtocolVersion(),
-						UserAgent:       p.UserAgent(),
-						StartingHeight:  p.StartingHeight(),
-						CurrentHeight:   currHeight,
-					}
-					log.Errorf("DialTimeout failed for %s using %s, %s", p.Addr(), network, err.Error())
+					log.Errorf("DialTimeout failed for %s, %s", p.Addr(), err.Error())
 					return
 				}
 				latency := time.Since(t).Milliseconds()
@@ -135,7 +112,7 @@ func creep(netParams *chaincfg.Params) {
 				case <-verack:
 					// Mark this peer as a good node.
 					amgr.Good(p)
-					amgr.goodPeer <- &Node{
+					amgr.peerNtfn <- &Node{
 						IP:              addr.IP,
 						Port: 			 addr.Port,
 						Services:        p.Services(),
@@ -156,24 +133,6 @@ func creep(netParams *chaincfg.Params) {
 				case <-time.After(defaultNodeTimeout):
 					log.Infof("verack timeout on peer %v",
 						p.Addr())
-					currHeight := p.LastBlock()
-					if currHeight == 0 {
-						currHeight = p.StartingHeight()
-					}
-					amgr.goodPeer <- &Node{
-						IP:              addr.IP,
-						Port: 			 addr.Port,
-						Services:        p.Services(),
-						LastAttempt:     time.Now().UTC(),
-						LastSuccess:     p.TimeConnected(),
-						LastSeen:        p.TimeConnected(),
-						Latency:         latency,
-						ConnectionTime:  p.TimeConnected().Unix(),
-						ProtocolVersion: p.ProtocolVersion(),
-						UserAgent:       p.UserAgent(),
-						StartingHeight:  p.StartingHeight(),
-						CurrentHeight:   currHeight,
-					}
 					p.Disconnect()
 					return
 				}

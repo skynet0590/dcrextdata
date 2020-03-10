@@ -427,7 +427,7 @@ func testNetworkSnapshotsSelect(t *testing.T) {
 }
 
 var (
-	networkSnapshotDBTypes = map[string]string{`Timestamp`: `bigint`, `Height`: `bigint`, `NodeCount`: `integer`, `OldestNodeTimestamp`: `bigint`}
+	networkSnapshotDBTypes = map[string]string{`Timestamp`: `bigint`, `Height`: `bigint`, `NodeCount`: `integer`, `OldestNodeTimestamp`: `bigint`, `ReachableNodes`: `integer`}
 	_                      = bytes.MinRead
 )
 
