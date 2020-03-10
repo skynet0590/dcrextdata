@@ -189,8 +189,12 @@ func (m *Manager) AddAddresses(addrs []peerAddress) int {
 // Addresses returns IPs that need to be tested again.
 func (m *Manager) Addresses() []peerAddress {
 	if addrs := m.liveNodes(); len(addrs) > 0 {
-		log.Infof("returned %d IPs from live nodes", len(addrs))
-		// return addrs
+		log.Infof("returning %d IPs from live nodes", len(addrs))
+		peers := make([]peerAddress, len(addrs))
+		for i, p := range addrs {
+			peers[i] = peerAddress{IP: p}
+		}
+		return peers
 	}
 
 	addrs := make([]peerAddress, 0, defaultMaxAddresses*8)
