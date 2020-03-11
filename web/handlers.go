@@ -1797,7 +1797,7 @@ func (s *Server) snapshotsChart(w http.ResponseWriter, r *http.Request) {
 	s.renderJSON(result, w)
 }
 
-// /nodes/view{ip}
+// /nodes/view/{ip}
 func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	address := getNodeIPFromCtx(r)
 	if address == "" {

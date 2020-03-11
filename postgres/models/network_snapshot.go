@@ -23,11 +23,12 @@ import (
 
 // NetworkSnapshot is an object representing the database table.
 type NetworkSnapshot struct {
-	Timestamp           int64 `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
-	Height              int64 `boil:"height" json:"height" toml:"height" yaml:"height"`
-	NodeCount           int   `boil:"node_count" json:"node_count" toml:"node_count" yaml:"node_count"`
-	OldestNodeTimestamp int64 `boil:"oldest_node_timestamp" json:"oldest_node_timestamp" toml:"oldest_node_timestamp" yaml:"oldest_node_timestamp"`
-	ReachableNodes      int   `boil:"reachable_nodes" json:"reachable_nodes" toml:"reachable_nodes" yaml:"reachable_nodes"`
+	Timestamp           int64  `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
+	Height              int64  `boil:"height" json:"height" toml:"height" yaml:"height"`
+	NodeCount           int    `boil:"node_count" json:"node_count" toml:"node_count" yaml:"node_count"`
+	ReachableNodes      int    `boil:"reachable_nodes" json:"reachable_nodes" toml:"reachable_nodes" yaml:"reachable_nodes"`
+	OldestNodeTimestamp int64  `boil:"oldest_node_timestamp" json:"oldest_node_timestamp" toml:"oldest_node_timestamp" yaml:"oldest_node_timestamp"`
+	OldestNode          string `boil:"oldest_node" json:"oldest_node" toml:"oldest_node" yaml:"oldest_node"`
 
 	R *networkSnapshotR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkSnapshotL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,14 +38,16 @@ var NetworkSnapshotColumns = struct {
 	Timestamp           string
 	Height              string
 	NodeCount           string
-	OldestNodeTimestamp string
 	ReachableNodes      string
+	OldestNodeTimestamp string
+	OldestNode          string
 }{
 	Timestamp:           "timestamp",
 	Height:              "height",
 	NodeCount:           "node_count",
-	OldestNodeTimestamp: "oldest_node_timestamp",
 	ReachableNodes:      "reachable_nodes",
+	OldestNodeTimestamp: "oldest_node_timestamp",
+	OldestNode:          "oldest_node",
 }
 
 // Generated where
@@ -53,14 +56,16 @@ var NetworkSnapshotWhere = struct {
 	Timestamp           whereHelperint64
 	Height              whereHelperint64
 	NodeCount           whereHelperint
-	OldestNodeTimestamp whereHelperint64
 	ReachableNodes      whereHelperint
+	OldestNodeTimestamp whereHelperint64
+	OldestNode          whereHelperstring
 }{
 	Timestamp:           whereHelperint64{field: "\"network_snapshot\".\"timestamp\""},
 	Height:              whereHelperint64{field: "\"network_snapshot\".\"height\""},
 	NodeCount:           whereHelperint{field: "\"network_snapshot\".\"node_count\""},
-	OldestNodeTimestamp: whereHelperint64{field: "\"network_snapshot\".\"oldest_node_timestamp\""},
 	ReachableNodes:      whereHelperint{field: "\"network_snapshot\".\"reachable_nodes\""},
+	OldestNodeTimestamp: whereHelperint64{field: "\"network_snapshot\".\"oldest_node_timestamp\""},
+	OldestNode:          whereHelperstring{field: "\"network_snapshot\".\"oldest_node\""},
 }
 
 // NetworkSnapshotRels is where relationship names are stored.
@@ -80,9 +85,9 @@ func (*networkSnapshotR) NewStruct() *networkSnapshotR {
 type networkSnapshotL struct{}
 
 var (
-	networkSnapshotAllColumns            = []string{"timestamp", "height", "node_count", "oldest_node_timestamp", "reachable_nodes"}
-	networkSnapshotColumnsWithoutDefault = []string{"timestamp", "height", "node_count"}
-	networkSnapshotColumnsWithDefault    = []string{"oldest_node_timestamp", "reachable_nodes"}
+	networkSnapshotAllColumns            = []string{"timestamp", "height", "node_count", "reachable_nodes", "oldest_node_timestamp", "oldest_node"}
+	networkSnapshotColumnsWithoutDefault = []string{"timestamp", "height", "node_count", "reachable_nodes"}
+	networkSnapshotColumnsWithDefault    = []string{"oldest_node_timestamp", "oldest_node"}
 	networkSnapshotPrimaryKeyColumns     = []string{"timestamp"}
 )
 
