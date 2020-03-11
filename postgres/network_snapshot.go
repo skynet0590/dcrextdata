@@ -259,7 +259,7 @@ func (pg PgDb) RecordNodeConnectionFailure(ctx context.Context, address string, 
 	}
 
 	if node.FailureCount >= maxAllowedFailure {
-		cols[models.NodeColumns.FailureCount] = true
+		cols[models.NodeColumns.IsDead] = true
 	}
 	_, err = models.Nodes(models.NodeWhere.Address.EQ(address)).UpdateAll(ctx, pg.db, cols)
 	return err

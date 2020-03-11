@@ -268,6 +268,14 @@ func (m *Manager) notifyFailedAttempt(ip net.IP) {
 
 func (m *Manager) Good(p *peer.Peer) {
 	m.mtx.Lock()
+
+	// addresses added from the database may not be present in the node list
+	if _, exists := m.nodes[p.NA().IP.String()]; !exists {
+		m.mtx.Unlock()
+		m.AddAddresses([]peerAddress{peerAddress{p.NA().IP, 0}})
+		m.mtx.Lock()
+	}
+	
 	node, exists := m.nodes[p.NA().IP.String()]
 	if exists {
 		node.Services = p.Services()
@@ -277,7 +285,6 @@ func (m *Manager) Good(p *peer.Peer) {
 		node.ProtocolVersion = p.ProtocolVersion()
 		node.StartingHeight = p.StartingHeight()
 		node.CurrentHeight = p.LastBlock()
-
 	}
 	m.mtx.Unlock()
 }

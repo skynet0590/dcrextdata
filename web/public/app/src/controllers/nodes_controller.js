@@ -401,7 +401,7 @@ export default class extends Controller {
       if (maxDate === undefined || date > maxDate) {
         maxDate = date
       }
-      csv += `${date},${record.reachable_node_code},${record.node_count}\n`
+      csv += `${date},${record.node_count},${record.reachable_node_count}\n`
     })
 
     this.chartsView = new Dygraph(
