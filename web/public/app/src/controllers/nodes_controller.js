@@ -60,7 +60,7 @@ export default class extends Controller {
     }
 
     this.height = parseInt(this.data.get('height'))
-    this.currentPage = parseInt(this.currentPageTarget.dataset.initialValue) || 1
+    this.currentPage = parseInt(this.data.get('page')) || 1
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
     this.dataType = this.data.get('dataType') || dataTypeNodes

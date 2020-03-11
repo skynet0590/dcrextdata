@@ -7,6 +7,7 @@
     {{ template "header" }}
     <div class="content" data-controller="nodes"
          data-nodes-page-size="{{ .pageSize }}"
+         data-nodes-page="{{ .currentPage }}"
          data-nodes-view-option="{{ .selectedViewOption }}"
          data-nodes-data-type="{{ .dataType }}"
          data-nodes-timestamp="{{ .timestamp }}"
@@ -107,8 +108,7 @@
                                     class="mr-2 {{ if lt .previousPage 1 }}d-hide{{ end }}">&lt;Previous </a>
 
                                     <p class="text-muted" style="white-space: nowrap;"> Page <span
-                                                data-target="nodes.currentPage" class="text-muted"
-                                                data-current-page="{{ .currentPage }}"> {{ .currentPage }}</span>
+                                                data-target="nodes.currentPage" class="text-muted">{{ .currentPage }}</span>
                                         of <span data-target="nodes.totalPageCount"
                                                 class="text-muted">{{ .totalPages }}</span>
                                     </p>
