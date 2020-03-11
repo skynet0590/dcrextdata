@@ -241,10 +241,35 @@ func (pg PgDb) AttemptPeer(ctx context.Context, address string, now int64) error
 	return err
 }
 
+// RecordNodeConnectionFailure increase the number of failare for the specified node 
+// 
+// The node will be marked as dead if the maxAllowedFailure is reached
+func (pg PgDb) RecordNodeConnectionFailure(ctx context.Context, address string, maxAllowedFailure int) error {
+	node, err := models.Nodes(models.NodeWhere.Address.EQ(address)).One(ctx, pg.db)
+	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return nil
+		}
+		return err
+	}
+
+	node.FailureCount ++
+	var cols = models.M{
+		models.NodeColumns.FailureCount: node.FailureCount,
+	}
+
+	if node.FailureCount >= maxAllowedFailure {
+		cols[models.NodeColumns.FailureCount] = true
+	}
+	_, err = models.Nodes(models.NodeWhere.Address.EQ(address)).UpdateAll(ctx, pg.db, cols)
+	return err
+}
+
 func (pg PgDb) NodeExists(ctx context.Context, address string) (bool, error) {
 	return models.NodeExists(ctx, pg.db, address)
 }
 
+// SaveNode inserts the new node information. The node is marked as alive by default
 func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
 	newNode := models.Node{
 		Address:         peer.Address,
@@ -268,6 +293,9 @@ func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error
 	return err
 }
 
+// UpdateNode updates the node information in the database
+//
+// It reset the node's failure count and marks it as alive
 func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
 	existingNode, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).One(ctx, pg.db)
 	if err != nil {
@@ -282,6 +310,8 @@ func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) err
 		models.NodeColumns.StartingHeight: peer.StartingHeight,
 		models.NodeColumns.UserAgent:      peer.UserAgent,
 		models.NodeColumns.CurrentHeight:  peer.CurrentHeight,
+		models.NodeColumns.IsDead:		   false,
+		models.NodeColumns.FailureCount:   0,
 	}
 	if existingNode.ConnectionTime == 0 {
 		cols[models.NodeColumns.ConnectionTime] = peer.ConnectionTime
@@ -320,6 +350,7 @@ func (pg PgDb) NetworkPeers(ctx context.Context, timestamp int64, q string, offs
 			StartingHeight:  node.StartingHeight,
 			CurrentHeight:   node.CurrentHeight,
 			Services:        node.Services,
+			IsDead: 		 node.IsDead,
 		}
 
 		peer.IPInfo = netsnapshot.IPInfo{
@@ -370,6 +401,7 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 		StartingHeight:  node.StartingHeight,
 		CurrentHeight:   node.CurrentHeight,
 		Services:        node.Services,
+		IsDead: 		 node.IsDead,
 	}
 
 	peer.IPInfo = netsnapshot.IPInfo{
@@ -384,6 +416,7 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 
 func (pg PgDb) AverageLatency(ctx context.Context, address string) (int, error) {
 	heartbeats, err := models.Heartbeats(models.HeartbeatWhere.NodeID.EQ(address), 
+		models.HeartbeatWhere.Latency.GT(0),
 		qm.Select(models.HeartbeatColumns.Latency)).All(ctx, pg.db)
 	if err != nil {
 		if err.Error() == sql.ErrNoRows.Error() {

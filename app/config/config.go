@@ -43,6 +43,7 @@ const (
 	defaultSeederListenPort    = "5354"
 	defaultSeederNameServer    = "nameserver.example.com"
 	defaultSeeder              = "127.0.0.1"
+	maxPeerConnectionFailure   = 3
 )
 
 var (
@@ -88,6 +89,7 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.Nameserver = defaultSeederNameServer
 	cfg.Listen = normalizeAddress(defaultSeederListonAddress, defaultSeederListenPort)
 	cfg.Seeder = defaultSeeder
+	cfg.MaxPeerConnectionFailure = maxPeerConnectionFailure
 
 	return cfg
 }
@@ -175,6 +177,7 @@ type CommunityStatOptions struct {
 type NetworkSnapshotOptions struct {
 	DisableNetworkSnapshot bool   `long:"disablesnapshot" description:"Disable network snapshot"`
 	SnapshotInterval       int    `long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
+	MaxPeerConnectionFailure	   int 	  `long:"maxPeerConnectionFailure" description:"Number of failed connection before a pair is marked a dead"`
 	SeederHost             string `short:"H" long:"host" description:"Seed DNS address"`
 	Listen                 string `long:"listen" short:"l" description:"Listen on address:port"`
 	Nameserver             string `short:"n" long:"nameserver" description:"hostname of nameserver"`

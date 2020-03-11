@@ -52,6 +52,7 @@ type Manager struct {
 	liveNodeIPs []net.IP
 	peerNtfn    chan *Node
 	attemptNtfn chan attemptedPeer
+	connFailNtfn chan net.IP
 	wg          sync.WaitGroup
 	quit        chan struct{}
 	peersFile   string
@@ -145,6 +146,7 @@ func NewManager(dataDir string) (*Manager, error) {
 		nodes:     make(map[string]*Node),
 		peerNtfn:  make(chan *Node),
 		attemptNtfn: make(chan attemptedPeer),
+		connFailNtfn: make(chan net.IP),
 		peersFile: filepath.Join(dataDir, peersFilename),
 		quit:      make(chan struct{}),
 	}
@@ -195,6 +197,10 @@ func (m *Manager) AddAddresses(addrs []peerAddress) int {
 
 // Addresses returns IPs that need to be tested again.
 func (m *Manager) Addresses() []peerAddress {
+	defer func ()  {
+		m.liveNodeIPs = nil
+	}()
+
 	if addrs := m.liveNodes(); len(addrs) > 0 {
 		log.Infof("returning %d IPs from live nodes", len(addrs))
 		peers := make([]peerAddress, len(addrs))
@@ -230,22 +236,17 @@ func (m *Manager) liveNodes() []net.IP {
 		panic("m can't nil")
 	}
 	m.mtx.RLock()
-	m.mtx.RUnlock()
-
+	defer m.mtx.RUnlock()
 	if len(m.liveNodeIPs) == 0 {
 		return nil
 	}
-
-	var addrs []net.IP
-	copy(m.liveNodeIPs, addrs)
-	m.liveNodeIPs = nil
-	return addrs
+	return m.liveNodeIPs
 }
 
 func (m *Manager) setLiveNodes(nodes []net.IP) {
 	m.mtx.Lock()
-	defer m.mtx.Unlock()
 	m.liveNodeIPs = nodes
+	m.mtx.Unlock()
 }
 
 func (m *Manager) Attempt(ip net.IP) {
@@ -259,6 +260,10 @@ func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Unlock()
 	
 	m.attemptNtfn <- attemptedPeer{ip, now.UTC().Unix()}
+}
+
+func (m *Manager) notifyFailedAttempt(ip net.IP) {
+	m.connFailNtfn <- ip
 }
 
 func (m *Manager) Good(p *peer.Peer) {

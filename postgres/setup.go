@@ -159,6 +159,7 @@ const (
 		last_attempt INT8 NOT NULL,
 		last_seen INT8 NOT NULL,
 		last_success INT8 NOT NULL,
+		failure_count INT NOT NULL DEFAULT 0,
 		is_dead BOOLEAN NOT NULL,
 		connection_time INT8 NOT NULL,
 		protocol_version INT NOT NULL,

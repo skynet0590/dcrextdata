@@ -107,7 +107,7 @@ func templateFuncMap() template.FuncMap {
 			}
 			return pair
 		},
-		"percentage": func(total int64, actual int64) string {
+		"percentage": func(actual int64, total int64) string {
 			return fmt.Sprintf("%.2f", 100 * float64(actual) / float64(total))
 		},
 	}

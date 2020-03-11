@@ -78,6 +78,7 @@ type DataStore interface {
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
 	SaveHeartbeat(ctx context.Context, peer Heartbeat) error
 	AttemptPeer(ctx context.Context, address string, now int64) error
+	RecordNodeConnectionFailure(ctx context.Context, address string, maxAllowedFailure int) error
 	SaveNode(ctx context.Context, peer NetworkPeer) error
 	UpdateNode(ctx context.Context, peer NetworkPeer) error
 	GetAvailableNodes(ctx context.Context) ([]net.IP, error)

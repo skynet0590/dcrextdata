@@ -39,6 +39,7 @@ type Node struct {
 	Services        string `boil:"services" json:"services" toml:"services" yaml:"services"`
 	StartingHeight  int64  `boil:"starting_height" json:"starting_height" toml:"starting_height" yaml:"starting_height"`
 	CurrentHeight   int64  `boil:"current_height" json:"current_height" toml:"current_height" yaml:"current_height"`
+	FailureCount    int    `boil:"failure_count" json:"failure_count" toml:"failure_count" yaml:"failure_count"`
 
 	R *nodeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L nodeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -61,6 +62,7 @@ var NodeColumns = struct {
 	Services        string
 	StartingHeight  string
 	CurrentHeight   string
+	FailureCount    string
 }{
 	Address:         "address",
 	IPVersion:       "ip_version",
@@ -78,6 +80,7 @@ var NodeColumns = struct {
 	Services:        "services",
 	StartingHeight:  "starting_height",
 	CurrentHeight:   "current_height",
+	FailureCount:    "failure_count",
 }
 
 // Generated where
@@ -108,6 +111,7 @@ var NodeWhere = struct {
 	Services        whereHelperstring
 	StartingHeight  whereHelperint64
 	CurrentHeight   whereHelperint64
+	FailureCount    whereHelperint
 }{
 	Address:         whereHelperstring{field: "\"node\".\"address\""},
 	IPVersion:       whereHelperint{field: "\"node\".\"ip_version\""},
@@ -125,6 +129,7 @@ var NodeWhere = struct {
 	Services:        whereHelperstring{field: "\"node\".\"services\""},
 	StartingHeight:  whereHelperint64{field: "\"node\".\"starting_height\""},
 	CurrentHeight:   whereHelperint64{field: "\"node\".\"current_height\""},
+	FailureCount:    whereHelperint{field: "\"node\".\"failure_count\""},
 }
 
 // NodeRels is where relationship names are stored.
@@ -148,9 +153,9 @@ func (*nodeR) NewStruct() *nodeR {
 type nodeL struct{}
 
 var (
-	nodeAllColumns            = []string{"address", "ip_version", "country", "region", "city", "zip", "last_attempt", "last_seen", "last_success", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
+	nodeAllColumns            = []string{"address", "ip_version", "country", "region", "city", "zip", "last_attempt", "last_seen", "last_success", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height", "failure_count"}
 	nodeColumnsWithoutDefault = []string{"address", "ip_version", "country", "region", "city", "zip", "last_attempt", "last_seen", "last_success", "is_dead", "connection_time", "protocol_version", "user_agent", "services", "starting_height", "current_height"}
-	nodeColumnsWithDefault    = []string{}
+	nodeColumnsWithDefault    = []string{"failure_count"}
 	nodePrimaryKeyColumns     = []string{"address"}
 )
 
