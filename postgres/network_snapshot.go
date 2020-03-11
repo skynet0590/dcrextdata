@@ -255,6 +255,11 @@ func (pg PgDb) SaveNode(ctx context.Context, peer netsnapshot.NetworkPeer) error
 }
 
 func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) error {
+	existingNode, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).One(ctx, pg.db)
+	if err != nil {
+		return fmt.Errorf("update failed: %s", err.Error())
+	}
+
 	var cols = models.M{
 		models.NodeColumns.LastAttempt:    peer.LastAttempt,
 		models.NodeColumns.LastSeen:       peer.LastSeen,
@@ -263,9 +268,11 @@ func (pg PgDb) UpdateNode(ctx context.Context, peer netsnapshot.NetworkPeer) err
 		models.NodeColumns.StartingHeight: peer.StartingHeight,
 		models.NodeColumns.UserAgent:      peer.UserAgent,
 		models.NodeColumns.CurrentHeight:  peer.CurrentHeight,
-		models.NodeColumns.ConnectionTime: peer.ConnectionTime,
 	}
-	_, err := models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).UpdateAll(ctx, pg.db, cols)
+	if existingNode.ConnectionTime == 0 {
+		cols[models.NodeColumns.ConnectionTime] = peer.ConnectionTime
+	}
+	_, err = models.Nodes(models.NodeWhere.Address.EQ(peer.Address)).UpdateAll(ctx, pg.db, cols)
 	return err
 }
 
