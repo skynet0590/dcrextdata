@@ -146,6 +146,7 @@ const (
 		reachable_nodes INT NOT NULL,
 		oldest_node VARCHAR(256) NOT NULL DEFAULT '',
 		oldest_node_timestamp INT8 NOT NULL DEFAULT 0,
+		latency INT NOT NULL DEFAULT 0,
 		PRIMARY KEY (timestamp)
 	);`
 

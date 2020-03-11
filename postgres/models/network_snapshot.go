@@ -29,6 +29,7 @@ type NetworkSnapshot struct {
 	ReachableNodes      int    `boil:"reachable_nodes" json:"reachable_nodes" toml:"reachable_nodes" yaml:"reachable_nodes"`
 	OldestNodeTimestamp int64  `boil:"oldest_node_timestamp" json:"oldest_node_timestamp" toml:"oldest_node_timestamp" yaml:"oldest_node_timestamp"`
 	OldestNode          string `boil:"oldest_node" json:"oldest_node" toml:"oldest_node" yaml:"oldest_node"`
+	Latency             int    `boil:"latency" json:"latency" toml:"latency" yaml:"latency"`
 
 	R *networkSnapshotR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkSnapshotL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,6 +42,7 @@ var NetworkSnapshotColumns = struct {
 	ReachableNodes      string
 	OldestNodeTimestamp string
 	OldestNode          string
+	Latency             string
 }{
 	Timestamp:           "timestamp",
 	Height:              "height",
@@ -48,6 +50,7 @@ var NetworkSnapshotColumns = struct {
 	ReachableNodes:      "reachable_nodes",
 	OldestNodeTimestamp: "oldest_node_timestamp",
 	OldestNode:          "oldest_node",
+	Latency:             "latency",
 }
 
 // Generated where
@@ -59,6 +62,7 @@ var NetworkSnapshotWhere = struct {
 	ReachableNodes      whereHelperint
 	OldestNodeTimestamp whereHelperint64
 	OldestNode          whereHelperstring
+	Latency             whereHelperint
 }{
 	Timestamp:           whereHelperint64{field: "\"network_snapshot\".\"timestamp\""},
 	Height:              whereHelperint64{field: "\"network_snapshot\".\"height\""},
@@ -66,6 +70,7 @@ var NetworkSnapshotWhere = struct {
 	ReachableNodes:      whereHelperint{field: "\"network_snapshot\".\"reachable_nodes\""},
 	OldestNodeTimestamp: whereHelperint64{field: "\"network_snapshot\".\"oldest_node_timestamp\""},
 	OldestNode:          whereHelperstring{field: "\"network_snapshot\".\"oldest_node\""},
+	Latency:             whereHelperint{field: "\"network_snapshot\".\"latency\""},
 }
 
 // NetworkSnapshotRels is where relationship names are stored.
@@ -85,9 +90,9 @@ func (*networkSnapshotR) NewStruct() *networkSnapshotR {
 type networkSnapshotL struct{}
 
 var (
-	networkSnapshotAllColumns            = []string{"timestamp", "height", "node_count", "reachable_nodes", "oldest_node_timestamp", "oldest_node"}
+	networkSnapshotAllColumns            = []string{"timestamp", "height", "node_count", "reachable_nodes", "oldest_node_timestamp", "oldest_node", "latency"}
 	networkSnapshotColumnsWithoutDefault = []string{"timestamp", "height", "node_count", "reachable_nodes"}
-	networkSnapshotColumnsWithDefault    = []string{"oldest_node_timestamp", "oldest_node"}
+	networkSnapshotColumnsWithDefault    = []string{"oldest_node_timestamp", "oldest_node", "latency"}
 	networkSnapshotPrimaryKeyColumns     = []string{"timestamp"}
 )
 

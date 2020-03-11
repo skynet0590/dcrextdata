@@ -35,6 +35,12 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		snapshot.OldestNode = address
 	}
 
+	avgLatency, err := pg.averageLatencyByTimestamp(ctx, snapshot.Timestamp)
+	if err != nil {
+		return err
+	}
+	snapshot.Latency = avgLatency
+
 	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
 	if err == nil {
 		existingSnapshot.Height = snapshot.Height
@@ -42,6 +48,7 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		existingSnapshot.ReachableNodes = snapshot.ReachableNodeCount
 		existingSnapshot.OldestNode = snapshot.OldestNode
 		existingSnapshot.OldestNodeTimestamp = snapshot.OldestNodeTimestamp
+		existingSnapshot.Latency = snapshot.Latency
 		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
 		return err
 	}
@@ -53,6 +60,7 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		ReachableNodes:      snapshot.ReachableNodeCount,
 		OldestNode:          snapshot.OldestNode,
 		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
+		Latency: 			 snapshot.Latency,
 	}
 
 	//
@@ -78,6 +86,7 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
+		Latency: 			 snapshotModel.Latency,
 	}, nil
 }
 
@@ -98,6 +107,7 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
+		Latency: 			 snapshotModel.Latency,
 	}
 
 	return &snapshot, err
@@ -133,6 +143,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 			ReachableNodeCount:  m.ReachableNodes,
 			OldestNode:          m.OldestNode,
 			OldestNodeTimestamp: m.OldestNodeTimestamp,
+			Latency: 			 m.Latency,
 		}
 	}
 
@@ -161,6 +172,7 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
+		Latency: 			 snapshotModel.Latency,
 	}
 
 	return &snapshot, err
@@ -416,6 +428,25 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 
 func (pg PgDb) AverageLatency(ctx context.Context, address string) (int, error) {
 	heartbeats, err := models.Heartbeats(models.HeartbeatWhere.NodeID.EQ(address),
+		models.HeartbeatWhere.Latency.GT(0),
+		qm.Select(models.HeartbeatColumns.Latency)).All(ctx, pg.db)
+	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	var total int
+	for _, h := range heartbeats {
+		total += h.Latency
+	}
+
+	return total / len(heartbeats), nil
+}
+
+func (pg PgDb) averageLatencyByTimestamp(ctx context.Context, timestamp int64) (int, error) {
+	heartbeats, err := models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp),
 		models.HeartbeatWhere.Latency.GT(0),
 		qm.Select(models.HeartbeatColumns.Latency)).All(ctx, pg.db)
 	if err != nil {
