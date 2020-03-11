@@ -233,6 +233,14 @@ func (pg PgDb) SaveHeartbeat(ctx context.Context, heartbeat netsnapshot.Heartbea
 	return nil
 }
 
+func (pg PgDb) AttemptPeer(ctx context.Context, address string, now int64) error {
+	var cols = models.M{
+		models.NodeColumns.LastAttempt: now,
+	}
+	_, err := models.Nodes(models.NodeWhere.Address.EQ(address)).UpdateAll(ctx, pg.db, cols)
+	return err
+}
+
 func (pg PgDb) NodeExists(ctx context.Context, address string) (bool, error) {
 	return models.NodeExists(ctx, pg.db, address)
 }

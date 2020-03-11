@@ -40,12 +40,18 @@ type peerAddress struct {
 	Port uint16
 }
 
+type attemptedPeer struct {
+	IP net.IP
+	Time int64
+}
+
 type Manager struct {
 	mtx sync.RWMutex
 
 	nodes       map[string]*Node
 	liveNodeIPs []net.IP
 	peerNtfn    chan *Node
+	attemptNtfn chan attemptedPeer
 	wg          sync.WaitGroup
 	quit        chan struct{}
 	peersFile   string
@@ -138,6 +144,7 @@ func NewManager(dataDir string) (*Manager, error) {
 	amgr := Manager{
 		nodes:     make(map[string]*Node),
 		peerNtfn:  make(chan *Node),
+		attemptNtfn: make(chan attemptedPeer),
 		peersFile: filepath.Join(dataDir, peersFilename),
 		quit:      make(chan struct{}),
 	}
@@ -244,11 +251,14 @@ func (m *Manager) setLiveNodes(nodes []net.IP) {
 func (m *Manager) Attempt(ip net.IP) {
 	m.mtx.Lock()
 	node, exists := m.nodes[ip.String()]
+	now := time.Now()
 	if exists {
-		node.LastAttempt = time.Now()
+		node.LastAttempt = now
 		node.AttemptCount++
 	}
 	m.mtx.Unlock()
+	
+	m.attemptNtfn <- attemptedPeer{ip, now.UTC().Unix()}
 }
 
 func (m *Manager) Good(p *peer.Peer) {

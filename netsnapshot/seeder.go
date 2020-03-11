@@ -95,8 +95,9 @@ func creep(netParams *chaincfg.Params) {
 					return
 				}
 
-				amgr.Attempt(addr.IP)
 				t := time.Now()
+				amgr.Attempt(addr.IP)
+
 				conn, err := net.DialTimeout("tcp", p.Addr(),
 					defaultNodeTimeout)
 				if err != nil {

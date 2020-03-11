@@ -132,6 +132,7 @@ func (t taker) Start(ctx context.Context) {
 			networkPeer := NetworkPeer{
 				Timestamp:       timestamp,
 				Address:         node.IP.String(),
+				LastAttempt:     node.LastAttempt.UTC().Unix(),
 				LastSeen:        node.LastSeen.UTC().Unix(),
 				LastSuccess:     node.LastSuccess.UTC().Unix(),
 				ConnectionTime:  node.ConnectionTime,
@@ -199,6 +200,11 @@ func (t taker) Start(ctx context.Context) {
 				mtx.Unlock()
 				log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), node.UserAgent, node.ProtocolVersion)
 			}
+		case attemptedPeer := <-amgr.attemptNtfn:
+			if err := t.dataStore.AttemptPeer(ctx, attemptedPeer.IP.String(), attemptedPeer.Time); err != nil {
+				log.Errorf("Error in saving peer attempt for %s, %s", attemptedPeer.IP.String(), err.Error())
+			}
+
 		case <-ctx.Done():
 			log.Info("Shutting down network seeder")
 			amgr.quit <- struct{}{}

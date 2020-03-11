@@ -19,7 +19,9 @@
                                 <a href="#network-snapshot">Node Status</a>
                             </h3>
                             <p>
-                                Node information is updated every {{ .snapshotinterval }} minutes. Last seen
+                                Node information is updated every {{ .snapshotinterval }} minutes. Last Attempt
+                                <span data-target="node.moment" data-value="{{.node.LastSeen}}">{{formatUnixTime .node.LastAttempt}}</span>
+                                Last seen
                                 <span data-target="node.moment" data-value="{{.node.LastSeen}}">{{formatUnixTime .node.LastSeen}}</span>
                             </p>
                         </div>
@@ -39,7 +41,7 @@
                                             <h4>UP</h4>
                                             <span class="field">Connected Since <span data-target="node.moment" data-value="{{.node.ConnectionTime}}">{{ unixTimeAgo .node.ConnectionTime }}</span></span>
                                         {{ end }}
-                                        <h4>{{.averageLatency}}</h4>
+                                        <h4>{{.averageLatency}} Milliseconds</h4>
                                         <span class="field">Average Latency</span>
                                     </li>
                                     <li class="list-group-item">
