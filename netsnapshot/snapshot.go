@@ -78,6 +78,7 @@ func (t taker) Start(ctx context.Context) {
 		minutesPassed := math.Abs(time.Since(time.Unix(lastSnapshot.Timestamp, 0)).Minutes())
 		if minutesPassed < float64(t.cfg.SnapshotInterval) {
 			snapshot = *lastSnapshot
+			timestamp = lastSnapshot.Timestamp
 		}
 	}
 

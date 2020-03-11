@@ -24,16 +24,6 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		return err
 	}
 	snapshot.ReachableNodeCount = int(goodNode)
-
-	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
-	if err == nil {
-		existingSnapshot.Height = snapshot.Height
-		existingSnapshot.NodeCount = snapshot.NodeCount
-		existingSnapshot.ReachableNodes = snapshot.ReachableNodeCount
-		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
-		return err
-	}
-
 	if snapshot.OldestNodeTimestamp == 0 {
 		address, oldestTimestamp, err := pg.getOldestNodeTimestamp(ctx, snapshot.Timestamp)
 		if err != nil {
@@ -43,6 +33,17 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		}
 		snapshot.OldestNodeTimestamp = oldestTimestamp
 		snapshot.OldestNode = address
+	}
+
+	existingSnapshot, err := models.FindNetworkSnapshot(ctx, pg.db, snapshot.Timestamp)
+	if err == nil {
+		existingSnapshot.Height = snapshot.Height
+		existingSnapshot.NodeCount = snapshot.NodeCount
+		existingSnapshot.ReachableNodes = snapshot.ReachableNodeCount
+		existingSnapshot.OldestNode = snapshot.OldestNode
+		existingSnapshot.OldestNodeTimestamp= snapshot.OldestNodeTimestamp
+		_, err = existingSnapshot.Update(ctx, pg.db, boil.Infer())
+		return err
 	}
 
 	snapshotModel := models.NetworkSnapshot{
