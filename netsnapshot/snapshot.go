@@ -76,7 +76,7 @@ func (t taker) Start(ctx context.Context) {
 	lastSnapshot, err := t.dataStore.LastSnapshot(ctx)
 	if err == nil {
 		minutesPassed := math.Abs(time.Since(time.Unix(lastSnapshot.Timestamp, 0)).Minutes())
-		if minutesPassed < float64(t.cfg.SnapshotInterval)/2 {
+		if minutesPassed < float64(t.cfg.SnapshotInterval) {
 			snapshot = *lastSnapshot
 		}
 	}
