@@ -62,7 +62,6 @@ func (t taker) Start(ctx context.Context) {
 			log.Errorf("Error in taking network snapshot, %s", err.Error())
 		}
 		amgr.setLiveNodes(nodes)
-		log.Infof("%d nodes loaded to live reload", len(nodes))
 	}
 
 	// enqueue previous known ips
@@ -120,7 +119,6 @@ func (t taker) Start(ctx context.Context) {
 			count = 0
 			log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", count)
 			timestamp = time.Now().UTC().Unix()
-			loadLiveNodes()
 			mtx.Unlock()
 			// update all reachable nodes
 			loadLiveNodes()
@@ -207,7 +205,7 @@ func (t taker) Start(ctx context.Context) {
 				log.Errorf("Error in saving peer attempt for %s, %s", attemptedPeer.IP.String(), err.Error())
 			}
 
-		case ip := <- amgr.connFailNtfn:
+		case ip := <-amgr.connFailNtfn:
 			if err := t.dataStore.RecordNodeConnectionFailure(ctx, ip.String(), t.cfg.MaxPeerConnectionFailure); err != nil {
 				log.Errorf("Error in failed connection attempt for %s, %s", ip.String(), err.Error())
 			}

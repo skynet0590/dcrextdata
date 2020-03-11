@@ -14,9 +14,9 @@ var templates *template.Template
 
 func (s *Server) loadTemplates() {
 	layout := "web/views/layout.html"
-    for _, dir := range templateDirs {
-        files2, _ := ioutil.ReadDir(dir)
-        for _, file := range files2 {
+	for _, dir := range templateDirs {
+		files2, _ := ioutil.ReadDir(dir)
+		for _, file := range files2 {
 			filename := file.Name()
 			if !strings.HasSuffix(filename, ".html") {
 				continue
@@ -33,8 +33,8 @@ func (s *Server) loadTemplates() {
 			s.lock.Lock()
 			s.templates[filename] = tpl
 			s.lock.Unlock()
-        }
-    }
+		}
+	}
 }
 
 var pairMap = map[string]string{
@@ -108,7 +108,7 @@ func templateFuncMap() template.FuncMap {
 			return pair
 		},
 		"percentage": func(actual int64, total int64) string {
-			return fmt.Sprintf("%.2f", 100 * float64(actual) / float64(total))
+			return fmt.Sprintf("%.2f", 100*float64(actual)/float64(total))
 		},
 	}
 }

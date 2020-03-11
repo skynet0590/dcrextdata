@@ -19,7 +19,7 @@ import (
 
 type Node struct {
 	IP           net.IP
-	Port 		 uint16
+	Port         uint16
 	Services     wire.ServiceFlag
 	LastAttempt  time.Time
 	AttemptCount int
@@ -41,21 +41,21 @@ type peerAddress struct {
 }
 
 type attemptedPeer struct {
-	IP net.IP
+	IP   net.IP
 	Time int64
 }
 
 type Manager struct {
 	mtx sync.RWMutex
 
-	nodes       map[string]*Node
-	liveNodeIPs []net.IP
-	peerNtfn    chan *Node
-	attemptNtfn chan attemptedPeer
+	nodes        map[string]*Node
+	liveNodeIPs  []net.IP
+	peerNtfn     chan *Node
+	attemptNtfn  chan attemptedPeer
 	connFailNtfn chan net.IP
-	wg          sync.WaitGroup
-	quit        chan struct{}
-	peersFile   string
+	wg           sync.WaitGroup
+	quit         chan struct{}
+	peersFile    string
 }
 
 var (
@@ -143,12 +143,12 @@ func NewManager(dataDir string) (*Manager, error) {
 	}
 
 	amgr := Manager{
-		nodes:     make(map[string]*Node),
-		peerNtfn:  make(chan *Node),
-		attemptNtfn: make(chan attemptedPeer),
+		nodes:        make(map[string]*Node),
+		peerNtfn:     make(chan *Node),
+		attemptNtfn:  make(chan attemptedPeer),
 		connFailNtfn: make(chan net.IP),
-		peersFile: filepath.Join(dataDir, peersFilename),
-		quit:      make(chan struct{}),
+		peersFile:    filepath.Join(dataDir, peersFilename),
+		quit:         make(chan struct{}),
 	}
 
 	err = amgr.deserializePeers()
@@ -184,7 +184,7 @@ func (m *Manager) AddAddresses(addrs []peerAddress) int {
 		}
 		node := Node{
 			IP:       addr.IP,
-			Port: 	  addr.Port,
+			Port:     addr.Port,
 			LastSeen: time.Now(),
 		}
 		m.nodes[addrStr] = &node
@@ -197,7 +197,7 @@ func (m *Manager) AddAddresses(addrs []peerAddress) int {
 
 // Addresses returns IPs that need to be tested again.
 func (m *Manager) Addresses() []peerAddress {
-	defer func ()  {
+	defer func() {
 		m.liveNodeIPs = nil
 	}()
 
@@ -258,7 +258,7 @@ func (m *Manager) Attempt(ip net.IP) {
 		node.AttemptCount++
 	}
 	m.mtx.Unlock()
-	
+
 	m.attemptNtfn <- attemptedPeer{ip, now.UTC().Unix()}
 }
 

@@ -1693,7 +1693,7 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 
 	t, _ := strconv.Atoi(r.FormValue("timestamp"))
 	timestamp = int64(t)
-	
+
 	if timestamp == 0 {
 		timestamp = s.db.LastSnapshotTime(r.Context())
 		if timestamp == 0 {
@@ -1751,10 +1751,10 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 		"nextPage":           nextPage,
 		"pageSize":           pageSize,
 		"totalPages":         pageCount,
-		"timestamp":		  timestamp,
-		"height":			  snapshot.Height,
+		"timestamp":          timestamp,
+		"height":             snapshot.Height,
 		"previousTimestamp":  previousTimestamp,
-		"nextTimestamp":	  nextTimestamp,
+		"nextTimestamp":      nextTimestamp,
 	}
 
 	s.render("nodes.html", data, w)
@@ -1829,8 +1829,8 @@ func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
 	s.render("node.html", map[string]interface{}{
 		"node": node, "bestBlockHeight": int64(bestBlockHeight),
 		"snapshotinterval": netsnapshot.Snapshotinterval(),
-		"averageLatency": averageLatency,
-		}, w)
+		"averageLatency":   averageLatency,
+	}, w)
 }
 
 // /api/snapshots/user-agents
@@ -1860,10 +1860,10 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 
 	total := len(userAgents)
 	var totalPages int
-	if total % pageSize == 0 {
+	if total%pageSize == 0 {
 		totalPages = total / pageSize
 	} else {
-		totalPages = 1 + (total - total % pageSize) / pageSize
+		totalPages = 1 + (total-total%pageSize)/pageSize
 	}
 
 	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
@@ -1896,10 +1896,10 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 
 	total := len(countries)
 	var totalPages int
-	if total % pageSize == 0 {
+	if total%pageSize == 0 {
 		totalPages = total / pageSize
 	} else {
-		totalPages = 1 + (total - total % pageSize) / pageSize
+		totalPages = 1 + (total-total%pageSize)/pageSize
 	}
 
 	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
@@ -1972,7 +1972,7 @@ func (s *Server) ipInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.renderJSON(map[string]interface{}{"country" : country, "ip_version" : version}, w)
+	s.renderJSON(map[string]interface{}{"country": country, "ip_version": version}, w)
 }
 
 // api/sync/{dataType}

@@ -9,12 +9,12 @@ import (
 )
 
 type SnapShot struct {
-	Timestamp 			int64 `json:"timestamp"`
-	Height    			int64 `json:"height"`
-	NodeCount 			int   `json:"node_count"`
-	ReachableNodeCount  int   `json:"reachable_node_count"`
-	OldestNode 			string `json:"oldest_node"`
-	OldestNodeTimestamp int64 `json:"oldest_node_timestamp"`
+	Timestamp           int64  `json:"timestamp"`
+	Height              int64  `json:"height"`
+	NodeCount           int    `json:"node_count"`
+	ReachableNodeCount  int    `json:"reachable_node_count"`
+	OldestNode          string `json:"oldest_node"`
+	OldestNodeTimestamp int64  `json:"oldest_node_timestamp"`
 }
 
 type NodeCount struct {
@@ -46,7 +46,7 @@ type NetworkPeer struct {
 	LastSuccess     int64  `json:"last_success"`
 	IsDead          bool   `json:"is_dead"`
 	Latency         int    `json:"latency"`
-	Reachable		bool   `json:"reachable"`
+	Reachable       bool   `json:"reachable"`
 	IPVersion       int    `json:"ip_version"`
 	Services        string `json:"services"`
 	LastAttempt     int64  `json:"last_attempt"`
