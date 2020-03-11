@@ -17,7 +17,14 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
+var snapshotinterval int
+
+func Snapshotinterval() int {
+	return snapshotinterval
+}
+
 func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
+	snapshotinterval = cfg.SnapshotInterval
 	return &taker{
 		dataStore: store,
 		cfg:       cfg,

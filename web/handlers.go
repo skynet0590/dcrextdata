@@ -15,6 +15,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -1805,19 +1806,31 @@ func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	node, err := s.db.NetworkPeer(r.Context(), address)
+	ctx := r.Context()
+
+	node, err := s.db.NetworkPeer(ctx, address)
 	if err != nil {
 		s.renderErrorf("Cannot get not details, %s", w, err.Error())
 		return
 	}
 
-	bestBlockHeight, err := s.getExplorerBestBlock(r.Context())
+	averageLatency, err := s.db.AverageLatency(ctx, address)
+	if err != nil {
+		s.renderErrorf("Cannot load detail, error in getting average latency, %s", w, err.Error())
+		return
+	}
+
+	bestBlockHeight, err := s.getExplorerBestBlock(ctx)
 	if err != nil {
 		s.renderErrorf("Cannot load detail, error in getting best block height, %s", w, err.Error())
 		return
 	}
 
-	s.render("node.html", map[string]interface{}{"node": node, "bestBlockHeight": int64(bestBlockHeight)}, w)
+	s.render("node.html", map[string]interface{}{
+		"node": node, "bestBlockHeight": int64(bestBlockHeight),
+		"snapshotinterval": netsnapshot.Snapshotinterval(),
+		"averageLatency": averageLatency,
+		}, w)
 }
 
 // /api/snapshots/user-agents

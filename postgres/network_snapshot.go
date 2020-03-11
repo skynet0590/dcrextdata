@@ -374,6 +374,24 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 	return &peer, nil
 }
 
+func (pg PgDb) AverageLatency(ctx context.Context, address string) (int, error) {
+	heartbeats, err := models.Heartbeats(models.HeartbeatWhere.NodeID.EQ(address), 
+		qm.Select(models.HeartbeatColumns.Latency)).All(ctx, pg.db)
+	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	var total int
+	for _, h := range heartbeats {
+		total += h.Latency
+	}
+
+	return total/len(heartbeats), nil
+}
+
 func (pg PgDb) GetIPLocation(ctx context.Context, ip string) (string, int, error) {
 	node, err := models.Nodes(
 		models.NodeWhere.Address.EQ(ip),
