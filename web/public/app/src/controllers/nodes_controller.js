@@ -418,7 +418,7 @@ export default class extends Controller {
         ylabel: 'Node Count',
         y2label: 'Reachable Nodes',
         xlabel: 'Date',
-        labels: ['Date', 'Reachable Nodes', 'Node Count'],
+        labels: ['Date', 'Node Count', 'Reachable Nodes'],
         labelsUTC: true,
         labelsKMB: true,
         maxNumberWidth: 10,
