@@ -204,7 +204,6 @@ func (m *Manager) Addresses() []peerAddress {
 	}()
 
 	if addrs := m.liveNodes(); len(addrs) > 0 {
-		log.Infof("returning %d IPs from live nodes", len(addrs))
 		peers := make([]peerAddress, len(addrs))
 		for i, p := range addrs {
 			peers[i] = peerAddress{IP: p}
@@ -221,8 +220,8 @@ func (m *Manager) Addresses() []peerAddress {
 		if i == 0 {
 			break
 		}
-		if (now.Sub(node.LastSuccess) < defaultStaleTimeout || now.Sub(node.LastAttempt) < defaultStaleTimeout) &&
-			!(node.StartingHeight == 0 && node.AttemptCount < 3) {
+		if now.Sub(node.LastSuccess) < defaultStaleTimeout ||
+			now.Sub(node.LastAttempt) < defaultStaleTimeout {
 			continue
 		}
 		addrs = append(addrs, peerAddress{node.IP, node.Port})
@@ -310,7 +309,6 @@ out:
 		}
 	}
 	m.savePeers()
-	//m.wg.Done()
 }
 
 func (m *Manager) prunePeers() {
@@ -333,7 +331,9 @@ func (m *Manager) prunePeers() {
 	l := len(m.nodes)
 	m.mtx.Unlock()
 
-	log.Infof("Pruned %d addresses: %d remaining", count, l)
+	if m.showDetailedLog {
+		log.Infof("Pruned %d addresses: %d remaining", count, l)
+	}
 }
 
 func (m *Manager) deserializePeers() error {
@@ -390,5 +390,7 @@ func (m *Manager) savePeers() {
 		return
 	}
 
-	log.Infof("%d nodes saved to %s", len(m.nodes), m.peersFile)
+	if m.showDetailedLog {
+		log.Infof("%d nodes saved to %s", len(m.nodes), m.peersFile)
+	}
 }

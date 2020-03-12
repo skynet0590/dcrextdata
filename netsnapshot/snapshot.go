@@ -89,12 +89,11 @@ func (t taker) Start(ctx context.Context) {
 	}
 
 	snapshot.NodeCount = len(amgr.nodes)
-	err = t.dataStore.SaveSnapshot(ctx, snapshot)
-
-	if err != nil {
-		// todo delete all the related node info
-		t.dataStore.DeleteSnapshot(ctx, timestamp)
-		log.Errorf("Error in saving network snapshot, %s", err.Error())
+	if snapshot.NodeCount > 0 {
+		if err = t.dataStore.SaveSnapshot(ctx, snapshot); err != nil {
+			t.dataStore.DeleteSnapshot(ctx, timestamp)
+			log.Errorf("Error in saving network snapshot, %s", err.Error())
+		}
 	}
 
 	ticker := time.NewTicker(time.Duration(t.cfg.SnapshotInterval) * time.Minute)
@@ -197,7 +196,10 @@ func (t taker) Start(ctx context.Context) {
 				}
 
 				mtx.Unlock()
-				log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), node.UserAgent, node.ProtocolVersion)
+				if amgr.showDetailedLog {
+					log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), 
+						node.UserAgent, node.ProtocolVersion)
+				}
 			}
 
 		case attemptedPeer := <-amgr.attemptNtfn:

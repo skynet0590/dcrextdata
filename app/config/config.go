@@ -38,10 +38,6 @@ const (
 	defaultGithubStatInterval  = 60 * 24
 	defaultYoutubeInterval     = 60 * 24
 	//dcrseeder
-	defaultSeederHostAddress   = "network-seed.example.com"
-	defaultSeederListonAddress = "localhost"
-	defaultSeederListenPort    = "5354"
-	defaultSeederNameServer    = "nameserver.example.com"
 	defaultSeeder              = "127.0.0.1"
 	defaultSeederPort          = 9108
 	maxPeerConnectionFailure   = 3

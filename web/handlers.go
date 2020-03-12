@@ -1697,7 +1697,7 @@ func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	if timestamp == 0 {
 		timestamp = s.db.LastSnapshotTime(r.Context())
 		if timestamp == 0 {
-			s.renderError("No snapshot has been taken, please enable Network snapshot from the config file and try again.", w)
+			s.renderError("No snapshot has been taken, please confirm that snapshot taker is configured.", w)
 			return
 		}
 	}

@@ -52,13 +52,17 @@ func creep(netParams *chaincfg.Params) {
 					n = append(n, peerAddress{addr.IP, addr.Port})
 				}
 				added := amgr.AddAddresses(n)
-				log.Infof("Peer %v sent %v addresses, %d new",
-					p.Addr(), len(msg.AddrList), added)
+				if amgr.showDetailedLog {
+					log.Infof("Peer %v sent %v addresses, %d new",
+						p.Addr(), len(msg.AddrList), added)
+				}
 				onaddr <- struct{}{}
 			},
 			OnVerAck: func(p *peer.Peer, msg *wire.MsgVerAck) {
-				log.Infof("Adding peer %v with services %v",
-					p.NA().IP.String(), p.Services())
+				if amgr.showDetailedLog {
+					log.Infof("Adding peer %v with services %v",
+						p.NA().IP.String(), p.Services())
+				}
 
 				verack <- struct{}{}
 			},
@@ -69,8 +73,9 @@ func creep(netParams *chaincfg.Params) {
 	for {
 		peerAddrs := amgr.Addresses()
 		if len(peerAddrs) == 0 {
-			log.Infof("No stale addresses -- sleeping for %v",
-				defaultAddressTimeout)
+			if amgr.showDetailedLog {
+				log.Infof("No stale addresses -- sleeping for %v", defaultAddressTimeout)
+			}
 			time.Sleep(defaultAddressTimeout)
 			continue
 		}
@@ -85,8 +90,7 @@ func creep(netParams *chaincfg.Params) {
 				if addr.Port == 0 {
 					port = netParams.DefaultPort
 				}
-				host := net.JoinHostPort(addr.IP.String(),
-					port)
+				host := net.JoinHostPort(addr.IP.String(), port)
 
 				p, err := peer.NewOutboundPeer(&peerConfig, host)
 				if err != nil {

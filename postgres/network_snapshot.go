@@ -15,10 +15,7 @@ import (
 )
 
 func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) error {
-	if snapshot.NodeCount == 0 {
-		log.Critical("this cannot be")
-		// todo don't save empty snapshot
-	}
+
 	goodNode, err := models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(snapshot.Timestamp)).Count(ctx, pg.db)
 	if err != nil {
 		return err
@@ -53,17 +50,7 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		return err
 	}
 
-	snapshotModel := models.NetworkSnapshot{
-		Timestamp:           snapshot.Timestamp,
-		Height:              snapshot.Height,
-		NodeCount:           snapshot.NodeCount,
-		ReachableNodes:      snapshot.ReachableNodeCount,
-		OldestNode:          snapshot.OldestNode,
-		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
-		Latency:             snapshot.Latency,
-	}
-
-	//
+	snapshotModel := modelFromSnapshot(snapshot)
 
 	if err := snapshotModel.Insert(ctx, pg.db, boil.Infer()); err != nil {
 		if !strings.Contains(err.Error(), "unique constraint") { // Ignore duplicate entries
@@ -79,15 +66,7 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 	if err != nil {
 		return nil, err
 	}
-	return &netsnapshot.SnapShot{
-		Timestamp:           snapshotModel.Timestamp,
-		Height:              snapshotModel.Height,
-		NodeCount:           snapshotModel.NodeCount,
-		ReachableNodeCount:  snapshotModel.ReachableNodes,
-		OldestNode:          snapshotModel.OldestNode,
-		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
-		Latency:             snapshotModel.Latency,
-	}, nil
+	return modelToSnapshot(snapshotModel), nil
 }
 
 func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error) {
@@ -100,17 +79,8 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 	if err != nil {
 		return nil, err
 	}
-	snapshot := netsnapshot.SnapShot{
-		Timestamp:           snapshotModel.Timestamp,
-		Height:              snapshotModel.Height,
-		NodeCount:           snapshotModel.NodeCount,
-		ReachableNodeCount:  snapshotModel.ReachableNodes,
-		OldestNode:          snapshotModel.OldestNode,
-		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
-		Latency:             snapshotModel.Latency,
-	}
 
-	return &snapshot, err
+	return modelToSnapshot(snapshotModel), err
 }
 
 func (pg PgDb) SnapshotCount(ctx context.Context) (int64, error) {
@@ -136,15 +106,8 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 
 	snapshots := make([]netsnapshot.SnapShot, len(snapshotSlice))
 	for i, m := range snapshotSlice {
-		snapshots[i] = netsnapshot.SnapShot{
-			Timestamp:           m.Timestamp,
-			Height:              m.Height,
-			NodeCount:           m.NodeCount,
-			ReachableNodeCount:  m.ReachableNodes,
-			OldestNode:          m.OldestNode,
-			OldestNodeTimestamp: m.OldestNodeTimestamp,
-			Latency:             m.Latency,
-		}
+		snapshot := modelToSnapshot(m)
+		snapshots[i] = *snapshot
 	}
 
 	total, err := models.NetworkSnapshots(models.NetworkSnapshotWhere.Height.GT(0)).Count(ctx, pg.db)
@@ -165,7 +128,12 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 	if err != nil {
 		return nil, err
 	}
-	snapshot := netsnapshot.SnapShot{
+
+	return modelToSnapshot(snapshotModel), err
+}
+
+func modelToSnapshot(snapshotModel *models.NetworkSnapshot) *netsnapshot.SnapShot {
+	return &netsnapshot.SnapShot{
 		Timestamp:           snapshotModel.Timestamp,
 		Height:              snapshotModel.Height,
 		NodeCount:           snapshotModel.NodeCount,
@@ -174,16 +142,26 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
 		Latency:             snapshotModel.Latency,
 	}
+}
 
-	return &snapshot, err
+func modelFromSnapshot(snapshot netsnapshot.SnapShot) models.NetworkSnapshot {
+	return models.NetworkSnapshot{
+		Timestamp:           snapshot.Timestamp,
+		Height:              snapshot.Height,
+		NodeCount:           snapshot.NodeCount,
+		ReachableNodes:      snapshot.ReachableNodeCount,
+		OldestNode:          snapshot.OldestNode,
+		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
+		Latency:             snapshot.Latency,
+	}
 }
 
 func (pg PgDb) DeleteSnapshot(ctx context.Context, timestamp int64) {
 	snapshot, err := models.FindNetworkSnapshot(ctx, pg.db, timestamp)
 	if err == nil {
+		_, _ = models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp)).DeleteAll(ctx, pg.db)
 		_, _ = snapshot.Delete(ctx, pg.db)
 	}
-	_, _ = models.Heartbeats(models.HeartbeatWhere.Timestamp.EQ(timestamp)).DeleteAll(ctx, pg.db)
 }
 
 func (pg PgDb) getOldestNodeTimestamp(ctx context.Context, timestamp int64) (string, int64, error) {
@@ -209,9 +187,11 @@ func (pg PgDb) getOldestNodeTimestamp(ctx context.Context, timestamp int64) (str
 }
 
 func (pg PgDb) SaveHeartbeat(ctx context.Context, heartbeat netsnapshot.Heartbeat) error {
+
 	heartbeatModel, err := models.Heartbeats(
 		models.HeartbeatWhere.NodeID.EQ(heartbeat.Address),
 		models.HeartbeatWhere.Timestamp.EQ(heartbeat.Timestamp)).One(ctx, pg.db)
+
 	if err == nil {
 		if heartbeat.CurrentHeight > 0 {
 			heartbeatModel.CurrentHeight = heartbeat.CurrentHeight
@@ -390,7 +370,7 @@ func (pg PgDb) GetAvailableNodes(ctx context.Context) ([]net.IP, error) {
 		return nil, err
 	}
 
-	var peers []net.IP
+	var peers = make([]net.IP, 0, len(peerSlice))
 	for _, node := range peerSlice {
 		peer := net.ParseIP(node.Address)
 		peers = append(peers, peer)
@@ -404,26 +384,31 @@ func (pg PgDb) NetworkPeer(ctx context.Context, address string) (*netsnapshot.Ne
 	if err != nil {
 		return nil, err
 	}
-	peer := netsnapshot.NetworkPeer{
-		Address:         node.Address,
-		LastSeen:        node.LastSeen,
-		ConnectionTime:  node.ConnectionTime,
-		ProtocolVersion: uint32(node.ProtocolVersion),
-		UserAgent:       node.UserAgent,
-		StartingHeight:  node.StartingHeight,
-		CurrentHeight:   node.CurrentHeight,
-		Services:        node.Services,
-		IsDead:          node.IsDead,
+
+	return networkPeerFromModel(node), nil
+}
+
+func networkPeerFromModel(nodeModel *models.Node) *netsnapshot.NetworkPeer {
+	peer := &netsnapshot.NetworkPeer{
+		Address:         nodeModel.Address,
+		LastSeen:        nodeModel.LastSeen,
+		ConnectionTime:  nodeModel.ConnectionTime,
+		ProtocolVersion: uint32(nodeModel.ProtocolVersion),
+		UserAgent:       nodeModel.UserAgent,
+		StartingHeight:  nodeModel.StartingHeight,
+		CurrentHeight:   nodeModel.CurrentHeight,
+		Services:        nodeModel.Services,
+		IsDead:          nodeModel.IsDead,
 	}
 
 	peer.IPInfo = netsnapshot.IPInfo{
-		CountryName: node.Country,
-		RegionName:  node.Region,
-		City:        node.City,
-		Zip:         node.Zip,
+		CountryName: nodeModel.Country,
+		RegionName:  nodeModel.Region,
+		City:        nodeModel.City,
+		Zip:         nodeModel.Zip,
 	}
 
-	return &peer, nil
+	return peer
 }
 
 func (pg PgDb) AverageLatency(ctx context.Context, address string) (int, error) {
