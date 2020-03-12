@@ -274,7 +274,7 @@ export default class extends Controller {
       fields[3].innerText = item.reachable_node_count
       fields[4].innerHTML = item.oldest_node !== '' ? `<a href="/nodes/view/${item.oldest_node}">${item.oldest_node}</a>` : 'N/A'
       fields[5].innerText = item.oldest_node_timestamp <= 0 ? 'N/A' : humanize.timeSince(item.oldest_node_timestamp)
-      fields[6].innerHTML = item.latency + ' Milliseconds'
+      fields[6].innerHTML = item.latency
 
       _this.tableBodyTarget.appendChild(exRow)
     })

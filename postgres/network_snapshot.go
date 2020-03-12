@@ -437,6 +437,10 @@ func (pg PgDb) AverageLatency(ctx context.Context, address string) (int, error) 
 		return 0, err
 	}
 
+	if len(heartbeats) == 0 {
+		return 0, nil
+	}
+
 	var total int
 	for _, h := range heartbeats {
 		total += h.Latency
@@ -454,6 +458,10 @@ func (pg PgDb) averageLatencyByTimestamp(ctx context.Context, timestamp int64) (
 			return 0, nil
 		}
 		return 0, err
+	}
+
+	if len(heartbeats) == 0 {
+		return 0, nil
 	}
 
 	var total int
