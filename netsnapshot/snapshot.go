@@ -116,7 +116,9 @@ func (t taker) Start(ctx context.Context) {
 
 			mtx.Lock()
 			count = 0
-			log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", count)
+			if t.cfg.ShowDetailedLog {
+				log.Infof("Took a new network snapshot, recorded %d discoverable nodes.", count)
+			}
 			timestamp = time.Now().UTC().Unix()
 			mtx.Unlock()
 			// update all reachable nodes
