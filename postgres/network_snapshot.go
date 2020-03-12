@@ -60,7 +60,7 @@ func (pg PgDb) SaveSnapshot(ctx context.Context, snapshot netsnapshot.SnapShot) 
 		ReachableNodes:      snapshot.ReachableNodeCount,
 		OldestNode:          snapshot.OldestNode,
 		OldestNodeTimestamp: snapshot.OldestNodeTimestamp,
-		Latency: 			 snapshot.Latency,
+		Latency:             snapshot.Latency,
 	}
 
 	//
@@ -86,7 +86,7 @@ func (pg PgDb) FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsn
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
-		Latency: 			 snapshotModel.Latency,
+		Latency:             snapshotModel.Latency,
 	}, nil
 }
 
@@ -107,7 +107,7 @@ func (pg PgDb) PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnaps
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
-		Latency: 			 snapshotModel.Latency,
+		Latency:             snapshotModel.Latency,
 	}
 
 	return &snapshot, err
@@ -143,7 +143,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 			ReachableNodeCount:  m.ReachableNodes,
 			OldestNode:          m.OldestNode,
 			OldestNodeTimestamp: m.OldestNodeTimestamp,
-			Latency: 			 m.Latency,
+			Latency:             m.Latency,
 		}
 	}
 
@@ -172,7 +172,7 @@ func (pg PgDb) NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.
 		ReachableNodeCount:  snapshotModel.ReachableNodes,
 		OldestNode:          snapshotModel.OldestNode,
 		OldestNodeTimestamp: snapshotModel.OldestNodeTimestamp,
-		Latency: 			 snapshotModel.Latency,
+		Latency:             snapshotModel.Latency,
 	}
 
 	return &snapshot, err

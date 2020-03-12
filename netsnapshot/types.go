@@ -15,7 +15,7 @@ type SnapShot struct {
 	ReachableNodeCount  int    `json:"reachable_node_count"`
 	OldestNode          string `json:"oldest_node"`
 	OldestNodeTimestamp int64  `json:"oldest_node_timestamp"`
-	Latency 			int    `json:"latency"`
+	Latency             int    `json:"latency"`
 }
 
 type NodeCount struct {

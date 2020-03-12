@@ -90,8 +90,9 @@ func creep(netParams *chaincfg.Params) {
 
 				p, err := peer.NewOutboundPeer(&peerConfig, host)
 				if err != nil {
-					log.Infof("NewOutboundPeer on %v: %v",
-						host, err)
+					if amgr.showDetailedLog {
+						log.Infof("NewOutboundPeer on %v: %v", host, err)
+					}
 					amgr.notifyFailedAttempt(addr.IP)
 					return
 				}
@@ -102,7 +103,9 @@ func creep(netParams *chaincfg.Params) {
 				conn, err := net.DialTimeout("tcp", p.Addr(),
 					defaultNodeTimeout)
 				if err != nil {
-					log.Errorf("DialTimeout failed for %s, %s", p.Addr(), err.Error())
+					if amgr.showDetailedLog {
+						log.Errorf("DialTimeout failed for %s, %s", p.Addr(), err.Error())
+					}
 					amgr.notifyFailedAttempt(addr.IP)
 					return
 				}
@@ -134,8 +137,9 @@ func creep(netParams *chaincfg.Params) {
 					p.QueueMessage(wire.NewMsgGetAddr(), nil)
 
 				case <-time.After(defaultNodeTimeout):
-					log.Infof("verack timeout on peer %v",
-						p.Addr())
+					if amgr.showDetailedLog {
+						log.Infof("verack timeout on peer %v", p.Addr())
+					}
 					p.Disconnect()
 					return
 				}
@@ -143,8 +147,9 @@ func creep(netParams *chaincfg.Params) {
 				select {
 				case <-onaddr:
 				case <-time.After(defaultNodeTimeout):
-					log.Infof("getaddr timeout on peer %v",
-						p.Addr())
+					if amgr.showDetailedLog {
+						log.Infof("getaddr timeout on peer %v", p.Addr())
+					}
 					p.Disconnect()
 					return
 				}

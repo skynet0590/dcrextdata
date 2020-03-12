@@ -48,14 +48,15 @@ type attemptedPeer struct {
 type Manager struct {
 	mtx sync.RWMutex
 
-	nodes        map[string]*Node
-	liveNodeIPs  []net.IP
-	peerNtfn     chan *Node
-	attemptNtfn  chan attemptedPeer
-	connFailNtfn chan net.IP
-	wg           sync.WaitGroup
-	quit         chan struct{}
-	peersFile    string
+	nodes           map[string]*Node
+	liveNodeIPs     []net.IP
+	peerNtfn        chan *Node
+	attemptNtfn     chan attemptedPeer
+	connFailNtfn    chan net.IP
+	showDetailedLog bool
+	wg              sync.WaitGroup
+	quit            chan struct{}
+	peersFile       string
 }
 
 var (
@@ -136,19 +137,20 @@ func isRoutable(addr net.IP) bool {
 	return true
 }
 
-func NewManager(dataDir string) (*Manager, error) {
+func NewManager(dataDir string, showDetailedLog bool) (*Manager, error) {
 	err := os.MkdirAll(dataDir, 0700)
 	if err != nil {
 		return nil, err
 	}
 
 	amgr := Manager{
-		nodes:        make(map[string]*Node),
-		peerNtfn:     make(chan *Node),
-		attemptNtfn:  make(chan attemptedPeer),
-		connFailNtfn: make(chan net.IP),
-		peersFile:    filepath.Join(dataDir, peersFilename),
-		quit:         make(chan struct{}),
+		nodes:           make(map[string]*Node),
+		peerNtfn:        make(chan *Node),
+		attemptNtfn:     make(chan attemptedPeer),
+		connFailNtfn:    make(chan net.IP),
+		showDetailedLog: showDetailedLog,
+		peersFile:       filepath.Join(dataDir, peersFilename),
+		quit:            make(chan struct{}),
 	}
 
 	err = amgr.deserializePeers()
@@ -275,7 +277,7 @@ func (m *Manager) Good(p *peer.Peer) {
 		m.AddAddresses([]peerAddress{peerAddress{p.NA().IP, 0}})
 		m.mtx.Lock()
 	}
-	
+
 	node, exists := m.nodes[p.NA().IP.String()]
 	if exists {
 		node.Services = p.Services()

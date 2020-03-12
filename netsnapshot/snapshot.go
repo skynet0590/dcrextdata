@@ -49,7 +49,7 @@ func (t taker) Start(ctx context.Context) {
 
 	var err error
 	amgr, err = NewManager(filepath.Join(defaultHomeDir,
-		netParams.Name))
+		netParams.Name), t.cfg.ShowDetailedLog)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "NewManager: %v\n", err)
 		os.Exit(1)

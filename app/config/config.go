@@ -43,7 +43,7 @@ const (
 	defaultSeederListenPort    = "5354"
 	defaultSeederNameServer    = "nameserver.example.com"
 	defaultSeeder              = "127.0.0.1"
-	defaultSeederPort		   = 9108
+	defaultSeederPort          = 9108
 	maxPeerConnectionFailure   = 3
 )
 
