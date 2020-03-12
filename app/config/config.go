@@ -43,6 +43,7 @@ const (
 	defaultSeederListenPort    = "5354"
 	defaultSeederNameServer    = "nameserver.example.com"
 	defaultSeeder              = "127.0.0.1"
+	defaultSeederPort		   = 9108
 	maxPeerConnectionFailure   = 3
 )
 
@@ -85,10 +86,8 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.YoutubeChannelName = defaultYoutubeChannelNames
 	cfg.YoutubeChannelId = defaultYoutubeChannelId
 	cfg.SnapshotInterval = defaultSnapshotInterval
-	cfg.SeederHost = defaultSeederHostAddress
-	cfg.Nameserver = defaultSeederNameServer
-	cfg.Listen = normalizeAddress(defaultSeederListonAddress, defaultSeederListenPort)
 	cfg.Seeder = defaultSeeder
+	cfg.SeederPort = defaultSeederPort
 	cfg.MaxPeerConnectionFailure = maxPeerConnectionFailure
 
 	return cfg
@@ -178,9 +177,6 @@ type NetworkSnapshotOptions struct {
 	DisableNetworkSnapshot   bool   `long:"disablesnapshot" description:"Disable network snapshot"`
 	SnapshotInterval         int    `long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
 	MaxPeerConnectionFailure int    `long:"maxPeerConnectionFailure" description:"Number of failed connection before a pair is marked a dead"`
-	SeederHost               string `short:"H" long:"host" description:"Seed DNS address"`
-	Listen                   string `long:"listen" short:"l" description:"Listen on address:port"`
-	Nameserver               string `short:"n" long:"nameserver" description:"hostname of nameserver"`
 	Seeder                   string `short:"s" long:"seeder" description:"IP address of a working node"`
 	SeederPort               uint16 `short:"p" long:"seederport" description:"Port of a working node"`
 	IpStackAccessKey         string `long:"ipStackAccessKey" description:"IP stack access key https://ipstack.com/"`
@@ -235,15 +231,6 @@ func LoadConfig() (*Config, []string, error) {
 	}
 
 	// network snapshot validation
-
-	if len(cfg.SeederHost) == 0 {
-		return nil, nil, fmt.Errorf("Please specify a hostname")
-	}
-
-	if len(cfg.Nameserver) == 0 {
-		return nil, nil, fmt.Errorf("Please specify a nameserver")
-	}
-
 	if len(cfg.Seeder) == 0 {
 		return nil, nil, fmt.Errorf("Please specify a seeder")
 	}
@@ -252,8 +239,6 @@ func LoadConfig() (*Config, []string, error) {
 		str := "\"%s\" is not a valid textual representation of an IP address"
 		return nil, nil, fmt.Errorf(str, cfg.Seeder)
 	}
-
-	cfg.Listen = normalizeAddress(cfg.Listen, defaultSeederListenPort)
 
 	return &cfg, unknownArg, nil
 }
