@@ -269,12 +269,8 @@ export default class extends Controller {
       const fields = exRow.querySelectorAll('td')
 
       fields[0].innerText = humanize.date(item.timestamp * 1000)
-      fields[1].innerText = item.height
-      fields[2].innerText = item.node_count
-      fields[3].innerText = item.reachable_node_count
-      fields[4].innerHTML = item.oldest_node !== '' ? `<a href="/nodes/view/${item.oldest_node}">${item.oldest_node}</a>` : 'N/A'
-      fields[5].innerText = item.oldest_node_timestamp <= 0 ? 'N/A' : humanize.timeSince(item.oldest_node_timestamp)
-      fields[6].innerHTML = item.latency
+      fields[1].innerText = item.node_count
+      fields[2].innerText = item.reachable_node_count
 
       _this.tableBodyTarget.appendChild(exRow)
     })
