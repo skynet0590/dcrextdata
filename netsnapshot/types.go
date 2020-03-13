@@ -26,13 +26,13 @@ type NodeCount struct {
 type UserAgentInfo struct {
 	UserAgent  string `json:"user_agent"`
 	Nodes      int64  `json:"nodes"`
-	Percentage int64  `json:"percentage"`
+	Timestamp int64   `json:"timestamp"`
 }
 
 type CountryInfo struct {
 	Country    string `json:"country"`
 	Nodes      int64  `json:"nodes"`
-	Percentage int64  `json:"percentage"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type NetworkPeer struct {

@@ -480,20 +480,34 @@ func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCoun
 	return result, err
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) ([]netsnapshot.UserAgentInfo, error) {
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context, offset, limit int) ([]netsnapshot.UserAgentInfo, int64, error) {
 
-	sql := fmt.Sprintf(`SELECT node.user_agent, COUNT(node.user_agent) AS number from node 
-			INNER JOIN heartbeat ON node.address = heartbeat.node_id
-		WHERE heartbeat.timestamp = %d GROUP BY node.user_agent`, timestamp)
+	sql := `SELECT network_snapshot.timestamp, node.user_agent, COUNT(node.user_agent) AS number FROM network_snapshot
+		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
+		INNER JOIN node ON node.address = heartbeat.node_id
+		GROUP BY network_snapshot.timestamp, node.user_agent
+		ORDER BY network_snapshot.timestamp, number DESC`
 
 	var result []struct {
+		Timestamp int64	 `json:"timestamp"`
 		UserAgent string `json:"user_agent"`
 		Number    int64  `json:"number"`
 	}
-
+	
 	err := models.Nodes(qm.SQL(sql)).Bind(ctx, pg.db, &result)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	count := len(result)
+
+	if limit > -1 {
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", offset, limit)
+		result = nil
+		err = models.Heartbeats(qm.SQL(sql)).Bind(ctx, pg.db, &result)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
 
 	var total int64
@@ -510,33 +524,43 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, timestamp int64) ([]ne
 		userAgents[i] = netsnapshot.UserAgentInfo{
 			UserAgent:  userAgent,
 			Nodes:      item.Number,
-			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
+			Timestamp: item.Timestamp,
 		}
 	}
 
-	return userAgents, nil
+	return userAgents, int64(count), nil
 }
 
-func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) ([]netsnapshot.CountryInfo, error) {
+func (pg PgDb) PeerCountByCountries(ctx context.Context, offset, limit int) ([]netsnapshot.CountryInfo, int64, error) {
 
-	sql := fmt.Sprintf(`SELECT node.country, COUNT(node.country) AS number from node 
-		INNER JOIN heartbeat on heartbeat.node_id = node.address WHERE heartbeat.timestamp = %d 
-		GROUP BY node.country ORDER BY number DESC`, timestamp)
+	sql := `SELECT network_snapshot.timestamp, node.country, COUNT(node.country) AS number FROM network_snapshot
+		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
+		INNER JOIN node ON node.address = heartbeat.node_id
+		GROUP BY network_snapshot.timestamp, node.country
+		ORDER BY network_snapshot.timestamp, number DESC`
 
 	var result []struct {
+		Timestamp int64 `json:"timestamp"`
 		Country string `json:"country"`
 		Number  int64  `json:"number"`
 	}
 
 	err := models.Heartbeats(qm.SQL(sql)).Bind(ctx, pg.db, &result)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	var total int64
-	for _, item := range result {
-		total += item.Number
+	count := len(result)
+
+	if limit != -1 {
+		result = nil
+		sql += fmt.Sprintf(" OFFSET %d LIMIT %d", offset, limit)
+		err = models.Heartbeats(qm.SQL(sql)).Bind(ctx, pg.db, &result)
+		if err != nil {
+			return nil, 0, err
+		}
 	}
+
 	countries := make([]netsnapshot.CountryInfo, len(result))
 
 	for i, item := range result {
@@ -547,11 +571,11 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, timestamp int64) ([]net
 		countries[i] = netsnapshot.CountryInfo{
 			Country:    item.Country,
 			Nodes:      item.Number,
-			Percentage: int64(100.0 * float64(item.Number) / float64(total)),
+			Timestamp: item.Timestamp,
 		}
 	}
 
-	return countries, nil
+	return countries, int64(count), nil
 }
 
 func (pg PgDb) PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error) {

@@ -9,8 +9,7 @@ import {
   show,
   showLoading,
   updateQueryParam,
-  hideAll,
-  barChartPlotter
+  hideAll
 } from '../utils'
 
 import { animationFrame } from '../helpers/animation_helper'
@@ -36,9 +35,8 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'timestamp', 'snapshotHeader', 'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType',
-      'numPageWrapper', 'pageSize', 'messageView', 'chartWrapper', 'chartsView', 'labels', 'previousTimestampBtn',
-      'nextTimestampBtn',
+      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType',
+      'numPageWrapper', 'pageSize', 'messageView', 'chartWrapper', 'chartsView', 'labels',
       'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
       'snapshotRowTemplate', 'userAgentRowTemplate', 'countriesRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
       'dataTypeSelector', 'dataType'
@@ -46,20 +44,6 @@ export default class extends Controller {
   }
 
   async initialize () {
-    this.timestamp = parseInt(this.data.get('timestamp'))
-    this.timestampTargets.forEach(el => {
-      el.innerHTML = humanize.date(this.timestamp * 1000)
-    })
-    this.nextTimestamp = parseInt(this.data.get('nextTimestamp'))
-    if (this.nextTimestamp === 0) {
-      hide(this.nextTimestampBtnTarget)
-    }
-    this.previousTimestamp = parseInt(this.data.get('previousTimestamp'))
-    if (this.previousTimestamp === 0) {
-      hide(this.previousTimestampBtnTarget)
-    }
-
-    this.height = parseInt(this.data.get('height'))
     this.currentPage = parseInt(this.data.get('page')) || 1
     this.pageSize = parseInt(this.data.get('pageSize')) || 20
     this.selectedViewOption = this.data.get('viewOption')
@@ -74,34 +58,7 @@ export default class extends Controller {
     this.updateView()
   }
 
-  gotoPreviousTimestamp () {
-    const urlParams = new URLSearchParams(window.location.search)
-    const baseUrl = window.location.href.replace(window.location.search, '')
-    if (urlParams.has('timestamp')) {
-      urlParams.set('timestamp', this.previousTimestamp)
-    } else {
-      urlParams.append('timestamp', this.previousTimestamp)
-    }
-    window.location.href = `${baseUrl}?${urlParams.toString()}`
-  }
-
-  gotoNextTimestamp () {
-    const urlParams = new URLSearchParams(window.location.search)
-    const baseUrl = window.location.href.replace(window.location.search, '')
-    if (urlParams.has('timestamp')) {
-      urlParams.set('timestamp', this.nextTimestamp)
-    } else {
-      urlParams.append('timestamp', this.nextTimestamp)
-    }
-    window.location.href = `${baseUrl}?${urlParams.toString()}`
-  }
-
   updateView () {
-    if (this.dataType === dataTypeNodes) {
-      hide(this.snapshotHeaderTarget)
-    } else {
-      show(this.snapshotHeaderTarget)
-    }
     if (this.selectedViewOption === 'table') {
       this.setTable()
     } else {
@@ -179,7 +136,7 @@ export default class extends Controller {
     }
     const _this = this
     showLoading(this.loadingDataTarget, [_this.tableWrapperTarget])
-    url += `?page=${this.currentPage}&page-size=${this.pageSize}&timestamp=${this.timestamp}`
+    url += `?page=${this.currentPage}&page-size=${this.pageSize}`
     axios.get(url).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, [_this.tableWrapperTarget])
@@ -222,19 +179,16 @@ export default class extends Controller {
     this.tableBodyTarget.innerHTML = ''
 
     const _this = this
-    let offset = (_this.currentPage - 1) * _this.pageSize
-    let top = Math.min(offset + this.pageSize, result.userAgents.length)
-    for (let i = offset; i < top; i++) {
-      let item = result.userAgents[i]
+    result.userAgents.forEach(item => {
       const exRow = document.importNode(_this.userAgentRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerText = i + offset + 1
+      fields[0].innerText = humanize.date(item.timestamp * 1000)
       fields[1].innerText = item.user_agent
       fields[2].innerText = item.nodes
 
       _this.tableBodyTarget.appendChild(exRow)
-    }
+    })
   }
 
   displayCountries (result) {
@@ -243,19 +197,16 @@ export default class extends Controller {
     this.tableBodyTarget.innerHTML = ''
 
     const _this = this
-    let offset = (_this.currentPage - 1) * _this.pageSize
-    let top = Math.min(offset + this.pageSize, result.countries.length)
-    for (let i = offset; i < top; i++) {
-      let item = result.countries[i]
+    result.countries.forEach(item => {
       const exRow = document.importNode(_this.countriesRowTemplateTarget.content, true)
       const fields = exRow.querySelectorAll('td')
 
-      fields[0].innerText = i + offset + 1
+      fields[0].innerText = humanize.date(item.timestamp * 1000)
       fields[1].innerText = item.country || 'Unknown'
       fields[2].innerText = item.nodes
 
       _this.tableBodyTarget.appendChild(exRow)
-    }
+    })
   }
 
   displaySnapshotTable (result) {
@@ -357,11 +308,11 @@ export default class extends Controller {
 
     switch (this.dataType) {
       case dataTypeVersion:
-        url = `/api/snapshots/user-agents?chart=1&timestamp=${this.timestamp}`
+        url = `/api/snapshots/user-agents/chart`
         drawChartFn = this.drawUserAgentsChart
         break
       case dataTypeLocation:
-        url = `/api/snapshots/countries?chart=1&timestamp=${this.timestamp}`
+        url = `/api/snapshots/countries/chart`
         drawChartFn = this.drawCountriesChart
         break
       case dataTypeNodes:
@@ -433,91 +384,53 @@ export default class extends Controller {
   }
 
   drawUserAgentsChart (result) {
-    let csv = ''
-    let i = 0
-    let labelMap = []
-    result.userAgents.forEach(record => {
-      csv += `${i},${record.nodes}\n`
-      labelMap.push(record.user_agent)
-      i++
-    })
-
-    this.chartsView = new Dygraph(
-      this.chartsViewTarget,
-      csv,
-      {
-        legend: 'always',
-        includeZero: true,
-        legendFormatter: legendFormatter,
-        plotter: barChartPlotter,
-        digitsAfterDecimal: 8,
-        labelsDiv: this.labelsTarget,
-        ylabel: 'Node Count',
-        xlabel: 'User Agent',
-        labels: ['User Agent', 'Node Count'],
-        labelsUTC: true,
-        labelsKMB: true,
-        maxNumberWidth: 10,
-        showRangeSelector: true,
-        axes: {
-          x: {
-            valueFormatter: (x) => {
-              return labelMap[parseInt(x)]
-            },
-            axisLabelFormatter: (x) => {
-              return labelMap[parseInt(x)]
-            }
-          },
-          y: {
-            axisLabelWidth: 90
-          }
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: 'Node Count',
+      xlabel: 'Date (UTC)',
+      labelsUTC: true,
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      showRangeSelector: true,
+      axes: {
+        x: {
+          drawGrid: false
         }
       }
+    }
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      result.csv,
+      options
     )
     hideLoading(this.loadingDataTarget)
   }
 
   drawCountriesChart (result) {
-    let csv = ''
-    let i = 0
-    let labelMap = []
-    result.countries.forEach(record => {
-      csv += `${i},${record.nodes}\n`
-      labelMap.push(record.country)
-      i++
-    })
-
-    this.chartsView = new Dygraph(
-      this.chartsViewTarget,
-      csv,
-      {
-        legend: 'always',
-        includeZero: true,
-        legendFormatter: legendFormatter,
-        plotter: barChartPlotter,
-        digitsAfterDecimal: 8,
-        labelsDiv: this.labelsTarget,
-        ylabel: 'Node Count',
-        xlabel: 'Country',
-        labels: ['Country', 'Node Count'],
-        labelsUTC: true,
-        labelsKMB: true,
-        maxNumberWidth: 10,
-        showRangeSelector: true,
-        axes: {
-          x: {
-            valueFormatter: (x) => {
-              return labelMap[parseInt(x)]
-            },
-            axisLabelFormatter: (x) => {
-              return labelMap[parseInt(x)]
-            }
-          },
-          y: {
-            axisLabelWidth: 90
-          }
+    let options = {
+      legend: 'always',
+      includeZero: true,
+      legendFormatter: legendFormatter,
+      labelsDiv: this.labelsTarget,
+      ylabel: 'Node Count',
+      xlabel: 'Date (UTC)',
+      labelsUTC: true,
+      labelsKMB: true,
+      connectSeparatedPoints: true,
+      showRangeSelector: true,
+      axes: {
+        x: {
+          drawGrid: false
         }
       }
+    }
+    this.chartsView = new Dygraph(
+      this.chartsViewTarget,
+      result.csv,
+      options
     )
     hideLoading(this.loadingDataTarget)
   }

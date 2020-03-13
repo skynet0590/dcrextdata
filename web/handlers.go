@@ -1840,33 +1840,94 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 		pageSize = defaultPageSize
 	}
 
-	timestamp, err := strconv.Atoi(r.FormValue("timestamp"))
-	if err != nil {
-		s.renderErrorfJSON("Cannot fetch data. Timestamp is required: %s", w, err.Error())
-		return
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	limit := -1
+	var offset int
+	if r.FormValue("chart") != "1" {
+		if page < 1 {
+			page = 1
+		}
+		offset = (page -1) * pageSize
+		limit = pageSize
 	}
+	
 
-	userAgents, err := s.db.PeerCountByUserAgents(r.Context(), int64(timestamp))
+	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), offset, limit)
 	if err != nil {
 		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
 	}
 
-	if r.FormValue("chart") != "1" {
-		sort.Slice(userAgents, func(i, j int) bool {
-			return userAgents[i].Nodes > userAgents[j].Nodes
-		})
-	}
-
-	total := len(userAgents)
-	var totalPages int
-	if total%pageSize == 0 {
-		totalPages = total / pageSize
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
 	} else {
-		totalPages = 1 + (total-total%pageSize)/pageSize
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
 	}
 
 	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/user-agents/chart
+func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Request) {
+	limit := -1
+	offset := 0
+	userAgents, _, err := s.db.PeerCountByUserAgents(r.Context(), offset, limit)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+		return
+	}
+	var datesMap = map[int64]struct{}{}
+	var allDates []int64
+	var userAgentMap = map[string]struct{}{}
+	var allUserAgents []string
+	var dateUserAgentCount = make(map[int64]map[string]int64)
+
+	for _, item := range userAgents {
+		if _, exists := datesMap[item.Timestamp]; !exists {
+			datesMap[item.Timestamp] = struct{}{}
+			allDates = append(allDates, item.Timestamp)
+		}
+
+		if _, exists := dateUserAgentCount[item.Timestamp]; !exists {
+			dateUserAgentCount[item.Timestamp] = make(map[string]int64)
+		}
+		
+		if _, exists := userAgentMap[item.UserAgent]; !exists {
+			userAgentMap[item.UserAgent] = struct{}{}
+			allUserAgents = append(allUserAgents, item.UserAgent)
+		}
+		dateUserAgentCount[item.Timestamp][item.UserAgent] = item.Nodes
+	}
+
+	var row = []string{ "Date (UTC)" }
+	for userAgent, _ := range userAgentMap {
+		row = append(row, userAgent)
+	}
+	csv := strings.Join(row, ",") + "\n"
+
+	var minDate, maxDate int64
+	for _, timestamp := range allDates {
+		if minDate == 0 || timestamp < minDate {
+			minDate = timestamp
+		}
+
+		if maxDate == 0 || timestamp > maxDate {
+			maxDate = timestamp
+		}
+
+		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		for _, userAgent := range allUserAgents {
+			row = append(row, strconv.FormatInt(dateUserAgentCount[timestamp][userAgent], 10))
+		}
+		csv += strings.Join(row, ",") + "\n"
+	}
+
+	s.renderJSON(map[string]interface{}{ 
+		"csv" : csv, 
+		"minDate" : time.Unix(minDate, 0).UTC().String(), 
+		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	}, w)
 }
 
 // /api/snapshots/countries
@@ -1876,13 +1937,18 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 		pageSize = defaultPageSize
 	}
 
-	timestamp, err := strconv.Atoi(r.FormValue("timestamp"))
-	if err != nil {
-		s.renderErrorfJSON("Cannot fetch data. Timestamp is required: %s", w, err.Error())
-		return
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	limit := -1
+	var offset int
+	if r.FormValue("chart") != "1" {
+		if page < 1 {
+			page = 1
+		}
+		offset = (page -1) * pageSize
+		limit = pageSize
 	}
 
-	countries, err := s.db.PeerCountByCountries(r.Context(), int64(timestamp))
+	countries, total, err := s.db.PeerCountByCountries(r.Context(), offset, limit)
 	if err != nil {
 		s.renderErrorJSON(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
@@ -1894,15 +1960,76 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	total := len(countries)
-	var totalPages int
-	if total%pageSize == 0 {
-		totalPages = total / pageSize
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
 	} else {
-		totalPages = 1 + (total-total%pageSize)/pageSize
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
 	}
 
 	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/countries/chart
+func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Request) {
+	limit := -1
+	offset := 0
+	countries, _, err := s.db.PeerCountByCountries(r.Context(), offset, limit)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+		return
+	}
+	var datesMap = map[int64]struct{}{}
+	var allDates []int64
+	var countryMap = map[string]struct{}{}
+	var allCountries []string
+	var dateCountryCount = make(map[int64]map[string]int64)
+
+	for _, item := range countries {
+		if _, exists := datesMap[item.Timestamp]; !exists {
+			datesMap[item.Timestamp] = struct{}{}
+			allDates = append(allDates, item.Timestamp)
+		}
+
+		if _, exists := dateCountryCount[item.Timestamp]; !exists {
+			dateCountryCount[item.Timestamp] = make(map[string]int64)
+		}
+		
+		if _, exists := countryMap[item.Country]; !exists {
+			countryMap[item.Country] = struct{}{}
+			allCountries = append(allCountries, item.Country)
+		}
+		dateCountryCount[item.Timestamp][item.Country] = item.Nodes
+	}
+
+	var row = []string{ "Date (UTC)" }
+	for userAgent, _ := range countryMap {
+		row = append(row, userAgent)
+	}
+	csv := strings.Join(row, ",") + "\n"
+
+	var minDate, maxDate int64
+	for _, timestamp := range allDates {
+		if minDate == 0 || timestamp < minDate {
+			minDate = timestamp
+		}
+
+		if maxDate == 0 || timestamp > maxDate {
+			maxDate = timestamp
+		}
+
+		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		for _, userAgent := range allCountries {
+			row = append(row, strconv.FormatInt(dateCountryCount[timestamp][userAgent], 10))
+		}
+		csv += strings.Join(row, ",") + "\n"
+	}
+
+	s.renderJSON(map[string]interface{}{ 
+		"csv" : csv, 
+		"minDate" : time.Unix(minDate, 0).UTC().String(), 
+		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	}, w)
 }
 
 // /api/snapshot/nodes/count-by-timestamp
