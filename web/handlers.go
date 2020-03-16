@@ -1901,7 +1901,7 @@ func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Reques
 	}
 
 	var row = []string{ "Date (UTC)" }
-	for userAgent, _ := range userAgentMap {
+	for _, userAgent := range allUserAgents {
 		row = append(row, userAgent)
 	}
 	csv := strings.Join(row, ",") + "\n"
@@ -2003,8 +2003,8 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 	}
 
 	var row = []string{ "Date (UTC)" }
-	for userAgent, _ := range countryMap {
-		row = append(row, userAgent)
+	for _, country := range allCountries {
+		row = append(row, country)
 	}
 	csv := strings.Join(row, ",") + "\n"
 
@@ -2019,8 +2019,8 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 		}
 
 		row = []string{ time.Unix(timestamp, 0).UTC().String() }
-		for _, userAgent := range allCountries {
-			row = append(row, strconv.FormatInt(dateCountryCount[timestamp][userAgent], 10))
+		for _, country := range allCountries {
+			row = append(row, strconv.FormatInt(dateCountryCount[timestamp][country], 10))
 		}
 		csv += strings.Join(row, ",") + "\n"
 	}
