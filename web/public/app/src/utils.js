@@ -179,7 +179,8 @@ export function selectedOption (optTargets) {
   return key
 }
 
-export function insertQueryParam (name, value) {
+export function insertQueryParam (name, value, defaultValue) {
+  if (value === defaultValue) return
   const urlParams = new URLSearchParams(window.location.search)
   const oldValue = urlParams.get(name)
   if (oldValue !== null) {
@@ -191,20 +192,24 @@ export function insertQueryParam (name, value) {
   return true
 }
 
-export function updateQueryParam (name, value) {
+export function updateQueryParam (name, value, defaultValue) {
   let urlParams = new URLSearchParams(window.location.search)
   if (!urlParams.has(name)) {
     return false
   }
-  urlParams.set(name, value)
+  if (value === defaultValue) {
+    urlParams.delete(name)
+  } else {
+    urlParams.set(name, value)
+  }
   const baseUrl = window.location.href.replace(window.location.search, '')
   window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
   return true
 }
 
-export function insertOrUpdateQueryParam (name, value) {
+export function insertOrUpdateQueryParam (name, value, defaultValue) {
   const urlParams = new URLSearchParams(window.location.search)
-  return !urlParams.has(name) ? insertQueryParam(name, value) : updateQueryParam(name, value)
+  return !urlParams.has(name) ? insertQueryParam(name, value, defaultValue) : updateQueryParam(name, value, defaultValue)
 }
 
 export function trimUrl (keepSet) {
