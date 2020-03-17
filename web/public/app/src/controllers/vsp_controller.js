@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   options,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -92,7 +92,8 @@ export default class extends Controller {
     show(this.vspSelectorWrapperTarget)
     this.nextPage = this.currentPage
     this.fetchData()
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'page', 'records-per-page', 'filter'])
   }
 
   setChart () {
@@ -107,8 +108,12 @@ export default class extends Controller {
     show(this.chartSourceWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['data-type', 'view-option'])
+    // reset this table properties as they are removed from the url
+    this.nextPage = 1
+    this.selectedNumTarget.value = 20
     this.fetchDataAndPlotGraph()
-    updateQueryParam('view-option', this.selectedViewOption)
   }
 
   selectedFilterChanged () {
@@ -121,25 +126,29 @@ export default class extends Controller {
       }
       this.fetchDataAndPlotGraph()
     }
-    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value)
+    let defaultFilter
+    if (this.selectedFilterTarget.options.length > 0) {
+      defaultFilter = this.selectedFilterTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value, defaultFilter)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData()
-    insertOrUpdateQueryParam('page', this.currentPage - 1)
+    insertOrUpdateQueryParam('page', this.currentPage - 1, 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData()
-    insertOrUpdateQueryParam('page', this.currentPage + 1)
+    insertOrUpdateQueryParam('page', this.currentPage + 1, 1)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
     this.fetchData()
-    insertOrUpdateQueryParam('records-per-page', this.selectedNumTarget.value)
+    insertOrUpdateQueryParam('records-per-page', parseInt(this.selectedNumTarget.value), 20)
   }
 
   fetchData () {

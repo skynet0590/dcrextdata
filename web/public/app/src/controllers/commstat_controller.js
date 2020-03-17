@@ -34,6 +34,8 @@ export default class extends Controller {
       this.currentPage = 1
     }
 
+    this.pageSize = this.pageSizeTarget.value
+
     this.platform = this.platformTarget.dataset.initialValue
     if (this.platform === '') {
       this.platform = this.platformTarget.value = this.platformTarget.options[0].innerText
@@ -80,8 +82,8 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.pageSizeWrapperTarget)
     show(this.paginationWrapperTarget)
+    this.pageSizeTarget.value = this.pageSize
     this.updateDataTypeControl()
-    this.nextPage = this.currentPage
     this.fetchData()
   }
 
@@ -96,6 +98,9 @@ export default class extends Controller {
     hide(this.pageSizeWrapperTarget)
     this.updateDataTypeControl()
     this.fetchDataAndPlotGraph()
+    // reset this table properties as the url params will be reset
+    this.currentPage = 1
+    this.pageSize = 20
   }
 
   trimUrlParam () {

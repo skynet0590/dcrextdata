@@ -8,7 +8,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, updateQueryParam, insertOrUpdateQueryParam, updateZoomSelector
+  selectedOption, updateQueryParam, insertOrUpdateQueryParam, updateZoomSelector, trimUrl
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -82,7 +82,8 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.nextPage = this.currentPage
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['page', 'records-per-page', 'view-option', 'selected-currency-pair', 'selected-exchange', 'selected-interval'])
   }
 
   setChart () {
@@ -104,13 +105,19 @@ export default class extends Controller {
     if (this.selectedCurrencyPair === '' || this.selectedCurrencyPair === 'All') {
       this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value = this.selectedCurrencyPairTarget.options[1].text
       this.selectedCurrencyPairTarget.text = this.selectedCurrencyPair
+    } else {
+      this.selectedCurrencyPairTarget.value = this.selectedCurrencyPair
     }
     if (this.selectedExchange === '' || this.selectedExchange === 'All') {
       this.selectedExchange = this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
       this.selectedFilterTarget.text = this.selectedExchange
     }
     this.fetchExchange(this.selectedViewOption)
-    updateQueryParam('view-option', this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['selected-tick', 'view-option', 'selected-currency-pair', 'selected-exchange', 'selected-interval'])
+    // reset this table properties as they are removed from the url
+    this.currentPage = 1
+    this.selectedNumTarget.value = 20
   }
 
   resetCommonFilter () {
@@ -129,47 +136,66 @@ export default class extends Controller {
     this.nextPage = 1
     this.selectedInterval = this.selectedIntervalTarget.value
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('selected-interval', this.selectedInterval)
-    insertOrUpdateQueryParam('page', 1)
+    let defaultInterval
+    if (this.selectedInterval.options.length > 0) {
+      defaultInterval = this.selectedInterval.options[0].value
+    }
+    insertOrUpdateQueryParam('selected-interval', this.selectedInterval, defaultInterval)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   selectedTicksChanged () {
     this.selectedTick = this.selectedTicksTarget.value
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('selected-tick', this.selectedTick)
+    let defaultTick
+    if (this.selectedTicksTarget.options.length > 0) {
+      defaultTick = this.selectedTicksTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('selected-tick', this.selectedTick, defaultTick)
   }
 
   selectedFilterChanged () {
     this.nextPage = 1
     this.selectedExchange = this.selectedFilterTarget.value
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('selected-exchange', this.selectedExchange)
+    let defaultFilter
+    if (this.selectedFilterTarget.options.length > 0) {
+      defaultFilter = this.selectedFilterTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('selected-exchange', this.selectedExchange, defaultFilter)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
+    if (this.nextPage < 1) {
+      this.nextPage = 1
+    }
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.currentPage - 1)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.currentPage + 1)
+    insertOrUpdateQueryParam('page', this.currentPage + 1, 1)
   }
 
   selectedCurrencyPairChanged () {
     this.nextPage = 1
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('selected-currency-pair', this.selectedCurrencyPair)
+    let defaultPair
+    if (this.selectedCurrencyPairTarget.options.length > 0) {
+      defaultPair = this.selectedCurrencyPairTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('selected-currency-pair', this.selectedCurrencyPair, defaultPair)
   }
 
   numberOfRowsChanged () {
     this.nextPage = 1
     this.numberOfRows = this.selectedNumTarget.value
     this.fetchExchange(this.selectedViewOption)
-    insertOrUpdateQueryParam('records-per-page', this.numberOfRows)
+    insertOrUpdateQueryParam('records-per-page', this.numberOfRows, 20)
   }
 
   fetchExchange (display) {

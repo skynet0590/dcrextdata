@@ -9,7 +9,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -65,6 +65,7 @@ export default class extends Controller {
     this.nextPage = this.currentPage
     this.fetchData(this.selectedViewOption)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    trimUrl(['view-option', 'page', 'records-per-page'])
   }
 
   setChart () {
@@ -79,7 +80,11 @@ export default class extends Controller {
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
     this.fetchData(this.selectedViewOption)
-    updateQueryParam('view-option', this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'chart-data-type'])
+    // reset this table properties as they are removed from the url
+    this.currentPage = 1
+    this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value = 20
   }
 
   setDataType (event) {
