@@ -1,6 +1,6 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate, trimUrl } from '../utils'
+import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate, trimUrl, insertOrUpdateQueryParam, removeUrlParam } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 const redditPlatform = 'Reddit'
@@ -18,8 +18,8 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'pageSizeWrapper', 'previousPageButton', 'totalPageCount', 'nextPageButton',
-      'currentPage', 'numPageWrapper', 'selectedNum', 'messageView',
+      'paginationWrapper', 'previousPageButton', 'totalPageCount', 'nextPageButton',
+      'currentPage', 'pageSizeWrapper', 'pageSize', 'messageView',
       'viewOptionControl', 'viewOption',
       'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
@@ -73,12 +73,13 @@ export default class extends Controller {
 
   setTable () {
     this.viewOption = 'table'
+    insertOrUpdateQueryParam('view-option', this.viewOption, 'chart')
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
     show(this.tableWrapperTarget)
-    show(this.numPageWrapperTarget)
     show(this.pageSizeWrapperTarget)
+    show(this.paginationWrapperTarget)
     this.updateDataTypeControl()
     this.nextPage = this.currentPage
     this.fetchData()
@@ -86,12 +87,13 @@ export default class extends Controller {
 
   setChart () {
     this.viewOption = 'chart'
+    insertOrUpdateQueryParam('view-option', this.viewOption, 'chart')
     setActiveOptionBtn(this.viewOption, this.viewOptionTargets)
     hide(this.tableWrapperTarget)
     hide(this.messageViewTarget)
     show(this.chartWrapperTarget)
+    hide(this.paginationWrapperTarget)
     hide(this.pageSizeWrapperTarget)
-    hide(this.numPageWrapperTarget)
     this.updateDataTypeControl()
     this.fetchDataAndPlotGraph()
   }
@@ -138,8 +140,11 @@ export default class extends Controller {
 
   platformChanged (event) {
     this.platform = event.currentTarget.value
+    insertOrUpdateQueryParam('platform', this.platform, this.platformTarget.options[0].value)
     this.showCurrentSubAccountWrapper()
     this.updateDataTypeControl()
+    this.resetSubAccountsAndDataType()
+    removeUrlParam('data-type')
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -148,8 +153,31 @@ export default class extends Controller {
     }
   }
 
+  resetSubAccountsAndDataType () {
+    if (this.subredditTarget.options.length > 0) {
+      this.subredditTarget.value = this.subredditTarget.options[0].value
+    }
+    if (this.twitterHandleTarget.options.length > 0) {
+      this.twitterHandleTarget.value = this.twitterHandleTarget.options[0].value
+    }
+    if (this.repositoryTarget.options.length > 0) {
+      this.repositoryTarget.value = this.repositoryTarget.options[0].value
+    }
+    if (this.channelTarget.options.length > 0) {
+      this.channelTarget.value = this.channelTarget.options[0].value
+    }
+    if (this.dataTypeTarget.options.length > 0) {
+      this.dataTypeTarget.value = this.dataTypeTarget.options[0].value
+    }
+  }
+
   subredditChanged (event) {
     this.subreddit = event.currentTarget.value
+    let defaultSubreddit
+    if (event.currentTarget.options.length > 0) {
+      defaultSubreddit = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('subreddit', this.subreddit, defaultSubreddit)
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -160,6 +188,11 @@ export default class extends Controller {
 
   twitterHandleChanged (event) {
     this.twitterHandle = event.currentTarget.value
+    let defaultTwitterHandle
+    if (event.currentTarget.options.length > 0) {
+      defaultTwitterHandle = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('twitter-handle', this.twitterHandle, defaultTwitterHandle)
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -170,6 +203,11 @@ export default class extends Controller {
 
   repositoryChanged (event) {
     this.repository = event.currentTarget.value
+    let defaultRepository
+    if (event.currentTarget.options.length > 0) {
+      defaultRepository = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('repository', this.repository, defaultRepository)
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -180,6 +218,11 @@ export default class extends Controller {
 
   channelChanged (event) {
     this.channel = event.currentTarget.value
+    let defaultChannel
+    if (event.currentTarget.options.length > 0) {
+      defaultChannel = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('channel', this.channel, defaultChannel)
     this.currentPage = 1
     if (this.viewOption === 'table') {
       this.fetchData()
@@ -190,6 +233,11 @@ export default class extends Controller {
 
   dataTypeChanged (event) {
     this.dataType = event.currentTarget.value
+    let defaultDataType
+    if (event.currentTarget.options.length > 0) {
+      defaultDataType = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('data-type', this.dataType, defaultDataType)
     this.fetchDataAndPlotGraph()
   }
 
@@ -251,28 +299,37 @@ export default class extends Controller {
   }
 
   loadPreviousPage () {
-    this.nextPage = this.currentPage - 1
+    this.currentPage -= 1
+    if (this.currentPage < 1) {
+      this.currentPage = 1
+    }
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
     this.fetchData()
   }
 
   loadNextPage () {
-    this.nextPage = this.currentPage + 1
+    this.currentPage += 1
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
     this.fetchData()
   }
 
-  numberOfRowsChanged () {
-    this.nextPage = 1
+  pageSizeChanged (event) {
+    this.currentPage = 1
+    this.pageSize = event.currentTarget.value
+    let defaultPageSize
+    if (event.currentTarget.options.length > 0) {
+      defaultPageSize = event.currentTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
+    insertOrUpdateQueryParam('records-per-page', this.pageSize, defaultPageSize)
     this.fetchData()
   }
 
   fetchData () {
-    const numberOfRows = this.selectedNumTarget.value
-
     let elementsToToggle = [this.tableWrapperTarget]
     showLoading(this.loadingDataTarget, elementsToToggle)
-
     const _this = this
-    const queryString = `page=${_this.nextPage}&records-per-page=${numberOfRows}&view-option=` +
+    const queryString = `page=${_this.currentPage}&records-per-page=${this.pageSize}&view-option=` +
       `${_this.viewOption}&platform=${this.platform}&subreddit=${this.subreddit}&twitter-handle=${this.twitterHandle}` +
       `&repository=${this.repository}&channel=${this.channel}`
     axios.get(`/getCommunityStat?${queryString}`)
@@ -288,17 +345,14 @@ export default class extends Controller {
           _this.messageViewTarget.innerHTML = messageHTML
           show(_this.messageViewTarget)
           hide(_this.tableTarget)
-          hide(_this.pageSizeWrapperTarget)
+          hide(_this.paginationWrapperTarget)
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
-          window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
           _this.trimUrlParam()
         } else {
           show(_this.tableTarget)
-          show(_this.pageSizeWrapperTarget)
+          show(_this.paginationWrapperTarget)
           hide(_this.messageViewTarget)
-          const pageUrl = `/community?${queryString}`
-          window.history.pushState(window.history.state, _this.addr, pageUrl)
           _this.trimUrlParam()
 
           _this.currentPage = result.currentPage
@@ -394,7 +448,6 @@ export default class extends Controller {
     const _this = this
     const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}` +
       `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}&repository=${this.repository}&channel=${this.channel}`
-    window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
     _this.trimUrlParam()
 
     axios.get(`/communitychat?${queryString}`).then(function (response) {

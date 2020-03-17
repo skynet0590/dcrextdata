@@ -188,7 +188,11 @@ export function insertQueryParam (name, value, defaultValue) {
   }
   urlParams.append(name, value)
   const baseUrl = window.location.href.replace(window.location.search, '')
-  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.pushState(window.history.state, appName, `${baseUrl}${q}`)
   return true
 }
 
@@ -203,7 +207,11 @@ export function updateQueryParam (name, value, defaultValue) {
     urlParams.set(name, value)
   }
   const baseUrl = window.location.href.replace(window.location.search, '')
-  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.pushState(window.history.state, appName, `${baseUrl}${q}`)
   return true
 }
 
@@ -213,6 +221,7 @@ export function insertOrUpdateQueryParam (name, value, defaultValue) {
 }
 
 export function trimUrl (keepSet) {
+  if (window.location.search.length === 0) return
   let urlParams = new URLSearchParams(window.location.search)
   let newParam = new URLSearchParams()
   for (let i = 0; i <= keepSet.length; i++) {
@@ -221,7 +230,27 @@ export function trimUrl (keepSet) {
     newParam.append(key, urlParams.get(key))
   }
   const baseUrl = window.location.href.replace(window.location.search, '')
-  window.history.replaceState(window.history.state, appName, `${baseUrl}?${newParam.toString()}`)
+  let q = newParam.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.replaceState(window.history.state, appName, `${baseUrl}${q}`)
+}
+
+export function removeUrlParam (name) {
+  if (window.location.search.length === 0) return
+  let urlParams = new URLSearchParams(window.location.search)
+  if (!urlParams.has(name)) {
+    return false
+  }
+  urlParams.delete(name)
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.replaceState(window.history.state, appName, `${baseUrl}${q}`)
+  return true
 }
 
 export function getParameterByName (name, url) {
