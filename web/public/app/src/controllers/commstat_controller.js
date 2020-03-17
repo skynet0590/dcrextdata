@@ -1,8 +1,12 @@
 import { Controller } from 'stimulus'
 import axios from 'axios'
-import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate } from '../utils'
+import { hide, show, legendFormatter, setActiveOptionBtn, showLoading, hideLoading, formatDate, trimUrl } from '../utils'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
+const redditPlatform = 'Reddit'
+const twitterPlatform = 'Twitter'
+const githubPlatform = 'GitHub'
+const youtubePlatform = 'YouTube'
 
 export default class extends Controller {
   viewOption
@@ -92,10 +96,49 @@ export default class extends Controller {
     this.fetchDataAndPlotGraph()
   }
 
+  trimUrlParam () {
+    var baseSet = ['platform', 'view-option']
+    var keepSet = []
+    if (this.viewOption === 'table') {
+      const tableParams = ['page', 'records-per-page', ...baseSet]
+      switch (this.platform) {
+        case redditPlatform:
+          keepSet = ['subreddit', ...tableParams]
+          break
+        case youtubePlatform:
+          keepSet = ['channel', ...tableParams]
+          break
+        case githubPlatform:
+          keepSet = ['repository', ...tableParams]
+          break
+        case twitterPlatform:
+          keepSet = ['twitter-handle', ...tableParams]
+          break
+      }
+    } else {
+      var chartParams = baseSet
+      switch (this.platform) {
+        case redditPlatform:
+          keepSet = ['subreddit', 'data-type', ...chartParams]
+          break
+        case youtubePlatform:
+          keepSet = ['data-type', ...chartParams]
+          break
+        case githubPlatform:
+          keepSet = ['repository', 'data-type', ...chartParams]
+          break
+        case twitterPlatform:
+          keepSet = ['twitter-handle', ...chartParams]
+          break
+      }
+    }
+
+    trimUrl(keepSet)
+  }
+
   platformChanged (event) {
     this.platform = event.currentTarget.value
     this.showCurrentSubAccountWrapper()
-
     this.updateDataTypeControl()
     this.currentPage = 1
     if (this.viewOption === 'table') {
@@ -174,7 +217,7 @@ export default class extends Controller {
       _this.dataTypeTarget.innerHTML += `<option ${selected} value="${value}">${label}</option>`
     }
     switch (this.platform) {
-      case 'Reddit':
+      case redditPlatform:
         if (this.dataType !== 'subscribers' && this.dataType !== 'active_accounts') {
           this.dataType = 'subscribers'
         }
@@ -182,7 +225,7 @@ export default class extends Controller {
         addDataTypeOption('active_accounts', 'Active Accounts')
         show(_this.dataTypeWrapperTarget)
         break
-      case 'GitHub':
+      case githubPlatform:
         if (this.dataType !== 'folks' && this.dataType !== 'stars') {
           this.dataType = 'folks'
         }
@@ -190,7 +233,7 @@ export default class extends Controller {
         addDataTypeOption('stars', 'Stars')
         show(_this.dataTypeWrapperTarget)
         break
-      case 'YouTube':
+      case youtubePlatform:
         if (this.dataType !== 'subscribers' && this.dataType !== 'view_count') {
           this.dataType = 'subscribers'
         }
@@ -249,12 +292,14 @@ export default class extends Controller {
           _this.totalPageCountTarget.textContent = 0
           _this.currentPageTarget.textContent = 0
           window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
+          _this.trimUrlParam()
         } else {
           show(_this.tableTarget)
           show(_this.pageSizeWrapperTarget)
           hide(_this.messageViewTarget)
           const pageUrl = `/community?${queryString}`
           window.history.pushState(window.history.state, _this.addr, pageUrl)
+          _this.trimUrlParam()
 
           _this.currentPage = result.currentPage
           if (_this.currentPage <= 1) {
@@ -350,6 +395,7 @@ export default class extends Controller {
     const queryString = `data-type=${this.dataType}&platform=${this.platform}&subreddit=${_this.subreddit}` +
       `&twitter-handle=${this.twitterHandle}&view-option=${this.viewOption}&repository=${this.repository}&channel=${this.channel}`
     window.history.pushState(window.history.state, _this.addr, `/community?${queryString}`)
+    _this.trimUrlParam()
 
     axios.get(`/communitychat?${queryString}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)

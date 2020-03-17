@@ -207,6 +207,18 @@ export function insertOrUpdateQueryParam (name, value) {
   return !urlParams.has(name) ? insertQueryParam(name, value) : updateQueryParam(name, value)
 }
 
+export function trimUrl (keepSet) {
+  let urlParams = new URLSearchParams(window.location.search)
+  let newParam = new URLSearchParams()
+  for (let i = 0; i <= keepSet.length; i++) {
+    const key = keepSet[i]
+    if (!urlParams.has(key)) continue
+    newParam.append(key, urlParams.get(key))
+  }
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  window.history.replaceState(window.history.state, appName, `${baseUrl}?${newParam.toString()}`)
+}
+
 export function getParameterByName (name, url) {
   const urlParams = new URLSearchParams(window.location.search)
   return urlParams.get(name)
