@@ -1794,7 +1794,7 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	s.renderJSONBytes(chartData, w)
 }
 
-func (s *Server) statusPage(res http.ResponseWriter, req *http.Request) {
+func (s *Server) statsPage(res http.ResponseWriter, req *http.Request) {
 	mempoolCount, err := s.db.MempoolCount(req.Context())
 	if err != nil {
 		s.renderError(fmt.Sprintf("Cannot get mempools count, %s", err.Error()), res)
@@ -1840,5 +1840,5 @@ func (s *Server) statusPage(res http.ResponseWriter, req *http.Request) {
 		"exchangeTick": exchangeCount,
 	}
 
-	s.render("status.html", data, res)
+	s.render("stats.html", data, res)
 }

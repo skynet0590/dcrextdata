@@ -171,7 +171,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/community", s.community)
 	r.Get("/getCommunityStat", s.getCommunityStat)
 	r.Get("/communitychat", s.communityChat)
-	r.Get("/status", s.statusPage)
+	r.Get("/stats", s.statsPage)
 
 	r.Get("/nodes", s.snapshot)
 	r.With(addTimestampToCtx).Get("/nodes/{timestamp}", s.snapshot)
