@@ -69,7 +69,7 @@
                             </div>
                         </div>
 
-                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Github">
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="GitHub">
                             <div class=" mb-2">
                                 <div class="control-label">Repository</div>
                                 <select data-target="commstat.repository" data-initial-value="{{.repository}}"
@@ -83,7 +83,7 @@
                             </div>
                         </div>
 
-                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="Youtube">
+                        <div class="control-div p-0 ml-1 d-none" data-target="commstat.subAccountWrapper" data-platform="YouTube">
                             <div class=" mb-2">
                                 <div class="control-label">Channel</div>
                                 <select data-target="commstat.channel" data-initial-value="{{.channel}}"
@@ -117,13 +117,13 @@
                         <div class="table-details">
                             <h3>Community</h3>
                             <div class="paginate">
-                                <div data-target="commstat.numPageWrapper"
+                                <div data-target="commstat.pageSizeWrapper"
                                     class="control-div p-0 ml-1 {{ if eq .viewOption "chart" }}d-none{{ end }}">
                                     <div class=" mb-2 float-md-right">
 
                                         <div class="control-label">Page Size:</div>
-                                        <select data-target="commstat.selectedNum"
-                                                data-action="change->commstat#numberOfRowsChanged" class="form-control"
+                                        <select data-target="commstat.pageSize"
+                                                data-action="change->commstat#pageSizeChanged" class="form-control"
                                                 style="width: 70px;">
                                             {{$selectedNum := .selectedNum}}
                                             {{ range $index, $filter := .pageSizeSelector}}
@@ -133,7 +133,7 @@
                                     </div>
                                 </div>
 
-                                <div data-target="commstat.pageSizeWrapper"
+                                <div data-target="commstat.paginationWrapper"
                                     class="page-size d-flex {{ if eq .viewOption "chart" }}d-none{{ end }}">
                                     <a href="javascript:void(0)" data-target="commstat.previousPageButton"
                                     data-action="click->commstat#loadPreviousPage"

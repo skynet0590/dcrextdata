@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   selectedOption,
-  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector
+  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -79,7 +79,8 @@ export default class extends Controller {
     hide(this.chartDataTypeSelectorTarget)
     this.nextPage = this.currentPage
     this.fetchData()
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'page', 'records-per-page', 'filter'])
   }
 
   setChart () {
@@ -95,10 +96,13 @@ export default class extends Controller {
     hide(this.pageSizeWrapperTarget)
     show(this.chartDataTypeSelectorTarget)
     this.fetchDataAndPlotGraph()
-    updateQueryParam('view-option', this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'pools', 'data-type'])
+    // reset this table properties as they are removed from the url
+    this.currentPage = 1
   }
 
-  poolCheckChanged (event) {
+  poolCheckChanged () {
     let selectedPools = []
     this.poolTargets.forEach(el => {
       if (el.checked) {
@@ -106,31 +110,35 @@ export default class extends Controller {
       }
     })
     this.fetchDataAndPlotGraph()
-    insertOrUpdateQueryParam('pools', selectedPools.join('|'))
+    insertOrUpdateQueryParam('pools', selectedPools.join('|'), '')
   }
 
   selectedFilterChanged () {
-    this.nextPage = 1
+    this.currentPage = 1
     this.fetchData()
-    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value)
+    let defaultFilter
+    if (this.selectedFilterTarget.options.length > 0) {
+      defaultFilter = this.selectedFilterTarget.options[0].value
+    }
+    insertOrUpdateQueryParam('filter', this.selectedFilterTarget.value, defaultFilter)
   }
 
   loadPreviousPage () {
-    this.nextPage = this.currentPage - 1
+    this.currentPage -= 1
     this.fetchData()
-    insertOrUpdateQueryParam('page', this.currentPage - 1)
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
   }
 
   loadNextPage () {
-    this.nextPage = this.currentPage + 1
+    this.currentPage += 1
     this.fetchData()
-    insertOrUpdateQueryParam('page', this.currentPage + 1)
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
   }
 
   numberOfRowsChanged () {
-    this.nextPage = 1
+    this.currentPage = 1
     this.fetchData()
-    insertOrUpdateQueryParam('page', this.selectedNumTarget.value)
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
   }
 
   fetchData () {
@@ -141,7 +149,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/filteredpow?page=${_this.nextPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
+    axios.get(`/filteredpow?page=${_this.currentPage}&filter=${selectedFilter}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`)
       .then(function (response) {
         hideLoading(_this.loadingDataTarget, elementsToToggle)
         let result = response.data
@@ -217,7 +225,7 @@ export default class extends Controller {
     }
 
     this.fetchDataAndPlotGraph()
-    insertOrUpdateQueryParam('data-type', this.dataType)
+    insertOrUpdateQueryParam('data-type', this.dataType, 'pool_hashrate')
   }
 
   fetchDataAndPlotGraph () {

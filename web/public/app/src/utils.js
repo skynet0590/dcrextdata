@@ -179,7 +179,8 @@ export function selectedOption (optTargets) {
   return key
 }
 
-export function insertQueryParam (name, value) {
+export function insertQueryParam (name, value, defaultValue) {
+  if (value === defaultValue) return
   const urlParams = new URLSearchParams(window.location.search)
   const oldValue = urlParams.get(name)
   if (oldValue !== null) {
@@ -187,24 +188,69 @@ export function insertQueryParam (name, value) {
   }
   urlParams.append(name, value)
   const baseUrl = window.location.href.replace(window.location.search, '')
-  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.pushState(window.history.state, appName, `${baseUrl}${q}`)
   return true
 }
 
-export function updateQueryParam (name, value) {
+export function updateQueryParam (name, value, defaultValue) {
   let urlParams = new URLSearchParams(window.location.search)
   if (!urlParams.has(name)) {
     return false
   }
-  urlParams.set(name, value)
+  if (value === defaultValue) {
+    urlParams.delete(name)
+  } else {
+    urlParams.set(name, value)
+  }
   const baseUrl = window.location.href.replace(window.location.search, '')
-  window.history.pushState(window.history.state, appName, `${baseUrl}?${urlParams.toString()}`)
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.pushState(window.history.state, appName, `${baseUrl}${q}`)
   return true
 }
 
-export function insertOrUpdateQueryParam (name, value) {
+export function insertOrUpdateQueryParam (name, value, defaultValue) {
   const urlParams = new URLSearchParams(window.location.search)
-  return !urlParams.has(name) ? insertQueryParam(name, value) : updateQueryParam(name, value)
+  return !urlParams.has(name) ? insertQueryParam(name, value, defaultValue) : updateQueryParam(name, value, defaultValue)
+}
+
+export function trimUrl (keepSet) {
+  if (window.location.search.length === 0) return
+  let urlParams = new URLSearchParams(window.location.search)
+  let newParam = new URLSearchParams()
+  for (let i = 0; i <= keepSet.length; i++) {
+    const key = keepSet[i]
+    if (!urlParams.has(key)) continue
+    newParam.append(key, urlParams.get(key))
+  }
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  let q = newParam.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.replaceState(window.history.state, appName, `${baseUrl}${q}`)
+}
+
+export function removeUrlParam (name) {
+  if (window.location.search.length === 0) return
+  let urlParams = new URLSearchParams(window.location.search)
+  if (!urlParams.has(name)) {
+    return false
+  }
+  urlParams.delete(name)
+  const baseUrl = window.location.href.replace(window.location.search, '')
+  let q = urlParams.toString()
+  if (q.length > 0) {
+    q = `?${q}`
+  }
+  window.history.replaceState(window.history.state, appName, `${baseUrl}${q}`)
+  return true
 }
 
 export function getParameterByName (name, url) {

@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl
 } from '../utils'
 import dompurify from 'dompurify'
 
@@ -63,7 +63,8 @@ export default class extends Controller {
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.fetchTableData(this.currentPage)
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'page', 'records-per-page', 'record-set'])
   }
 
   setChart () {
@@ -79,7 +80,11 @@ export default class extends Controller {
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.plotSelectedChart()
-    updateQueryParam('view-option', this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
+    trimUrl(['view-option', 'chart-type'])
+    // reset this table properties as they are removed from the url
+    this.currentPage = 1
+    this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value = 20
   }
 
   setBothRecordSet () {
@@ -95,7 +100,7 @@ export default class extends Controller {
       this.fetchChartExtDataAndPlot()
     }
 
-    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet, 'both')
   }
 
   setBlocksRecordSet () {
@@ -111,7 +116,7 @@ export default class extends Controller {
       this.fetchChartExtDataAndPlot()
     }
 
-    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet, 'both')
   }
 
   setVotesRecordSet () {
@@ -127,31 +132,33 @@ export default class extends Controller {
       this.fetchChartExtDataAndPlot()
     }
 
-    insertOrUpdateQueryParam('record-set', this.selectedRecordSet)
+    insertOrUpdateQueryParam('record-set', this.selectedRecordSet, 'both')
   }
 
   changeChartType (event) {
     this.chartType = event.currentTarget.dataset.option
     setActiveOptionBtn(this.chartType, this.chartTypeTargets)
     this.plotSelectedChart()
-    insertOrUpdateQueryParam('chart-type', this.chartType)
+    insertOrUpdateQueryParam('chart-type', this.chartType, 'propagation')
   }
 
   loadPreviousPage () {
-    this.fetchTableData(this.currentPage - 1)
-    insertOrUpdateQueryParam('page', this.currentPage - 1)
+    this.currentPage -= 1
+    this.fetchTableData(this.currentPage)
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
   }
 
   loadNextPage () {
     this.fetchTableData(this.currentPage + 1)
-    insertOrUpdateQueryParam('page', this.currentPage + 1)
+    insertOrUpdateQueryParam('page', this.currentPage + 1, 1)
   }
 
   numberOfRowsChanged () {
-    this.selectedNum = this.selectedNumTarget.value
-    this.fetchTableData(1)
-    insertOrUpdateQueryParam('page', 1)
-    insertOrUpdateQueryParam('records-per-page', this.selectedNum)
+    this.selectedNum = parseInt(this.selectedNumTarget.value)
+    this.currentPage = 1
+    this.fetchTableData(this.currentPage)
+    insertOrUpdateQueryParam('page', this.currentPage, 1)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNum, 20)
   }
 
   fetchTableData (page) {
