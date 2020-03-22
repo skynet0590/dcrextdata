@@ -9,7 +9,8 @@ import {
   show,
   showLoading,
   updateQueryParam,
-  hideAll
+  hideAll,
+  trimUrl
 } from '../utils'
 
 import { animationFrame } from '../helpers/animation_helper'
@@ -73,8 +74,9 @@ export default class extends Controller {
     hide(this.messageViewTarget)
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
     this.reloadTable()
+    trimUrl(['view-option', 'data-type', 'page', 'page-size'])
   }
 
   setChart () {
@@ -85,8 +87,12 @@ export default class extends Controller {
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
-    updateQueryParam('view-option', this.selectedViewOption)
+    updateQueryParam('view-option', this.selectedViewOption, 'chart')
     this.reloadChat()
+    trimUrl(['view-option', 'data-type'])
+    // reset this table properties as the url params will be reset
+    this.currentPage = 1
+    this.pageSizeTarget.value = this.pageSize = 20
   }
 
   setDataType (e) {
@@ -97,7 +103,7 @@ export default class extends Controller {
     this.currentPage = 1
     insertOrUpdateQueryParam('page', this.currentPage, 1)
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
-    insertOrUpdateQueryParam('data-type', this.dataType)
+    insertOrUpdateQueryParam('data-type', this.dataType, 'nodes')
     this.updateView()
   }
 
