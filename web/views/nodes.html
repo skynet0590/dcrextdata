@@ -76,7 +76,7 @@
                                 <div data-target="nodes.numPageWrapper"
                                     class="control-div p-0">
                                     <div class="control-label">Page Size:</div>
-                                    <select data-action="change->nodes#changePageSize" class="form-control"
+                                    <select data-target="nodes.pageSize" data-action="change->nodes#changePageSize" class="form-control"
                                             style="width: 70px;">
                                         {{$pageSize := .pageSize}}
                                         {{ range $index, $filter := .pageSizeSelector}}
