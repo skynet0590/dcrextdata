@@ -40,7 +40,8 @@ export default class extends Controller {
       'numPageWrapper', 'pageSize', 'messageView', 'chartWrapper', 'chartsView', 'labels',
       'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
       'snapshotRowTemplate', 'userAgentRowTemplate', 'countriesRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
-      'dataTypeSelector', 'dataType'
+      'dataTypeSelector', 'dataType', 'chartWrapper', 'chartSourceWrapper', 'chartSource', 'chartsViewWrapper', 'chartSourceList',
+      'allChartSource'
     ]
   }
 
@@ -59,11 +60,11 @@ export default class extends Controller {
     this.updateView()
   }
 
-  updateView () {
+  async updateView () {
     if (this.selectedViewOption === 'table') {
       this.setTable()
     } else {
-      this.setChart()
+      await this.setChart()
     }
   }
 
@@ -79,10 +80,11 @@ export default class extends Controller {
     trimUrl(['view-option', 'data-type', 'page', 'page-size'])
   }
 
-  setChart () {
+  async setChart () {
     this.selectedViewOption = 'chart'
     hide(this.tableWrapperTarget)
     hide(this.messageViewTarget)
+    await this.updateChartUI()
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     hide(this.numPageWrapperTarget)
@@ -93,6 +95,63 @@ export default class extends Controller {
     // reset this table properties as the url params will be reset
     this.currentPage = 1
     this.pageSizeTarget.value = this.pageSize = 20
+  }
+
+  allChartSourceCheckChanged (event) {
+    const checked = event.currentTarget.checked
+    this.chartSourceTargets.forEach(el => {
+      el.checked = checked
+    })
+    this.reloadChat()
+  }
+
+  chartSourceCheckChanged () {
+    this.reloadChat()
+  }
+
+  async updateChartUI () {
+    switch (this.dataType) {
+      case dataTypeNodes:
+        hide(this.chartSourceWrapperTarget)
+        this.chartsViewWrapperTarget.classList.remove('col-md-9')
+        this.chartsViewWrapperTarget.classList.add('col-md-12')
+        return
+      case dataTypeLocation:
+      case dataTypeVersion:
+        await this.populateChartSources()
+        break
+    }
+    show(this.chartSourceWrapperTarget)
+    this.chartsViewWrapperTarget.classList.add('col-md-9')
+    this.chartsViewWrapperTarget.classList.remove('col-md-12')
+  }
+
+  async populateChartSources () {
+    let url = `/api/snapshot/${this.dataType === dataTypeVersion ? 'node-versions' : 'node-countries'}`
+    showLoading(this.loadingDataTarget, [this.tableWrapperTarget])
+    const _this = this
+    let response = await axios.get(url)
+    let result = response.data
+    hideLoading(_this.loadingDataTarget)
+    if (result.error) {
+      let messageHTML = `<div class="alert alert-primary"><strong>${result.error}</strong></div>`
+      _this.messageViewTarget.innerHTML = messageHTML
+      show(_this.messageViewTarget)
+      return
+    }
+    let html = ''
+    _this.allChartSourceTarget.checked = true
+    result.forEach(item => {
+      if (item === '') {
+        item = 'Unknown'
+      }
+      html += `<div class="form-check">
+                    <input name="chartSource" data-target="nodes.chartSource" data-action="click->nodes#chartSourceCheckChanged"
+                    class="form-check-input" type="checkbox" id="inlineCheckbox-${item}" value="${item}" checked>
+                    <label class="form-check-label" for="inlineCheckbox-${item}">${item}</label>
+                </div>`
+    })
+    _this.chartSourceListTarget.innerHTML = html
   }
 
   setDataType (e) {
@@ -312,13 +371,23 @@ export default class extends Controller {
     let url
     let drawChartFn
 
+    let selectedSources = []
+    this.chartSourceTargets.forEach(el => {
+      if (el.checked) {
+        selectedSources.push(el.value)
+      }
+    })
+    let q = ''
+    if (selectedSources.length > 0) {
+      q = `sources=${selectedSources.join('|')}`
+    }
     switch (this.dataType) {
       case dataTypeVersion:
-        url = `/api/snapshots/user-agents/chart`
+        url = `/api/snapshots/user-agents/chart?${q}`
         drawChartFn = this.drawUserAgentsChart
         break
       case dataTypeLocation:
-        url = `/api/snapshots/countries/chart`
+        url = `/api/snapshots/countries/chart?${q}`
         drawChartFn = this.drawCountriesChart
         break
       case dataTypeNodes:

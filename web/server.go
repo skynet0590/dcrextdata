@@ -85,10 +85,12 @@ type DataQuery interface {
 	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
 	NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
 	AverageLatency(ctx context.Context, address string) (int, error)
-	PeerCountByUserAgents(ctx context.Context, offset, limit int) (userAgents []netsnapshot.UserAgentInfo, total int64, err error)
+	PeerCountByUserAgents(ctx context.Context, sources string, offset, limit int) (userAgents []netsnapshot.UserAgentInfo, total int64, err error)
 	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)
-	PeerCountByCountries(ctx context.Context, offset, limit int) (countries []netsnapshot.CountryInfo, total int64, err error)
+	PeerCountByCountries(ctx context.Context, sources string, offset, limit int) (countries []netsnapshot.CountryInfo, total int64, err error)
 	GetIPLocation(ctx context.Context, ip string) (string, int, error)
+	AllNodeVersions(ctx context.Context) ([]string, error)
+	AllNodeContries(ctx context.Context) ([]string, error)
 }
 
 type Server struct {
@@ -190,6 +192,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
 	r.Get("/api/snapshot/nodes/count-by-timestamp", s.nodeCountByTimestamp)
 	r.Get("/api/snapshots/ip-info", s.ipInfo)
+	r.Get("/api/snapshot/node-versions", s.nodeVersions)
+	r.Get("/api/snapshot/node-countries", s.nodeCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
 }

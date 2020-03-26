@@ -480,12 +480,19 @@ func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCoun
 	return result, err
 }
 
-func (pg PgDb) PeerCountByUserAgents(ctx context.Context, offset, limit int) ([]netsnapshot.UserAgentInfo, int64, error) {
+func (pg PgDb) PeerCountByUserAgents(ctx context.Context, sources string, offset, limit int) ([]netsnapshot.UserAgentInfo, int64, error) {
 
+	sourceList := strings.Split(sources, "|")
+	sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
+	sources = strings.ReplaceAll(sources, "Unknown", "")
+	where := ""
+	if len(sourceList) > 0 {
+		where = fmt.Sprintf("WHERE node.user_agent IN (%s) ", sources)
+	}
 	sql := `SELECT network_snapshot.timestamp, node.user_agent, COUNT(node.user_agent) AS number FROM network_snapshot
 		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
-		INNER JOIN node ON node.address = heartbeat.node_id
-		GROUP BY network_snapshot.timestamp, node.user_agent
+		INNER JOIN node ON node.address = heartbeat.node_id ` + where +
+		`GROUP BY network_snapshot.timestamp, node.user_agent
 		ORDER BY network_snapshot.timestamp, number DESC`
 
 	var result []struct {
@@ -531,12 +538,20 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, offset, limit int) ([]
 	return userAgents, int64(count), nil
 }
 
-func (pg PgDb) PeerCountByCountries(ctx context.Context, offset, limit int) ([]netsnapshot.CountryInfo, int64, error) {
+func (pg PgDb) PeerCountByCountries(ctx context.Context, sources string, offset, limit int) ([]netsnapshot.CountryInfo, int64, error) {
+
+	sourceList := strings.Split(sources, "|")
+	sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
+	sources = strings.ReplaceAll(sources, "Unknown", "")
+	where := ""
+	if len(sourceList) > 0 {
+		where = fmt.Sprintf("WHERE node.country IN (%s) ", sources)
+	}
 
 	sql := `SELECT network_snapshot.timestamp, node.country, COUNT(node.country) AS number FROM network_snapshot
 		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
-		INNER JOIN node ON node.address = heartbeat.node_id
-		GROUP BY network_snapshot.timestamp, node.country
+		INNER JOIN node ON node.address = heartbeat.node_id ` + where +
+		`GROUP BY network_snapshot.timestamp, node.country
 		ORDER BY network_snapshot.timestamp, number DESC`
 
 	var result []struct {
@@ -597,4 +612,20 @@ func (pg PgDb) LastSnapshotTime(ctx context.Context) (timestamp int64) {
 
 func (pg PgDb) LastSnapshot(ctx context.Context) (*netsnapshot.SnapShot, error) {
 	return pg.FindNetworkSnapshot(ctx, pg.LastSnapshotTime(ctx))
+}
+
+func (pg PgDb) AllNodeVersions(ctx context.Context) (versions []string, err error) {
+	nodes, err := models.Nodes(qm.Select("distinct user_agent")).All(ctx, pg.db)
+	for _, node := range nodes {
+		versions = append(versions, node.UserAgent)
+	}
+	return
+}
+
+func (pg PgDb) AllNodeContries(ctx context.Context) (countries []string, err error) {
+	nodes, err := models.Nodes(qm.Select("distinct country")).All(ctx, pg.db)
+	for _, node := range nodes {
+		countries = append(countries, node.UserAgent)
+	}
+	return
 }

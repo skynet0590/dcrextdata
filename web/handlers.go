@@ -1852,7 +1852,7 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 	}
 	
 
-	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), offset, limit)
+	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
 	if err != nil {
 		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
@@ -1872,7 +1872,7 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Request) {
 	limit := -1
 	offset := 0
-	userAgents, _, err := s.db.PeerCountByUserAgents(r.Context(), offset, limit)
+	userAgents, _, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
 	if err != nil {
 		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
@@ -1948,7 +1948,7 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 		limit = pageSize
 	}
 
-	countries, total, err := s.db.PeerCountByCountries(r.Context(), offset, limit)
+	countries, total, err := s.db.PeerCountByCountries(r.Context(), r.FormValue("sources"), offset, limit)
 	if err != nil {
 		s.renderErrorJSON(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
 		return
@@ -1974,7 +1974,7 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Request) {
 	limit := -1
 	offset := 0
-	countries, _, err := s.db.PeerCountByCountries(r.Context(), offset, limit)
+	countries, _, err := s.db.PeerCountByCountries(r.Context(), r.FormValue("sources"), offset, limit)
 	if err != nil {
 		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
@@ -2100,6 +2100,26 @@ func (s *Server) ipInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.renderJSON(map[string]interface{}{"country": country, "ip_version": version}, w)
+}
+
+// api/snapshot/node-versions
+func (s *Server) nodeVersions(w http.ResponseWriter, r *http.Request) {
+	version, err := s.db.AllNodeVersions(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node versions - %s", w, err.Error())
+		return
+	}
+	s.renderJSON(version, w)
+}
+
+// api/snapshot/node-countries
+func (s *Server) nodeCountries(w http.ResponseWriter, r *http.Request) {
+	version, err := s.db.AllNodeContries(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node contries - %s", w, err.Error())
+		return
+	}
+	s.renderJSON(version, w)
 }
 
 // api/sync/{dataType}
