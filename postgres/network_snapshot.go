@@ -625,7 +625,7 @@ func (pg PgDb) AllNodeVersions(ctx context.Context) (versions []string, err erro
 func (pg PgDb) AllNodeContries(ctx context.Context) (countries []string, err error) {
 	nodes, err := models.Nodes(qm.Select("distinct country")).All(ctx, pg.db)
 	for _, node := range nodes {
-		countries = append(countries, node.UserAgent)
+		countries = append(countries, node.Country)
 	}
 	return
 }
