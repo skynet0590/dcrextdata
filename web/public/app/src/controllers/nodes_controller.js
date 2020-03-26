@@ -84,7 +84,7 @@ export default class extends Controller {
     this.selectedViewOption = 'chart'
     hide(this.tableWrapperTarget)
     hide(this.messageViewTarget)
-    await this.updateChartUI()
+    await this.populateChartSources()
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     hide(this.numPageWrapperTarget)
@@ -109,27 +109,29 @@ export default class extends Controller {
     this.reloadChat()
   }
 
-  async updateChartUI () {
+  updateChartUI () {
     switch (this.dataType) {
       case dataTypeNodes:
         hide(this.chartSourceWrapperTarget)
-        this.chartsViewWrapperTarget.classList.remove('col-md-9')
+        this.chartsViewWrapperTarget.classList.remove('col-md-10')
+        this.chartsViewWrapperTarget.classList.remove('col-md-11')
         this.chartsViewWrapperTarget.classList.add('col-md-12')
         return
       case dataTypeLocation:
-        this.chartsViewWrapperTarget.classList.add('col-md-10')
+        this.chartsViewWrapperTarget.classList.remove('col-md-10')
+        this.chartsViewWrapperTarget.classList.add('col-md-11')
         this.chartsViewWrapperTarget.classList.remove('col-md-12')
         this.chartSourceWrapperTarget.classList.add('col-md-1')
         this.chartSourceWrapperTarget.classList.remove('col-md-2')
         break
       case dataTypeVersion:
-        this.chartsViewWrapperTarget.classList.add('col-md-9')
+        this.chartsViewWrapperTarget.classList.add('col-md-10')
+        this.chartsViewWrapperTarget.classList.remove('col-md-11')
         this.chartsViewWrapperTarget.classList.remove('col-md-12')
         this.chartSourceWrapperTarget.classList.add('col-md-2')
         this.chartSourceWrapperTarget.classList.remove('col-md-1')
         break
     }
-    await this.populateChartSources()
     show(this.chartSourceWrapperTarget)
   }
 
@@ -161,7 +163,7 @@ export default class extends Controller {
     _this.chartSourceListTarget.innerHTML = html
   }
 
-  setDataType (e) {
+  async setDataType (e) {
     this.dataType = e.currentTarget.getAttribute('data-option')
     if (this.dataType === selectedOption(this.dataTypeTargets)) {
       return
@@ -170,6 +172,7 @@ export default class extends Controller {
     insertOrUpdateQueryParam('page', this.currentPage, 1)
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
     insertOrUpdateQueryParam('data-type', this.dataType, 'nodes')
+    await this.populateChartSources()
     this.updateView()
   }
 
@@ -416,6 +419,7 @@ export default class extends Controller {
     }
     hide(this.messageViewTarget)
     drawChartFn = drawChartFn.bind(this)
+    this.updateChartUI()
     drawChartFn(result)
   }
 
