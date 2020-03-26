@@ -117,13 +117,20 @@ export default class extends Controller {
         this.chartsViewWrapperTarget.classList.add('col-md-12')
         return
       case dataTypeLocation:
+        this.chartsViewWrapperTarget.classList.add('col-md-10')
+        this.chartsViewWrapperTarget.classList.remove('col-md-12')
+        this.chartSourceWrapperTarget.classList.add('col-md-1')
+        this.chartSourceWrapperTarget.classList.remove('col-md-2')
+        break
       case dataTypeVersion:
-        await this.populateChartSources()
+        this.chartsViewWrapperTarget.classList.add('col-md-9')
+        this.chartsViewWrapperTarget.classList.remove('col-md-12')
+        this.chartSourceWrapperTarget.classList.add('col-md-2')
+        this.chartSourceWrapperTarget.classList.remove('col-md-1')
         break
     }
+    await this.populateChartSources()
     show(this.chartSourceWrapperTarget)
-    this.chartsViewWrapperTarget.classList.add('col-md-9')
-    this.chartsViewWrapperTarget.classList.remove('col-md-12')
   }
 
   async populateChartSources () {
