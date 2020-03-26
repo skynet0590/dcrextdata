@@ -1872,11 +1872,17 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Request) {
 	limit := -1
 	offset := 0
-	userAgents, _, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
-	if err != nil {
-		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
-		return
+	var err error
+	userAgents := []netsnapshot.UserAgentInfo{}
+	sources := r.FormValue("sources")
+	if len(sources) > 0 {
+		userAgents, _, err = s.db.PeerCountByUserAgents(r.Context(), sources, offset, limit)
+		if err != nil {
+			s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+			return
+		}
 	}
+	
 	var datesMap = map[int64]struct{}{}
 	var allDates []int64
 	var userAgentMap = map[string]struct{}{}
@@ -1974,11 +1980,17 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Request) {
 	limit := -1
 	offset := 0
-	countries, _, err := s.db.PeerCountByCountries(r.Context(), r.FormValue("sources"), offset, limit)
-	if err != nil {
-		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
-		return
+	sources := r.FormValue("sources")
+	var err error
+	countries := []netsnapshot.CountryInfo{}
+	if len(sources) > 0 {
+		countries, _, err = s.db.PeerCountByCountries(r.Context(), sources, offset, limit)
+		if err != nil {
+			s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+			return
+		}
 	}
+	
 	var datesMap = map[int64]struct{}{}
 	var allDates []int64
 	var countryMap = map[string]struct{}{}
