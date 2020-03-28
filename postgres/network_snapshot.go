@@ -482,13 +482,14 @@ func (pg PgDb) SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCoun
 
 func (pg PgDb) PeerCountByUserAgents(ctx context.Context, sources string, offset, limit int) ([]netsnapshot.UserAgentInfo, int64, error) {
 
-	sourceList := strings.Split(sources, "|")
-	sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
-	sources = strings.ReplaceAll(sources, "Unknown", "")
 	where := ""
-	if len(sourceList) > 0 {
+	if len(strings.Trim(sources, "")) > 0 {
+		sourceList := strings.Split(sources, "|")
+		sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
+		sources = strings.ReplaceAll(sources, "Unknown", "")
 		where = fmt.Sprintf("WHERE node.user_agent IN (%s) ", sources)
 	}
+	
 	sql := `SELECT network_snapshot.timestamp, node.user_agent, COUNT(node.user_agent) AS number FROM network_snapshot
 		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
 		INNER JOIN node ON node.address = heartbeat.node_id ` + where +
@@ -540,11 +541,11 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, sources string, offset
 
 func (pg PgDb) PeerCountByCountries(ctx context.Context, sources string, offset, limit int) ([]netsnapshot.CountryInfo, int64, error) {
 
-	sourceList := strings.Split(sources, "|")
-	sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
-	sources = strings.ReplaceAll(sources, "Unknown", "")
 	where := ""
-	if len(sourceList) > 0 {
+	if len(strings.Trim(sources, "")) > 0 {
+		sourceList := strings.Split(sources, "|")
+		sources = fmt.Sprintf("'%s'", strings.Join(sourceList, "','"))
+		sources = strings.ReplaceAll(sources, "Unknown", "")
 		where = fmt.Sprintf("WHERE node.country IN (%s) ", sources)
 	}
 
