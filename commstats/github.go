@@ -114,7 +114,7 @@ func (c *Collector) getGithubData(ctx context.Context, repository string) (int, 
 	defer resp.Body.Close()
 	var response struct {
 		Stars int `json:"stargazers_count"`
-		Folks int `json:"forks_count"`
+		Folks int `json:"network_count"`
 	}
 	if resp.StatusCode == http.StatusOK {
 		err = json.NewDecoder(resp.Body).Decode(&response)
