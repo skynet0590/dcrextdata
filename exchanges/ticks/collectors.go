@@ -19,8 +19,6 @@ const (
 	bittrexAPIURL   = "https://bittrex.com/Api/v2.0/pub/market/GetTicks"
 	Poloniex        = "poloniex"
 	poloniexAPIURL  = "https://poloniex.com/public"
-	Bleutrade       = "bleutrade"
-	bleutradeAPIURL = "https://bleutrade.com/api/v3/public/getcandles"
 	Binance         = "binance"
 	binanceAPIURL   = "https://api.binance.com/api/v1/klines"
 
@@ -50,7 +48,6 @@ var (
 		Bittrex:    NewBittrexCollector,
 		Bittrexusd: NewBittrexUSDCollector,
 		Poloniex:   NewPoloniexCollector,
-		// Bleutrade:  NewBleutradeCollector,
 		Binance:    NewBinanceCollector,
 	}
 
@@ -132,24 +129,6 @@ var (
 			return helpers.AddParams(bittrexAPIURL, map[string]interface{}{
 				"marketName":   cpair,
 				"tickInterval": bittrexIntervals[interval.Seconds()],
-			})
-		},
-	}
-
-	bleutradeData = ExchangeData{
-		Name:       Bleutrade,
-		WebsiteURL: "https://bleutrade.com",
-		availableCPairs: map[string]string{
-			btcdcrPair: "DCR_BTC",
-		},
-		apiLimited:       false,
-		ShortInterval:    time.Hour,
-		LongInterval:     4 * time.Hour,
-		HistoricInterval: oneDay,
-		requester: func(last time.Time, interval time.Duration, cpair string) (string, error) {
-			return helpers.AddParams(bleutradeAPIURL, map[string]interface{}{
-				"market": cpair,
-				"period": bleutradeIntervals[interval.Seconds()],
 			})
 		},
 	}
@@ -251,10 +230,6 @@ func NewBittrexCollector(ctx context.Context, store Store) (Collector, error) {
 
 func NewBittrexUSDCollector(ctx context.Context, store Store) (Collector, error) {
 	return newCollector(ctx, store, bittrexData, usdbtcPair, zeroTime, new(bittrexAPIResponse))
-}
-
-func NewBleutradeCollector(ctx context.Context, store Store) (Collector, error) {
-	return newCollector(ctx, store, bleutradeData, btcdcrPair, zeroTime, new(bleutradeAPIResponse))
 }
 
 func NewBinanceCollector(ctx context.Context, store Store) (Collector, error) {

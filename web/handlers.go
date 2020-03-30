@@ -1,14 +1,16 @@
 package web
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"math"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
@@ -294,6 +296,57 @@ func (s *Server) getExchangeChartData(res http.ResponseWriter, req *http.Request
 	data["chartData"] = chartData
 
 	defer s.renderJSON(data, res)
+}
+
+func (s *Server) tickIntervalsByExchangeAndPair(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	selectedCurrencyPair := req.FormValue("currency-pair")
+	var result = []struct{
+		Label string `json:"label"`
+		Value int `json:"value"`
+	} {
+		{Label: "All", Value: -1},
+	}
+	pairs, err := s.db.TickIntervalsByExchangeAndPair(req.Context(), req.FormValue("exchange"), selectedCurrencyPair)
+	if err != nil {
+		if err.Error() != sql.ErrNoRows.Error() {
+			s.renderErrorJSON("error in loading intervals, " + err.Error(), res)
+			return
+		}
+		s.renderJSON(result, res)
+		return
+	}
+
+	
+
+	for _, p := range pairs {
+		result = append(result, struct {
+			Label string `json:"label"`
+			Value int `json:"value"`
+		}{
+			Label: exchangeTickIntervals[p.Interval],
+			Value: p.Interval,
+		})
+	}
+	s.renderJSON(result, res)
+}
+
+func (s *Server) currencyPairByExchange(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	var result = []string{"All"}
+	pairs, err := s.db.CurrencyPairByExchange(req.Context(), req.FormValue("exchange"))
+	if err != nil {
+		if err.Error() != sql.ErrNoRows.Error() {
+			s.renderErrorJSON("error in loading intervals, " + err.Error(), res)
+			return
+		}
+		s.renderJSON(result, res)
+		return
+	}
+	for _, p := range pairs {
+		result = append(result, p.CurrencyPair)
+	}
+	s.renderJSON(result, res)
 }
 
 // /vsps
