@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/postgres/models"
-
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
