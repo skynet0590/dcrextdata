@@ -152,7 +152,7 @@ func (pg *PgDb) SaveExchangeFromSync(ctx context.Context, exchangeData interface
 
 // AllExchange fetches a slice of all exchange from the db
 func (pg *PgDb) AllExchange(ctx context.Context) (models.ExchangeSlice, error) {
-	exchangeSlice, err := models.Exchanges().All(ctx, pg.db)
+	exchangeSlice, err := models.Exchanges(models.ExchangeWhere.Name.NEQ("bluetrade")).All(ctx, pg.db)
 	return exchangeSlice, err
 }
 
