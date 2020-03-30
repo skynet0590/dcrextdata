@@ -29,6 +29,7 @@ type DataQuery interface {
 	AllExchangeTicksCurrencyPair(ctx context.Context) ([]ticks.TickDtoCP, error)
 	ExchangeTicksChartData(ctx context.Context, filter string, currencyPair string, selectedInterval int, exchanges string) ([]ticks.TickChartData, error)
 	AllExchangeTicksInterval(ctx context.Context) ([]ticks.TickDtoInterval, error)
+	TickIntervalsByExchangeAndPair(ctx context.Context, exchange string, currencyPair string) ([]ticks.TickDtoInterval, error)
 
 	VspTickCount(ctx context.Context) (int64, error)
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
@@ -128,6 +129,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/exchanges", s.getExchangeTicks)
 	r.Get("/exchangedata", s.getFilteredExchangeTicks)
 	r.Get("/exchangechart", s.getExchangeChartData)
+	r.Get("/api/exchanges/intervals", s.tickIntervalsByExchangeAndPair)
 	r.Get("/vsp", s.getVspTicks)
 	r.Get("/vspchartdata", s.vspChartData)
 	r.Get("/vsps", s.getFilteredVspTicks)

@@ -62,7 +62,7 @@ export default class extends Controller {
     }
   }
 
-  setTable () {
+  async setTable () {
     this.selectedViewOption = 'table'
     hide(this.messageViewTarget)
     hide(this.tickWapperTarget)
@@ -81,12 +81,13 @@ export default class extends Controller {
     this.selectedInterval = this.selectedIntervalTarget.value
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.nextPage = this.currentPage
+    await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
     trimUrl(['page', 'records-per-page', 'view-option', 'selected-currency-pair', 'selected-exchange', 'selected-interval'])
   }
 
-  setChart () {
+  async setChart () {
     this.selectedViewOption = 'chart'
     hide(this.messageViewTarget)
     var intervals = this.selectedIntervalTarget.options
@@ -112,6 +113,7 @@ export default class extends Controller {
       this.selectedExchange = this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
       this.selectedFilterTarget.text = this.selectedExchange
     }
+    await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
     trimUrl(['selected-tick', 'view-option', 'selected-currency-pair', 'selected-exchange', 'selected-interval'])
@@ -137,8 +139,8 @@ export default class extends Controller {
     this.selectedInterval = this.selectedIntervalTarget.value
     this.fetchExchange(this.selectedViewOption)
     let defaultInterval
-    if (this.selectedInterval.options.length > 0) {
-      defaultInterval = this.selectedInterval.options[0].value
+    if (this.selectedIntervalTarget.options.length > 0) {
+      defaultInterval = this.selectedIntervalTarget.options[0].value
     }
     insertOrUpdateQueryParam('selected-interval', this.selectedInterval, defaultInterval)
     insertOrUpdateQueryParam('page', this.nextPage, 1)
@@ -154,9 +156,10 @@ export default class extends Controller {
     insertOrUpdateQueryParam('selected-tick', this.selectedTick, defaultTick)
   }
 
-  selectedFilterChanged () {
+  async selectedFilterChanged () {
     this.nextPage = 1
     this.selectedExchange = this.selectedFilterTarget.value
+    await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     let defaultFilter
     if (this.selectedFilterTarget.options.length > 0) {
@@ -180,9 +183,10 @@ export default class extends Controller {
     insertOrUpdateQueryParam('page', this.currentPage + 1, 1)
   }
 
-  selectedCurrencyPairChanged () {
+  async selectedCurrencyPairChanged () {
     this.nextPage = 1
     this.selectedCurrencyPair = this.selectedCurrencyPairTarget.value
+    await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     let defaultPair
     if (this.selectedCurrencyPairTarget.options.length > 0) {
@@ -191,6 +195,30 @@ export default class extends Controller {
     insertOrUpdateQueryParam('selected-currency-pair', this.selectedCurrencyPair, defaultPair)
   }
 
+  async loadIntervals () {
+    var response = await axios.get(`/api/exchanges/intervals?currency-pair=${this.selectedCurrencyPair}&exchange=${this.selectedExchange}`)
+    if (response.data.error) {
+      window.alert(response.data.error)
+      return
+    }
+    let selectedDropped = true
+    this.selectedIntervalTarget.innerHTML = ''
+    let options = ''
+    response.data.forEach(p => {
+      if (p.value === parseInt(this.selectedInterval)) {
+        selectedDropped = false
+      }
+      options += `<option value="${p.value}">${p.label}</option>`
+    })
+    this.selectedIntervalTarget.innerHTML = options
+    if (selectedDropped && response.data.length > 1) {
+      this.selectedInterval = this.selectedIntervalTarget.options[1].value
+    }
+    this.selectedIntervalTarget.value = this.selectedInterval
+    if (this.selectedViewOption === 'chart') {
+      hide(this.selectedIntervalTarget.options[0])
+    }
+  }
   numberOfRowsChanged () {
     this.nextPage = 1
     this.numberOfRows = this.selectedNumTarget.value
