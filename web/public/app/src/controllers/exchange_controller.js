@@ -23,7 +23,7 @@ export default class extends Controller {
       'previousPageButton', 'totalPageCount', 'nextPageButton', 'selectedTicks', 'selectedInterval', 'loadingData',
       'exRowTemplate', 'currentPage', 'selectedNum', 'exchangeTableWrapper', 'tickWapper', 'viewOptionControl',
       'chartWrapper', 'labels', 'chartsView', 'selectedViewOption', 'hideOption', 'sourceWrapper', 'chartSelector',
-      'pageSizeWrapper', 'chartSource', 'currencyPairHideOption', 'messageView', 'hideIntervalOption', 'viewOption',
+      'pageSizeWrapper', 'chartSource', 'messageView', 'hideIntervalOption', 'viewOption',
       'zoomSelector', 'zoomOption'
     ]
   }
@@ -70,8 +70,6 @@ export default class extends Controller {
     show(this.pageSizeWrapperTarget)
     hide(this.chartWrapperTarget)
     hide(this.zoomSelectorTarget)
-    show(this.selectedIntervalTarget.options[0])
-    show(this.currencyPairHideOptionTarget)
     show(this.exchangeTableWrapperTarget)
     show(this.numPageWrapperTarget)
     this.resetCommonFilter()
@@ -81,6 +79,7 @@ export default class extends Controller {
     this.selectedInterval = this.selectedIntervalTarget.value
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     this.nextPage = this.currentPage
+    await this.loadCurrencyPairs()
     await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
@@ -90,15 +89,12 @@ export default class extends Controller {
   async setChart () {
     this.selectedViewOption = 'chart'
     hide(this.messageViewTarget)
-    var intervals = this.selectedIntervalTarget.options
     show(this.chartWrapperTarget)
     hide(this.pageSizeWrapperTarget)
     show(this.tickWapperTarget)
     show(this.zoomSelectorTarget)
     hide(this.hideOptionTarget)
     hide(this.messageViewTarget)
-    hide(intervals[0])
-    hide(this.currencyPairHideOptionTarget)
     hide(this.numPageWrapperTarget)
     hide(this.exchangeTableWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
@@ -113,6 +109,7 @@ export default class extends Controller {
       this.selectedExchange = this.selectedFilterTarget.value = this.selectedFilterTarget.options[1].text
       this.selectedFilterTarget.text = this.selectedExchange
     }
+    await this.loadCurrencyPairs()
     await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
@@ -159,6 +156,7 @@ export default class extends Controller {
   async selectedFilterChanged () {
     this.nextPage = 1
     this.selectedExchange = this.selectedFilterTarget.value
+    await this.loadCurrencyPairs()
     await this.loadIntervals()
     this.fetchExchange(this.selectedViewOption)
     let defaultFilter
@@ -219,6 +217,32 @@ export default class extends Controller {
       hide(this.selectedIntervalTarget.options[0])
     }
   }
+
+  async loadCurrencyPairs () {
+    var response = await axios.get(`/api/exchanges/currency-pairs?exchange=${this.selectedExchange}`)
+    if (response.data.error) {
+      window.alert(response.data.error)
+      return
+    }
+    let selectedDropped = true
+    this.selectedCurrencyPairTarget.innerHTML = ''
+    let options = ''
+    response.data.forEach(p => {
+      if (p.value === this.selectedCurrencyPair) {
+        selectedDropped = false
+      }
+      options += `<option value="${p}">${p}</option>`
+    })
+    this.selectedCurrencyPairTarget.innerHTML = options
+    if (selectedDropped && response.data.length > 1) {
+      this.selectedCurrencyPair = this.selectedCurrencyPairTarget.options[1].value
+    }
+    this.selectedCurrencyPairTarget.value = this.selectedCurrencyPair
+    if (this.selectedViewOption === 'chart' || response.data.length <= 2) {
+      hide(this.selectedCurrencyPairTarget.options[0])
+    }
+  }
+
   numberOfRowsChanged () {
     this.nextPage = 1
     this.numberOfRows = this.selectedNumTarget.value

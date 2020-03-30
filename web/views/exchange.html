@@ -47,7 +47,7 @@
                                 <select data-target="exchange.selectedCurrencyPair" data-initial-value="{{ $selectedCurrencyPair }}"
                                     data-action="change->exchange#selectedCurrencyPairChanged"
                                     class="form-control" style="width: 105px;">
-                                    <option data-target="exchange.currencyPairHideOption" class="{{ if .chartView }}d-none{{ end }}" value="All">All</option>
+                                    <option class="{{ if .chartView }}d-none{{ end }}" value="All">All</option>
                                     {{ range $index, $cpair := .currencyPairs}}
                                     <option value="{{$cpair.CurrencyPair}}" {{ if eq $cpair.CurrencyPair $selectedCurrencyPair}} selected {{ end }}>{{commonPair $cpair.CurrencyPair}}</option>
                                     {{ end }}

@@ -331,6 +331,24 @@ func (s *Server) tickIntervalsByExchangeAndPair(res http.ResponseWriter, req *ht
 	s.renderJSON(result, res)
 }
 
+func (s *Server) currencyPairByExchange(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	var result = []string{"All"}
+	pairs, err := s.db.CurrencyPairByExchange(req.Context(), req.FormValue("exchange"))
+	if err != nil {
+		if err.Error() != sql.ErrNoRows.Error() {
+			s.renderErrorJSON("error in loading intervals, " + err.Error(), res)
+			return
+		}
+		s.renderJSON(result, res)
+		return
+	}
+	for _, p := range pairs {
+		result = append(result, p.CurrencyPair)
+	}
+	s.renderJSON(result, res)
+}
+
 // /vsps
 func (s *Server) getVspTicks(res http.ResponseWriter, req *http.Request) {
 	vsps, err := s.fetchVSPData(req)
