@@ -113,21 +113,21 @@ export default class extends Controller {
     switch (this.dataType) {
       case dataTypeNodes:
         hide(this.chartSourceWrapperTarget)
-        this.chartsViewWrapperTarget.classList.remove('col-md-10')
-        this.chartsViewWrapperTarget.classList.remove('col-md-11')
-        this.chartsViewWrapperTarget.classList.add('col-md-12')
-        return
-      case dataTypeLocation:
+        this.chartsViewWrapperTarget.classList.remove('col-md-9')
         this.chartsViewWrapperTarget.classList.remove('col-md-10')
         this.chartsViewWrapperTarget.classList.add('col-md-11')
-        this.chartsViewWrapperTarget.classList.remove('col-md-12')
+        return
+      case dataTypeLocation:
+        this.chartsViewWrapperTarget.classList.remove('col-md-9')
+        this.chartsViewWrapperTarget.classList.add('col-md-10')
+        this.chartsViewWrapperTarget.classList.remove('col-md-11')
         this.chartSourceWrapperTarget.classList.add('col-md-1')
         this.chartSourceWrapperTarget.classList.remove('col-md-2')
         break
       case dataTypeVersion:
-        this.chartsViewWrapperTarget.classList.add('col-md-10')
+        this.chartsViewWrapperTarget.classList.add('col-md-9')
+        this.chartsViewWrapperTarget.classList.remove('col-md-10')
         this.chartsViewWrapperTarget.classList.remove('col-md-11')
-        this.chartsViewWrapperTarget.classList.remove('col-md-12')
         this.chartSourceWrapperTarget.classList.add('col-md-2')
         this.chartSourceWrapperTarget.classList.remove('col-md-1')
         break
