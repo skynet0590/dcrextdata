@@ -616,7 +616,7 @@ func (pg PgDb) LastSnapshot(ctx context.Context) (*netsnapshot.SnapShot, error) 
 }
 
 func (pg PgDb) AllNodeVersions(ctx context.Context) (versions []string, err error) {
-	nodes, err := models.Nodes(qm.Select("distinct user_agent")).All(ctx, pg.db)
+	nodes, err := models.Nodes(qm.Select("distinct user_agent"), qm.OrderBy(models.NodeColumns.UserAgent)).All(ctx, pg.db)
 	for _, node := range nodes {
 		versions = append(versions, node.UserAgent)
 	}
@@ -624,7 +624,7 @@ func (pg PgDb) AllNodeVersions(ctx context.Context) (versions []string, err erro
 }
 
 func (pg PgDb) AllNodeContries(ctx context.Context) (countries []string, err error) {
-	nodes, err := models.Nodes(qm.Select("distinct country")).All(ctx, pg.db)
+	nodes, err := models.Nodes(qm.Select("distinct country"), qm.OrderBy(models.NodeColumns.Country)).All(ctx, pg.db)
 	for _, node := range nodes {
 		countries = append(countries, node.Country)
 	}
