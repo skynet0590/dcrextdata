@@ -2,34 +2,38 @@ package web
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
 )
 
+var templateDirs = []string{"web/views"}
+var templates *template.Template
+
 func (s *Server) loadTemplates() {
 	layout := "web/views/layout.html"
-	tpls := map[string]string{
-		"error.html":       "web/views/error.html",
-		"home.html":        "web/views/home.html",
-		"exchange.html":    "web/views/exchange.html",
-		"vsp.html":         "web/views/vsp.html",
-		"pow.html":         "web/views/pow.html",
-		"mempool.html":     "web/views/mempool.html",
-		"propagation.html": "web/views/propagation.html",
-		"community.html":   "web/views/community.html",
-	}
+	for _, dir := range templateDirs {
+		files2, _ := ioutil.ReadDir(dir)
+		for _, file := range files2 {
+			filename := file.Name()
+			if !strings.HasSuffix(filename, ".html") {
+				continue
+			}
+			var files = []string{"web/views/" + filename}
+			if !strings.HasPrefix(filename, "_") {
+				files = append(files, layout)
+			}
+			tpl, err := template.New(filename).Funcs(templateFuncMap()).ParseFiles(files...)
+			if err != nil {
+				log.Errorf("Error loading templates: %s", err.Error())
+			}
 
-	for i, v := range tpls {
-		tpl, err := template.New(i).Funcs(templateFuncMap()).ParseFiles(v, layout)
-		if err != nil {
-			log.Errorf("Error loading templates: %s", err.Error())
+			s.lock.Lock()
+			s.templates[filename] = tpl
+			s.lock.Unlock()
 		}
-
-		s.lock.Lock()
-		s.templates[i] = tpl
-		s.lock.Unlock()
 	}
 }
 
@@ -54,6 +58,15 @@ func templateFuncMap() template.FuncMap {
 		},
 		"timestamp": func() int64 {
 			return time.Now().Unix()
+		},
+		"timeSince": func(timestamp int64) string {
+			return time.Since(time.Unix(timestamp, 0).UTC()).String()
+		},
+		"formatUnixTime": func(timestamp int64) string {
+			return time.Unix(timestamp, 0).Format(time.UnixDate)
+		},
+		"unixTimeAgo": func(timestamp int64) string {
+			return time.Since(time.Unix(timestamp, 0)).String()
 		},
 		"strListContains": func(stringList []string, needle string) bool {
 			for _, value := range stringList {
@@ -93,6 +106,9 @@ func templateFuncMap() template.FuncMap {
 				return v
 			}
 			return pair
+		},
+		"percentage": func(actual int64, total int64) string {
+			return fmt.Sprintf("%.2f", 100*float64(actual)/float64(total))
 		},
 	}
 }

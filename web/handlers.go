@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/postgres/models"
-
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
+	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
 )
@@ -24,7 +24,7 @@ const (
 	defaultViewOption           = chartViewOption
 	mempoolDefaultChartDataType = "size"
 	maxPageSize                 = 250
-	recordsPerPage              = 20
+	defaultPageSize             = 20
 	defaultInterval             = 1440 // All
 	noDataMessage               = "does not have data for the selected query option(s)."
 
@@ -166,7 +166,7 @@ func (s *Server) fetchExchangeData(req *http.Request) (map[string]interface{}, e
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -390,7 +390,7 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -624,7 +624,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -640,7 +640,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 		selectedPow = "All"
 	}
 
-	offset := (pageToLoad - 1) * recordsPerPage
+	offset := (pageToLoad - 1) * defaultPageSize
 
 	ctx := req.Context()
 
@@ -692,7 +692,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	data["powData"] = allPowDataSlice
-	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(recordsPerPage)))
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(defaultPageSize)))
 
 	totalTxLoaded := offset + len(allPowDataSlice)
 	if int64(totalTxLoaded) < totalCount {
@@ -857,7 +857,7 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -987,7 +987,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1252,7 +1252,7 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1349,7 +1349,7 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
 	if err != nil || numRows <= 0 {
-		pageSize = recordsPerPage
+		pageSize = defaultPageSize
 	} else if numRows > maxPageSize {
 		pageSize = maxPageSize
 	} else {
@@ -1451,7 +1451,7 @@ func (s *Server) community(res http.ResponseWriter, req *http.Request) {
 		channel = commstats.YoutubeChannels()[0]
 	}
 
-		selectedNum, _ := strconv.Atoi(selectedNumStr)
+	selectedNum, _ := strconv.Atoi(selectedNumStr)
 	if selectedNum == 0 {
 		selectedNum = 20
 	}
@@ -1593,7 +1593,7 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 	}, resp)
 }
 
-// communitychat
+// /communitychat
 func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	plarform := req.FormValue("platform")
@@ -1667,6 +1667,469 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		"stats":  csv,
 		"ylabel": yLabel,
 	}, resp)
+}
+
+// /snapshot
+func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize, _ := strconv.Atoi(r.FormValue("page-size"))
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+
+	viewOption := r.FormValue("view-option")
+	if viewOption == "" {
+		viewOption = defaultViewOption
+	}
+
+	var timestamp, previousTimestamp, nextTimestamp int64
+
+	t, _ := strconv.Atoi(r.FormValue("timestamp"))
+	timestamp = int64(t)
+
+	if timestamp == 0 {
+		timestamp = s.db.LastSnapshotTime(r.Context())
+		if timestamp == 0 {
+			s.renderError("No snapshot has been taken, please confirm that snapshot taker is configured.", w)
+			return
+		}
+	}
+
+	if snapshot, err := s.db.PreviousSnapshot(r.Context(), timestamp); err == nil {
+		previousTimestamp = snapshot.Timestamp
+	}
+
+	if snapshot, err := s.db.NextSnapshot(r.Context(), timestamp); err == nil {
+		nextTimestamp = snapshot.Timestamp
+	}
+
+	snapshot, err := s.db.FindNetworkSnapshot(r.Context(), timestamp)
+	if err != nil {
+		s.renderError(fmt.Sprintf("Cannot find a snapshot of the specified timestamp, %s", err.Error()), w)
+		return
+	}
+
+	dataType := r.FormValue("data-type")
+	if dataType == "" {
+		dataType = "nodes"
+	}
+
+	//
+	var totalCount, pageCount int64
+	switch dataType {
+	case "snapshot":
+	default:
+		totalCount, err = s.db.SnapshotCount(r.Context())
+		if err != nil {
+			s.renderError(err.Error(), w)
+			return
+		}
+	}
+
+	if totalCount%int64(pageSize) == 0 {
+		pageCount = totalCount / int64(pageSize)
+	} else {
+		pageCount = 1 + (totalCount-totalCount%int64(pageSize))/int64(pageSize)
+	}
+
+	var previousPage int = page - 1
+	var nextPage int = page + 1
+
+	data := map[string]interface{}{
+		"selectedViewOption": viewOption,
+		"dataType":           dataType,
+		"pageSizeSelector":   pageSizeSelector,
+		"previousPage":       previousPage,
+		"currentPage":        page,
+		"nextPage":           nextPage,
+		"pageSize":           pageSize,
+		"totalPages":         pageCount,
+		"timestamp":          timestamp,
+		"height":             snapshot.Height,
+		"previousTimestamp":  previousTimestamp,
+		"nextTimestamp":      nextTimestamp,
+	}
+
+	s.render("nodes.html", data, w)
+}
+
+// /api/snapshots
+func (s *Server) snapshots(w http.ResponseWriter, r *http.Request) {
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+
+	page, err := strconv.Atoi(r.FormValue("page"))
+	if err != nil {
+		page = 1
+	}
+
+	offset := (page - 1) * pageSize
+
+	result, total, err := s.db.Snapshots(r.Context(), offset, pageSize, false)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
+		return
+	}
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
+	} else {
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+	}
+	s.renderJSON(map[string]interface{}{"data": result, "total": total, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/chart
+func (s *Server) snapshotsChart(w http.ResponseWriter, r *http.Request) {
+	result, _, err := s.db.Snapshots(r.Context(), 0, -1, true)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch snapshots: %s", w, err.Error())
+		return
+	}
+	s.renderJSON(result, w)
+}
+
+// /nodes/view/{ip}
+func (s *Server) nodeInfo(w http.ResponseWriter, r *http.Request) {
+	address := getNodeIPFromCtx(r)
+	if address == "" {
+		s.renderError("Address is required", w)
+		return
+	}
+
+	ctx := r.Context()
+
+	node, err := s.db.NetworkPeer(ctx, address)
+	if err != nil {
+		s.renderErrorf("Cannot get not details, %s", w, err.Error())
+		return
+	}
+
+	averageLatency, err := s.db.AverageLatency(ctx, address)
+	if err != nil {
+		s.renderErrorf("Cannot load detail, error in getting average latency, %s", w, err.Error())
+		return
+	}
+
+	bestBlockHeight, err := s.getExplorerBestBlock(ctx)
+	if err != nil {
+		s.renderErrorf("Cannot load detail, error in getting best block height, %s", w, err.Error())
+		return
+	}
+
+	s.render("node.html", map[string]interface{}{
+		"node": node, "bestBlockHeight": int64(bestBlockHeight),
+		"snapshotinterval": netsnapshot.Snapshotinterval(),
+		"averageLatency":   averageLatency,
+	}, w)
+}
+
+// /api/snapshots/user-agents
+func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	limit := -1
+	var offset int
+	if r.FormValue("chart") != "1" {
+		if page < 1 {
+			page = 1
+		}
+		offset = (page -1) * pageSize
+		limit = pageSize
+	}
+	
+
+	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+		return
+	}
+
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
+	} else {
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+	}
+
+	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/user-agents/chart
+func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Request) {
+	limit := -1
+	offset := 0
+	var err error
+	userAgents := []netsnapshot.UserAgentInfo{}
+	sources := r.FormValue("sources")
+	if len(sources) > 0 {
+		userAgents, _, err = s.db.PeerCountByUserAgents(r.Context(), sources, offset, limit)
+		if err != nil {
+			s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+			return
+		}
+	}
+	
+	var datesMap = map[int64]struct{}{}
+	var allDates []int64
+	var userAgentMap = map[string]struct{}{}
+	var allUserAgents []string
+	var dateUserAgentCount = make(map[int64]map[string]int64)
+
+	for _, item := range userAgents {
+		if _, exists := datesMap[item.Timestamp]; !exists {
+			datesMap[item.Timestamp] = struct{}{}
+			allDates = append(allDates, item.Timestamp)
+		}
+
+		if _, exists := dateUserAgentCount[item.Timestamp]; !exists {
+			dateUserAgentCount[item.Timestamp] = make(map[string]int64)
+		}
+		
+		if _, exists := userAgentMap[item.UserAgent]; !exists {
+			userAgentMap[item.UserAgent] = struct{}{}
+			allUserAgents = append(allUserAgents, item.UserAgent)
+		}
+		dateUserAgentCount[item.Timestamp][item.UserAgent] = item.Nodes
+	}
+
+	var row = []string{ "Date (UTC)" }
+	for _, userAgent := range allUserAgents {
+		row = append(row, userAgent)
+	}
+	csv := strings.Join(row, ",") + "\n"
+
+	var minDate, maxDate int64
+	for _, timestamp := range allDates {
+		if minDate == 0 || timestamp < minDate {
+			minDate = timestamp
+		}
+
+		if maxDate == 0 || timestamp > maxDate {
+			maxDate = timestamp
+		}
+
+		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		for _, userAgent := range allUserAgents {
+			row = append(row, strconv.FormatInt(dateUserAgentCount[timestamp][userAgent], 10))
+		}
+		csv += strings.Join(row, ",") + "\n"
+	}
+
+	s.renderJSON(map[string]interface{}{ 
+		"csv" : csv, 
+		"minDate" : time.Unix(minDate, 0).UTC().String(), 
+		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	}, w)
+}
+
+// /api/snapshots/countries
+func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
+	pageSize, err := strconv.Atoi(r.FormValue("page-size"))
+	if err != nil {
+		pageSize = defaultPageSize
+	}
+
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	limit := -1
+	var offset int
+	if r.FormValue("chart") != "1" {
+		if page < 1 {
+			page = 1
+		}
+		offset = (page -1) * pageSize
+		limit = pageSize
+	}
+
+	countries, total, err := s.db.PeerCountByCountries(r.Context(), r.FormValue("sources"), offset, limit)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
+		return
+	}
+
+	if r.FormValue("chart") != "1" {
+		sort.Slice(countries, func(i, j int) bool {
+			return countries[i].Nodes > countries[j].Nodes
+		})
+	}
+
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
+	} else {
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+	}
+
+	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
+}
+
+// /api/snapshots/countries/chart
+func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Request) {
+	limit := -1
+	offset := 0
+	sources := r.FormValue("sources")
+	var err error
+	countries := []netsnapshot.CountryInfo{}
+	if len(sources) > 0 {
+		countries, _, err = s.db.PeerCountByCountries(r.Context(), sources, offset, limit)
+		if err != nil {
+			s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+			return
+		}
+	}
+	
+	var datesMap = map[int64]struct{}{}
+	var allDates []int64
+	var countryMap = map[string]struct{}{}
+	var allCountries []string
+	var dateCountryCount = make(map[int64]map[string]int64)
+
+	for _, item := range countries {
+		if _, exists := datesMap[item.Timestamp]; !exists {
+			datesMap[item.Timestamp] = struct{}{}
+			allDates = append(allDates, item.Timestamp)
+		}
+
+		if _, exists := dateCountryCount[item.Timestamp]; !exists {
+			dateCountryCount[item.Timestamp] = make(map[string]int64)
+		}
+		
+		if _, exists := countryMap[item.Country]; !exists {
+			countryMap[item.Country] = struct{}{}
+			allCountries = append(allCountries, item.Country)
+		}
+		dateCountryCount[item.Timestamp][item.Country] = item.Nodes
+	}
+
+	var row = []string{ "Date (UTC)" }
+	for _, country := range allCountries {
+		row = append(row, country)
+	}
+	csv := strings.Join(row, ",") + "\n"
+
+	var minDate, maxDate int64
+	for _, timestamp := range allDates {
+		if minDate == 0 || timestamp < minDate {
+			minDate = timestamp
+		}
+
+		if maxDate == 0 || timestamp > maxDate {
+			maxDate = timestamp
+		}
+
+		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		for _, country := range allCountries {
+			row = append(row, strconv.FormatInt(dateCountryCount[timestamp][country], 10))
+		}
+		csv += strings.Join(row, ",") + "\n"
+	}
+
+	s.renderJSON(map[string]interface{}{ 
+		"csv" : csv, 
+		"minDate" : time.Unix(minDate, 0).UTC().String(), 
+		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	}, w)
+}
+
+// /api/snapshot/nodes/count-by-timestamp
+func (s *Server) nodeCountByTimestamp(w http.ResponseWriter, r *http.Request) {
+	result, err := s.db.SeenNodesByTimestamp(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node count: %s", w, err.Error())
+		return
+	}
+	s.renderJSON(result, w)
+}
+
+// /api/snapshot/{timestamp}/nodes
+func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	page, _ := strconv.Atoi(r.FormValue("page"))
+	if page < 1 {
+		page = 1
+	}
+
+	pageSize, _ := strconv.Atoi(r.FormValue("page-size"))
+	if pageSize < 1 {
+		pageSize = defaultPageSize
+	}
+
+	offset := (page - 1) * pageSize
+	query := r.FormValue("q")
+
+	var timestamp int64
+
+	timestamp = getTitmestampCtx(r)
+	if timestamp == 0 {
+		s.renderErrorJSON("timestamp is required and cannot be zero", w)
+		return
+	}
+
+	nodes, peerCount, err := s.db.NetworkPeers(r.Context(), timestamp, query, offset, pageSize)
+	if err != nil {
+		s.renderErrorfJSON("Error in fetching network nodes, %s", w, err.Error())
+		return
+	}
+
+	rem := peerCount % defaultPageSize
+	pageCount := (peerCount - rem) / defaultPageSize
+	if rem > 0 {
+		pageCount += 1
+	}
+
+	s.renderJSON(map[string]interface{}{
+		"page":      page,
+		"pageCount": pageCount,
+		"peerCount": peerCount,
+		"nodes":     nodes,
+	}, w)
+}
+
+// /api/snapshots/ip-info
+func (s *Server) ipInfo(w http.ResponseWriter, r *http.Request) {
+	address := r.FormValue("ip")
+	if address == "" {
+		s.renderErrorJSON("please specify a valid IP", w)
+		return
+	}
+	country, version, err := s.db.GetIPLocation(r.Context(), address)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), w)
+		return
+	}
+
+	s.renderJSON(map[string]interface{}{"country": country, "ip_version": version}, w)
+}
+
+// api/snapshot/node-versions
+func (s *Server) nodeVersions(w http.ResponseWriter, r *http.Request) {
+	version, err := s.db.AllNodeVersions(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node versions - %s", w, err.Error())
+		return
+	}
+	s.renderJSON(version, w)
+}
+
+// api/snapshot/node-countries
+func (s *Server) nodeCountries(w http.ResponseWriter, r *http.Request) {
+	version, err := s.db.AllNodeContries(r.Context())
+	if err != nil {
+		s.renderErrorfJSON("Cannot fetch node contries - %s", w, err.Error())
+		return
+	}
+	s.renderJSON(version, w)
 }
 
 // api/sync/{dataType}

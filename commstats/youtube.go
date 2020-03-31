@@ -94,15 +94,14 @@ func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context) {
 		youtubeStat := Youtube{
 			Date:        time.Now().UTC(),
 			Subscribers: youtubeSubscribers,
-			ViewCount: viewCount,
-			Channel: channel,
+			ViewCount:   viewCount,
+			Channel:     channel,
 		}
 		err = c.dataStore.StoreYoutubeStat(ctx, youtubeStat)
 		if err != nil {
 			log.Error("Unable to save Youtube stat, %s", err.Error())
 			return
 		}
-
 
 		log.Infof("New Youtube stat collected for %s at %s, Subscribers %d", channel,
 			youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)

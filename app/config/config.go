@@ -6,6 +6,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"os"
 
 	flags "github.com/jessevdk/go-flags"
@@ -31,18 +32,23 @@ const (
 	defaultVSPInterval         = 300
 	defaultPowInterval         = 300
 	defaultSyncInterval        = 60
+	defaultSnapshotInterval    = 5
 	defaultRedditInterval      = 60
 	defaultTwitterStatInterval = 60 * 24
 	defaultGithubStatInterval  = 60 * 24
 	defaultYoutubeInterval     = 60 * 24
+	//dcrseeder
+	defaultSeeder              = "127.0.0.1"
+	defaultSeederPort          = 9108
+	maxPeerConnectionFailure   = 3
 )
 
 var (
-	defaultSubreddits         	= []string{"decred"}
-	defaultTwitterHandles     	= []string{"decredproject"}
-	defaultGithubRepositories 	= []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
-	defaultYoutubeChannelNames 	= []string{"Decred"}
-	defaultYoutubeChannelId		= []string{"UCJ2bYDaPYHpSmJPh_M5dNSg"}
+	defaultSubreddits          = []string{"decred"}
+	defaultTwitterHandles      = []string{"decredproject"}
+	defaultGithubRepositories  = []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
+	defaultYoutubeChannelNames = []string{"Decred"}
+	defaultYoutubeChannelId    = []string{"UCJ2bYDaPYHpSmJPh_M5dNSg"}
 )
 
 func defaultFileOptions() ConfigFileOptions {
@@ -75,6 +81,11 @@ func defaultFileOptions() ConfigFileOptions {
 	cfg.YoutubeStatInterval = defaultYoutubeInterval
 	cfg.YoutubeChannelName = defaultYoutubeChannelNames
 	cfg.YoutubeChannelId = defaultYoutubeChannelId
+	cfg.SnapshotInterval = defaultSnapshotInterval
+	cfg.Seeder = defaultSeeder
+	cfg.SeederPort = defaultSeederPort
+	cfg.MaxPeerConnectionFailure = maxPeerConnectionFailure
+
 	return cfg
 }
 
@@ -99,6 +110,11 @@ type ConfigFileOptions struct {
 	// Http Server
 	HTTPHost string `long:"httphost" description:"HTTP server host address or IP when running godcr in http mode."`
 	HTTPPort string `long:"httpport" description:"HTTP server port when running godcr in http mode."`
+
+	// pprof
+	Cpuprofile string `long:"cpuprofile" description:"write cpu profile to file"`
+	Memprofile string `long:"memprofile" description:"write memory profile to file"`
+
 	// Exchange collector
 	DisableExchangeTicks bool     `long:"disablexcticks" description:"Disables collection of ticker data from exchanges"`
 	DisabledExchanges    []string `long:"disableexchange" description:"Disable data collection for this exchange"`
@@ -119,6 +135,7 @@ type ConfigFileOptions struct {
 	DcrdNetworkType string  `long:"dcrdnetworktype" description:"Dcrd rpc network type"`
 	DcrdRpcUser     string  `long:"dcrdrpcuser" description:"Your Dcrd rpc username"`
 	DcrdRpcPassword string  `long:"dcrdrpcpassword" description:"Your Dcrd rpc password"`
+	DisableTLS      bool    `long:"dcrdisabletls" description:"DisableTLS specifies whether transport layer security should be disabled"`
 
 	// sync
 	DisableSync   bool     `long:"disablesync" description:"Disables data sharing operation"`
@@ -127,6 +144,7 @@ type ConfigFileOptions struct {
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 
 	CommunityStatOptions
+	NetworkSnapshotOptions
 }
 
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
@@ -149,6 +167,18 @@ type CommunityStatOptions struct {
 	YoutubeChannelId     []string `long:"youtubechannelid" description:"List of Youtube channel ID to be tracked"`
 	YoutubeStatInterval  int      `long:"youtubestatinterval" description:"Number of minutes between Youtube stat collection"`
 	YoutubeDataApiKey    string   `long:"youtubedataapikey" description:"Youtube data API key gotten from google developer console"`
+}
+
+type NetworkSnapshotOptions struct {
+	DisableNetworkSnapshot   bool   `long:"disablesnapshot" description:"Disable network snapshot"`
+	SnapshotInterval         int    `long:"snapshotinterval" description:"The number of minutes between snapshot (default 5)"`
+	MaxPeerConnectionFailure int    `long:"maxPeerConnectionFailure" description:"Number of failed connection before a pair is marked a dead"`
+	Seeder                   string `short:"s" long:"seeder" description:"IP address of a working node"`
+	SeederPort               uint16 `short:"p" long:"seederport" description:"Port of a working node"`
+	IpStackAccessKey         string `long:"ipStackAccessKey" description:"IP stack access key https://ipstack.com/"`
+	IpLocationProvidingPeer  string `long:"ipLocationProvidingPeer" description:"An optional peer address for getting IP info"`
+	TestNet                  bool   `long:"testnet" description:"Use testnet"`
+	ShowDetailedLog          bool   `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
 
 func defaultConfig() Config {
@@ -196,5 +226,25 @@ func LoadConfig() (*Config, []string, error) {
 		return nil, nil, err
 	}
 
+	// network snapshot validation
+	if len(cfg.Seeder) == 0 {
+		return nil, nil, fmt.Errorf("Please specify a seeder")
+	}
+
+	if net.ParseIP(cfg.Seeder) == nil {
+		str := "\"%s\" is not a valid textual representation of an IP address"
+		return nil, nil, fmt.Errorf(str, cfg.Seeder)
+	}
+
 	return &cfg, unknownArg, nil
+}
+
+// normalizeAddress returns addr with the passed default port appended if
+// there is not already a port specified.
+func normalizeAddress(addr, defaultPort string) string {
+	_, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return net.JoinHostPort(addr, defaultPort)
+	}
+	return addr
 }

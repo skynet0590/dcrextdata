@@ -142,8 +142,8 @@ func (pg *PgDb) YoutubeStat(ctx context.Context, channel string, offtset int, li
 		stat := commstats.Youtube{
 			Date:        record.Date,
 			Subscribers: record.Subscribers,
-			ViewCount: record.ViewCount,
-			Channel: record.Channel,
+			ViewCount:   record.ViewCount,
+			Channel:     record.Channel,
 		}
 
 		result = append(result, stat)

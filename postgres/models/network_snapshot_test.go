@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testYoutubes(t *testing.T) {
+func testNetworkSnapshots(t *testing.T) {
 	t.Parallel()
 
-	query := Youtubes()
+	query := NetworkSnapshots()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testYoutubesDelete(t *testing.T) {
+func testNetworkSnapshotsDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testYoutubesDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testYoutubesDelete(t *testing.T) {
 	}
 }
 
-func testYoutubesQueryDeleteAll(t *testing.T) {
+func testNetworkSnapshotsQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testYoutubesQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := Youtubes().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := NetworkSnapshots().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testYoutubesQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testYoutubesSliceDeleteAll(t *testing.T) {
+func testNetworkSnapshotsSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testYoutubesSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := YoutubeSlice{o}
+	slice := NetworkSnapshotSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testYoutubesSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testYoutubesSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testYoutubesExists(t *testing.T) {
+func testNetworkSnapshotsExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testYoutubesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := YoutubeExists(ctx, tx, o.Date)
+	e, err := NetworkSnapshotExists(ctx, tx, o.Timestamp)
 	if err != nil {
-		t.Errorf("Unable to check if Youtube exists: %s", err)
+		t.Errorf("Unable to check if NetworkSnapshot exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected YoutubeExists to return true, but got false.")
+		t.Errorf("Expected NetworkSnapshotExists to return true, but got false.")
 	}
 }
 
-func testYoutubesFind(t *testing.T) {
+func testNetworkSnapshotsFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testYoutubesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	youtubeFound, err := FindYoutube(ctx, tx, o.Date)
+	networkSnapshotFound, err := FindNetworkSnapshot(ctx, tx, o.Timestamp)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if youtubeFound == nil {
+	if networkSnapshotFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testYoutubesBind(t *testing.T) {
+func testNetworkSnapshotsBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testYoutubesBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = Youtubes().Bind(ctx, tx, o); err != nil {
+	if err = NetworkSnapshots().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testYoutubesOne(t *testing.T) {
+func testNetworkSnapshotsOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testYoutubesOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := Youtubes().One(ctx, tx); err != nil {
+	if x, err := NetworkSnapshots().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testYoutubesAll(t *testing.T) {
+func testNetworkSnapshotsAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	youtubeOne := &Youtube{}
-	youtubeTwo := &Youtube{}
-	if err = randomize.Struct(seed, youtubeOne, youtubeDBTypes, false, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	networkSnapshotOne := &NetworkSnapshot{}
+	networkSnapshotTwo := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, networkSnapshotOne, networkSnapshotDBTypes, false, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
-	if err = randomize.Struct(seed, youtubeTwo, youtubeDBTypes, false, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	if err = randomize.Struct(seed, networkSnapshotTwo, networkSnapshotDBTypes, false, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = youtubeOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = networkSnapshotOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = youtubeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = networkSnapshotTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Youtubes().All(ctx, tx)
+	slice, err := NetworkSnapshots().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testYoutubesAll(t *testing.T) {
 	}
 }
 
-func testYoutubesCount(t *testing.T) {
+func testNetworkSnapshotsCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	youtubeOne := &Youtube{}
-	youtubeTwo := &Youtube{}
-	if err = randomize.Struct(seed, youtubeOne, youtubeDBTypes, false, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	networkSnapshotOne := &NetworkSnapshot{}
+	networkSnapshotTwo := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, networkSnapshotOne, networkSnapshotDBTypes, false, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
-	if err = randomize.Struct(seed, youtubeTwo, youtubeDBTypes, false, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	if err = randomize.Struct(seed, networkSnapshotTwo, networkSnapshotDBTypes, false, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = youtubeOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = networkSnapshotOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = youtubeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = networkSnapshotTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,14 +299,14 @@ func testYoutubesCount(t *testing.T) {
 	}
 }
 
-func testYoutubesInsert(t *testing.T) {
+func testNetworkSnapshotsInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -316,7 +316,7 @@ func testYoutubesInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,24 +326,24 @@ func testYoutubesInsert(t *testing.T) {
 	}
 }
 
-func testYoutubesInsertWhitelist(t *testing.T) {
+func testNetworkSnapshotsInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(youtubeColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(networkSnapshotColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -353,14 +353,14 @@ func testYoutubesInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testYoutubesReload(t *testing.T) {
+func testNetworkSnapshotsReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -375,14 +375,14 @@ func testYoutubesReload(t *testing.T) {
 	}
 }
 
-func testYoutubesReloadAll(t *testing.T) {
+func testNetworkSnapshotsReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -392,21 +392,21 @@ func testYoutubesReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := YoutubeSlice{o}
+	slice := NetworkSnapshotSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testYoutubesSelect(t *testing.T) {
+func testNetworkSnapshotsSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -416,7 +416,7 @@ func testYoutubesSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := Youtubes().All(ctx, tx)
+	slice, err := NetworkSnapshots().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -427,25 +427,25 @@ func testYoutubesSelect(t *testing.T) {
 }
 
 var (
-	youtubeDBTypes = map[string]string{`Date`: `timestamp without time zone`, `Subscribers`: `integer`, `ViewCount`: `integer`, `Channel`: `character varying`}
-	_              = bytes.MinRead
+	networkSnapshotDBTypes = map[string]string{`Timestamp`: `bigint`, `Height`: `bigint`, `NodeCount`: `integer`, `ReachableNodes`: `integer`, `OldestNodeTimestamp`: `bigint`, `OldestNode`: `character varying`, `Latency`: `integer`}
+	_                      = bytes.MinRead
 )
 
-func testYoutubesUpdate(t *testing.T) {
+func testNetworkSnapshotsUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(youtubePrimaryKeyColumns) {
+	if 0 == len(networkSnapshotPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(youtubeAllColumns) == len(youtubePrimaryKeyColumns) {
+	if len(networkSnapshotAllColumns) == len(networkSnapshotPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -455,7 +455,7 @@ func testYoutubesUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -464,8 +464,8 @@ func testYoutubesUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -475,18 +475,18 @@ func testYoutubesUpdate(t *testing.T) {
 	}
 }
 
-func testYoutubesSliceUpdateAll(t *testing.T) {
+func testNetworkSnapshotsSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(youtubeAllColumns) == len(youtubePrimaryKeyColumns) {
+	if len(networkSnapshotAllColumns) == len(networkSnapshotPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Youtube{}
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := &NetworkSnapshot{}
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -496,7 +496,7 @@ func testYoutubesSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -505,18 +505,18 @@ func testYoutubesSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, youtubeDBTypes, true, youtubePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	if err = randomize.Struct(seed, o, networkSnapshotDBTypes, true, networkSnapshotPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(youtubeAllColumns, youtubePrimaryKeyColumns) {
-		fields = youtubeAllColumns
+	if strmangle.StringSliceMatch(networkSnapshotAllColumns, networkSnapshotPrimaryKeyColumns) {
+		fields = networkSnapshotAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			youtubeAllColumns,
-			youtubePrimaryKeyColumns,
+			networkSnapshotAllColumns,
+			networkSnapshotPrimaryKeyColumns,
 		)
 	}
 
@@ -534,7 +534,7 @@ func testYoutubesSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := YoutubeSlice{o}
+	slice := NetworkSnapshotSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -542,29 +542,29 @@ func testYoutubesSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testYoutubesUpsert(t *testing.T) {
+func testNetworkSnapshotsUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(youtubeAllColumns) == len(youtubePrimaryKeyColumns) {
+	if len(networkSnapshotAllColumns) == len(networkSnapshotPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := Youtube{}
-	if err = randomize.Struct(seed, &o, youtubeDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	o := NetworkSnapshot{}
+	if err = randomize.Struct(seed, &o, networkSnapshotDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Youtube: %s", err)
+		t.Errorf("Unable to upsert NetworkSnapshot: %s", err)
 	}
 
-	count, err := Youtubes().Count(ctx, tx)
+	count, err := NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -573,15 +573,15 @@ func testYoutubesUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, youtubeDBTypes, false, youtubePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Youtube struct: %s", err)
+	if err = randomize.Struct(seed, &o, networkSnapshotDBTypes, false, networkSnapshotPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize NetworkSnapshot struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Youtube: %s", err)
+		t.Errorf("Unable to upsert NetworkSnapshot: %s", err)
 	}
 
-	count, err = Youtubes().Count(ctx, tx)
+	count, err = NetworkSnapshots().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

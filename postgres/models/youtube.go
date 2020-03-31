@@ -25,8 +25,8 @@ import (
 type Youtube struct {
 	Date        time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
 	Subscribers int       `boil:"subscribers" json:"subscribers" toml:"subscribers" yaml:"subscribers"`
-	Channel     string    `boil:"channel" json:"channel" toml:"channel" yaml:"channel"`
 	ViewCount   int       `boil:"view_count" json:"view_count" toml:"view_count" yaml:"view_count"`
+	Channel     string    `boil:"channel" json:"channel" toml:"channel" yaml:"channel"`
 
 	R *youtubeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L youtubeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -35,13 +35,13 @@ type Youtube struct {
 var YoutubeColumns = struct {
 	Date        string
 	Subscribers string
-	Channel     string
 	ViewCount   string
+	Channel     string
 }{
 	Date:        "date",
 	Subscribers: "subscribers",
-	Channel:     "channel",
 	ViewCount:   "view_count",
+	Channel:     "channel",
 }
 
 // Generated where
@@ -49,13 +49,13 @@ var YoutubeColumns = struct {
 var YoutubeWhere = struct {
 	Date        whereHelpertime_Time
 	Subscribers whereHelperint
-	Channel     whereHelperstring
 	ViewCount   whereHelperint
+	Channel     whereHelperstring
 }{
 	Date:        whereHelpertime_Time{field: "\"youtube\".\"date\""},
 	Subscribers: whereHelperint{field: "\"youtube\".\"subscribers\""},
-	Channel:     whereHelperstring{field: "\"youtube\".\"channel\""},
 	ViewCount:   whereHelperint{field: "\"youtube\".\"view_count\""},
+	Channel:     whereHelperstring{field: "\"youtube\".\"channel\""},
 }
 
 // YoutubeRels is where relationship names are stored.
@@ -75,9 +75,9 @@ func (*youtubeR) NewStruct() *youtubeR {
 type youtubeL struct{}
 
 var (
-	youtubeAllColumns            = []string{"date", "subscribers", "channel", "view_count"}
-	youtubeColumnsWithoutDefault = []string{"date", "subscribers"}
-	youtubeColumnsWithDefault    = []string{"channel", "view_count"}
+	youtubeAllColumns            = []string{"date", "subscribers", "view_count", "channel"}
+	youtubeColumnsWithoutDefault = []string{"date", "subscribers", "view_count", "channel"}
+	youtubeColumnsWithDefault    = []string{}
 	youtubePrimaryKeyColumns     = []string{"date"}
 )
 

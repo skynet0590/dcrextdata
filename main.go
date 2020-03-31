@@ -8,9 +8,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 
 	"github.com/decred/dcrd/chaincfg"
@@ -25,6 +27,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -57,6 +60,18 @@ func _main(ctx context.Context) error {
 	cfg, args, err := config.LoadConfig()
 	if err != nil {
 		return err
+	}
+
+	if cfg.Cpuprofile != "" {
+		f, err := os.Create(cfg.Cpuprofile)
+		if err != nil {
+			log.Critical("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Critical("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	// Initialize log rotation.  After log rotation has been initialized, the
@@ -169,7 +184,7 @@ func _main(ctx context.Context) error {
 			}
 			return db, nil
 		}
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, extDbFactory)
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, netParams(cfg.DcrdNetworkType), extDbFactory)
 	}
 
 	var dcrClient *rpcclient.Client
@@ -177,22 +192,27 @@ func _main(ctx context.Context) error {
 
 	// if mempool is not disable, check that a dcrclient can be created before showing app version
 	if !cfg.DisableMempool {
-		dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
-		certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
-		if err != nil {
-			log.Error("Error in reading dcrd cert: ", err)
+		connCfg := &rpcclient.ConnConfig{
+			Host:       cfg.DcrdRpcServer,
+			Endpoint:   "ws",
+			User:       cfg.DcrdRpcUser,
+			Pass:       cfg.DcrdRpcPassword,
+			DisableTLS: cfg.DisableTLS,
 		}
 
-		connCfg := &rpcclient.ConnConfig{
-			Host:         cfg.DcrdRpcServer,
-			Endpoint:     "ws",
-			User:         cfg.DcrdRpcUser,
-			Pass:         cfg.DcrdRpcPassword,
-			Certificates: certs,
+		if !cfg.DisableTLS {
+			dcrdHomeDir := dcrutil.AppDataDir("dcrd", false)
+			certs, err := ioutil.ReadFile(filepath.Join(dcrdHomeDir, "rpc.cert"))
+			if err != nil {
+				log.Error("Error in reading dcrd cert: ", err)
+				return nil
+			}
+			connCfg.Certificates = certs
 		}
 
 		collector = mempool.NewCollector(cfg.MempoolInterval, netParams(cfg.DcrdNetworkType), db)
 		collector.RegisterSyncer(syncCoordinator)
+
 		dcrClient, err = rpcclient.New(connCfg, collector.DcrdHandlers(ctx))
 		if err != nil {
 			dcrNotRunningErr := "No connection could be made because the target machine actively refused it"
@@ -272,10 +292,27 @@ func _main(ctx context.Context) error {
 		}
 	}
 
+	if !cfg.DisableNetworkSnapshot {
+		snapshotTaker := netsnapshot.NewTaker(db, cfg.NetworkSnapshotOptions)
+		go snapshotTaker.Start(ctx)
+	}
+
 	go syncCoordinator.StartSyncing(ctx)
 
 	// wait for shutdown signal
 	<-ctx.Done()
+
+	if cfg.Memprofile != "" {
+		f, err := os.Create(cfg.Memprofile)
+		if err != nil {
+			log.Critical("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Critical("could not write memory profile: ", err)
+		}
+	}
 
 	return ctx.Err()
 }
@@ -392,6 +429,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating reddit table: ", err)
 			return err
 		}
+		log.Info("reddit table created successfully.")
 	}
 
 	if exists := db.TwitterTableExits(); !exists {
@@ -399,6 +437,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating twitter table: ", err)
 			return err
 		}
+		log.Info("twitter table created successfully.")
 	}
 
 	if exists := db.YoutubeTableExits(); !exists {
@@ -406,6 +445,7 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating youtube table: ", err)
 			return err
 		}
+		log.Info("youtube table created successfully.")
 	}
 
 	if exists := db.GithubTableExits(); !exists {
@@ -413,6 +453,31 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating github table: ", err)
 			return err
 		}
+		log.Info("github table created successfully.")
+	}
+
+	if exists := db.NetworkSnapshotTableExists(); !exists {
+		if err := db.CreateNetworkSnapshotTable(); err != nil {
+			log.Error("Error creating network snapshot table: ", err)
+			return err
+		}
+		log.Info("snapshot table created successfully.")
+	}
+
+	if exists := db.NetworkNodeTableExists(); !exists {
+		if err := db.CreateNetworkNodeTable(); err != nil {
+			log.Error("Error creating node table: ", err)
+			return err
+		}
+		log.Info("node table created successfully.")
+	}
+
+	if exists := db.HeartbeatTableExists(); !exists {
+		if err := db.CreateHeartbeatTable(); err != nil {
+			log.Error("Error creating heartbeat table: ", err)
+			return err
+		}
+		log.Info("heartbeat table created successfully.")
 	}
 	return nil
 }

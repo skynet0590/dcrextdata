@@ -127,7 +127,7 @@
                                 {{ end }}
                             </select>
                         </div>
-                        <div data-target="mempool.btnWrapper" class="page-size d-flex {{ if .mempool.chartView }}d-none{{ end }}">
+                        <div data-target="mempool.btnWrapper" class="page-size d-flex mt-1 {{ if .mempool.chartView }}d-none{{ end }}">
                             <a href="javascript:void(0)" data-target="mempool.previousPageButton"
                             data-action="click->mempool#loadPreviousPage"
                             class="mr-2 {{ if lt .mempool.previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
@@ -181,16 +181,9 @@
                     <div class="legend d-flex" data-target="mempool.labels"></div>
                 </div>
             </div>
-            <div class="p-5 text-center d-hide loading" data-target="mempool.loadingData">
-                <div class="loading-icon"></div>
-                <div class="loading-text">loading data...</div>
-            </div>
             <div data-target="mempool.messageView" class="d-hide mx-auto">
             </div>
-            <div class="p-5 text-center d-hide loading" data-target="mempool.loadingData">
-                <div class="loading-icon"></div>
-                <div class="loading-text">loading data...</div>
-            </div>
+            <div class="loading" data-target="mempool.loadingData"><div class="loader"></div></div>
         </div>
 
         {{ template "footer" }}

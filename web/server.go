@@ -12,10 +12,13 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
+	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/raedahgroup/dcrextdata/vsp"
@@ -62,27 +65,49 @@ type DataQuery interface {
 	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
-	RedditStats(ctx context.Context, subreddit string, offtset int, limit int) ([]commstats.Reddit, error)
+	RedditStats(ctx context.Context, subreddit string, offset int, limit int) ([]commstats.Reddit, error)
 	CountTwitterStat(ctx context.Context, handle string) (int64, error)
-	TwitterStats(ctx context.Context, handle string, offtset int, limit int) ([]commstats.Twitter, error)
+	TwitterStats(ctx context.Context, handle string, offset int, limit int) ([]commstats.Twitter, error)
 	CountYoutubeStat(ctx context.Context, channel string) (int64, error)
-	YoutubeStat(ctx context.Context, channel string, offtset int, limit int) ([]commstats.Youtube, error)
+	YoutubeStat(ctx context.Context, channel string, offset int, limit int) ([]commstats.Youtube, error)
 	CountGithubStat(ctx context.Context, repository string) (int64, error)
-	GithubStat(ctx context.Context, repository string, offtset int, limit int) ([]commstats.Github, error)
+	GithubStat(ctx context.Context, repository string, offset int, limit int) ([]commstats.Github, error)
 	CommunityChart(ctx context.Context, platform string, dataType string, filters map[string]string) ([]commstats.ChartData, error)
+
+	Snapshots(ctx context.Context, offset, limit int, forChart bool) ([]netsnapshot.SnapShot, int64, error)
+	SnapshotCount(ctx context.Context) (int64, error)
+	LastSnapshotTime(ctx context.Context) (timestamp int64)
+	FindNetworkSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+	PreviousSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+	NextSnapshot(ctx context.Context, timestamp int64) (*netsnapshot.SnapShot, error)
+	TotalPeerCount(ctx context.Context, timestamp int64) (int64, error)
+	SeenNodesByTimestamp(ctx context.Context) ([]netsnapshot.NodeCount, error)
+	NetworkPeers(ctx context.Context, timestamp int64, q string, offset int, limit int) ([]netsnapshot.NetworkPeer, int64, error)
+	NetworkPeer(ctx context.Context, address string) (*netsnapshot.NetworkPeer, error)
+	AverageLatency(ctx context.Context, address string) (int, error)
+	PeerCountByUserAgents(ctx context.Context, sources string, offset, limit int) (userAgents []netsnapshot.UserAgentInfo, total int64, err error)
+	PeerCountByIPVersion(ctx context.Context, timestamp int64, iPVersion int) (int64, error)
+	PeerCountByCountries(ctx context.Context, sources string, offset, limit int) (countries []netsnapshot.CountryInfo, total int64, err error)
+	GetIPLocation(ctx context.Context, ip string) (string, int, error)
+	AllNodeVersions(ctx context.Context) ([]string, error)
+	AllNodeContries(ctx context.Context) ([]string, error)
 }
 
 type Server struct {
 	templates    map[string]*template.Template
 	lock         sync.RWMutex
 	db           DataQuery
+	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery, extDbFactory func(name string) (DataQuery, error)) {
+func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain *chaincfg.Params,
+	extDbFactory func(name string) (DataQuery, error)) {
+
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db:           db,
+		activeChain:  activeChain,
 		extDbFactory: extDbFactory,
 	}
 
@@ -155,5 +180,43 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getCommunityStat", s.getCommunityStat)
 	r.Get("/communitychat", s.communityChat)
 
+	r.Get("/nodes", s.snapshot)
+	r.With(addTimestampToCtx).Get("/nodes/{timestamp}", s.snapshot)
+	r.With(addNodeIPToCtx).Get("/nodes/view/{address}", s.nodeInfo)
+	r.Get("/api/snapshots", s.snapshots)
+	r.Get("/api/snapshots/chart", s.snapshotsChart)
+	r.Get("/api/snapshots/user-agents", s.nodesCountUserAgents)
+	r.Get("/api/snapshots/user-agents/chart", s.nodesCountUserAgentsChart)
+	r.Get("/api/snapshots/countries", s.nodesCountByCountries)
+	r.Get("/api/snapshots/countries/chart", s.nodesCountByCountriesChart)
+	r.With(addTimestampToCtx).Get("/api/snapshot/{timestamp}/nodes", s.nodes)
+	r.Get("/api/snapshot/nodes/count-by-timestamp", s.nodeCountByTimestamp)
+	r.Get("/api/snapshots/ip-info", s.ipInfo)
+	r.Get("/api/snapshot/node-versions", s.nodeVersions)
+	r.Get("/api/snapshot/node-countries", s.nodeCountries)
+
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
+}
+
+func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {
+	var explorerUrl string
+	switch s.activeChain.Name {
+	case chaincfg.MainNetParams.Name:
+		explorerUrl = "https://explorer.dcrdata.org/api/block/best"
+		break
+	case chaincfg.TestNet3Params.Name:
+		explorerUrl = "https://testnet.dcrdata.org/api/block/best"
+		break
+	}
+
+	var bestBlock = struct {
+		Height uint32 `json:"height"`
+	}{}
+
+	err := helpers.GetResponse(ctx, &http.Client{}, explorerUrl, &bestBlock)
+	if err != nil {
+		return 0, err
+	}
+
+	return bestBlock.Height, nil
 }

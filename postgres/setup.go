@@ -138,6 +138,46 @@ const (
 		channel VARCHAR(256) NOT NULL,
 		PRIMARY KEY (date)
 	);`
+
+	createNetworkSnapshotTable = `CREATE TABLE If NOT EXISTS network_snapshot (
+		timestamp INT8 NOT NULL,
+		height INT8 NOT NULL,
+		node_count INT NOT NULL,
+		reachable_nodes INT NOT NULL,
+		oldest_node VARCHAR(256) NOT NULL DEFAULT '',
+		oldest_node_timestamp INT8 NOT NULL DEFAULT 0,
+		latency INT NOT NULL DEFAULT 0,
+		PRIMARY KEY (timestamp)
+	);`
+
+	createNodeTable = `CREATE TABLE If NOT EXISTS node (
+		address VARCHAR(256) NOT NULL PRIMARY KEY,
+		ip_version INT NOT NULL,
+		country VARCHAR(256) NOT NULL,
+		region VARCHAR(256) NOT NULL,
+		city VARCHAR(256) NOT NULL,
+		zip VARCHAR(256) NOT NULL,
+		last_attempt INT8 NOT NULL,
+		last_seen INT8 NOT NULL,
+		last_success INT8 NOT NULL,
+		failure_count INT NOT NULL DEFAULT 0,
+		is_dead BOOLEAN NOT NULL,
+		connection_time INT8 NOT NULL,
+		protocol_version INT NOT NULL,
+		user_agent VARCHAR(256) NOT NULL,
+		services VARCHAR(256) NOT NULL,
+		starting_height INT8 NOT NULL,
+		current_height INT8 NOT NULL
+	);`
+
+	createHeartbeatTable = `CREATE TABLE If NOT EXISTS heartbeat (
+		timestamp INT8 NOT NULL,
+		node_id VARCHAR(256) NOT NULL REFERENCES node(address),
+		last_seen INT8 NOT NULL,
+		latency INT NOT NULL,
+		current_height INT8 NOT NULL,
+		PRIMARY KEY (timestamp, node_id)
+	);`
 )
 
 func (pg *PgDb) CreateExchangeTable() error {
@@ -279,6 +319,39 @@ func (pg *PgDb) YoutubeTableExits() bool {
 	return exists
 }
 
+// network snapshot
+func (pg *PgDb) CreateNetworkSnapshotTable() error {
+	_, err := pg.db.Exec(createNetworkSnapshotTable)
+	return err
+}
+
+func (pg *PgDb) NetworkSnapshotTableExists() bool {
+	exists, _ := pg.tableExists("network_snapshot")
+	return exists
+}
+
+// network node
+func (pg *PgDb) CreateNetworkNodeTable() error {
+	_, err := pg.db.Exec(createNodeTable)
+	return err
+}
+
+func (pg *PgDb) NetworkNodeTableExists() bool {
+	exists, _ := pg.tableExists("node")
+	return exists
+}
+
+// network peer
+func (pg *PgDb) CreateHeartbeatTable() error {
+	_, err := pg.db.Exec(createHeartbeatTable)
+	return err
+}
+
+func (pg *PgDb) HeartbeatTableExists() bool {
+	exists, _ := pg.tableExists("heartbeat")
+	return exists
+}
+
 func (pg *PgDb) tableExists(name string) (bool, error) {
 	rows, err := pg.db.Query(`SELECT relname FROM pg_class WHERE relname = $1`, name)
 	if err == nil {
@@ -363,6 +436,21 @@ func (pg *PgDb) DropAllTables() error {
 
 	// comm_stat
 	if err := pg.dropTable("comm_stat"); err != nil {
+		return err
+	}
+
+	// network_snapshot
+	if err := pg.dropTable("network_snapshot"); err != nil {
+		return err
+	}
+
+	// heartbeat
+	if err := pg.dropTable("heartbeat"); err != nil {
+		return err
+	}
+
+	// node
+	if err := pg.dropTable("node"); err != nil {
 		return err
 	}
 

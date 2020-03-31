@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -29,22 +30,37 @@ func (s *Server) render(tplName string, data map[string]interface{}, res http.Re
 	log.Errorf("Template %s is not registered", tplName)
 }
 
-func (routes *Server) renderError(errorMessage string, res http.ResponseWriter) {
+func (s *Server) renderError(errorMessage string, res http.ResponseWriter) {
 	data := map[string]interface{}{
 		"error": errorMessage,
 	}
-	routes.render("error.html", data, res)
+	s.render("error.html", data, res)
 }
 
-func (routes *Server) renderErrorJSON(errorMessage string, res http.ResponseWriter) {
+func (s *Server) renderErrorf(format string, res http.ResponseWriter, args ...interface{}) {
+	data := map[string]interface{}{
+		"error": fmt.Sprintf(format, args...),
+	}
+	s.render("error.html", data, res)
+}
+
+func (s *Server) renderErrorJSON(errorMessage string, res http.ResponseWriter) {
 	data := map[string]interface{}{
 		"error": errorMessage,
 	}
 
-	routes.renderJSON(data, res)
+	s.renderJSON(data, res)
 }
 
-func (routes *Server) renderJSON(data interface{}, res http.ResponseWriter) {
+func (s *Server) renderErrorfJSON(errorMessage string, res http.ResponseWriter, args ...interface{}) {
+	data := map[string]interface{}{
+		"error": fmt.Sprintf(errorMessage, args...),
+	}
+
+	s.renderJSON(data, res)
+}
+
+func (s *Server) renderJSON(data interface{}, res http.ResponseWriter) {
 	d, err := json.Marshal(data)
 	if err != nil {
 		log.Errorf("Error marshalling data: %s", err.Error())

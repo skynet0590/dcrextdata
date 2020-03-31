@@ -121,7 +121,7 @@
                                 </div>
                             </div>
 
-                            <div data-target="vsp.pageSizeWrapper" class="page-size d-flex {{ if .chartView }}d-none{{ end }}">
+                            <div data-target="vsp.pageSizeWrapper" class="page-size d-flex mt-1 {{ if .chartView }}d-none{{ end }}">
                                 <a href="javascript:void(0)" data-target="vsp.previousPageButton" data-action="click->vsp#loadPreviousPage" class="mr-2 {{ if lt .previousPage 1 }}d-none{{ end }}">&lt;Previous </a>
 
                                 <p class="text-muted" style="white-space: nowrap;"> Page <span data-target="vsp.currentPage" class="text-muted" data-current-page="{{ .currentPage }}"> {{ .currentPage }}</span> of <span data-target="vsp.totalPageCount" class="text-muted">{{ .totalPages }}</span>
@@ -215,10 +215,7 @@
             </div>
             <div data-target="vsp.messageView" class="d-hide mx-auto">
             </div>
-            <div class="p-5 text-center d-hide loading" data-target="vsp.loadingData">
-              <div class="loading-icon"></div>
-              <div class="loading-text">loading data... </div>
-          </div>
+            <div class="loading" data-target="vsp.loadingData"><div class="loader"></div></div>
       </div>
   </div>
 </div>
