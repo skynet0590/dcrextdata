@@ -15,6 +15,8 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/go-chi/chi/middleware"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
 	"github.com/raedahgroup/dcrextdata/mempool"
@@ -39,8 +41,6 @@ type DataQuery interface {
 	FetchVSPs(ctx context.Context) ([]vsp.VSPDto, error)
 	FiltredVSPTicks(ctx context.Context, vspName string, offset, limit int) ([]vsp.VSPTickDto, int64, error)
 	AllVSPTicks(ctx context.Context, offset, limit int) ([]vsp.VSPTickDto, int64, error)
-	FetchChartData(ctx context.Context, attribute, vspName string) (records []vsp.ChartData, err error)
-	GetVspTickDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
 	PowCount(ctx context.Context) (int64, error)
 	FetchPowData(ctx context.Context, offset, limit int) ([]pow.PowDataDto, int64, error)
@@ -50,19 +50,14 @@ type DataQuery interface {
 	GetPowDistinctDates(ctx context.Context, vsps []string) ([]time.Time, error)
 
 	MempoolCount(ctx context.Context) (int64, error)
-	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.MempoolDto, error)
-	MempoolsChartData(ctx context.Context, chartFilter string) (models.MempoolSlice, error)
+	Mempools(ctx context.Context, offtset int, limit int) ([]mempool.Dto, error)
 
 	BlockCount(ctx context.Context) (int64, error)
 	Blocks(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
-	BlockHeights(ctx context.Context) ([]int64, error)
 	BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
 	VotesCount(ctx context.Context) (int64, error)
-	PropagationVoteChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
-	PropagationBlockChartData(ctx context.Context) ([]mempool.PropagationChartData, error)
-	FetchBlockReceiveTime(ctx context.Context) ([]mempool.BlockReceiveTime, error)
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
 	RedditStats(ctx context.Context, subreddit string, offset int, limit int) ([]commstats.Reddit, error)
@@ -99,19 +94,22 @@ type Server struct {
 	db           DataQuery
 	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
+	charts       *cache.ChartData
 }
 
-func StartHttpServer(httpHost, httpPort string, db DataQuery, activeChain *chaincfg.Params,
-	extDbFactory func(name string) (DataQuery, error)) {
-
+func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery, 
+	activeChain *chaincfg.Params, extDbFactory func(name string) (DataQuery, error)) {
+		
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db:           db,
 		activeChain:  activeChain,
 		extDbFactory: extDbFactory,
+		charts:       charts,
 	}
 
 	router := chi.NewRouter()
+	router.Use(middleware.DefaultCompress)
 	workDir, _ := os.Getwd()
 
 	filesDir := filepath.Join(workDir, "web/public/dist")
@@ -158,19 +156,13 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/exchanges/intervals", s.tickIntervalsByExchangeAndPair)
 	r.Get("/api/exchanges/currency-pairs", s.currencyPairByExchange)
 	r.Get("/vsp", s.getVspTicks)
-	r.Get("/vspchartdata", s.vspChartData)
 	r.Get("/vsps", s.getFilteredVspTicks)
 	r.Get("/pow", s.powPage)
 	r.Get("/filteredpow", s.getFilteredPowData)
-	r.Get("/powchart", s.getPowChartData)
 	r.Get("/mempool", s.mempoolPage)
-	r.Get("/mempoolcharts", s.getMempoolChartData)
 	r.Get("/getmempool", s.getMempool)
 	r.Get("/propagation", s.propagation)
 	r.Get("/getpropagationdata", s.getPropagationData)
-	r.Get("/blockschartdata", s.blocksChartData)
-	r.Get("/voteschartdata", s.votesChartDate)
-	r.Get("/propagationchartdata", s.propagationChartData)
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
@@ -196,6 +188,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/snapshot/node-countries", s.nodeCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
+	r.With(chartTypeCtx).Get("/api/charts/{charttype}", s.chartTypeData)
 }
 
 func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {

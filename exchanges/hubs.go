@@ -239,7 +239,7 @@ func (hub *TickHub) registerExchangeSyncer(syncCoordinator *datasync.SyncCoordin
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.ExchangeData{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -290,7 +290,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []ticks.TickDto{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -299,7 +299,7 @@ func (hub *TickHub) registerExchangeTickSyncer(syncCoordinator *datasync.SyncCoo
 			if err != nil {
 				return nil, fmt.Errorf("invalid date, %s", err.Error())
 			}
-			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, time.Unix(unitDate, 0), skip, take)
+			exchangeTicks, totalCount, err := hub.store.FetchExchangeTicksForSync(ctx, helpers.UnixTime(unitDate), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return

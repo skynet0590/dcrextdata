@@ -1,5 +1,6 @@
 import dompurify from 'dompurify'
 import humanize from './helpers/humanize_helper'
+import { map } from 'lodash-es'
 
 const Dygraph = require('../../dist/js/dygraphs.min.js')
 
@@ -116,7 +117,7 @@ export function barChartPlotter (e) {
     const sep = points[i].canvasx - points[i - 1].canvasx
     if (sep < minSep) minSep = sep
   }
-  const barWidth = Math.floor(2.0 / 3 * minSep)
+  const barWidth = Math.max(Math.floor(2.0 / 3 * minSep), 5)
 
   // Do the actual plotting.
   for (let i = 0; i < points.length; i++) {
@@ -278,6 +279,28 @@ export function getParameterByName (name, url) {
   return urlParams.get(name)
 }
 
+export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoefficient, windowS) {
+  windowS = windowS || 1
+  yCoefficient = yCoefficient || 1
+  zCoefficient = zCoefficient || 1
+  return map(gData.x, (n, i) => {
+    let xAxisVal
+    if (isHeightAxis && isDayBinned) {
+      xAxisVal = n
+    } else if (isHeightAxis) {
+      xAxisVal = n * windowS
+    } else {
+      xAxisVal = new Date(n * 1000)
+    }
+    const data = [xAxisVal, gData.y[i] * yCoefficient]
+    if (gData.z) {
+      data.push(gData.z[i] * zCoefficient)
+    }
+
+    return data
+  })
+}
+
 export function updateZoomSelector (targets, minDate, maxDate) {
   const duration = maxDate - minDate
   const days = duration / (1000 * 60 * 60 * 24)
@@ -354,3 +377,14 @@ export function getNumberOfPages (recordsCount, pageSize) {
   }
   return pageCount
 }
+
+/* eslint no-undef: 0 */
+export function notifySuccess (title, message) {
+  toastr.success(title, message)
+}
+
+export function notifyFailure (title, message) {
+  toastr.error(title, message)
+}
+
+/* eslint no-undef: 1 */

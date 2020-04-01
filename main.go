@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	_ "net/http/pprof"
@@ -23,6 +24,7 @@ import (
 	"github.com/raedahgroup/dcrextdata/app/config"
 	"github.com/raedahgroup/dcrextdata/app/help"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
 	"github.com/raedahgroup/dcrextdata/exchanges"
@@ -175,6 +177,45 @@ func _main(ctx context.Context) error {
 		syncCoordinator.AddSource(source, db, databaseName)
 	}
 
+	// For consistency with StakeDatabase, a non-negative height is needed.
+	mempoolCount, err := db.MempoolCount(ctx)
+	if err != nil && err != sql.ErrNoRows {
+		log.Errorf("Cannot fetch mempool count, %s", err.Error())
+	}
+
+	pools, _ := db.FetchPowSourceData(ctx)
+	var poolSources []string
+	for _, pool := range pools {
+		poolSources = append(poolSources, pool.Source)
+	}
+
+	allVspData, _ := db.FetchVSPs(ctx)
+	var vsps []string
+	for _, vspSource := range allVspData {
+		vsps = append(vsps, vspSource.Name)
+	}
+
+	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
+	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
+		db, found := syncDbs[name]
+		if !found {
+			return nil, fmt.Errorf("no db is registered for the source, %s", name)
+		}
+		return db, nil
+	})
+
+	// Pre-populate charts data using the dumped cache data in the .gob file path
+	// provided instead of querying the data from the dbs.
+	// This charts pre-population is faster than db querying
+	// and can be done before the monitors are fully set up.
+	if err = charts.Load(ctx, cfg.ChartsCacheDump); err != nil {
+		log.Warnf("Failed to load charts data cache: %v", err)
+	}
+
+	// This dumps the cache charts data into a file for future use on system
+	// exit.
+	defer charts.Dump(cfg.ChartsCacheDump)
+
 	// http server method
 	if cfg.HttpMode {
 		extDbFactory := func(name string) (query web.DataQuery, e error) {
@@ -184,7 +225,7 @@ func _main(ctx context.Context) error {
 			}
 			return db, nil
 		}
-		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, db, netParams(cfg.DcrdNetworkType), extDbFactory)
+		go web.StartHttpServer(cfg.HTTPHost, cfg.HTTPPort, charts, db, netParams(cfg.DcrdNetworkType), extDbFactory)
 	}
 
 	var dcrClient *rpcclient.Client
@@ -247,7 +288,7 @@ func _main(ctx context.Context) error {
 
 		collector.SetClient(dcrClient)
 
-		go collector.StartMonitoring(ctx)
+		go collector.StartMonitoring(ctx, charts)
 	}
 
 	if !cfg.DisableVSP {

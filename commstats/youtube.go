@@ -92,7 +92,7 @@ func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context) {
 		var channel = c.options.YoutubeChannelName[index]
 
 		youtubeStat := Youtube{
-			Date:        time.Now().UTC(),
+			Date:        helpers.NowUTC(),
 			Subscribers: youtubeSubscribers,
 			ViewCount:   viewCount,
 			Channel:     channel,

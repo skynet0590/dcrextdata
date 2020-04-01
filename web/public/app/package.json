@@ -16,8 +16,8 @@
     "bootstrap4-toggle": "^3.4.0",
     "dompurify": "~1.0.10",
     "moment": "^2.24.0",
-    "stimulus": "^1.1.1",
-    "toastr": "^2.1.4"
+    "lodash-es": "^4.17.15",
+    "stimulus": "^1.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.4.5",

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
 var templateDirs = []string{"web/views"}
@@ -57,7 +59,7 @@ func templateFuncMap() template.FuncMap {
 			return fmt.Sprintf("%010.8f DCR", balance)
 		},
 		"timestamp": func() int64 {
-			return time.Now().Unix()
+			return helpers.NowUTC().Unix()
 		},
 		"timeSince": func(timestamp int64) string {
 			return time.Since(time.Unix(timestamp, 0).UTC()).String()

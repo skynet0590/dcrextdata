@@ -8,7 +8,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, updateQueryParam, insertOrUpdateQueryParam, updateZoomSelector, trimUrl
+  selectedOption, updateQueryParam, insertOrUpdateQueryParam, updateZoomSelector, trimUrl, zipXYZData
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -260,8 +260,8 @@ export default class extends Controller {
     if (display === 'table') {
       url = `/exchangedata?page=${_this.nextPage}&selected-exchange=${_this.selectedExchange}&records-per-page=${_this.numberOfRows}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&view-option=${_this.selectedViewOption}`
     } else {
-      const queryString = `selected-tick=${_this.selectedTick}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&selected-exchange=${_this.selectedExchange}&view-option=${_this.selectedViewOption}`
-      url = `/exchangechart?${queryString}`
+      const queryString = `axis=${_this.selectedTick}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&selected-exchange=${_this.selectedExchange}`
+      url = `/api/charts/exchange?${queryString}`
     }
 
     axios.get(url)
@@ -307,12 +307,12 @@ export default class extends Controller {
             _this.displayExchange(result)
           }
         } else {
-          if (result.error) {
+          if (!result.x) {
             hideLoading(_this.loadingDataTarget, [_this.chartWrapperTarget])
             _this.drawInitialGraph()
           } else {
             hideLoading(_this.loadingDataTarget, [_this.chartWrapperTarget])
-            _this.plotGraph(result.chartData)
+            _this.plotGraph(result)
           }
         }
       }).catch(function (e) {
@@ -409,14 +409,11 @@ export default class extends Controller {
   }
 
   // exchange chart
-  plotGraph (exs) {
-    var data = []
-    var dataSet = []
-
+  plotGraph (data) {
     const _this = this
     let minDate, maxDate
-    exs.forEach(ex => {
-      let date = new Date(ex.time)
+    data.x.forEach(unixTime => {
+      let date = new Date(unixTime * 1000)
       if (minDate === undefined || date < minDate) {
         minDate = date
       }
@@ -424,12 +421,6 @@ export default class extends Controller {
       if (maxDate === undefined || date > maxDate) {
         maxDate = date
       }
-
-      data.push(date)
-      data.push(ex.filter)
-
-      dataSet.push(data)
-      data = []
     })
 
     _this.labels = ['Date', _this.selectedExchange]
@@ -445,9 +436,11 @@ export default class extends Controller {
       digitsAfterDecimal: 8
     }
 
+    const chartData = zipXYZData(data)
+
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet, { ...options, ...extra }
+      chartData, { ...options, ...extra }
     )
 
     _this.validateZoom()

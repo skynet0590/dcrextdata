@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"os"
 	"sort"
 	"strings"
@@ -49,9 +50,11 @@ var (
 	powLog      = backendLog.Logger("POWL")
 	mempoolLog  = backendLog.Logger("MEMP")
 	redditLog   = backendLog.Logger("REDD")
+	commStatLog = backendLog.Logger("COMM")
 	webLog      = backendLog.Logger("WEBL")
 	syncLog     = backendLog.Logger("SYNC")
 	snapshotLog = backendLog.Logger("NETS")
+	cacheLog    = backendLog.Logger("CACH")
 )
 
 // subsystemLoggers maps each subsystem identifier to its associated logger.
@@ -62,10 +65,11 @@ var subsystemLoggers = map[string]slog.Logger{
 	"VSPC": vspLog,
 	"POWL": powLog,
 	"MEMP": mempoolLog,
-	"REDD": redditLog,
+	"COMM": commStatLog,
 	"WEBL": webLog,
 	"SYNC": syncLog,
 	"NETS": snapshotLog,
+	"CACH": cacheLog,
 }
 
 func init() {
@@ -74,10 +78,11 @@ func init() {
 	postgres.UseLogger(pqLog)
 	vsp.UseLogger(vspLog)
 	mempool.UseLogger(mempoolLog)
-	commstats.UseLogger(redditLog)
+	commstats.UseLogger(commStatLog)
 	web.UseLogger(webLog)
 	datasync.UseLogger(syncLog)
 	netsnapshot.UseLogger(snapshotLog)
+	cache.UseLogger(cacheLog)
 }
 
 // initLogRotator initializes the logging rotater to write logs to logFile and

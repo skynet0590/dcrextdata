@@ -25,7 +25,7 @@ type Mempool struct {
 	Total                float64   `json:"total"`
 }
 
-type MempoolDto struct {
+type Dto struct {
 	Time                 string  `json:"time"`
 	FirstSeenTime        string  `json:"first_seen_time"`
 	NumberOfTransactions int     `json:"number_of_transactions"`

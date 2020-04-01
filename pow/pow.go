@@ -219,7 +219,7 @@ func (in *CoinminePow) Collect(ctx context.Context) ([]PowData, error) {
 
 func (CoinminePow) fetch(res *coinmineAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
-	t := helpers.NowUtc().Unix()
+	t := helpers.NowUTC().Unix()
 
 	data = append(data, PowData{
 		Time:         t,
@@ -269,7 +269,7 @@ func (in *UupoolPow) Collect(ctx context.Context) ([]PowData, error) {
 
 func (UupoolPow) fetch(res *uupoolAPIResponse, start int64) []PowData {
 	data := make([]PowData, 0, 1)
-	t := helpers.NowUtc().Unix()
+	t := helpers.NowUTC().Unix()
 
 	data = append(data, PowData{
 		Time:         t,

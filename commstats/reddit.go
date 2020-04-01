@@ -85,7 +85,7 @@ func (c *Collector) collectAndStoreRedditStat(ctx context.Context) {
 		}
 
 		err = c.dataStore.StoreRedditStat(ctx, Reddit{
-			Date:           time.Now().UTC(),
+			Date:           helpers.NowUTC(),
 			Subscribers:    resp.Data.Subscribers,
 			AccountsActive: resp.Data.AccountsActive,
 			Subreddit:      subreddit,
@@ -95,7 +95,7 @@ func (c *Collector) collectAndStoreRedditStat(ctx context.Context) {
 			return
 		}
 		log.Infof("New Reddit stat collected for %s at %s, Subscribers  %d, Active Users %d", subreddit,
-			time.Now().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
+			helpers.NowUTC().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
 	}
 }
 

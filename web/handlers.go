@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/datasync"
-	"github.com/raedahgroup/dcrextdata/mempool"
 	"github.com/raedahgroup/dcrextdata/netsnapshot"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
@@ -22,7 +22,7 @@ import (
 const (
 	chartViewOption             = "chart"
 	defaultViewOption           = chartViewOption
-	mempoolDefaultChartDataType = "size"
+	mempoolDefaultChartDataType = "mempool-size"
 	maxPageSize                 = 250
 	defaultPageSize             = 20
 	defaultInterval             = 1440 // All
@@ -61,11 +61,11 @@ var (
 		"Live",
 		"Voted",
 		"Missed",
-		"Pool_Fees",
-		"Proportion_Live",
-		"Proportion_Missed",
-		"User_Count",
-		"Users_Active",
+		"Pool-Fees",
+		"Proportion-Live",
+		"Proportion-Missed",
+		"User-Count",
+		"Users-Active",
 	}
 
 	commStatPlatforms = []string{redditPlatform, twitterPlatform, githubPlatform, youtubePlatform}
@@ -469,117 +469,6 @@ func (s *Server) fetchVSPData(req *http.Request) (map[string]interface{}, error)
 	return data, nil
 }
 
-// vspchartdata
-func (s *Server) vspChartData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	selectedExchange := req.FormValue("vsps")
-	selectedAttribute := req.FormValue("data-type")
-
-	vsps := strings.Split(selectedExchange, "|")
-
-	ctx := req.Context()
-	dates, err := s.db.GetVspTickDistinctDates(ctx, vsps)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from VSP table, %s", err.Error()), res)
-		return
-	}
-
-	var vspChartData = struct {
-		CSV     string    `json:"csv"`
-		MinDate time.Time `json:"min_date"`
-		MaxDate time.Time `json:"max_date"`
-	}{
-		CSV: "Date," + strings.Join(vsps, ",") + "\n",
-	}
-
-	var resultMap = map[time.Time][]string{}
-	for _, date := range dates {
-		if vspChartData.MinDate.IsZero() || date.Before(vspChartData.MinDate) {
-			vspChartData.MinDate = date
-		}
-		if vspChartData.MaxDate.IsZero() || date.After(vspChartData.MaxDate) {
-			vspChartData.MaxDate = date
-		}
-		resultMap[date] = []string{date.String()}
-	}
-
-	for _, source := range vsps {
-		points, err := s.db.FetchChartData(ctx, selectedAttribute, source)
-		if err != nil {
-			s.renderErrorJSON(fmt.Sprintf("Error in fetching %s records for %s: %s", selectedAttribute, source, err.Error()), res)
-			return
-		}
-
-		var vspPointMap = map[time.Time]string{}
-		var vspDates []time.Time
-		for _, point := range points {
-			vspPointMap[point.Date] = point.Record
-			vspDates = append(vspDates, point.Date)
-		}
-
-		sort.Slice(vspDates, func(i, j int) bool {
-			return vspDates[i].Before(vspDates[j])
-		})
-
-		for date, _ := range resultMap {
-			if date.Year() == 1970 || date.IsZero() {
-				continue
-			}
-			if record, found := vspPointMap[date]; found {
-				skip := false
-				if record == "0" || record == "" {
-					skip = true
-					for _, vspDate := range vspDates {
-						if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
-							skip = false
-						}
-					}
-				}
-				if !skip {
-					resultMap[date] = append(resultMap[date], record)
-				} else {
-					resultMap[date] = append(resultMap[date], "Nan")
-				}
-			} else {
-				// if they have not been any record for this vsp, give a gap (Nan) else use space
-				padding := "Nan"
-				for _, vspDate := range vspDates {
-					if vspDate.Before(date) && vspPointMap[vspDate] != "" && vspPointMap[vspDate] != "0" {
-						padding = ""
-					}
-				}
-				resultMap[date] = append(resultMap[date], padding)
-			}
-		}
-	}
-
-	for _, date := range dates {
-		if date.Year() == 1970 || date.IsZero() {
-			continue
-		}
-
-		points := resultMap[date]
-		hasAtleastOneRecord := false
-		for index, point := range points {
-			// the first index is the date
-			if index == 0 {
-				continue
-			}
-			if point != "" && point != "Nan" {
-				hasAtleastOneRecord = true
-			}
-		}
-
-		if !hasAtleastOneRecord {
-			continue
-		}
-
-		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
-	}
-
-	s.renderJSON(vspChartData, res)
-}
-
 // /PoW
 func (s *Server) powPage(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
@@ -618,7 +507,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	if selectedDataType == "" {
-		selectedDataType = "pool_hashrate"
+		selectedDataType = "hashrate"
 	}
 
 	var pageSize int
@@ -700,117 +589,6 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	return data, nil
-}
-
-func (s *Server) getPowChartData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	sources := req.FormValue("pools")
-	dataType := req.FormValue("data-type")
-
-	pools := strings.Split(sources, "|")
-
-	ctx := req.Context()
-	dates, err := s.db.GetPowDistinctDates(ctx, pools)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Error is getting dates from PoW table, %s", err.Error()), res)
-		return
-	}
-
-	var powChartData = struct {
-		CSV     string    `json:"csv"`
-		MinDate time.Time `json:"min_date"`
-		MaxDate time.Time `json:"max_date"`
-	}{
-		CSV: "Date," + strings.Join(pools, ",") + "\n",
-	}
-
-	var resultMap = map[time.Time][]string{}
-	for _, date := range dates {
-		if powChartData.MinDate.IsZero() || date.Before(powChartData.MinDate) {
-			powChartData.MinDate = date
-		}
-		if powChartData.MaxDate.IsZero() || date.After(powChartData.MaxDate) {
-			powChartData.MaxDate = date
-		}
-		resultMap[date] = []string{date.String()}
-	}
-
-	for _, source := range pools {
-		points, err := s.db.FetchPowChartData(ctx, source, dataType)
-		if err != nil {
-			s.renderErrorJSON(fmt.Sprintf("Error in fetching %s records for %s: %s", dataType, source, err.Error()), res)
-			return
-		}
-
-		var pointMaps = map[time.Time]string{}
-		var powDates []time.Time
-		for _, point := range points {
-			pointMaps[point.Date] = point.Record
-			powDates = append(powDates, point.Date)
-		}
-
-		sort.Slice(powDates, func(i, j int) bool {
-			return powDates[i].Before(powDates[j])
-		})
-
-		for date, _ := range resultMap {
-			if date.Year() == 1970 || date.IsZero() {
-				continue
-			}
-			if record, found := pointMaps[date]; found {
-				skip := false
-				if record == "0" || record == "" {
-					skip = true
-					for _, powDate := range powDates {
-						if powDate.Before(date) && pointMaps[powDate] != "" && pointMaps[powDate] != "0" {
-							skip = false
-						}
-					}
-				}
-				if !skip {
-					resultMap[date] = append(resultMap[date], record)
-				} else {
-					resultMap[date] = append(resultMap[date], "Nan")
-				}
-			} else {
-				// if they have not been any record for this vsp, give a gap (Nan) else use space
-				padding := "Nan"
-				for _, powDate := range powDates {
-					if powDate.Before(date) && pointMaps[powDate] != "" && pointMaps[powDate] != "0" {
-						padding = ""
-					}
-				}
-				resultMap[date] = append(resultMap[date], padding)
-			}
-		}
-	}
-
-	for _, date := range dates {
-		if date.Year() == 1970 || date.IsZero() {
-			continue
-		}
-
-		points := resultMap[date]
-		hasAtleastOneRecord := false
-		for index, point := range points {
-			// the first index is the date
-			if index == 0 {
-				continue
-			}
-			if point != "" && point != "Nan" {
-				hasAtleastOneRecord = true
-			}
-		}
-
-		if !hasAtleastOneRecord {
-			continue
-		}
-
-		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(points, ","))
-	}
-
-	s.renderJSON(powChartData, res)
-
 }
 
 // /mempool
@@ -914,30 +692,6 @@ func (s *Server) fetchMempoolData(req *http.Request) (map[string]interface{}, er
 	return data, nil
 }
 
-func (s *Server) getMempoolChartData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-	chartFilter := req.FormValue("chart-data-type")
-	ctx := req.Context()
-
-	mempoolDataSlice, err := s.db.MempoolsChartData(ctx, chartFilter)
-	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
-		return
-	}
-
-	if len(mempoolDataSlice) == 0 {
-		s.renderErrorJSON("mempool chart data is empty", res)
-		return
-	}
-
-	data := map[string]interface{}{
-		"mempoolchartData": mempoolDataSlice,
-		"chartFilter":      chartFilter,
-	}
-
-	defer s.renderJSON(data, res)
-}
-
 // /propagation
 func (s *Server) propagation(res http.ResponseWriter, req *http.Request) {
 	data := map[string]interface{}{}
@@ -981,7 +735,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	}
 
 	if chartType == "" {
-		chartType = "propagation"
+		chartType = "block-propagation"
 	}
 
 	var pageSize int
@@ -1003,6 +757,8 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 
 	ctx := req.Context()
 
+	syncSources, _ := datasync.RegisteredSources()
+
 	data := map[string]interface{}{
 		"chartView":            viewOption == "chart",
 		"selectedViewOption":   viewOption,
@@ -1016,6 +772,7 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		"url":                  "/propagation",
 		"previousPage":         pageToLoad - 1,
 		"totalPages":           0,
+		"syncSources":          strings.Join(syncSources, "|"),
 	}
 
 	if viewOption == defaultViewOption {
@@ -1046,173 +803,6 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 	}
 
 	return data, nil
-}
-
-// /blocksChartData
-func (s *Server) blocksChartData(res http.ResponseWriter, req *http.Request) {
-	data, err := s.db.PropagationBlockChartData(req.Context())
-
-	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
-		return
-	}
-
-	var avgTimeForHeight = map[int64]float64{}
-	var heightArr []int64
-	for _, record := range data {
-		avgTimeForHeight[record.BlockHeight] = record.TimeDifference
-		heightArr = append(heightArr, record.BlockHeight)
-	}
-
-	var yLabel = "Delay (s)"
-
-	var csv = fmt.Sprintf("Height,%s\n", yLabel)
-	for _, height := range heightArr {
-		timeDifference := fmt.Sprintf("%04.2f", avgTimeForHeight[height])
-		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
-	}
-
-	s.renderJSON(csv, res)
-}
-
-// /votesChartDate
-func (s *Server) votesChartDate(res http.ResponseWriter, req *http.Request) {
-	var data []mempool.PropagationChartData
-	var err error
-
-	data, err = s.db.PropagationVoteChartData(req.Context())
-
-	if err != nil {
-		s.renderErrorJSON(err.Error(), res)
-		return
-	}
-
-	var receiveTimeRecordsForHeight = map[int64][]float64{}
-	heightArr, err := s.db.BlockHeights(req.Context())
-
-	for _, record := range data {
-		receiveTimeRecordsForHeight[record.BlockHeight] = append(receiveTimeRecordsForHeight[record.BlockHeight], record.TimeDifference)
-	}
-
-	var yLabel = "Time Difference (Milliseconds)"
-	var csv = fmt.Sprintf("Height,%s\n", yLabel)
-
-	avg := func(records []float64) float64 {
-		if len(records) == 0 {
-			return 0
-		}
-		var sum float64
-		for _, record := range records {
-			sum += record
-		}
-
-		return sum / float64(len(records))
-	}
-
-	for _, height := range heightArr {
-		timeDifference := fmt.Sprintf("%04.2f", avg(receiveTimeRecordsForHeight[height])*1000)
-		csv += fmt.Sprintf("%d, %s\n", height, timeDifference)
-	}
-
-	s.renderJSON(csv, res)
-}
-
-// propagationChartData
-func (s *Server) propagationChartData(res http.ResponseWriter, req *http.Request) {
-	req.ParseForm()
-
-	var chartData struct {
-		CSV       string `json:"csv"`
-		YLabel    string `json:"yLabel"`
-		MinHeight int64  `json:"min_height"`
-		MaxHeight int64  `json:"max_height"`
-	}
-	pointsMap := map[int64][]string{}
-	var localBlockHeights []int64
-	var localBlockReceiveTimes = map[int64]time.Time{}
-
-	heightIsInLocalDb := func(height int64) bool {
-		for _, localHieght := range localBlockHeights {
-			if localHieght == height {
-				return true
-			}
-		}
-		return false
-	}
-
-	fetchChartDataForSource := func(db DataQuery, isLocal bool) {
-		data, err := db.FetchBlockReceiveTime(req.Context())
-
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
-
-		var timeVarianceForHeights = map[int64]float64{}
-		for _, record := range data {
-			if isLocal {
-				localBlockHeights = append(localBlockHeights, record.BlockHeight)
-				localBlockReceiveTimes[record.BlockHeight] = record.ReceiveTime
-				continue
-			}
-
-			if !isLocal && !heightIsInLocalDb(record.BlockHeight) {
-				continue
-			}
-
-			if localTime, found := localBlockReceiveTimes[record.BlockHeight]; found {
-				timeVarianceForHeights[record.BlockHeight] = localTime.Sub(record.ReceiveTime).Seconds()
-			}
-		}
-
-		if isLocal {
-			sort.Slice(localBlockHeights, func(i, j int) bool {
-				return localBlockHeights[j] >= localBlockHeights[i]
-			})
-			return
-		}
-
-		for _, h := range localBlockHeights {
-			if timeDiff, found := timeVarianceForHeights[h]; found {
-				pointsMap[h] = append(pointsMap[h], fmt.Sprintf("%.4f", timeDiff))
-			}
-		}
-	}
-
-	fetchChartDataForSource(s.db, true)
-
-	syncSources, err := datasync.RegisteredSources()
-	if err != nil {
-		log.Error(err)
-	}
-
-	if len(syncSources) == 0 {
-		s.renderErrorJSON("Please register at least one source to view chart", res)
-		return
-	}
-
-	var yLabel = "Block Time Variance (seconds)"
-
-	chartData.YLabel = yLabel
-
-	for _, source := range syncSources {
-		db, err := s.extDbFactory(source)
-		if err != nil {
-			s.renderErrorJSON(err.Error(), res)
-			return
-		}
-		fetchChartDataForSource(db, false)
-	}
-
-	chartData.CSV = fmt.Sprintf("%s,%s\n", "Height", strings.Join(syncSources, ","))
-	for _, height := range localBlockHeights {
-		if len(pointsMap[height]) == 0 {
-			continue
-		}
-		chartData.CSV += fmt.Sprintf("%d, %s\n", height, strings.Join(pointsMap[height], ","))
-	}
-
-	s.renderJSON(chartData, res)
 }
 
 // /getblocks
@@ -2172,4 +1762,34 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	result.TotalCount = response.TotalCount
 
 	return
+}
+
+// api/charts/{dataType}
+func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	chartType := getChartTypeCtx(r)
+	axis := r.URL.Query().Get("axis")
+	extras := r.URL.Query().Get("sources")
+
+	// the extra data passed for exchange chart is the exchange set key
+	if chartType == cache.Exchange {
+		selectedCurrencyPair := r.FormValue("selected-currency-pair")
+		selectedInterval := r.FormValue("selected-interval")
+		selectedExchange := r.FormValue("selected-exchange")
+
+		interval, err := strconv.Atoi(selectedInterval)
+		if err != nil {
+			s.renderErrorJSON(fmt.Sprintf("Invalid interval, %s", err.Error()), w)
+			return
+		}
+
+		extras = cache.BuildExchangeKey(selectedExchange, selectedCurrencyPair, interval)
+	}
+	chartData, err := s.charts.Chart(chartType, axis, strings.Split(extras, "|")...)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), w)
+		log.Warnf(`Error fetching %s chart: %v`, chartType, err)
+		return
+	}
+	s.renderJSONBytes(chartData, w)
 }

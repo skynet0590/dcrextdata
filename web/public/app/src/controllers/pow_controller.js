@@ -39,7 +39,7 @@ export default class extends Controller {
 
     this.query = new TurboQuery()
     this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType', 'page', 'view-option'])
-    this.settings.chart = this.settings.chart || 'mempool'
+    this.settings.chart = this.settings.chart || 'hashrate'
 
     this.zoomCallback = this._zoomCallback.bind(this)
     this.drawCallback = this._drawCallback.bind(this)
@@ -139,6 +139,7 @@ export default class extends Controller {
     this.currentPage = 1
     this.fetchData()
     insertOrUpdateQueryParam('page', this.currentPage, 1)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumTarget.value, 20)
   }
 
   fetchData () {
@@ -240,9 +241,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    const queryString = `data-type=${this.dataType}&pools=${selectedPools.join('|')}&view-option=${_this.selectedViewOption}`
 
-    axios.get(`/powchart?${queryString}`).then(function (response) {
+    axios.get(`/api/charts/pow?axis=${this.dataType}&sources=${selectedPools.join('|')}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       if (result.error) {
@@ -318,7 +318,7 @@ export default class extends Controller {
   }
 
   // vsp chart
-  plotGraph (dataSet) {
+  plotGraph (data) {
     const _this = this
     let dataTypeLabel = 'Pool Hashrate (Th/s)'
     if (_this.dataType === 'workers') {
@@ -343,8 +343,9 @@ export default class extends Controller {
       }
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.csv, options)
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, data.csv, options)
     _this.validateZoom()
-    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.min_date))
+
+    updateZoomSelector(_this.zoomOptionTargets, data.min_date, data.max_date)
   }
 }

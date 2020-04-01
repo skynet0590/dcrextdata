@@ -8,10 +8,14 @@ package postgres
 
 import (
 	"database/sql"
+	"time"
 )
 
 type PgDb struct {
-	db *sql.DB
+	db                   *sql.DB
+	queryTimeout         time.Duration
+	syncSourceDbProvider func(source string) (*PgDb, error)
+	syncSources          []string
 }
 
 func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
@@ -21,7 +25,8 @@ func NewPgDb(host, port, user, pass, dbname string) (*PgDb, error) {
 	}
 	db.SetMaxOpenConns(5)
 	return &PgDb{
-		db: db,
+		db:           db,
+		queryTimeout: time.Second * 30,
 	}, nil
 }
 

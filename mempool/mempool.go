@@ -22,6 +22,7 @@ import (
 	exptypes "github.com/decred/dcrdata/explorer/types"
 	"github.com/decred/dcrdata/txhelpers/v2"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
@@ -53,7 +54,7 @@ func (c *Collector) SetExplorerBestBlock(ctx context.Context) error {
 		Height uint32 `json:"height"`
 	}{}
 
-	err := helpers.GetResponse(ctx, &http.Client{}, explorerUrl, &bestBlock)
+	err := helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, explorerUrl, &bestBlock)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 				if !c.syncIsDone {
 					return
 				}
-				receiveTime := helpers.NowUtc()
+				receiveTime := helpers.NowUTC()
 
 				msgTx, err := txhelpers.MsgTxFromHex(txDetails.Hex)
 				if err != nil {
@@ -171,7 +172,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 
 			block := Block{
 				BlockInternalTime: blockHeader.Timestamp.UTC(),
-				BlockReceiveTime:  helpers.NowUtc(),
+				BlockReceiveTime:  helpers.NowUTC(),
 				BlockHash:         blockHeader.BlockHash().String(),
 				BlockHeight:       blockHeader.Height,
 			}
@@ -182,7 +183,7 @@ func (c *Collector) DcrdHandlers(ctx context.Context) *rpcclient.NotificationHan
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context) {
+func (c *Collector) StartMonitoring(ctx context.Context, charts *cache.ChartData) {
 	var mu sync.Mutex
 
 	collectMempool := func() {
@@ -205,8 +206,8 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 
 		mempoolDto := Mempool{
 			NumberOfTransactions: len(mempoolTransactionMap),
-			Time:                 helpers.NowUtc(),
-			FirstSeenTime:        helpers.NowUtc(), //todo: use the time of the first tx in the mempool
+			Time:                 helpers.NowUTC(),
+			FirstSeenTime:        helpers.NowUTC(), //todo: use the time of the first tx in the mempool
 		}
 
 		for hashString, tx := range mempoolTransactionMap {
@@ -230,7 +231,7 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 			mempoolDto.TotalFee += tx.Fee
 			mempoolDto.Size += tx.Size
 			if mempoolDto.FirstSeenTime.Unix() > tx.Time {
-				mempoolDto.FirstSeenTime = time.Unix(tx.Time, 0)
+				mempoolDto.FirstSeenTime = helpers.UnixTime(tx.Time)
 			}
 
 		}
@@ -259,6 +260,10 @@ func (c *Collector) StartMonitoring(ctx context.Context) {
 		err = c.dataStore.StoreMempool(ctx, mempoolDto)
 		if err != nil {
 			log.Error(err)
+		} else {
+			if err = charts.TriggerUpdate(ctx); err != nil {
+				log.Errorf("Charts update problem: %s", err.Error())
+			}
 		}
 	}
 
@@ -312,7 +317,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Mempool{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -321,7 +326,7 @@ func (c *Collector) registerMempoolSyncer(syncCoordinator *datasync.SyncCoordina
 				return nil, fmt.Errorf("invalid date, %s", err)
 			}
 			result = new(datasync.Result)
-			mempoolDtos, totalCount, err := c.dataStore.FetchMempoolForSync(ctx, time.Unix(dateUnix, 0), skip, take)
+			mempoolDtos, totalCount, err := c.dataStore.FetchMempoolForSync(ctx, helpers.UnixTime(dateUnix), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return
@@ -367,7 +372,7 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Block{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
@@ -419,13 +424,13 @@ func (c *Collector) registerVoteSyncer(syncCoordinator *datasync.SyncCoordinator
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []Vote{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
 			unixDate, err := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
-			votes, totalCount, err := c.dataStore.FetchVoteForSync(ctx, time.Unix(unixDate, 0), skip, take)
+			votes, totalCount, err := c.dataStore.FetchVoteForSync(ctx, helpers.UnixTime(unixDate), skip, take)
 			if err != nil {
 				result.Message = err.Error()
 				return

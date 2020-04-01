@@ -238,7 +238,7 @@ export default class extends Controller {
   dataTypeChanged () {
     this.dataType = this.dataTypeTarget.value
     this.fetchDataAndPlotGraph()
-    insertOrUpdateQueryParam('data-type', this.dataType)
+    insertOrUpdateQueryParam('data-type', this.dataType, 'Immature')
   }
 
   fetchDataAndPlotGraph () {
@@ -253,8 +253,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     let _this = this
-    const queryString = `data-type=${this.dataType}&vsps=${vsps.join('|')}&view-option=${_this.selectedViewOption}`
-    axios.get(`/vspchartdata?${queryString}`).then(function (response) {
+    const queryString = `axis=${this.dataType}&sources=${vsps.join('|')}`
+    axios.get(`/api/charts/vsp?${queryString}`).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (result.error) {
@@ -362,7 +362,7 @@ export default class extends Controller {
       options
     )
 
-    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.min_date))
+    updateZoomSelector(_this.zoomOptionTargets, new Date(dataSet.min_date), new Date(dataSet.max_date))
   }
 
   drawInitialGraph () {

@@ -78,7 +78,7 @@ func (c *Collector) collectAndStoreGithubStat(ctx context.Context) {
 		}
 
 		githubStat := Github{
-			Date:       time.Now().UTC(),
+			Date:       helpers.NowUTC(),
 			Repository: repo,
 			Stars:      githubStars,
 			Folks:      githubFolks,

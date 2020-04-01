@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/postgres/models"
 	"github.com/raedahgroup/dcrextdata/pow"
 	"github.com/volatiletech/null"
@@ -191,7 +193,31 @@ func (pg *PgDb) GetPowDistinctDates(ctx context.Context, sources []string) ([]ti
 		if err != nil {
 			return nil, err
 		}
-		dates = append(dates, time.Unix(date, 0).UTC())
+		dates = append(dates, helpers.UnixTime(date).UTC())
+	}
+	return dates, nil
+}
+
+func (pg *PgDb) powDistinctDates(ctx context.Context, sources []string, startDate int64) ([]int64, error) {
+	query := fmt.Sprintf("SELECT DISTINCT %s FROM %s WHERE %s IN ('%s') and %s > %d ORDER BY %s", models.PowDatumColumns.Time,
+		models.TableNames.PowData,
+		models.PowDatumColumns.Source, strings.Join(sources, "', '"),
+		models.PowDatumColumns.Time, startDate, models.PowDatumColumns.Time)
+
+	rows, err := pg.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	var dates []int64
+
+	for rows.Next() {
+		var date int64
+		err = rows.Scan(&date)
+		if err != nil {
+			return nil, err
+		}
+		dates = append(dates, date)
 	}
 	return dates, nil
 }
@@ -213,7 +239,7 @@ func (pg *PgDb) FetchPowChartData(ctx context.Context, source string, dataType s
 			return nil, err
 		}
 
-		rec.Date = time.Unix(unixDate, 0).UTC()
+		rec.Date = helpers.UnixTime(unixDate)
 		records = append(records, rec)
 	}
 
@@ -238,7 +264,7 @@ func (pg *PgDb) FetchPowChartDatav(ctx context.Context, source string, dataType 
 			return nil, fmt.Errorf("unsupported data type: %s", dataType)
 		}
 		powChartData := pow.PowChartData{
-			Date:   time.Unix(int64(item.Time), 0).UTC(),
+			Date:   helpers.UnixTime(int64(item.Time)),
 			Record: record,
 		}
 		result = append(result, powChartData)
@@ -264,7 +290,7 @@ func (pg *PgDb) powDataModelToDto(item *models.PowDatum) (dto pow.PowDataDto, er
 	}
 
 	return pow.PowDataDto{
-		Time:           time.Unix(int64(item.Time), 0).UTC().Format(dateTemplate),
+		Time:           helpers.UnixTime(int64(item.Time)).Format(dateTemplate),
 		PoolHashrateTh: fmt.Sprintf("%.0f", poolHashRate),
 		Workers:        int64(item.Workers.Int),
 		Source:         item.Source,
@@ -313,4 +339,91 @@ func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, er
 	}
 
 	return result, nil
+}
+
+type powSet struct {
+	time     []uint64
+	workers  map[string][]*null.Uint64
+	hashrate map[string][]*null.Uint64
+}
+
+func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	cancelFun := func() {}
+	var powDataSet = powSet{
+		time:     []uint64{},
+		workers:  make(map[string][]*null.Uint64),
+		hashrate: make(map[string][]*null.Uint64),
+	}
+
+	pools, err := pg.FetchPowSourceData(ctx)
+	if err != nil {
+		return nil, cancelFun, err
+	}
+
+	var poolSources []string
+	for _, pool := range pools {
+		poolSources = append(poolSources, pool.Source)
+	}
+
+	dates, err := pg.powDistinctDates(ctx, poolSources, int64(charts.PowTime()))
+	for _, date := range dates {
+		powDataSet.time = append(powDataSet.time, uint64(date))
+	}
+
+	for _, pool := range poolSources {
+		points, err := models.PowData(
+			models.PowDatumWhere.Source.EQ(pool),
+			models.PowDatumWhere.Time.GT(int(charts.PowTime()))).All(ctx, pg.db)
+		if err != nil {
+			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
+		}
+
+		var pointsMap = map[uint64]*models.PowDatum{}
+		for _, record := range points {
+			pointsMap[uint64(record.Time)] = record
+
+		}
+
+		var hasFoundOne bool
+		for _, date := range dates {
+			if record, found := pointsMap[uint64(date)]; found {
+				powDataSet.workers[pool] = append(powDataSet.workers[pool], &null.Uint64{Valid: true, Uint64: uint64(record.Workers.Int)})
+				hashrateRaw, _ := strconv.ParseInt(record.PoolHashrate.String, 10, 64)
+				powDataSet.hashrate[pool] = append(powDataSet.hashrate[pool], &null.Uint64{Valid: true, Uint64: uint64(hashrateRaw)})
+				hasFoundOne = true
+			} else {
+				if hasFoundOne {
+					powDataSet.workers[pool] = append(powDataSet.workers[pool], &null.Uint64{Valid: false})
+					powDataSet.hashrate[pool] = append(powDataSet.hashrate[pool], &null.Uint64{Valid: false})
+				} else {
+					powDataSet.workers[pool] = append(powDataSet.workers[pool], nil)
+					powDataSet.hashrate[pool] = append(powDataSet.hashrate[pool], nil)
+				}
+			}
+		}
+	}
+
+	return powDataSet, cancelFun, nil
+}
+
+func appendPowChart(charts *cache.ChartData, data interface{}) error {
+	powDataSet := data.(powSet)
+
+	charts.Pow.Time = append(charts.Pow.Time, powDataSet.time...)
+
+	for pool, workers := range powDataSet.workers {
+		if charts.Pow.Workers == nil {
+			charts.Pow.Workers = map[string]cache.ChartNullUints{}
+		}
+		charts.Pow.Workers[pool] = append(charts.Pow.Workers[pool], workers...)
+	}
+
+	for pool, hashrate := range powDataSet.hashrate {
+		if charts.Pow.Hashrate == nil {
+			charts.Pow.Hashrate = map[string]cache.ChartNullUints{}
+		}
+		charts.Pow.Hashrate[pool] = append(charts.Pow.Hashrate[pool], hashrate...)
+	}
+
+	return nil
 }

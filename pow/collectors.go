@@ -53,7 +53,7 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 
 		if contructor, ok := PowConstructors[pow]; ok {
 			lastEntryTime := store.LastPowEntryTime(pow)
-			in, err := contructor(&http.Client{Timeout: 300 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
+			in, err := contructor(&http.Client{Timeout: 10 * time.Second}, lastEntryTime) // Consider if sharing a single client is better
 			if err != nil {
 				return nil, err
 			}
@@ -77,7 +77,7 @@ func (pc *Collector) Run(ctx context.Context) {
 	log.Info("Triggering PoW collectors.")
 
 	lastCollectionDateUnix := pc.store.LastPowEntryTime("")
-	lastCollectionDate := time.Unix(lastCollectionDateUnix, 0)
+	lastCollectionDate := helpers.UnixTime(lastCollectionDateUnix)
 	secondsPassed := time.Since(lastCollectionDate)
 	period := time.Duration(pc.period) * time.Second
 
@@ -124,7 +124,7 @@ func (pc *Collector) CollectAsync(ctx context.Context) {
 				}
 			}
 			completeCollectionCycle := pc.store.LastPowEntryTime("")
-			collectionCycleDate := time.Unix(completeCollectionCycle, 0)
+			collectionCycleDate := helpers.UnixTime(completeCollectionCycle)
 			timeInterval := time.Since(collectionCycleDate)
 			log.Info("The next collection cycle begins in", timeInterval)
 
@@ -167,7 +167,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 		Collect: func(ctx context.Context, url string) (result *datasync.Result, err error) {
 			result = new(datasync.Result)
 			result.Records = []PowData{}
-			err = helpers.GetResponse(ctx, &http.Client{Timeout: 3 * time.Second}, url, result)
+			err = helpers.GetResponse(ctx, &http.Client{Timeout: 10 * time.Second}, url, result)
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {

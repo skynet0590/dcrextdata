@@ -9,7 +9,7 @@ import {
   options,
   showLoading,
   hideLoading,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, zipXYZData
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -64,7 +64,7 @@ export default class extends Controller {
     show(this.btnWrapperTarget)
     this.nextPage = this.currentPage
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('view-option', this.selectedViewOption)
+    insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
     trimUrl(['view-option', 'page', 'records-per-page'])
   }
 
@@ -91,25 +91,25 @@ export default class extends Controller {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     this.fetchData('chart')
-    insertOrUpdateQueryParam('chart-data-type', this.dataType)
+    insertOrUpdateQueryParam('chart-data-type', this.dataType, 'mempool-size')
   }
 
   numberOfRowsChanged () {
     this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('records-per-page', this.selectedNumberOfRowsberOfRows)
+    insertOrUpdateQueryParam('records-per-page', this.selectedNumberOfRowsberOfRows, 20)
   }
 
   loadPreviousPage () {
     this.nextPage = this.currentPage - 1
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.nextPage)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   loadNextPage () {
     this.nextPage = this.currentPage + 1
     this.fetchData(this.selectedViewOption)
-    insertOrUpdateQueryParam('page', this.nextPage)
+    insertOrUpdateQueryParam('page', this.nextPage, 1)
   }
 
   fetchData (display) {
@@ -121,7 +121,7 @@ export default class extends Controller {
       this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&records-per-page=${this.selectedNumberOfRowsberOfRows}&view-option=${this.selectedViewOption}`
     } else {
-      url = `/mempoolcharts?chart-data-type=${this.dataType}&view-option=${this.selectedViewOption}`
+      url = `/api/charts/${this.dataType}`
     }
 
     const _this = this
@@ -247,64 +247,52 @@ export default class extends Controller {
     this._zoomCallback(start, end)
   }
 
-  // exchange chart
-  plotGraph (exs) {
+  // mempool chart
+  plotGraph (data) {
     const _this = this
-    if (exs.error) {
+
+    if (data.length === 0 || !data.x || data.x.length === 0) {
       this.drawInitialGraph()
     } else {
-      let chartData = exs.mempoolchartData
-      let csv = ''
       switch (this.dataType) {
-        case 'size':
+        case 'mempool-size':
           this.title = 'Size'
-          csv = 'Date,Size\n'
           break
-        case 'total_fee':
+        case 'mempool-fees':
           this.title = 'Total Fee'
-          csv = 'Date,Total Fee\n'
           break
         default:
           this.title = '# of Transactions'
-          csv = 'Date,# of Transactions\n'
           break
       }
       let minDate, maxDate
 
-      chartData.forEach(mp => {
-        let date = new Date(mp.time)
-        if (minDate === undefined || new Date(mp.time) < minDate) {
-          minDate = new Date(mp.time)
+      data.x.forEach(unixTime => {
+        let date = new Date(unixTime * 1000)
+        if (minDate === undefined || date < minDate) {
+          minDate = date
         }
 
-        if (maxDate === undefined || new Date(mp.time) > maxDate) {
-          maxDate = new Date(mp.time)
+        if (maxDate === undefined || date > maxDate) {
+          maxDate = date
         }
-
-        let record
-        if (_this.dataType === 'size') {
-          record = mp.size
-        } else if (_this.dataType === 'total_fee') {
-          record = mp.total_fee
-        } else {
-          record = mp.number_of_transactions
-        }
-        csv += `${date},${record}\n`
       })
 
-      _this.chartsView = new Dygraph(
-        _this.chartsViewTarget,
-        csv,
+      const chartData = zipXYZData(data)
+
+      _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData,
         {
           legend: 'always',
           includeZero: true,
           dateWindow: [minDate, maxDate],
           legendFormatter: legendFormatter,
           plotter: barChartPlotter,
+          strokeWidth: 1,
           digitsAfterDecimal: 8,
           labelsDiv: _this.labelsTarget,
           ylabel: _this.title,
           xlabel: 'Date',
+          labels: ['Date', _this.title],
           labelsUTC: true,
           labelsKMB: true,
           maxNumberWidth: 10,
