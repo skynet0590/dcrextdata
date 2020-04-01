@@ -117,7 +117,7 @@ export function barChartPlotter (e) {
     const sep = points[i].canvasx - points[i - 1].canvasx
     if (sep < minSep) minSep = sep
   }
-  const barWidth = Math.max(Math.floor(2.0 / 3 * minSep), 5)
+  const barWidth = Math.min(Math.floor(2.0 / 3 * minSep), 5)
 
   // Do the actual plotting.
   for (let i = 0; i < points.length; i++) {
