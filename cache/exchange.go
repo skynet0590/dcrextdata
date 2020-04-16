@@ -52,6 +52,7 @@ func (set *exchangeSet) Append(key string, time ChartUints, open ChartFloats, cl
 		existingTick.Close = append(existingTick.Close, close...)
 		existingTick.High = append(existingTick.High, high...)
 		existingTick.Low = append(existingTick.Low, low...)
+		set.Ticks[key] = existingTick
 	} else {
 		set.Ticks[key] = exchangeTick{
 			Time:  time,
