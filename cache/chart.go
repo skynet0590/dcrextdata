@@ -159,8 +159,8 @@ func (data ChartFloats) snip(max int) ChartFloats {
 }
 
 // A constructor for a sized ChartFloats.
-func newChartFloats(size int) ChartFloats {
-	return make([]float64, 0, size)
+func newChartFloats() ChartFloats {
+	return make([]float64, 0, 0)
 }
 
 type ChartNullData interface {
@@ -297,8 +297,8 @@ func (data ChartNullUints) snip(max int) ChartNullUints {
 }
 
 // A constructor for a sized ChartUints.
-func newChartNullUints(size int) ChartNullUints {
-	return make(ChartNullUints, 0, size)
+func newChartNullUints() ChartNullUints {
+	return make(ChartNullUints, 0)
 }
 
 // nullFloat64Pointer is a wrapper around ChartNullFloats with Items as []nullFloat64Pointer instead of
@@ -401,8 +401,8 @@ func (data ChartNullFloats) snip(max int) ChartNullFloats {
 }
 
 // A constructor for a sized ChartUints.
-func newChartNullFloats(size int) ChartNullFloats {
-	return make(ChartNullFloats, 0, size)
+func newChartNullFloats() ChartNullFloats {
+	return make(ChartNullFloats, 0)
 }
 
 // ChartStrings is a slice of strings. It satisfies the lengther interface, and
@@ -444,8 +444,8 @@ func (data ChartUints) snip(max int) ChartUints {
 }
 
 // A constructor for a sized ChartUints.
-func newChartUints(size int) ChartUints {
-	return make(ChartUints, 0, size)
+func newChartUints() ChartUints {
+	return make(ChartUints, 0)
 }
 
 // mempoolSet holds data for mempool fees, size and tx-count chart
@@ -470,12 +470,12 @@ func (set *mempoolSet) Snip(length int) {
 
 // Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
-func newMempoolSet(size int) *mempoolSet {
+func newMempoolSet() *mempoolSet {
 	return &mempoolSet{
-		Time:    newChartUints(size),
-		Size:    newChartUints(size),
-		TxCount: newChartUints(size),
-		Fees:    newChartFloats(size),
+		Time:    newChartUints(),
+		Size:    newChartUints(),
+		TxCount: newChartUints(),
+		Fees:    newChartFloats(),
 	}
 }
 
@@ -503,15 +503,15 @@ func (set *propagationSet) Snip(length int) {
 
 // Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
 // since the height is implicit for block-binned data.
-func newPropagationSet(size int, syncSources []string) *propagationSet {
+func newPropagationSet(syncSources []string) *propagationSet {
 	blockPropagation := make(map[string]ChartFloats)
 	for _, source := range syncSources {
-		blockPropagation[source] = newChartFloats(size)
+		blockPropagation[source] = newChartFloats()
 	}
 	return &propagationSet{
-		Height:                     newChartUints(size),
-		BlockDelays:                newChartFloats(size),
-		VotesReceiveTimeDeviations: newChartFloats(size),
+		Height:                     newChartUints(),
+		BlockDelays:                newChartFloats(),
+		VotesReceiveTimeDeviations: newChartFloats(),
 		BlockPropagation:           blockPropagation,
 	}
 }
@@ -541,21 +541,20 @@ func (set *powSet) Snip(length int) {
 	}
 }
 
-// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
-// since the height is implicit for block-binned data.
-func newPowSet(pools []string, size int) *powSet {
+// Constructor for Pow Set
+func newPowSet(pools []string) *powSet {
 	hashrate := make(map[string]ChartNullUints)
 	for _, pool := range pools {
-		hashrate[pool] = newChartNullUints(size)
+		hashrate[pool] = newChartNullUints()
 	}
 
 	workers := make(map[string]ChartNullUints)
 	for _, pool := range pools {
-		workers[pool] = newChartNullUints(size)
+		workers[pool] = newChartNullUints()
 	}
 
 	return &powSet{
-		Time:     newChartUints(size),
+		Time:     newChartUints(),
 		Hashrate: hashrate,
 		Workers:  workers,
 	}
@@ -613,55 +612,55 @@ func (set *vspSet) Snip(length int) {
 	}
 }
 
-// Constructor for a sized vspSet.
-func newVspSet(vsps []string, size int) *vspSet {
+// Constructor for a vspSet.
+func newVspSet(vsps []string) *vspSet {
 	immature := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		immature[vsp] = newChartNullUints(size)
+		immature[vsp] = newChartNullUints()
 	}
 
 	live := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		live[vsp] = newChartNullUints(size)
+		live[vsp] = newChartNullUints()
 	}
 
 	voted := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		voted[vsp] = newChartNullUints(size)
+		voted[vsp] = newChartNullUints()
 	}
 
 	missed := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		missed[vsp] = newChartNullUints(size)
+		missed[vsp] = newChartNullUints()
 	}
 
 	poolFees := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		poolFees[vsp] = newChartNullFloats(size)
+		poolFees[vsp] = newChartNullFloats()
 	}
 
 	proportionLive := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		proportionLive[vsp] = newChartNullFloats(size)
+		proportionLive[vsp] = newChartNullFloats()
 	}
 
 	proportionMissed := make(map[string]ChartNullFloats)
 	for _, vsp := range vsps {
-		proportionMissed[vsp] = newChartNullFloats(size)
+		proportionMissed[vsp] = newChartNullFloats()
 	}
 
 	userCount := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		userCount[vsp] = newChartNullUints(size)
+		userCount[vsp] = newChartNullUints()
 	}
 
 	usersActive := make(map[string]ChartNullUints)
 	for _, vsp := range vsps {
-		immature[vsp] = newChartNullUints(size)
+		immature[vsp] = newChartNullUints()
 	}
 
 	return &vspSet{
-		Time:             newChartUints(size),
+		Time:             newChartUints(),
 		Immature:         immature,
 		Live:             live,
 		Voted:            voted,
@@ -1119,22 +1118,14 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, height uint32, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
-	base64Height := int64(height)
-	// Allocate datasets for at least as many blocks as in a sdiff window.
-	if base64Height < chainParams.StakeDiffWindowSize {
-		height = uint32(chainParams.StakeDiffWindowSize)
-	}
-	// Start datasets at 25% larger than height. This matches golang's default
-	// capacity size increase for slice lengths > 1024
-	// https://github.com/golang/go/blob/87e48c5afdcf5e01bb2b7f51b7643e8901f4b7f9/src/runtime/slice.go#L100-L112
-	size := int(height * 5 / 4)
+func NewChartData(ctx context.Context, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
+	
 	return &ChartData{
 		ctx:          ctx,
-		Mempool:      newMempoolSet(size),
-		Propagation:  newPropagationSet(size, syncSources),
-		Pow:          newPowSet(poolSources, size),
-		Vsp:          newVspSet(vsps, size),
+		Mempool:      newMempoolSet(),
+		Propagation:  newPropagationSet(syncSources),
+		Pow:          newPowSet(poolSources),
+		Vsp:          newVspSet(vsps),
 		Exchange:     newExchangeSet(),
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
