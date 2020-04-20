@@ -48,29 +48,29 @@ export default class extends Controller {
     this.pageSize = this.pageSizeTarget.value
 
     this.platform = this.platformTarget.dataset.initialValue
-    if (this.platform === '') {
+    if (this.platform === '' && this.platformTarget.options.length > 0) {
       this.platform = this.platformTarget.value = this.platformTarget.options[0].innerText
     }
 
     this.showCurrentSubAccountWrapper()
 
     this.subreddit = this.subredditTarget.dataset.initialValue
-    if (this.subreddit === '') {
+    if (this.subreddit === '' && this.subredditTarget.options.length > 0) {
       this.subreddit = this.subredditTarget.value = this.subredditTarget.options[0].innerText
     }
 
     this.twitterHandle = this.twitterHandleTarget.dataset.initialValue
-    if (this.twitterHandle === '') {
+    if (this.twitterHandle === '' && this.twitterHandleTarget.options.length > 0) {
       this.twitterHandle = this.twitterHandleTarget.value = this.twitterHandleTarget.options[0].innerText
     }
 
     this.repository = this.repositoryTarget.dataset.initialValue
-    if (this.repository === '') {
+    if (this.repository === '' && this.repositoryTarget.options.length > 0) {
       this.repository = this.repositoryTarget.value = this.repositoryTarget.options[0].innerText
     }
 
     this.channel = this.channelTarget.dataset.initialValue
-    if (this.channel === '') {
+    if (this.channel === '' && this.channelTarget.options.length > 0) {
       this.channel = this.channelTarget.value = this.channelTarget.options[0].innerText
     }
 
