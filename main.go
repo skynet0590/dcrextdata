@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	_ "net/http/pprof"
@@ -177,12 +176,6 @@ func _main(ctx context.Context) error {
 		syncCoordinator.AddSource(source, db, databaseName)
 	}
 
-	// For consistency with StakeDatabase, a non-negative height is needed.
-	mempoolCount, err := db.MempoolCount(ctx)
-	if err != nil && err != sql.ErrNoRows {
-		log.Errorf("Cannot fetch mempool count, %s", err.Error())
-	}
-
 	pools, _ := db.FetchPowSourceData(ctx)
 	var poolSources []string
 	for _, pool := range pools {
@@ -195,7 +188,7 @@ func _main(ctx context.Context) error {
 		vsps = append(vsps, vspSource.Name)
 	}
 
-	charts := cache.NewChartData(ctx, uint32(mempoolCount), cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
+	charts := cache.NewChartData(ctx, cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {
