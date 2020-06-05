@@ -22,7 +22,7 @@ import (
 const (
 	chartViewOption             = "chart"
 	defaultViewOption           = chartViewOption
-	mempoolDefaultChartDataType = "mempool-size"
+	mempoolDefaultChartDataType = "size"
 	maxPageSize                 = 250
 	defaultPageSize             = 20
 	defaultInterval             = 1440 // All
@@ -1764,7 +1764,7 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// api/charts/{dataType}
+// api/charts/{chartType}
 func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	chartType := getChartTypeCtx(r)
@@ -1785,7 +1785,7 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 
 		extras = cache.BuildExchangeKey(selectedExchange, selectedCurrencyPair, interval)
 	}
-	chartData, err := s.charts.Chart(chartType, axis, strings.Split(extras, "|")...)
+	chartData, err := s.charts.Chart(r.Context(), chartType, axis, strings.Split(extras, "|")...)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), w)
 		log.Warnf(`Error fetching %s chart: %v`, chartType, err)

@@ -72,6 +72,7 @@ func defaultFileOptions() ConfigFileOptions {
 		HTTPPort:        defaultHttpPort,
 		SyncInterval:    defaultSyncInterval,
 		ChartsCacheDump: defaultChartsCacheDump,
+		EnableChartCache: true,
 	}
 
 	cfg.RedditStatInterval = defaultRedditInterval
@@ -146,6 +147,7 @@ type ConfigFileOptions struct {
 	SyncDatabases []string `long:"syncdatabase" description:"Database to sync remote data to"`
 
 	// charts
+	EnableChartCache bool `long:"enablechartcache" description:"Enable chart data caching"`
 	ChartsCacheDump string
 
 	CommunityStatOptions

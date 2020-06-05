@@ -91,7 +91,7 @@ export default class extends Controller {
     this.dataType = event.currentTarget.getAttribute('data-option')
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     this.fetchData('chart')
-    insertOrUpdateQueryParam('chart-data-type', this.dataType, 'mempool-size')
+    insertOrUpdateQueryParam('chart-data-type', this.dataType, 'size')
   }
 
   numberOfRowsChanged () {
@@ -121,7 +121,7 @@ export default class extends Controller {
       this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&records-per-page=${this.selectedNumberOfRowsberOfRows}&view-option=${this.selectedViewOption}`
     } else {
-      url = `/api/charts/${this.dataType}`
+      url = `/api/charts/mempool?axis=${this.dataType}`
     }
 
     const _this = this
@@ -255,10 +255,10 @@ export default class extends Controller {
       this.drawInitialGraph()
     } else {
       switch (this.dataType) {
-        case 'mempool-size':
+        case 'size':
           this.title = 'Size'
           break
-        case 'mempool-fees':
+        case 'fees':
           this.title = 'Total Fee'
           break
         default:

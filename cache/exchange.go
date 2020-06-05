@@ -100,7 +100,7 @@ func makeExchangeChart(charts *ChartData, axis axisType, setKey ...string) ([]by
 			return nil, errors.New("invalid exchange chart axis")
 		}
 
-		return charts.encode(nil, tick.Time, yAxis)
+		return charts.Encode(nil, tick.Time, yAxis)
 	}
 	return nil, errors.New("no record found for the selected exchange")
 }

@@ -19,14 +19,9 @@ import (
 
 // Keys for specifying chart data type.
 const (
-	MempoolSize    = "mempool-size"
-	MempoolFees    = "mempool-fees"
-	MempoolTxCount = "mempool-tx-count"
-
-	BlockPropagation = "block-propagation"
-	BlockTimestamp   = "block-timestamp"
-	VotesReceiveTime = "votes-receive-time"
-
+	Mempool = "mempool"
+	Propagation = "propagation"
+	Community = "community"
 	PowChart = "pow"
 	VSP      = "vsp"
 	Exchange = "exchange"
@@ -43,8 +38,17 @@ type axisType string
 const (
 	HeightAxis   axisType = "height"
 	TimeAxis     axisType = "time"
+
 	HashrateAxis axisType = "hashrate"
 	WorkerAxis   axisType = "workers"
+	
+	Size    = "size"
+	Fees    = "fees"
+	TxCount = "tx-count"
+
+	BlockPropagation = "block-propagation"
+	BlockTimestamp   = "block-timestamp"
+	VotesReceiveTime = "votes-receive-time"
 
 	ImmatureAxis         axisType = "immature"
 	LiveAxis             axisType = "live"
@@ -63,6 +67,13 @@ func ParseAxis(aType string) axisType {
 	switch axisType(aType) {
 	case HeightAxis:
 		return HeightAxis
+		//Mempool
+	case Size:
+		return Size
+	case TxCount:
+		return TxCount
+	case Fees:
+		return Fees
 		// PoW axis
 	case HashrateAxis:
 		return HashrateAxis
@@ -740,6 +751,9 @@ type ChartUpdater struct {
 	Appender func(charts *ChartData, recordSlice interface{}) error
 }
 
+// Retriver provides a function for directly getting a specific chart data from a store
+type Retriver func (ctx context.Context, charts *ChartData, axisString string, extras ...string) ([]byte, error)
+
 // ChartData is a set of data used for charts. It provides methods for
 // managing data validation and update concurrency, but does not perform any
 // data retrieval and must be used with care to keep the data valid. The Blocks
@@ -753,10 +767,12 @@ type ChartData struct {
 	Pow          *powSet
 	Vsp          *vspSet
 	Exchange     *exchangeSet
+	EnableCache	 bool
 
 	cacheMtx   sync.RWMutex
 	cache      map[string]*cachedChart
 	updaters   []ChartUpdater
+	retrivers  map[string]Retriver
 
 	syncSource []string
 }
@@ -1077,6 +1093,11 @@ func (charts *ChartData) VspTime() uint64 {
 	return charts.Vsp.Time[len(charts.Vsp.Time)-1]
 }
 
+// AddRetriever adds a Retriever to the Retrievers slice. 
+func (charts *ChartData) AddRetriever(chartID string, retriever Retriver) {
+	charts.retrivers[chartID] = retriever
+}
+
 // AddUpdater adds a ChartUpdater to the Updaters slice. Updaters are run
 // sequentially during (*ChartData).Update.
 func (charts *ChartData) AddUpdater(updater ChartUpdater) {
@@ -1087,6 +1108,11 @@ func (charts *ChartData) AddUpdater(updater ChartUpdater) {
 // Update is abandoned with a warning if stateID changes while running a Fetcher
 // (likely due to a new update starting during a query).
 func (charts *ChartData) Update(ctx context.Context) error {
+	// only run updater if caching is enabled
+	if !charts.EnableCache {
+		return nil
+	}
+
 	for _, updater := range charts.updaters {
 		stateID := charts.StateID()
 		rows, cancel, err := updater.Fetcher(ctx, charts)
@@ -1118,7 +1144,7 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
+func NewChartData(ctx context.Context, enableCache bool, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
 	
 	return &ChartData{
 		ctx:          ctx,
@@ -1127,8 +1153,10 @@ func NewChartData(ctx context.Context, syncSources []string, poolSources []strin
 		Pow:          newPowSet(poolSources),
 		Vsp:          newVspSet(vsps),
 		Exchange:     newExchangeSet(),
+		EnableCache:  enableCache,
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
+		retrivers: 	  make(map[string]Retriver),
 		syncSource:   syncSources,
 	}
 }
@@ -1142,9 +1170,7 @@ func cacheKey(chartID string, axis axisType) string {
 // be called under at least a (ChartData).cacheMtx.RLock.
 func (charts *ChartData) cacheID(chartID string) uint64 {
 	switch chartID {
-	case MempoolTxCount:
-	case MempoolSize:
-	case MempoolFees:
+	case Mempool:
 		return charts.MempoolTime()
 	case BlockPropagation:
 	case BlockTimestamp:
@@ -1197,24 +1223,23 @@ func (charts *ChartData) cacheChart(chartID string, version uint64, axis axisTyp
 type ChartMaker func(charts *ChartData, axis axisType, sources ...string) ([]byte, error)
 
 var chartMakers = map[string]ChartMaker{
-	MempoolSize:    mempoolSize,
-	MempoolTxCount: mempoolTxCount,
-	MempoolFees:    mempoolFees,
-
-	BlockPropagation: blockPropagation,
-	BlockTimestamp:   blockTimestamp,
-	VotesReceiveTime: votesReceiveTime,
-
+	Mempool:    mempool,
+	Propagation: propagation,
 	PowChart: powChart,
-
 	VSP: makeVspChart,
-
 	Exchange: makeExchangeChart,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
-func (charts *ChartData) Chart(chartID, axisString string, extras ...string) ([]byte, error) {
+func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, extras ...string) ([]byte, error) {
+	if !charts.EnableCache {
+		retriever, hasRetriever := charts.retrivers[chartID]
+		if !hasRetriever {
+			return nil, UnknownChartErr
+		}
+		return retriever(ctx, charts, axisString, extras...)
+	}
 	axis := ParseAxis(axisString)
 
 	sort.Strings(extras)
@@ -1251,7 +1276,7 @@ var responseKeys = []string{"x", "y", "z"}
 
 // Encode the slices. The set lengths are truncated to the smallest of the
 // arguments.
-func (charts *ChartData) encode(keys []string, sets ...lengther) ([]byte, error) {
+func (charts *ChartData) Encode(keys []string, sets ...lengther) ([]byte, error) {
 	return charts.encodeArr(keys, sets)
 }
 
@@ -1285,19 +1310,42 @@ func (charts *ChartData) encodeArr(keys []string, sets []lengther) ([]byte, erro
 	return json.Marshal(response)
 }
 
-func mempoolSize(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
-	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Size)
+func mempool(charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
+	switch(axis) {
+	case Size:
+		return mempoolSize(charts)
+	case TxCount:
+		return mempoolTxCount(charts)
+	case Fees:
+		return mempoolFees(charts)
+	}
+	return nil, UnknownChartErr
 }
 
-func mempoolTxCount(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
-	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.TxCount)
+func mempoolSize(charts *ChartData) ([]byte, error) {
+	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.Size)
 }
 
-func mempoolFees(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
-	return charts.encode(nil, charts.Mempool.Time, charts.Mempool.Fees)
+func mempoolTxCount(charts *ChartData) ([]byte, error) {
+	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.TxCount)
 }
 
-func blockPropagation(charts *ChartData, _ axisType, syncSources ...string) ([]byte, error) {
+func mempoolFees(charts *ChartData) ([]byte, error) {
+	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.Fees)
+}
+
+func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byte, error) {
+	switch(axis) {
+	case BlockPropagation:
+		return blockPropagation(charts, syncSources...)
+	case BlockTimestamp:
+		return blockTimestamp(charts)
+	case VotesReceiveTime:
+		return votesReceiveTime(charts)
+	}
+	return nil, UnknownChartErr
+}
+func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
 	var deviations = []lengther{charts.Propagation.Height}
 	for _, source := range syncSources {
 		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
@@ -1306,12 +1354,12 @@ func blockPropagation(charts *ChartData, _ axisType, syncSources ...string) ([]b
 	return charts.encodeArr(nil, deviations)
 }
 
-func blockTimestamp(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
-	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.BlockDelays)
+func blockTimestamp(charts *ChartData) ([]byte, error) {
+	return charts.Encode(nil, charts.Propagation.Height, charts.Propagation.BlockDelays)
 }
 
-func votesReceiveTime(charts *ChartData, _ axisType, _ ...string) ([]byte, error) {
-	return charts.encode(nil, charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
+func votesReceiveTime(charts *ChartData) ([]byte, error) {
+	return charts.Encode(nil, charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
 }
 
 func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
