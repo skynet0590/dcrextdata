@@ -13,6 +13,7 @@ const (
 	ctxTimestamp
 	ctxNodeIp
 	ctxChartType
+	ctxChartAxisType
 )
 
 func syncDataType(next http.Handler) http.Handler {
@@ -43,11 +44,21 @@ func addTimestampToCtx(next http.Handler) http.Handler {
 }
 
 // chartTypeCtx returns a http.HandlerFunc that embeds the value at the url
-// part {charttype} into the request context.
+// part {chartType} into the request context.
 func chartTypeCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), ctxChartType,
-			chi.URLParam(r, "charttype"))
+			chi.URLParam(r, "chartType"))
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// chartAxisTypeCtx returns a http.HandlerFunc that embeds the value at the url
+// part {chartAxisType} into the request context.
+func chartAxisTypeCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), ctxChartAxisType,
+			chi.URLParam(r, "chartAxisType"))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -76,6 +87,7 @@ func getNodeIPFromCtx(r *http.Request) string {
 	}
 	return address
 }
+
 // getChartTypeCtx retrieves the ctxChart data from the request context.
 // If not set, the return value is an empty string.
 func getChartTypeCtx(r *http.Request) string {
@@ -85,4 +97,15 @@ func getChartTypeCtx(r *http.Request) string {
 		return ""
 	}
 	return chartType
+}
+
+// getChartAxisTypeCtx retrieves the ctxChartAxisType data from the request context.
+// If not set, the return value is an empty string.
+func getChartAxisTypeCtx(r *http.Request) string {
+	chartAxisType, ok := r.Context().Value(ctxChartAxisType).(string)
+	if !ok {
+		log.Trace("chart axis type not set")
+		return ""
+	}
+	return chartAxisType
 }

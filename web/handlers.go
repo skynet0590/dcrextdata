@@ -1768,7 +1768,7 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	chartType := getChartTypeCtx(r)
-	axis := r.URL.Query().Get("axis")
+	axis := getChartAxisTypeCtx(r)
 	extras := r.URL.Query().Get("sources")
 
 	// the extra data passed for exchange chart is the exchange set key

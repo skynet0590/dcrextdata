@@ -260,8 +260,8 @@ export default class extends Controller {
     if (display === 'table') {
       url = `/exchangedata?page=${_this.nextPage}&selected-exchange=${_this.selectedExchange}&records-per-page=${_this.numberOfRows}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&view-option=${_this.selectedViewOption}`
     } else {
-      const queryString = `axis=${_this.selectedTick}&selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&selected-exchange=${_this.selectedExchange}`
-      url = `/api/charts/exchange?${queryString}`
+      const queryString = `selected-currency-pair=${_this.selectedCurrencyPair}&selected-interval=${_this.selectedInterval}&selected-exchange=${_this.selectedExchange}`
+      url = `/api/charts/exchange/${_this.selectedTick}?${queryString}`
     }
 
     axios.get(url)

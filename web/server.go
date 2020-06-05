@@ -189,7 +189,8 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/snapshot/node-countries", s.nodeCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
-	r.With(chartTypeCtx).Get("/api/charts/{charttype}", s.chartTypeData)
+	r.With(chartTypeCtx).With(chartAxisTypeCtx).Get("/api/charts/{chartType}/{chartAxisType}", s.chartTypeData)
+	r.With(chartTypeCtx).Get("/api/charts/{chartType}", s.chartTypeData)
 }
 
 func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {

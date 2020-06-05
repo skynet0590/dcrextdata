@@ -74,6 +74,13 @@ func ParseAxis(aType string) axisType {
 		return TxCount
 	case Fees:
 		return Fees
+		//Propagation
+	case BlockPropagation:
+		return BlockPropagation
+	case BlockTimestamp:
+		return BlockTimestamp
+	case VotesReceiveTime:
+		return VotesReceiveTime
 		// PoW axis
 	case HashrateAxis:
 		return HashrateAxis
@@ -1345,6 +1352,7 @@ func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byt
 	}
 	return nil, UnknownChartErr
 }
+
 func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
 	var deviations = []lengther{charts.Propagation.Height}
 	for _, source := range syncSources {

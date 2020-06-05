@@ -121,7 +121,7 @@ export default class extends Controller {
       this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&records-per-page=${this.selectedNumberOfRowsberOfRows}&view-option=${this.selectedViewOption}`
     } else {
-      url = `/api/charts/mempool?axis=${this.dataType}`
+      url = `/api/charts/mempool/${this.dataType}`
     }
 
     const _this = this

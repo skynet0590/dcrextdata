@@ -253,8 +253,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     let _this = this
-    const queryString = `axis=${this.dataType}&sources=${vsps.join('|')}`
-    axios.get(`/api/charts/vsp?${queryString}`).then(function (response) {
+    const queryString = `sources=${vsps.join('|')}`
+    axios.get(`/api/charts/vsp/${this.dataType}?${queryString}`).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (result.error) {
