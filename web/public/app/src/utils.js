@@ -2,8 +2,6 @@ import dompurify from 'dompurify'
 import humanize from './helpers/humanize_helper'
 import { map } from 'lodash-es'
 
-const Dygraph = require('../../dist/js/dygraphs.min.js')
-
 export const appName = 'dcrextdata'
 
 export const hide = (el) => {
@@ -101,41 +99,6 @@ export function legendFormatter (data) {
 
   dompurify.sanitize(html)
   return html
-}
-
-export function barChartPlotter (e) {
-  const ctx = e.drawingContext
-  const points = e.points
-  const yBottom = e.dygraph.toDomYCoord(0)
-
-  ctx.fillStyle = darkenColor(e.color)
-
-  // Find the minimum separation between x-values.
-  // This determines the bar width.
-  let minSep = Infinity
-  for (let i = 1; i < points.length; i++) {
-    const sep = points[i].canvasx - points[i - 1].canvasx
-    if (sep < minSep) minSep = sep
-  }
-  const barWidth = Math.max(Math.floor(2.0 / 3 * minSep), 5)
-
-  // Do the actual plotting.
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i]
-    const centerx = p.canvasx
-
-    ctx.fillRect(centerx - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
-    ctx.strokeRect(centerx - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
-  }
-}
-
-function darkenColor (colorStr) {
-  // Defined in dygraph-utils.js
-  var color = Dygraph.toRGB_(colorStr)
-  color.r = Math.floor((255 + color.r) / 2)
-  color.g = Math.floor((255 + color.g) / 2)
-  color.b = Math.floor((255 + color.b) / 2)
-  return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')'
 }
 
 export var options = {

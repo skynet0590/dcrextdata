@@ -2,7 +2,6 @@ import { Controller } from 'stimulus'
 import axios from 'axios'
 import {
   legendFormatter,
-  barChartPlotter,
   hide,
   show,
   setActiveOptionBtn,
@@ -286,8 +285,6 @@ export default class extends Controller {
           includeZero: true,
           dateWindow: [minDate, maxDate],
           legendFormatter: legendFormatter,
-          plotter: barChartPlotter,
-          strokeWidth: 1,
           digitsAfterDecimal: 8,
           labelsDiv: _this.labelsTarget,
           ylabel: _this.title,
