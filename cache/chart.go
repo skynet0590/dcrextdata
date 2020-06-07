@@ -969,6 +969,9 @@ func (charts *ChartData) readCacheFile(filePath string) error {
 // Load loads chart data from the gob file at the specified path and performs an
 // update.
 func (charts *ChartData) Load(ctx context.Context, cacheDumpPath string) error {
+	if !charts.EnableCache {
+		return nil
+	}
 	t := helpers.NowUTC()
 	defer func() {
 		log.Debugf("Completed the initial chart load and update in %f s",

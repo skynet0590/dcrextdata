@@ -465,6 +465,60 @@ func (pg *PgDb) fetchBlockReceiveTimeByHeight(ctx context.Context, height int32)
 
 // *****CHARTS******* //
 
+func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.ChartData, axisString string, extras ...string) ([]byte, error) {
+	
+	switch(axisString){
+	case cache.Size:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.Size),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartUints, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = uint64(m.Size.Int)
+		}
+		return charts.Encode(nil, time, data)
+
+	case cache.Fees:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.TotalFee),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartFloats, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = m.TotalFee.Float64
+		}
+		return charts.Encode(nil, time, data)
+
+	case cache.TxCount:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.NumberOfTransactions),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartUints, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = uint64(m.NumberOfTransactions.Int)
+		}
+		return charts.Encode(nil, time, data)
+	}
+	return nil, cache.UnknownChartErr
+}
+
 func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 

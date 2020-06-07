@@ -11,7 +11,7 @@ func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, sy
 		Fetcher:  pg.retrieveChartMempool,
 		Appender: appendChartMempool,
 	})
-	//charts.AddRetriever(cache.MempoolFees, )
+	charts.AddRetriever(cache.Mempool, pg.fetchEncodeMempoolChart)
 
 	charts.AddUpdater(cache.ChartUpdater{
 		Tag:      "block propagation chart",
