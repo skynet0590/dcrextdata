@@ -148,9 +148,9 @@ const UnknownChartErr = ChartError("unknown chart")
 const InvalidBinErr = ChartError("invalid bin")
 
 // An interface for reading and setting the length of datasets.
-type lengther interface {
+type Lengther interface {
 	Length() int
-	Truncate(int) lengther
+	Truncate(int) Lengther
 }
 
 // ChartFloats is a slice of floats. It satisfies the lengther interface, and
@@ -164,7 +164,7 @@ func (data ChartFloats) Length() int {
 
 // Truncate makes a subset of the underlying dataset. It satisfies the lengther
 // interface.
-func (data ChartFloats) Truncate(l int) lengther {
+func (data ChartFloats) Truncate(l int) Lengther {
 	return data[:l]
 }
 
@@ -182,7 +182,7 @@ func newChartFloats() ChartFloats {
 }
 
 type ChartNullData interface {
-	lengther
+	Lengther
 	Value(index int) interface{}
 	Valid(index int) bool
 	IsZero(index int) bool
@@ -285,7 +285,7 @@ func (data ChartNullUints) Length() int {
 
 // Truncate makes a subset of the underlying dataset. It satisfies the lengther
 // interface.
-func (data ChartNullUints) Truncate(l int) lengther {
+func (data ChartNullUints) Truncate(l int) Lengther {
 	return data[:l]
 }
 
@@ -406,7 +406,7 @@ func (data ChartNullFloats) Length() int {
 
 // Truncate makes a subset of the underlying dataset. It satisfies the lengther
 // interface.
-func (data ChartNullFloats) Truncate(l int) lengther {
+func (data ChartNullFloats) Truncate(l int) Lengther {
 	return data[:l]
 }
 
@@ -434,7 +434,7 @@ func (data ChartStrings) Length() int {
 
 // Truncate makes a subset of the underlying dataset. It satisfies the lengther
 // interface.
-func (data ChartStrings) Truncate(l int) lengther {
+func (data ChartStrings) Truncate(l int) Lengther {
 	return data[:l]
 }
 
@@ -449,7 +449,7 @@ func (data ChartUints) Length() int {
 
 // Truncate makes a subset of the underlying dataset. It satisfies the lengther
 // interface.
-func (data ChartUints) Truncate(l int) lengther {
+func (data ChartUints) Truncate(l int) Lengther {
 	return data[:l]
 }
 
@@ -785,7 +785,7 @@ type ChartData struct {
 }
 
 // Check that the length of all arguments is equal.
-func ValidateLengths(lens ...lengther) (int, error) {
+func ValidateLengths(lens ...Lengther) (int, error) {
 	lenLen := len(lens)
 	if lenLen == 0 {
 		return 0, nil
@@ -1286,13 +1286,13 @@ var responseKeys = []string{"x", "y", "z"}
 
 // Encode the slices. The set lengths are truncated to the smallest of the
 // arguments.
-func (charts *ChartData) Encode(keys []string, sets ...lengther) ([]byte, error) {
+func (charts *ChartData) Encode(keys []string, sets ...Lengther) ([]byte, error) {
 	return charts.encodeArr(keys, sets)
 }
 
 // Encode the slices. The set lengths are truncated to the smallest of the
 // arguments.
-func (charts *ChartData) encodeArr(keys []string, sets []lengther) ([]byte, error) {
+func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, error) {
 	if keys == nil {
 		keys = responseKeys
 	}
@@ -1357,7 +1357,7 @@ func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byt
 }
 
 func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
-	var deviations = []lengther{charts.Propagation.Height}
+	var deviations = []Lengther{charts.Propagation.Height}
 	for _, source := range syncSources {
 		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
 	}
