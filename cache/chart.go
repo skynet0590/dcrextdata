@@ -1386,6 +1386,10 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 			continue
 		}
 	}
+	return MakePowChart(charts.Pow.Time, deviations, pools)
+}
+
+func MakePowChart(dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
 
 	var powChartData = struct {
 		CSV     string    `json:"csv"`
@@ -1395,7 +1399,7 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 		CSV: fmt.Sprintf("Date,%s\n", strings.Join(pools, ",")),
 	}
 
-	if len(charts.Pow.Time) == 0 {
+	if len(dates) == 0 {
 		return json.Marshal(powChartData)
 	}
 
@@ -1412,12 +1416,12 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 		return false
 	}
 
-	for index := range charts.Pow.Time {
+	for index := range dates {
 		if !hasAny(index) {
 			continue
 		}
 
-		var lineRecords = []string{helpers.UnixTime(int64(charts.Pow.Time[index])).String()}
+		var lineRecords = []string{helpers.UnixTime(int64(dates[index])).String()}
 		for _, data := range deviations {
 			if record := data[index]; record != nil && record.Valid {
 				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
@@ -1434,8 +1438,8 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}
 
-	powChartData.MinDate = helpers.UnixTime(int64(charts.Pow.Time[0]))
-	powChartData.MaxDate = helpers.UnixTime(int64(charts.Pow.Time[len(charts.Pow.Time)-1]))
+	powChartData.MinDate = helpers.UnixTime(int64(dates[0]))
+	powChartData.MaxDate = helpers.UnixTime(int64(dates[len(dates) - 1]))
 
 	return json.Marshal(powChartData)
 }
