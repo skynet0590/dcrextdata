@@ -413,7 +413,8 @@ func (pg *PgDb) ExchangeTicksChartData(ctx context.Context, selectedTick string,
 	return tickChart, err
 }
 
-func (pg *PgDb) exchangeTicksChartData(ctx context.Context, currencyPair string, selectedInterval int, exchangeName string, exchangeTickTime uint64) (models.ExchangeTickSlice, error) {
+func (pg *PgDb) exchangeTicksChartData(ctx context.Context, currencyPair string, selectedInterval int,
+	 exchangeName string, exchangeTickTime uint64, cols ...string) (models.ExchangeTickSlice, error) {
 
 	exchange, err := models.Exchanges(models.ExchangeWhere.Name.EQ(exchangeName)).One(ctx, pg.db)
 	if err != nil {
@@ -426,6 +427,10 @@ func (pg *PgDb) exchangeTicksChartData(ctx context.Context, currencyPair string,
 		models.ExchangeTickWhere.ExchangeID.EQ(exchange.ID),
 		models.ExchangeTickWhere.Interval.EQ(selectedInterval),
 		qm.OrderBy(models.ExchangeTickColumns.Time),
+	}
+
+	if len(cols) > 0 {
+		queryMods = append(queryMods, qm.Select(cols...))
 	}
 
 	exchangeFilterResult, err := models.ExchangeTicks(queryMods...).All(ctx, pg.db)
@@ -539,6 +544,38 @@ type exchangeTickSet struct {
 	close cache.ChartFloats
 	high  cache.ChartFloats
 	low   cache.ChartFloats
+}
+
+func (pg *PgDb) fetchEncodeExchangeChart(ctx context.Context, charts *cache.ChartData, axisString string, setKey ...string) ([]byte, error) {
+	if len(setKey) < 1 {
+		return nil, errors.New("exchange set key is required for exchange chart")
+	}
+	exchangeName, currencyPair, interval := cache.ExtractExchangeKey(setKey[0])
+	tickSlice, err := pg.exchangeTicksChartData(ctx, currencyPair, interval, exchangeName, 0,)
+	if err != nil {
+		return nil, err
+	}
+	var dates cache.ChartUints
+	var yAxis cache.ChartFloats
+	for _, t := range tickSlice {
+		dates = append(dates, uint64(t.Time.Unix()))
+		switch(strings.ToLower(axisString)) {
+		case string(cache.ExchangeOpenAxis):
+			yAxis = append(yAxis, t.Open)
+			break
+		case string(cache.ExchangeCloseAxis):
+			yAxis = append(yAxis, t.Close)
+			break
+		case string(cache.ExchangeHighAxis):
+			yAxis = append(yAxis, t.High)
+			break
+		case string(cache.ExchangeLowAxis):
+			yAxis = append(yAxis, t.Low)
+			break
+		}
+	}
+
+	return charts.Encode(nil, dates, yAxis)
 }
 
 func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {

@@ -39,4 +39,5 @@ func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, sy
 		Fetcher:  pg.fetchExchangeChart,
 		Appender: appendExchangeChart,
 	})
+	charts.AddRetriever(cache.Exchange, pg.fetchEncodeExchangeChart)
 }
