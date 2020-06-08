@@ -346,12 +346,13 @@ type powSet struct {
 	workers  map[string][]*null.Uint64
 	hashrate map[string][]*null.Uint64
 }
+
 func (pg *PgDb) fetchEncodePowChart(ctx context.Context, charts *cache.ChartData, axisString string, pools ...string) ([]byte, error) {
-	data, err := pg.fetchPowChart(ctx, charts)
+	data, err := pg.fetchPowChart(ctx, 0)
 	if err != nil {
 		return nil, err
 	}
-	switch(axisString) {
+	switch(strings.ToLower(axisString)) {
 	case string(cache.WorkerAxis):
 		var deviations []cache.ChartNullUints
 		for _, p := range pools {
@@ -369,11 +370,11 @@ func (pg *PgDb) fetchEncodePowChart(ctx context.Context, charts *cache.ChartData
 }
 
 func (pg *PgDb) fetchCachePowChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
-	data, err := pg.fetchPowChart(ctx, charts)
+	data, err := pg.fetchPowChart(ctx, charts.PowTime())
 	return data, func() {}, err 
 }
 
-func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (*powSet, error) {
+func (pg *PgDb) fetchPowChart(ctx context.Context, startDate uint64) (*powSet, error) {
 	
 	var powDataSet = powSet{
 		time:     []uint64{},
@@ -391,7 +392,7 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (*po
 		poolSources[i] = pool.Source
 	}
 
-	dates, err := pg.powDistinctDates(ctx, poolSources, int64(charts.PowTime()))
+	dates, err := pg.powDistinctDates(ctx, poolSources, int64(startDate))
 	for _, date := range dates {
 		powDataSet.time = append(powDataSet.time, uint64(date))
 	}
@@ -399,7 +400,7 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (*po
 	for _, pool := range poolSources {
 		points, err := models.PowData(
 			models.PowDatumWhere.Source.EQ(pool),
-			models.PowDatumWhere.Time.GT(int(charts.PowTime()))).All(ctx, pg.db)
+			models.PowDatumWhere.Time.GT(int(startDate))).All(ctx, pg.db)
 		if err != nil {
 			return nil, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
 		}

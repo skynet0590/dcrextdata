@@ -1479,6 +1479,11 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 		}
 	}
 
+	return MakeVspChart(charts.Vsp.Time, deviations, vsps)
+}
+
+func MakeVspChart(dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
+
 	var vspChartData = struct {
 		CSV     string    `json:"csv"`
 		MinDate time.Time `json:"min_date"`
@@ -1487,7 +1492,7 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 		CSV: fmt.Sprintf("Date,%s\n", strings.Join(vsps, ",")),
 	}
 
-	if len(charts.Vsp.Time) == 0 {
+	if len(dates) == 0 {
 		return json.Marshal(vspChartData)
 	}
 
@@ -1505,12 +1510,12 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 	}
 
 	var minDate, maxDate uint64
-	for index := range charts.Vsp.Time {
+	for index := range dates {
 		if !hasAny(index) {
 			continue
 		}
 
-		var lineRecords = []string{helpers.UnixTime(int64(charts.Vsp.Time[index])).String()}
+		var lineRecords = []string{helpers.UnixTime(int64(dates[index])).String()}
 		for _, data := range deviations {
 			if data.Valid(index) {
 				lineRecords = append(lineRecords, data.String(index))
@@ -1524,12 +1529,12 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 			}
 		}
 
-		if minDate == 0 || minDate > charts.Vsp.Time[index] {
-			minDate = charts.Vsp.Time[index]
+		if minDate == 0 || minDate > dates[index] {
+			minDate = dates[index]
 		}
 
-		if maxDate < charts.Vsp.Time[index] {
-			maxDate = charts.Vsp.Time[index]
+		if maxDate < dates[index] {
+			maxDate = dates[index]
 		}
 		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
 	}

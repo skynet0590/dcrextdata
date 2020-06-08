@@ -374,36 +374,112 @@ func (pg *PgDb) vspIdByName(ctx context.Context, name string) (id int, err error
 }
 
 type vspSet struct {
-	time             []uint64
-	immature         map[string][]*null.Uint64
-	live             map[string][]*null.Uint64
-	voted            map[string][]*null.Uint64
-	missed           map[string][]*null.Uint64
-	poolFees         map[string][]*null.Float64
-	proportionLive   map[string][]*null.Float64
-	proportionMissed map[string][]*null.Float64
-	userCount        map[string][]*null.Uint64
-	usersActive      map[string][]*null.Uint64
+	time             cache.ChartUints
+	immature         map[string]cache.ChartNullUints
+	live             map[string]cache.ChartNullUints
+	voted            map[string]cache.ChartNullUints
+	missed           map[string]cache.ChartNullUints
+	poolFees         map[string]cache.ChartNullFloats
+	proportionLive   map[string]cache.ChartNullFloats
+	proportionMissed map[string]cache.ChartNullFloats
+	userCount        map[string]cache.ChartNullUints
+	usersActive      map[string]cache.ChartNullUints
 }
 
-func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
-	cancelFun := func() {}
+func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData, axisString string, vspSources ...string) ([]byte, error) {
+	data, err := pg.fetchVspChart(ctx, 0)
+	if err != nil {
+		return nil, err
+	}
+	switch(strings.ToLower(axisString)) {
+	case string(cache.ImmatureAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.immature[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.LiveAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.live[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.VotedAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.voted[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.MissedAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.missed[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.PoolFeesAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.poolFees[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.ProportionLiveAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.proportionLive[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.ProportionMissedAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.proportionMissed[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.UserCountAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.userCount[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+		
+	case string(cache.UsersActiveAxis):
+		var deviations []cache.ChartNullData
+		for _, p := range vspSources {
+			deviations = append(deviations, data.usersActive[p])
+		}
+		return cache.MakeVspChart(data.time, deviations, vspSources)
+	}
+	return nil, cache.UnknownChartErr
+}
+
+func (pg *PgDb) fetchCacheVspChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+	data, err := pg.fetchVspChart(ctx, charts.PowTime())
+	return data, func() {}, err 
+}
+
+func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64) (*vspSet, error) {
 	var vspDataSet = vspSet{
 		time:             []uint64{},
-		immature:         make(map[string][]*null.Uint64),
-		live:             make(map[string][]*null.Uint64),
-		voted:            make(map[string][]*null.Uint64),
-		missed:           make(map[string][]*null.Uint64),
-		poolFees:         make(map[string][]*null.Float64),
-		proportionLive:   make(map[string][]*null.Float64),
-		proportionMissed: make(map[string][]*null.Float64),
-		userCount:        make(map[string][]*null.Uint64),
-		usersActive:      make(map[string][]*null.Uint64),
+		immature:         make(map[string]cache.ChartNullUints),
+		live:             make(map[string]cache.ChartNullUints),
+		voted:            make(map[string]cache.ChartNullUints),
+		missed:           make(map[string]cache.ChartNullUints),
+		poolFees:         make(map[string]cache.ChartNullFloats),
+		proportionLive:   make(map[string]cache.ChartNullFloats),
+		proportionMissed: make(map[string]cache.ChartNullFloats),
+		userCount:        make(map[string]cache.ChartNullUints),
+		usersActive:      make(map[string]cache.ChartNullUints),
 	}
 
 	allVspData, err := pg.FetchVSPs(ctx)
 	if err != nil {
-		return nil, cancelFun, err
+		return nil, err
 	}
 
 	var vsps []string
@@ -411,9 +487,9 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 		vsps = append(vsps, vspSource.Name)
 	}
 
-	dates, err := pg.allVspTickDates(ctx, helpers.UnixTime(int64(charts.VspTime())))
+	dates, err := pg.allVspTickDates(ctx, helpers.UnixTime(int64(startDate)))
 	if err != nil && err != sql.ErrNoRows {
-		return nil, cancelFun, err
+		return nil, err
 	}
 
 	for _, date := range dates {
@@ -421,9 +497,9 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 	}
 
 	for _, vspSource := range allVspData {
-		points, err := pg.fetchChartData(ctx, vspSource.Name, helpers.UnixTime(int64(charts.VspTime())))
+		points, err := pg.fetchChartData(ctx, vspSource.Name, helpers.UnixTime(int64(startDate)))
 		if err != nil {
-			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", vspSource.Name, err.Error())
+			return nil, fmt.Errorf("error in fetching records for %s: %s", vspSource.Name, err.Error())
 		}
 
 		var pointsMap = map[time.Time]*models.VSPTick{}
@@ -470,7 +546,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, charts *cache.ChartData) (int
 		}
 	}
 
-	return vspDataSet, cancelFun, nil
+	return &vspDataSet, nil
 }
 
 func appendVspChart(charts *cache.ChartData, data interface{}) error {
