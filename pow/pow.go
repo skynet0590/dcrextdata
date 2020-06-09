@@ -15,7 +15,7 @@ import (
 
 const (
 	Luxor    = "luxor"
-	LuxorUrl = "http://mining.luxor.tech/API/DCR/stats"
+	LuxorUrl = "http://old.luxor.tech/API/DCR/stats"
 
 	F2pool    = "f2pool"
 	F2poolUrl = "https://api.f2pool.com/decred/"
