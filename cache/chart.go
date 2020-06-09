@@ -1479,10 +1479,15 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 		}
 	}
 
-	return MakeVspChart(charts.Vsp.Time, deviations, vsps)
+	return MakeVspChart(charts, charts.Vsp.Time, deviations, vsps)
 }
 
-func MakeVspChart(dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
+func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
+	var recs = []Lengther{dates}
+	for _, d := range deviations {
+		recs = append(recs, d)
+	}
+	return charts.Encode(nil, recs...)
 
 	var vspChartData = struct {
 		CSV     string    `json:"csv"`
