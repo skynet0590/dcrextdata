@@ -1483,69 +1483,9 @@ func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, err
 }
 
 func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
-	// var recs = []Lengther{dates}
-	// for _, d := range deviations {
-	// 	recs = append(recs, d)
-	// }
-	// return charts.Encode(nil, recs...)
-
-	var vspChartData = struct {
-		CSV     string    `json:"csv"`
-		MinDate time.Time `json:"min_date"`
-		MaxDate time.Time `json:"max_date"`
-	}{
-		CSV: fmt.Sprintf("Date,%s\n", strings.Join(vsps, ",")),
+	var recs = []Lengther{dates}
+	for _, d := range deviations {
+		recs = append(recs, d)
 	}
-
-	if len(dates) == 0 {
-		return json.Marshal(vspChartData)
-	}
-
-	hasAny := func(index int) bool {
-		for _, data := range deviations {
-			if index >= data.Length() {
-				continue
-			}
-
-			if data.Valid(index) && !data.IsZero(index) {
-				return true
-			}
-		}
-		return false
-	}
-
-	var minDate, maxDate uint64
-	for index := range dates {
-		if !hasAny(index) {
-			continue
-		}
-
-		var lineRecords = []string{helpers.UnixTime(int64(dates[index])).String()}
-		for _, data := range deviations {
-			if data.Valid(index) {
-				lineRecords = append(lineRecords, data.String(index))
-			} else {
-				// if no valid entry has been found, give a space using Nan
-				if noValidEntryBeforeIndex(data, index) {
-					lineRecords = append(lineRecords, "Nan")
-				} else {
-					lineRecords = append(lineRecords, "")
-				}
-			}
-		}
-
-		if minDate == 0 || minDate > dates[index] {
-			minDate = dates[index]
-		}
-
-		if maxDate < dates[index] {
-			maxDate = dates[index]
-		}
-		vspChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
-	}
-
-	vspChartData.MinDate = helpers.UnixTime(int64(minDate))
-	vspChartData.MaxDate = helpers.UnixTime(int64(maxDate))
-
-	return json.Marshal(vspChartData)
+	return charts.Encode(nil, recs...)
 }

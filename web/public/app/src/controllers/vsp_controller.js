@@ -242,10 +242,10 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
-    let vsps = []
+    this.vsps = []
     this.chartSourceTargets.forEach(chartSource => {
       if (chartSource.checked) {
-        vsps.push(chartSource.value)
+        this.vsps.push(chartSource.value)
       }
     })
 
@@ -253,7 +253,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     let _this = this
-    const queryString = `sources=${vsps.join('|')}`
+    const queryString = `sources=${this.vsps.join('|')}`
     axios.get(`/api/charts/vsp/${this.dataType}?${queryString}`).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -339,6 +339,44 @@ export default class extends Controller {
       _this.yLabel = 'n/a'
     }
 
+    let keys = ['x', 'y', 'z']
+    let rks = []
+    for (let i = 0; i <= this.vsps.length; i++) {
+      if (i < keys.length) {
+        rks.push(keys[i])
+        continue
+      }
+      const m = i % keys.length
+      const s = (i - m) / keys.length
+      rks.push(keys[m] + s)
+    }
+    const noValidEntryBeforeIndex = function (data, index) {
+      for (let i = index; i >= 0; i--) {
+        if (data[i] === null) {
+          return false
+        }
+      }
+      return true
+    }
+    let csv = ''
+    const len = dataSet.x.length
+    for (let i = 0; i < len; i++) {
+      let row = [new Date(dataSet.x[i] * 1000)]
+      for (let j = 1; j < rks.length; j++) {
+        const rk = rks[j]
+        if (dataSet[rk][i] !== null) {
+          row.push(dataSet[rk][i])
+          continue
+        }
+        if (noValidEntryBeforeIndex(dataSet[rk], i)) {
+          row.push('Nan')
+        } else {
+          row.push('')
+        }
+      }
+      csv += row.join(',') + '\n'
+    }
+
     let options = {
       legend: 'always',
       includeZero: true,
@@ -346,6 +384,7 @@ export default class extends Controller {
       labelsDiv: _this.labelsTarget,
       ylabel: _this.yLabel,
       xlabel: 'Date',
+      labels: ['Date', ...this.vsps],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -358,7 +397,7 @@ export default class extends Controller {
     }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet.csv,
+      csv,
       options
     )
 

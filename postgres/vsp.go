@@ -334,12 +334,56 @@ func (pg *PgDb) VspTickCount(ctx context.Context) (int64, error) {
 	return models.VSPTicks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time) (records models.VSPTickSlice, err error) {
+func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time, axisString string) (records models.VSPTickSlice, err error) {
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
 	}
-	return models.VSPTicks(models.VSPTickWhere.VSPID.EQ(vspInfo.ID), models.VSPTickWhere.Time.GT(start)).All(ctx, pg.db)
+	var queries []qm.QueryMod
+	if axisString != "" {
+		var col string
+		switch(strings.ToLower(axisString)) {
+		case string(cache.ImmatureAxis):
+			col = models.VSPTickColumns.Immature
+			break
+			
+		case string(cache.LiveAxis):
+			col = models.VSPTickColumns.Live
+			break
+			
+		case string(cache.VotedAxis):
+			col = models.VSPTickColumns.Voted
+			break
+			
+		case string(cache.MissedAxis):
+			col = models.VSPTickColumns.Missed
+			break
+			
+		case string(cache.PoolFeesAxis):
+			col = models.VSPTickColumns.PoolFees
+			break
+			
+		case string(cache.ProportionLiveAxis):
+			col = models.VSPTickColumns.ProportionLive
+			break
+			
+		case string(cache.ProportionMissedAxis):
+			col = models.VSPTickColumns.ProportionMissed
+			break
+			
+		case string(cache.UserCountAxis):
+			col = models.VSPTickColumns.UserCount
+			break
+			
+		case string(cache.UsersActiveAxis):
+			col = models.VSPTickColumns.UsersActive
+			break
+		}
+		queries = append(queries, qm.Select(models.VSPTickColumns.Time, col))
+	}
+
+	queries = append(queries, models.VSPTickWhere.VSPID.EQ(vspInfo.ID), models.VSPTickWhere.Time.GT(start),)
+	return models.VSPTicks(queries...).All(ctx, pg.db)
 }
 
 func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time, vspSources ...string) ([]time.Time, error) {
@@ -349,23 +393,27 @@ func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time, vspSources
 		models.VSPTickWhere.Time.GT(start),
 		qm.OrderBy(models.VSPTickColumns.Time),
 	}
+		var wheres []string
 	if len(vspSources) > 0 {
 		var args = make([]interface{}, len(vspSources))
 		for i, s := range vspSources {
 			args[i] = s
+			wheres = append(wheres, fmt.Sprintf("%s = $%d", models.VSPColumns.Name, i + 1))
 		}
 		vsps, err := models.VSPS(
-			qm.WhereIn(models.VSPColumns.Name, args...),
+			qm.Where(strings.Join(wheres, " OR "), args...),
 		).All(ctx, pg.db)
 		if err != nil {
 			return nil, err
 		}
 	
 		args = make([]interface{}, len(vsps))
+		wheres = make([]string, len(vsps))
 		for i, v := range vsps {
 			args[i] = v.ID
+			wheres[i] = fmt.Sprintf("%s = %d", models.VSPTickColumns.VSPID, v.ID)
 		}
-		query = append(query, qm.WhereIn(models.VSPTickColumns.VSPID, args...))
+		query = append(query, qm.Where(strings.Join(wheres, " OR "),))
 	}
 	
 	vspDates, err := models.VSPTicks(
@@ -410,7 +458,7 @@ type vspSet struct {
 }
 
 func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData, axisString string, vspSources ...string) ([]byte, error) {
-	data, err := pg.fetchVspChart(ctx, 0)
+	data, err := pg.fetchVspChart(ctx, 0, axisString, vspSources...)
 	if err != nil {
 		return nil, err
 	}
@@ -482,11 +530,11 @@ func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData
 }
 
 func (pg *PgDb) fetchCacheVspChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
-	data, err := pg.fetchVspChart(ctx, charts.PowTime())
+	data, err := pg.fetchVspChart(ctx, charts.PowTime(), "")
 	return data, func() {}, err 
 }
 
-func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, vspSources ...string) (*vspSet, error) {
+func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, axisString string, vspSources ...string) (*vspSet, error) {
 	var vspDataSet = vspSet{
 		time:             []uint64{},
 		immature:         make(map[string]cache.ChartNullUints),
@@ -524,7 +572,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, vspSources 
 	}
 
 	for _, vspSource := range vsps {
-		points, err := pg.fetchChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)))
+		points, err := pg.fetchChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)), axisString)
 		if err != nil {
 			return nil, fmt.Errorf("error in fetching records for %s: %s", vspSource, err.Error())
 		}
