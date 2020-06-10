@@ -359,7 +359,7 @@ export default class extends Controller {
     }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      csv(dataSet),
+      csv(dataSet, this.vsps.length),
       options
     )
 

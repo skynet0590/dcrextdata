@@ -264,10 +264,10 @@ export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoe
   })
 }
 
-export function csv (dataSet) {
+export function csv (dataSet, labelsCount) {
   let keys = ['x', 'y', 'z']
   let rks = []
-  for (let i = 0; i <= this.vsps.length; i++) {
+  for (let i = 0; i <= labelsCount; i++) {
     if (i < keys.length) {
       rks.push(keys[i])
       continue
