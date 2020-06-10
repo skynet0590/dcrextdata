@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   options,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, csv
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -339,44 +339,6 @@ export default class extends Controller {
       _this.yLabel = 'n/a'
     }
 
-    let keys = ['x', 'y', 'z']
-    let rks = []
-    for (let i = 0; i <= this.vsps.length; i++) {
-      if (i < keys.length) {
-        rks.push(keys[i])
-        continue
-      }
-      const m = i % keys.length
-      const s = (i - m) / keys.length
-      rks.push(keys[m] + s)
-    }
-    const noValidEntryBeforeIndex = function (data, index) {
-      for (let i = index; i >= 0; i--) {
-        if (data[i] === null) {
-          return false
-        }
-      }
-      return true
-    }
-    let csv = ''
-    const len = dataSet.x.length
-    for (let i = 0; i < len; i++) {
-      let row = [new Date(dataSet.x[i] * 1000)]
-      for (let j = 1; j < rks.length; j++) {
-        const rk = rks[j]
-        if (dataSet[rk][i] !== null) {
-          row.push(dataSet[rk][i])
-          continue
-        }
-        if (noValidEntryBeforeIndex(dataSet[rk], i)) {
-          row.push('Nan')
-        } else {
-          row.push('')
-        }
-      }
-      csv += row.join(',') + '\n'
-    }
-
     let options = {
       legend: 'always',
       includeZero: true,
@@ -397,7 +359,7 @@ export default class extends Controller {
     }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      csv,
+      csv(dataSet),
       options
     )
 

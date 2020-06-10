@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   selectedOption,
-  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
+  insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, csv
 } from '../utils'
 import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
@@ -230,10 +230,10 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
-    let selectedPools = []
+    this.selectedPools = []
     this.poolTargets.forEach(el => {
       if (el.checked) {
-        selectedPools.push(el.value)
+        this.selectedPools.push(el.value)
       }
     })
 
@@ -242,7 +242,7 @@ export default class extends Controller {
 
     const _this = this
 
-    axios.get(`/api/charts/pow/${this.dataType}?sources=${selectedPools.join('|')}`).then(function (response) {
+    axios.get(`/api/charts/pow/${this.dataType}?sources=${this.selectedPools.join('|')}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       if (result.error) {
@@ -332,6 +332,7 @@ export default class extends Controller {
       labelsDiv: _this.labelsTarget,
       ylabel: dataTypeLabel,
       xlabel: 'Date',
+      labels: ['Date', ...this.selectedPools],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -343,7 +344,7 @@ export default class extends Controller {
       }
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, data.csv, options)
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, csv(data), options)
     _this.validateZoom()
 
     updateZoomSelector(_this.zoomOptionTargets, data.min_date, data.max_date)

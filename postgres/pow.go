@@ -358,13 +358,13 @@ func (pg *PgDb) fetchEncodePowChart(ctx context.Context, charts *cache.ChartData
 		for _, p := range pools {
 			deviations = append(deviations, data.workers[p])
 		}
-		return cache.MakePowChart(data.time, deviations, pools)
+		return cache.MakePowChart(charts, data.time, deviations, pools)
 	case string(cache.HashrateAxis):
 		var deviations []cache.ChartNullUints
 		for _, p := range pools {
 			deviations = append(deviations, data.hashrate[p])
 		}
-		return cache.MakePowChart(data.time, deviations, pools)
+		return cache.MakePowChart(charts, data.time, deviations, pools)
 	}
 	return nil, cache.UnknownChartErr
 }

@@ -1386,62 +1386,16 @@ func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error)
 			continue
 		}
 	}
-	return MakePowChart(charts.Pow.Time, deviations, pools)
+	return MakePowChart(charts, charts.Pow.Time, deviations, pools)
 }
 
-func MakePowChart(dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
+func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
 
-	var powChartData = struct {
-		CSV     string    `json:"csv"`
-		MinDate time.Time `json:"min_date"`
-		MaxDate time.Time `json:"max_date"`
-	}{
-		CSV: fmt.Sprintf("Date,%s\n", strings.Join(pools, ",")),
+	var recs = []Lengther{dates}
+	for _, d := range deviations {
+		recs = append(recs, d)
 	}
-
-	if len(dates) == 0 {
-		return json.Marshal(powChartData)
-	}
-
-	hasAny := func(index int) bool {
-		for _, data := range deviations {
-			if index >= len(data) {
-				continue
-			}
-
-			if record := data[index]; record != nil && record.Valid && record.Uint64 > 0 {
-				return true
-			}
-		}
-		return false
-	}
-
-	for index := range dates {
-		if !hasAny(index) {
-			continue
-		}
-
-		var lineRecords = []string{helpers.UnixTime(int64(dates[index])).String()}
-		for _, data := range deviations {
-			if record := data[index]; record != nil && record.Valid {
-				lineRecords = append(lineRecords, strconv.FormatUint(record.Uint64, 10))
-			} else {
-				// if no valid entry has been found, give a space using Nan
-				if noValidEntryBeforeIndex(data, index) {
-					lineRecords = append(lineRecords, "Nan")
-				} else {
-					lineRecords = append(lineRecords, "")
-				}
-			}
-		}
-
-		powChartData.CSV += fmt.Sprintf("%s\n", strings.Join(lineRecords, ","))
-	}
-
-	powChartData.MinDate = helpers.UnixTime(int64(dates[0]))
-	powChartData.MaxDate = helpers.UnixTime(int64(dates[len(dates) - 1]))
-
-	return json.Marshal(powChartData)
+	return charts.Encode(nil, recs...)
 }
 
 func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
