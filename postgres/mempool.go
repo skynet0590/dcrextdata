@@ -523,7 +523,7 @@ func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartDat
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
 	charts.PropagationHeight()
-	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTime())))).All(ctx, pg.db)
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTimeTip())))).All(ctx, pg.db)
 	if err != nil {
 		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
 	}
@@ -534,12 +534,31 @@ func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartDat
 // This is the Appender half of a pair that make up a cache.ChartUpdater.
 func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) error {
 	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
-	chartsMempool := charts.Mempool
+	// chartsMempool := charts.Mempool
+	var chartsMempoolTime, chartsMempoolTxCount, chartsMempoolSize cache.ChartUints
+	var chartsMempoolFees cache.ChartFloats
+
 	for _, mempoolData := range mempoolSlice {
-		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.UTC().Unix()))
-		chartsMempool.Fees = append(chartsMempool.Fees, mempoolData.TotalFee.Float64)
-		chartsMempool.TxCount = append(chartsMempool.TxCount, uint64(mempoolData.NumberOfTransactions.Int))
-		chartsMempool.Size = append(chartsMempool.Size, uint64(mempoolData.Size.Int))
+		chartsMempoolTime = append(chartsMempoolTime, uint64(mempoolData.Time.UTC().Unix()))
+		chartsMempoolFees = append(chartsMempoolFees, mempoolData.TotalFee.Float64)
+		chartsMempoolTxCount = append(chartsMempoolTxCount, uint64(mempoolData.NumberOfTransactions.Int))
+		chartsMempoolSize = append(chartsMempoolSize, uint64(mempoolData.Size.Int))
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.TimeAxis), chartsMempoolTime); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartFloatsAxis(cache.Mempool + "-" + string(cache.Fees), chartsMempoolFees); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.TxCount), chartsMempoolTxCount); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.Size), chartsMempoolSize); err !=  nil {
+		return err 
 	}
 	return nil
 }

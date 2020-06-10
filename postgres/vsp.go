@@ -625,7 +625,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, axisString 
 }
 
 func appendVspChart(charts *cache.ChartData, data interface{}) error {
-	vspDataSet := data.(vspSet)
+	vspDataSet := data.(*vspSet)
 
 	charts.Vsp.Time = append(charts.Vsp.Time, vspDataSet.time...)
 

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/volatiletech/null"
 )
@@ -174,6 +175,10 @@ func (data ChartFloats) snip(max int) ChartFloats {
 		max = len(data)
 	}
 	return data[:max]
+}
+
+func (charts ChartFloats) Normalize() Lengther {
+	return charts
 }
 
 // A constructor for a sized ChartFloats.
@@ -459,6 +464,10 @@ func (data ChartUints) snip(max int) ChartUints {
 		max = len(data)
 	}
 	return data[:max]
+}
+
+func (data ChartUints) Normalize() Lengther {
+	return data
 }
 
 // A constructor for a sized ChartUints.
@@ -777,6 +786,7 @@ type ChartData struct {
 	EnableCache	 bool
 
 	cacheMtx   sync.RWMutex
+	db 		   *badger.DB
 	cache      map[string]*cachedChart
 	updaters   []ChartUpdater
 	retrivers  map[string]Retriver
@@ -1154,7 +1164,8 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, enableCache bool, syncSources []string, poolSources []string, vsps []string, chainParams *chaincfg.Params) *ChartData {
+func NewChartData(ctx context.Context, enableCache bool, syncSources []string, 
+	poolSources []string, vsps []string, chainParams *chaincfg.Params, db *badger.DB) *ChartData {
 	
 	return &ChartData{
 		ctx:          ctx,
@@ -1164,6 +1175,7 @@ func NewChartData(ctx context.Context, enableCache bool, syncSources []string, p
 		Vsp:          newVspSet(vsps),
 		Exchange:     newExchangeSet(),
 		EnableCache:  enableCache,
+		db: 		  db,
 		cache:        make(map[string]*cachedChart),
 		updaters:     make([]ChartUpdater, 0),
 		retrivers: 	  make(map[string]Retriver),
@@ -1333,15 +1345,37 @@ func mempool(charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
 }
 
 func mempoolSize(charts *ChartData) ([]byte, error) {
-	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.Size)
+	var dates, sizes ChartUints
+	if err := charts.ReadAxis(Mempool + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	if err := charts.ReadAxis(Mempool + "-" + string(Size), &sizes); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, dates, sizes)
 }
 
 func mempoolTxCount(charts *ChartData) ([]byte, error) {
-	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.TxCount)
+	var dates, txCounts ChartUints
+	if err := charts.ReadAxis(Mempool + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	if err := charts.ReadAxis(Mempool + "-" + string(TxCount), &txCounts); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, dates, txCounts)
 }
 
 func mempoolFees(charts *ChartData) ([]byte, error) {
-	return charts.Encode(nil, charts.Mempool.Time, charts.Mempool.Fees)
+	var dates ChartUints
+	var fees ChartFloats
+	if err := charts.ReadAxis(Mempool + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	if err := charts.ReadAxis(Mempool + "-" + string(Fees), &fees); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, dates, fees)
 }
 
 func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byte, error) {

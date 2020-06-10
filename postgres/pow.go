@@ -434,7 +434,7 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, startDate uint64) (*powSet, e
 }
 
 func appendPowChart(charts *cache.ChartData, data interface{}) error {
-	powDataSet := data.(powSet)
+	powDataSet := data.(*powSet)
 
 	charts.Pow.Time = append(charts.Pow.Time, powDataSet.time...)
 

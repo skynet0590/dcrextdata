@@ -18,6 +18,7 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/jessevdk/go-flags"
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
@@ -188,7 +189,13 @@ func _main(ctx context.Context) error {
 		vsps = append(vsps, vspSource.Name)
 	}
 
-	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
+	opt := badger.DefaultOptions("data")
+	bdb, err := badger.Open(opt)
+	if err != nil {
+		return err
+	}
+	
+	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType), bdb)
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {
