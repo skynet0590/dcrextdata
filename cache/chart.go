@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1278,19 +1277,6 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	}
 	axis := ParseAxis(axisString)
 
-	sort.Strings(extras)
-	completeId := strings.Join(append(extras, chartID), "-")
-
-	currentVersion := charts.cacheID(chartID)
-	cache, found, cacheID := charts.getCache(completeId, axis)
-	if found && cache.cacheID == cacheID {
-		if currentVersion == cache.version {
-			return cache.data, nil
-		}
-		ck := cacheKey(completeId, axis)
-		delete(charts.cache, ck)
-	}
-
 	maker, hasMaker := chartMakers[chartID]
 	if !hasMaker {
 		return nil, UnknownChartErr
@@ -1303,7 +1289,7 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(completeId, currentVersion, axis, data)
+	// charts.cacheChart(completeId, currentVersion, axis, data)
 	return data, nil
 }
 
