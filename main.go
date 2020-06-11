@@ -203,6 +203,7 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
+	defer charts.CloseDb()
 
 	// Pre-populate charts data using the dumped cache data in the .gob file path
 	// provided instead of querying the data from the dbs.

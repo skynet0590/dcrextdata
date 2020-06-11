@@ -1009,8 +1009,21 @@ func (charts *ChartData) Dump(dumpPath string) {
 	}
 }
 
+func (charts ChartData) CloseDb(){
+	if charts.db != nil {
+		charts.db.Close()
+	}
+}
+
 // TriggerUpdate triggers (*ChartData).Update.
 func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
+	charts.CloseDb()
+	opt := badger.DefaultOptions("data")
+	bdb, err := badger.Open(opt)
+	if err != nil {
+		return err
+	}
+	charts.db = bdb
 	if err := charts.Update(ctx); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
