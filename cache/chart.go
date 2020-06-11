@@ -1015,6 +1015,7 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
 	}
+	charts.ClearVLog()
 	return nil
 }
 

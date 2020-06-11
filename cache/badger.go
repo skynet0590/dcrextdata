@@ -22,7 +22,16 @@ func (charts ChartData) SaveAxis(data Normalizer, key string) error {
 		err := txn.Set([]byte(key), b.Bytes())
 		return err
 	})
+	log.Infof("Saved %s", key)
 	return err
+}
+
+func (charts ChartData) ClearVLog() {
+	again:
+		verr := charts.db.RunValueLogGC(0.7)
+		if verr == nil {
+			goto again
+		}
 }
 
 func (charts ChartData) ReadAxis(key string, result Lengther) error {
@@ -31,6 +40,7 @@ func (charts ChartData) ReadAxis(key string, result Lengther) error {
 		if err != nil {
 			return err
 		}
+
 		return item.Value(func(val []byte) error {
 			d := gob.NewDecoder(bytes.NewReader(val))
 			if err := d.Decode(result); err != nil {
