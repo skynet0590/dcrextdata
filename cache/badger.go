@@ -86,3 +86,15 @@ func (charts ChartData) MempoolTimeTip() uint64 {
 	}
 	return dates[dates.Length() - 1]
 }
+
+func (charts ChartData) PropagationHeightTip() uint64 {
+	var heights ChartUints
+	err := charts.ReadAxis(Propagation + "-" + string(HeightAxis), &heights)
+	if err != nil {
+		return 0
+	}
+	if len(heights) == 0 {
+		return 0
+	}
+	return heights[heights.Length() - 1]
+}

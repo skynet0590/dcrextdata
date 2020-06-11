@@ -657,7 +657,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 	emptyCancelFunc := func() {}
 	var propagationSet propagationSet
 
-	chartsBlockHeight := charts.PropagationHeight()
+	chartsBlockHeight := int32(charts.PropagationHeightTip())
 	blockDelays, err := pg.propagationBlockChartData(ctx, int(chartsBlockHeight))
 	if err != nil && err != sql.ErrNoRows {
 		return nil, emptyCancelFunc, err
@@ -727,19 +727,26 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 
 func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) error {
 	propagationSet := data.(propagationSet)
-	for _, height := range propagationSet.height {
-		charts.Propagation.Height = append(charts.Propagation.Height, height)
-	}
-	for _, delay := range propagationSet.blockDelay {
-		charts.Propagation.BlockDelays = append(charts.Propagation.BlockDelays, delay)
-	}
-	for _, voteTime := range propagationSet.voteReceiveTimeDeviations {
-		charts.Propagation.VotesReceiveTimeDeviations = append(charts.Propagation.VotesReceiveTimeDeviations, voteTime)
-	}
 
+	if err := charts.AppendChartUintsAxis(cache.Propagation + "-" + string(cache.HeightAxis), 
+		propagationSet.height); err !=  nil {
+		return err 
+	}
+	if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.BlockTimestamp), 
+		propagationSet.blockDelay); err !=  nil {
+		return err 
+	}
+	if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.VotesReceiveTime), 
+		propagationSet.voteReceiveTimeDeviations); err !=  nil {
+		return err 
+	}
 	for source, deviations := range propagationSet.blockPropagation {
 		charts.Propagation.BlockPropagation[source] = append(charts.Propagation.BlockPropagation[source], deviations...)
-	}
 
+		if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.BlockPropagation) + "-" + source, 
+			deviations); err !=  nil {
+			return err 
+		}
+	}
 	return nil
 }

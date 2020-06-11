@@ -1289,7 +1289,6 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	if err != nil {
 		return nil, err
 	}
-	// charts.cacheChart(completeId, currentVersion, axis, data)
 	return data, nil
 }
 
@@ -1391,20 +1390,44 @@ func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byt
 }
 
 func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
-	var deviations = []Lengther{charts.Propagation.Height}
+	var heights ChartUints
+	if err := charts.ReadAxis(Propagation + "-" + string(HeightAxis), &heights); err != nil {
+		return nil, err
+	}
+	var deviations = []Lengther{ heights }
 	for _, source := range syncSources {
-		deviations = append(deviations, charts.Propagation.BlockPropagation[source])
+		var d ChartFloats
+		if err := charts.ReadAxis(Propagation + "-" + string(BlockPropagation) + "-" + source, &d); err != nil {
+			return nil, err
+		}
+		deviations = append(deviations, d)
 	}
 
 	return charts.encodeArr(nil, deviations)
 }
 
 func blockTimestamp(charts *ChartData) ([]byte, error) {
-	return charts.Encode(nil, charts.Propagation.Height, charts.Propagation.BlockDelays)
+	var heights ChartUints
+	if err := charts.ReadAxis(Propagation + "-" + string(HeightAxis), &heights); err != nil {
+		return nil, err
+	}
+	var blockDelays ChartFloats
+	if err := charts.ReadAxis(Propagation + "-" + string(BlockTimestamp), &blockDelays); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, heights, blockDelays)
 }
 
 func votesReceiveTime(charts *ChartData) ([]byte, error) {
-	return charts.Encode(nil, charts.Propagation.Height, charts.Propagation.VotesReceiveTimeDeviations)
+	var heights ChartUints
+	if err := charts.ReadAxis(Propagation + "-" + string(HeightAxis), &heights); err != nil {
+		return nil, err
+	}
+	var votesReceiveTime ChartFloats
+	if err := charts.ReadAxis(Propagation + "-" + string(VotesReceiveTime), &votesReceiveTime); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, heights, votesReceiveTime)
 }
 
 func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
