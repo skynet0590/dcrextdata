@@ -7,12 +7,7 @@ import (
 	"github.com/dgraph-io/badger/v2"
 )
 
-type Normalizer interface {
-	Normalize() Lengther
-}
-
-func (charts ChartData) SaveAxis(data Normalizer, key string) error {
-	rec := data.Normalize()
+func (charts ChartData) SaveAxis(rec Lengther, key string) error {
 	var b bytes.Buffer
 	e := gob.NewEncoder(&b)
 	if err := e.Encode(rec); err != nil {
@@ -63,6 +58,18 @@ func (charts ChartData) AppendChartUintsAxis(key string, set ChartUints) error {
 	return charts.SaveAxis(data, key)
 }
 
+func (charts ChartData) AppendChartNullUintsAxis(key string, set ChartNullUints) error {
+	var data chartNullIntsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.Append(set)
+	return charts.SaveAxis(data, key)
+}
+
 func (charts ChartData) AppendChartFloatsAxis(key string, set ChartFloats) error {
 	var data ChartFloats
 	err := charts.ReadAxis(key, &data)
@@ -72,6 +79,18 @@ func (charts ChartData) AppendChartFloatsAxis(key string, set ChartFloats) error
 		}
 	}
 	data = append(data, set...)
+	return charts.SaveAxis(data, key)
+}
+
+func (charts ChartData) AppendChartNullFloatsAxis(key string, set ChartNullFloats) error {
+	var data chartNullFloatsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.Append(set)
 	return charts.SaveAxis(data, key)
 }
 
@@ -97,4 +116,28 @@ func (charts ChartData) PropagationHeightTip() uint64 {
 		return 0
 	}
 	return heights[heights.Length() - 1]
+}
+
+func (charts ChartData) PowTimeTip() uint64 {
+	var dates ChartUints
+	err := charts.ReadAxis(PowChart + "-" + string(TimeAxis), &dates)
+	if err != nil {
+		return 0
+	}
+	if len(dates) == 0 {
+		return 0
+	}
+	return dates[dates.Length() - 1]
+}
+
+func (charts ChartData) VSPTimeTip() uint64 {
+	var dates ChartUints
+	err := charts.ReadAxis(VSP + "-" + string(TimeAxis), &dates)
+	if err != nil {
+		return 0
+	}
+	if len(dates) == 0 {
+		return 0
+	}
+	return dates[dates.Length() - 1]
 }

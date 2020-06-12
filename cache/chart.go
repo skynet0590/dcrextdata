@@ -1,11 +1,13 @@
 package cache
 
 import (
+	"bytes"
 	"context"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -207,6 +209,29 @@ func noValidEntryBeforeIndex(data ChartNullData, index int) bool {
 type chartNullIntsPointer struct {
 	Items []nullUint64Pointer
 }
+// Length returns the length of data. Satisfies the lengther interface.
+func (data chartNullIntsPointer) Length() int {
+	return len(data.Items)
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data chartNullIntsPointer) Truncate(l int) Lengther {
+	data.Items = data.Items[:l]
+	return data
+}
+
+func (data chartNullIntsPointer) Append(set ChartNullUints) chartNullIntsPointer {
+	for _, item := range set {
+		var intPointer nullUint64Pointer
+		if item != nil {
+			intPointer.HasValue = true
+			intPointer.Value = *item
+		}
+		data.Items = append(data.Items, intPointer)
+	}
+	return data
+}
 
 // nullUint64Pointer provides a wrapper around *null.Uint64 to resolve the issue of inability to write nil pointer to gob
 type nullUint64Pointer struct {
@@ -259,6 +284,10 @@ func uintPointerMapToUint(input map[string]chartNullIntsPointer) map[string]Char
 
 // ChartNullUints is a slice of null.uints. It satisfies the lengther interface.
 type ChartNullUints []*null.Uint64
+
+func (data ChartNullUints) Normalize() Lengther {
+	return data.toChartNullUintWrapper()
+}
 
 func (data ChartNullUints) Value(index int) interface{} {
 	if data == nil || len(data) <= index || data[index] == nil {
@@ -335,6 +364,29 @@ type nullFloat64Pointer struct {
 	Value    null.Float64
 }
 
+func (data chartNullFloatsPointer) Length() int {
+	return len(data.Items)
+}
+
+// Truncate makes a subset of the underlying dataset. It satisfies the lengther
+// interface.
+func (data chartNullFloatsPointer) Truncate(l int) Lengther {
+	data.Items = data.Items[:l]
+	return data
+}
+
+func (data chartNullFloatsPointer) Append(set ChartNullFloats) chartNullFloatsPointer {
+	for _, item := range set {
+		var intPointer nullFloat64Pointer
+		if item != nil {
+			intPointer.HasValue = true
+			intPointer.Value = *item
+		}
+		data.Items = append(data.Items, intPointer)
+	}
+	return data
+}
+
 func (data chartNullFloatsPointer) toChartNullFloats() ChartNullFloats {
 	var result ChartNullFloats
 	for _, item := range data.Items {
@@ -380,6 +432,10 @@ func floatPointerToChartFloatMap(input map[string]chartNullFloatsPointer) map[st
 
 // ChartNullFloats is a slice of null.float64. It satisfies the lengther interface.
 type ChartNullFloats []*null.Float64
+
+func (data ChartNullFloats) Normalize() Lengther {
+	return data
+}
 
 func (data ChartNullFloats) Value(index int) interface{} {
 	if data == nil || len(data) <= index || data[index] == nil {
@@ -745,9 +801,9 @@ type ChartGobject struct {
 
 // The chart data is cached with the current cacheID of the zoomSet or windowSet.
 type cachedChart struct {
-	cacheID uint64
-	data    []byte
-	version uint64
+	CacheID uint64
+	Data    []byte
+	Version uint64
 }
 
 // A generic structure for JSON encoding keyed data sets.
@@ -1235,27 +1291,66 @@ func (charts *ChartData) getCache(chartID string, axis axisType) (data *cachedCh
 	defer charts.cacheMtx.RUnlock()
 	cacheID = charts.cacheID(chartID)
 	data, found = charts.cache[ck]
+
+	err := charts.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(ck))
+		if err != nil {
+			return err
+		}
+
+		return item.Value(func(val []byte) error {
+			d := gob.NewDecoder(bytes.NewReader(val))
+			if err := d.Decode(data); err != nil {
+				return err
+			}
+			found = true
+			return nil
+		})
+	})
+	if err != nil {
+		found = false
+	}
 	return
 }
 
 // Store the chart associated with the provided type and BinLevel.
 func (charts *ChartData) cacheChart(chartID string, version uint64, axis axisType, data []byte) {
 	ck := cacheKey(chartID, axis)
-	charts.cacheMtx.Lock()
-	defer charts.cacheMtx.Unlock()
-	// Using the current best cacheID. This leaves open the small possibility that
-	// the cacheID is wrong, if the cacheID has been updated between the
-	// ChartMaker and here. This would just cause a one block delay.
-	charts.cache[ck] = &cachedChart{
-		cacheID: charts.cacheID(chartID),
-		version: version,
-		data:    data,
+
+	c := &cachedChart{
+		Version: version,
+		Data:    data,
+	}
+
+	var b bytes.Buffer
+	e := gob.NewEncoder(&b)
+	if err := e.Encode(c); err != nil {
+		log.Errorf("Error caching cart, %s, %s", chartID, err.Error())
+	}
+	err := charts.db.Update(func(txn *badger.Txn) error {
+		err := txn.Set([]byte(ck), b.Bytes())
+		return err
+	})
+	if err != nil {
+		log.Errorf("Error caching cart, %s, %s", chartID, err.Error())
+	}
+
+}
+
+func (charts *ChartData) removeCache(chartID string, axis axisType) {
+	ck := cacheKey(chartID, axis)
+	err := charts.db.Update(func(txn *badger.Txn) error {
+		err := txn.Delete([]byte(ck))
+		return err
+	})
+	if err != nil {
+		log.Errorf("Error delete chart cache, %s, %s", chartID, err.Error())
 	}
 }
 
 // ChartMaker is a function that accepts a chart type and BinLevel, and returns
 // a JSON-encoded chartResponse.
-type ChartMaker func(charts *ChartData, axis axisType, sources ...string) ([]byte, error)
+type ChartMaker func(ctx context.Context, charts *ChartData, axis axisType, sources ...string) ([]byte, error)
 
 var chartMakers = map[string]ChartMaker{
 	Mempool:    mempool,
@@ -1284,7 +1379,7 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	// Do the locking here, rather than in encodeXY, so that the helper functions
 	// (accumulate, btw) are run under lock.
 	charts.mtx.RLock()
-	data, err := maker(charts, axis, extras...)
+	data, err := maker(ctx, charts, axis, extras...)
 	charts.mtx.RUnlock()
 	if err != nil {
 		return nil, err
@@ -1331,7 +1426,7 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 	return json.Marshal(response)
 }
 
-func mempool(charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
+func mempool(ctx context.Context, charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
 	switch(axis) {
 	case Size:
 		return mempoolSize(charts)
@@ -1377,7 +1472,7 @@ func mempoolFees(charts *ChartData) ([]byte, error) {
 	return charts.Encode(nil, dates, fees)
 }
 
-func propagation(charts *ChartData, axis axisType, syncSources ...string) ([]byte, error) {
+func propagation(ctx context.Context, charts *ChartData, axis axisType, syncSources ...string) ([]byte, error) {
 	switch(axis) {
 	case BlockPropagation:
 		return blockPropagation(charts, syncSources...)
@@ -1430,20 +1525,26 @@ func votesReceiveTime(charts *ChartData) ([]byte, error) {
 	return charts.Encode(nil, heights, votesReceiveTime)
 }
 
-func powChart(charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
-	var deviations []ChartNullUints
-
-	for _, pool := range pools {
-		switch axis {
-		case WorkerAxis:
-			deviations = append(deviations, charts.Pow.Workers[pool])
-			continue
-		case HashrateAxis:
-			deviations = append(deviations, charts.Pow.Hashrate[pool])
-			continue
+func powChart(ctx context.Context, charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
+	sort.Strings(pools)
+	key := fmt.Sprintf("%s-%s-%s", PowChart, strings.Join(pools, "-"), string(axis))
+	cache, found, _ := charts.getCache(key, axis)
+	if found {
+		if cache.Version == charts.PowTimeTip() {
+			return cache.Data, nil
 		}
+		charts.removeCache(key, axis)
 	}
-	return MakePowChart(charts, charts.Pow.Time, deviations, pools)
+	retriever, hasRetriever := charts.retrivers[PowChart]
+	if !hasRetriever {
+		return nil, UnknownChartErr
+	}
+	data, err := retriever(ctx, charts, string(axis), pools...)
+	if err != nil {
+		return nil, err
+	}
+	charts.cacheChart(key, charts.PowTimeTip(), axis, data)
+	return data, nil
 }
 
 func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
@@ -1455,42 +1556,26 @@ func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUin
 	return charts.Encode(nil, recs...)
 }
 
-func makeVspChart(charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
-	var deviations []ChartNullData
-
-	for _, vsp := range vsps {
-		switch axis {
-		case ImmatureAxis:
-			deviations = append(deviations, charts.Vsp.Immature[vsp])
-			continue
-		case LiveAxis:
-			deviations = append(deviations, charts.Vsp.Live[vsp])
-			continue
-		case VotedAxis:
-			deviations = append(deviations, charts.Vsp.Voted[vsp])
-			continue
-		case MissedAxis:
-			deviations = append(deviations, charts.Vsp.Missed[vsp])
-			continue
-		case PoolFeesAxis:
-			deviations = append(deviations, charts.Vsp.PoolFees[vsp])
-			continue
-		case ProportionLiveAxis:
-			deviations = append(deviations, charts.Vsp.ProportionLive[vsp])
-			continue
-		case ProportionMissedAxis:
-			deviations = append(deviations, charts.Vsp.ProportionMissed[vsp])
-			continue
-		case UserCountAxis:
-			deviations = append(deviations, charts.Vsp.UserCount[vsp])
-			continue
-		case UsersActiveAxis:
-			deviations = append(deviations, charts.Vsp.UsersActive[vsp])
-			continue
+func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
+	sort.Strings(vsps)
+	key := fmt.Sprintf("%s-%s-%s", VSP, strings.Join(vsps, "-"), string(axis))
+	cache, found, _ := charts.getCache(key, axis)
+	if found {
+		if cache.Version == charts.VSPTimeTip() {
+			return cache.Data, nil
 		}
+		charts.removeCache(key, axis)
 	}
-
-	return MakeVspChart(charts, charts.Vsp.Time, deviations, vsps)
+	retriever, hasRetriever := charts.retrivers[VSP]
+	if !hasRetriever {
+		return nil, UnknownChartErr
+	}
+	data, err := retriever(ctx, charts, string(axis), vsps...)
+	if err != nil {
+		return nil, err
+	}
+	charts.cacheChart(key, charts.PowTimeTip(), axis, data)
+	return data, nil
 }
 
 func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {

@@ -530,7 +530,7 @@ func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData
 }
 
 func (pg *PgDb) fetchCacheVspChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
-	data, err := pg.fetchVspChart(ctx, charts.PowTime(), "")
+	data, err := pg.fetchVspChart(ctx, charts.VSPTimeTip(), "")
 	return data, func() {}, err 
 }
 
@@ -627,78 +627,77 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, axisString 
 func appendVspChart(charts *cache.ChartData, data interface{}) error {
 	vspDataSet := data.(*vspSet)
 
-	charts.Vsp.Time = append(charts.Vsp.Time, vspDataSet.time...)
+	if len(vspDataSet.time) == 0 {
+		return nil
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.VSP + "-" + string(cache.TimeAxis), 
+		vspDataSet.time); err !=  nil {
+		return err 
+	}
+	return nil
 
 	for vspSource, record := range vspDataSet.immature {
-		if charts.Vsp.Immature == nil {
-			charts.Vsp.Immature = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.ImmatureAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.Immature[vspSource] = append(charts.Vsp.Immature[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.live {
-		if charts.Vsp.Live == nil {
-			charts.Vsp.Live = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.LiveAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.Live[vspSource] = append(charts.Vsp.Live[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.voted {
-		if charts.Vsp.Voted == nil {
-			charts.Vsp.Voted = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.VotedAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.Voted[vspSource] = append(charts.Vsp.Voted[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.missed {
-		if charts.Vsp.Missed == nil {
-			charts.Vsp.Missed = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.MissedAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.Missed[vspSource] = append(charts.Vsp.Missed[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.poolFees {
-		if charts.Vsp.PoolFees == nil {
-			charts.Vsp.PoolFees = map[string]cache.ChartNullFloats{}
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.PoolFeesAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.PoolFees[vspSource] = append(charts.Vsp.PoolFees[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.proportionLive {
-		if charts.Vsp.ProportionLive == nil {
-			charts.Vsp.ProportionLive = map[string]cache.ChartNullFloats{}
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.ProportionLiveAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.ProportionLive[vspSource] = append(charts.Vsp.ProportionLive[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.proportionMissed {
-		if charts.Vsp.ProportionMissed == nil {
-			charts.Vsp.ProportionMissed = map[string]cache.ChartNullFloats{}
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.ProportionMissedAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.ProportionMissed[vspSource] = append(charts.Vsp.ProportionMissed[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.usersActive {
-		if charts.Vsp.UsersActive == nil {
-			charts.Vsp.UsersActive = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.UsersActiveAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.UsersActive[vspSource] = append(charts.Vsp.UsersActive[vspSource], record...)
 	}
 
 	for vspSource, record := range vspDataSet.userCount {
-		if charts.Vsp.UserCount == nil {
-			charts.Vsp.UserCount = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.UserCountAxis) + "-" + vspSource, 
+			record); err !=  nil {
+			return err 
 		}
-
-		charts.Vsp.UserCount[vspSource] = append(charts.Vsp.UserCount[vspSource], record...)
 	}
 
 	return nil
