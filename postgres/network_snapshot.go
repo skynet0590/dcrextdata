@@ -574,7 +574,7 @@ func (pg PgDb) peerCountByUserAgentsByTime(ctx context.Context, startDate uint64
 
 	where := fmt.Sprintf(" WHERE network_snapshot.timestamp > %d ", startDate)
 	if endDate > 0 {
-		where += fmt.Sprintf(" network_snapshot.timestamp <= %d ", endDate)
+		where += fmt.Sprintf(" AND network_snapshot.timestamp <= %d ", endDate)
 	}
 
 	if len(sources) > 0 {
@@ -658,7 +658,7 @@ func (pg PgDb) peerCountByCountriesByTime(ctx context.Context, startDate uint64,
 
 	where := fmt.Sprintf(" WHERE network_snapshot.timestamp > %d ", startDate)
 	if endDate > 0 {
-		where += fmt.Sprintf(" network_snapshot.timestamp <= %d ", endDate)
+		where += fmt.Sprintf(" AND network_snapshot.timestamp <= %d ", endDate)
 	}
 	if len(sources) > 0 {
 		sourceStr := fmt.Sprintf("'%s'", strings.Join(sources, "','"))
