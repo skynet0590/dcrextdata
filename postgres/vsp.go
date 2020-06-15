@@ -334,7 +334,7 @@ func (pg *PgDb) VspTickCount(ctx context.Context) (int64, error) {
 	return models.VSPTicks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time, axisString string, page int, pageSize int) (records models.VSPTickSlice, err error) {
+func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time, endDate uint64, axisString string) (records models.VSPTickSlice, err error) {
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
@@ -382,15 +382,12 @@ func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.T
 		queries = append(queries, qm.Select(models.VSPTickColumns.Time, col))
 	}
 
-	queries = append(queries, models.VSPTickWhere.VSPID.EQ(vspInfo.ID), models.VSPTickWhere.Time.GT(start),)
-	if pageSize > 0 {
-		if page < 1 {
-			page = 1
-		}
-		offset := (page - 1) * pageSize
-		queries = append(queries, qm.Offset(offset), qm.Limit(pageSize))
+	queries = append(queries, models.VSPTickWhere.VSPID.EQ(vspInfo.ID), models.VSPTickWhere.Time.GT(start))
+	if endDate > 0 {
+		queries = append(queries, models.VSPTickWhere.Time.LTE(helpers.UnixTime(int64(endDate))))
 	}
-	return models.VSPTicks(queries...).All(ctx, pg.db)
+	data, err := models.VSPTicks(queries...).All(ctx, pg.db)
+	return data, err
 }
 
 func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time, vspSources ...string) ([]time.Time, error) {
@@ -465,7 +462,7 @@ type vspSet struct {
 }
 
 func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData, axisString string, vspSources ...string) ([]byte, error) {
-	data, _, err := pg.fetchVspChart(ctx, 0, axisString, 1, -1, vspSources...)
+	data, _, err := pg.fetchVspChart(ctx, 0, 0, axisString, vspSources...)
 	if err != nil {
 		return nil, err
 	}
@@ -537,11 +534,24 @@ func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData
 }
 
 func (pg *PgDb) fetchCacheVspChart(ctx context.Context, charts *cache.ChartData, page int) (interface{}, func(), bool, error) {
-	data, done, err := pg.fetchVspChart(ctx, charts.VSPTimeTip(), "", page, 100)
+	startDate := charts.VSPTimeTip()
+	if startDate == 0 {
+		var receiver time.Time
+		rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT 1", models.VSPTickColumns.Time,
+		 models.TableNames.VSPTick, models.VSPTickColumns.Time))
+		err := rows.Scan(&receiver)
+		if err != nil {
+			log.Errorf("Error in getting min vsp date - %s", err.Error())
+		}
+		startDate = uint64(receiver.Unix())
+	}
+	aDay := 86400
+	endDate := startDate + uint64(7 * aDay)
+	data, done, err := pg.fetchVspChart(ctx, startDate, endDate, "")
 	return data, func() {}, done, err 
 }
 
-func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, axisString string, page, pageSize int, vspSources ...string) (*vspSet, bool, error) {
+func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, endDate uint64, axisString string, vspSources ...string) (*vspSet, bool, error) {
 	var vspDataSet = vspSet{
 		time:             []uint64{},
 		immature:         make(map[string]cache.ChartNullUints),
@@ -578,15 +588,17 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, axisString 
 		vspDataSet.time = append(vspDataSet.time, uint64(date.Unix()))
 	}
 
-	var done bool = true
-
+	var done = true
 	for _, vspSource := range vsps {
-		points, err := pg.fetchChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)), axisString, page, pageSize)
+		points, err := pg.fetchChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)), endDate, axisString)
 		if err != nil {
+			if err.Error() == sql.ErrNoRows.Error() {
+				continue
+			}
 			return nil, false, fmt.Errorf("error in fetching records for %s: %s", vspSource, err.Error())
 		}
 
-		if len(points) == pageSize {
+		if len(points) > 0 {
 			done = false
 		}
 

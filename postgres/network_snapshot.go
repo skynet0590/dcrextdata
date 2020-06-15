@@ -715,7 +715,7 @@ type snapshotSet struct {
 	versions map[string]cache.ChartUints
 }
 
-func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
+func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.ChartData, page int) (interface{}, func(), bool, error) {
 	var set = snapshotSet {
 		locations: make(map[string]cache.ChartUints),
 		versions: make(map[string]cache.ChartUints),
