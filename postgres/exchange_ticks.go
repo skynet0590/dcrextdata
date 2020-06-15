@@ -578,11 +578,11 @@ func (pg *PgDb) fetchEncodeExchangeChart(ctx context.Context, charts *cache.Char
 	return charts.Encode(nil, dates, yAxis)
 }
 
-func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	cancel := func() {}
 	exchanges, err := pg.AllExchange(ctx)
 	if err != nil {
-		return nil, cancel, err
+		return nil, cancel, false, err
 	}
 
 	exchangeTickIntervals := []int{
@@ -594,7 +594,7 @@ func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData)
 
 	currencyPairs, err := pg.AllExchangeTicksCurrencyPair(ctx)
 	if err != nil {
-		return nil, cancel, fmt.Errorf("Chart:Updater:Exchange cannot fetch currency pair, %s", err.Error())
+		return nil, cancel, false, fmt.Errorf("Chart:Updater:Exchange cannot fetch currency pair, %s", err.Error())
 	}
 
 	var tickSets = map[string]exchangeTickSet{}
@@ -605,7 +605,7 @@ func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData)
 				exchangeTickTime := charts.ExchangeSetTime(key)
 				tickSlice, err := pg.exchangeTicksChartData(ctx, currencyPair.CurrencyPair, interval, exchange.Name, exchangeTickTime)
 				if err != nil && err != sql.ErrNoRows {
-					return nil, cancel, err
+					return nil, cancel, false, err
 				}
 
 				var tickSet exchangeTickSet
@@ -622,7 +622,7 @@ func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData)
 		}
 	}
 
-	return tickSets, cancel, nil
+	return tickSets, cancel, true, nil
 }
 
 func appendExchangeChart(charts *cache.ChartData, data interface{}) error {

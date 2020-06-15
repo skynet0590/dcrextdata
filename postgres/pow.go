@@ -369,9 +369,9 @@ func (pg *PgDb) fetchEncodePowChart(ctx context.Context, charts *cache.ChartData
 	return nil, cache.UnknownChartErr
 }
 
-func (pg *PgDb) fetchCachePowChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchCachePowChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	data, err := pg.fetchPowChart(ctx, charts.PowTimeTip())
-	return data, func() {}, err 
+	return data, func() {}, true, err 
 }
 
 func (pg *PgDb) fetchPowChart(ctx context.Context, startDate uint64) (*powSet, error) {

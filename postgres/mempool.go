@@ -519,15 +519,15 @@ func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.Chart
 	return nil, cache.UnknownChartErr
 }
 
-func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
 	charts.PropagationHeight()
 	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTimeTip())))).All(ctx, pg.db)
 	if err != nil {
-		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
+		return nil, cancel, false, fmt.Errorf("chartBlocks: %s", err.Error())
 	}
-	return mempoolSlice, cancel, nil
+	return mempoolSlice, cancel, true, nil
 }
 
 // Append the results from retrieveChartMempool to the provided ChartData.
@@ -656,14 +656,14 @@ func (pg *PgDb) fetchEncodePropagationChart(ctx context.Context, charts *cache.C
 	return nil, cache.UnknownChartErr
 }
 
-func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	emptyCancelFunc := func() {}
 	var propagationSet propagationSet
 
 	chartsBlockHeight := int32(charts.PropagationHeightTip())
 	blockDelays, err := pg.propagationBlockChartData(ctx, int(chartsBlockHeight))
 	if err != nil && err != sql.ErrNoRows {
-		return nil, emptyCancelFunc, err
+		return nil, emptyCancelFunc, false, err
 	}
 
 	localBlockReceiveTime := make(map[uint64]float64)
@@ -677,7 +677,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 
 	votesReceiveTime, err := pg.propagationVoteChartDataByHeight(ctx, chartsBlockHeight)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, emptyCancelFunc, err
+		return nil, emptyCancelFunc, false, err
 	}
 	var votesTimeDeviations = make(map[int64][]float64)
 
@@ -702,12 +702,12 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 	for _, source := range pg.syncSources {
 		db, err := pg.syncSourceDbProvider(source)
 		if err != nil {
-			return nil, emptyCancelFunc, err
+			return nil, emptyCancelFunc, false, err
 		}
 
 		blockDelays, err := db.propagationBlockChartData(ctx, int(chartsBlockHeight))
 		if err != nil && err != sql.ErrNoRows {
-			return nil, emptyCancelFunc, err
+			return nil, emptyCancelFunc, false, err
 		}
 
 		receiveTimeMap := make(map[uint64]float64)
@@ -725,7 +725,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 		}
 	}
 
-	return propagationSet, emptyCancelFunc, nil
+	return propagationSet, emptyCancelFunc, true, nil
 }
 
 func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) error {

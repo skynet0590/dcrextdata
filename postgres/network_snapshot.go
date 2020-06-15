@@ -715,7 +715,7 @@ type snapshotSet struct {
 	versions map[string]cache.ChartUints
 }
 
-func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	var set = snapshotSet {
 		locations: make(map[string]cache.ChartUints),
 		versions: make(map[string]cache.ChartUints),
@@ -724,7 +724,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 	startDate := charts.SnapshotTip()
 	result, err := pg.SnapshotsByTime(ctx, int64(startDate))
 	if err != nil {
-		return nil, func() {}, err
+		return nil, func() {}, false, err
 	}
 
 	for _, rec := range result {
@@ -742,7 +742,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 
 	locations, err := pg.peerCountByCountriesByTime(ctx, startDate)
 	if err != nil {
-		return nil, func() {}, err
+		return nil, func() {}, false, err
 	}
 
 	for _, item := range locations {
@@ -781,7 +781,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 
 	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, startDate)
 	if err != nil {
-		return nil, func() {}, err
+		return nil, func() {}, false, err
 	}
 
 	for _, item := range userAgents {
@@ -812,7 +812,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 		}
 	}
 
-	return set, func() {}, nil
+	return set, func() {}, true, nil
 }
 
 func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
