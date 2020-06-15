@@ -119,7 +119,7 @@ func (pg PgDb) Snapshots(ctx context.Context, offset, limit int, forChart bool) 
 	return snapshots, total, nil
 }
 
-func (pg PgDb) SnapshotsByTime(ctx context.Context, startDate int64) ([]netsnapshot.SnapShot, error) {
+func (pg PgDb) SnapshotsByTime(ctx context.Context, startDate int64, endDate int64) ([]netsnapshot.SnapShot, error) {
 	var queries = []qm.QueryMod{
 		qm.Select(
 			models.NetworkSnapshotColumns.Timestamp,
@@ -129,6 +129,10 @@ func (pg PgDb) SnapshotsByTime(ctx context.Context, startDate int64) ([]netsnaps
 		models.NetworkSnapshotWhere.Height.GT(0),
 		models.NetworkSnapshotWhere.Timestamp.GT(startDate),
 		qm.OrderBy("timestamp"),
+	}
+
+	if endDate > 0 {
+		queries = append(queries, models.NetworkSnapshotWhere.Timestamp.LTE(endDate))
 	}
 
 	snapshotSlice, err := models.NetworkSnapshots(queries...).All(ctx, pg.db)
@@ -566,9 +570,13 @@ func (pg PgDb) PeerCountByUserAgents(ctx context.Context, sources string, offset
 	return userAgents, int64(count), nil
 }
 
-func (pg PgDb) peerCountByUserAgentsByTime(ctx context.Context, startDate uint64, sources ...string) ([]netsnapshot.UserAgentInfo, error) {
+func (pg PgDb) peerCountByUserAgentsByTime(ctx context.Context, startDate uint64, endDate uint64, sources ...string) ([]netsnapshot.UserAgentInfo, error) {
 
 	where := fmt.Sprintf(" WHERE network_snapshot.timestamp > %d ", startDate)
+	if endDate > 0 {
+		where += fmt.Sprintf(" network_snapshot.timestamp <= %d ", endDate)
+	}
+
 	if len(sources) > 0 {
 		sourceStr := fmt.Sprintf("'%s'", strings.Join(sources, "','"))
 		sourceStr = strings.ReplaceAll(sourceStr, "Unknown", "")
@@ -646,9 +654,12 @@ func (pg PgDb) PeerCountByCountries(ctx context.Context, sources string, offset,
 	return countries, int64(count), nil
 }
 
-func (pg PgDb) peerCountByCountriesByTime(ctx context.Context, startDate uint64, sources ...string) ([]netsnapshot.CountryInfo, error) {
+func (pg PgDb) peerCountByCountriesByTime(ctx context.Context, startDate uint64, endDate uint64, sources ...string) ([]netsnapshot.CountryInfo, error) {
 
 	where := fmt.Sprintf(" WHERE network_snapshot.timestamp > %d ", startDate)
+	if endDate > 0 {
+		where += fmt.Sprintf(" network_snapshot.timestamp <= %d ", endDate)
+	}
 	if len(sources) > 0 {
 		sourceStr := fmt.Sprintf("'%s'", strings.Join(sources, "','"))
 		sourceStr = strings.ReplaceAll(sourceStr, "Unknown", "")
@@ -722,9 +733,27 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 	}
 
 	startDate := charts.SnapshotTip()
-	result, err := pg.SnapshotsByTime(ctx, int64(startDate))
+	if startDate == 0 {
+		rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT 1", 
+			models.NetworkSnapshotColumns.Timestamp,
+		 	models.TableNames.NetworkSnapshot, models.NetworkSnapshotColumns.Timestamp))
+		err := rows.Scan(&startDate)
+		if err != nil {
+			log.Errorf("Error in getting min vsp date - %s", err.Error())
+		}
+	}
+	aDay := 86400
+	endDate := startDate + uint64(7 * aDay)
+
+	result, err := pg.SnapshotsByTime(ctx, int64(startDate), int64(endDate))
 	if err != nil {
+		if err.Error() == sql.ErrNoRows.Error() {
+			return set, func() {}, true, nil
+		}
 		return nil, func() {}, false, err
+	}
+	if len(result) == 0 {
+		return set, func() {}, true, err
 	}
 
 	for _, rec := range result {
@@ -740,7 +769,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 	var allCountries []string
 	var dateCountryCount = make(map[int64]map[string]int64)
 
-	locations, err := pg.peerCountByCountriesByTime(ctx, startDate)
+	locations, err := pg.peerCountByCountriesByTime(ctx, startDate, endDate)
 	if err != nil {
 		return nil, func() {}, false, err
 	}
@@ -779,7 +808,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 	var allUserAgents []string
 	var dateUserAgentCount = make(map[int64]map[string]int64)
 
-	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, startDate)
+	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, startDate, endDate)
 	if err != nil {
 		return nil, func() {}, false, err
 	}
@@ -870,7 +899,7 @@ func (pg *PgDb) fetchEncodeSnapshotChart(ctx context.Context, charts *cache.Char
 }
 
 func (pg *PgDb) fetchEncodeSnapshotNodesChart(ctx context.Context, charts *cache.ChartData) ([]byte, error) {
-	result, err := pg.SnapshotsByTime(ctx, 0)
+	result, err := pg.SnapshotsByTime(ctx, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -892,7 +921,7 @@ func (pg *PgDb) fetchEncodeSnapshotNodeVersionsChart(ctx context.Context, charts
 	var allUserAgents []string
 	var dateUserAgentCount = make(map[uint64]map[string]int64)
 
-	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, 0, extras...)
+	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, 0, 0, extras...)
 	if err != nil {
 		return nil, err
 	}
@@ -940,7 +969,7 @@ func (pg *PgDb) fetchEncodeSnapshotLocationsChart(ctx context.Context, charts *c
 	var allCountries []string
 	var dateCountryCount = make(map[uint64]map[string]int64)
 
-	locations, err := pg.peerCountByCountriesByTime(ctx, 0, extras...)
+	locations, err := pg.peerCountByCountriesByTime(ctx, 0, 0, extras...)
 	if err != nil {
 		return nil, err
 	}
