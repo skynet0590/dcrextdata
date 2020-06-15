@@ -47,23 +47,24 @@ func newExchangeSet() *exchangeSet {
 	return &exchangeSet{Ticks: map[string]exchangeTick{}}
 }
 
-func (set *exchangeSet) Append(key string, time ChartUints, open ChartFloats, close ChartFloats, high ChartFloats, low ChartFloats) {
-	if existingTick, found := set.Ticks[key]; found {
-
-		existingTick.Time = append(existingTick.Time, time...)
-		existingTick.Open = append(existingTick.Open, open...)
-		existingTick.Close = append(existingTick.Close, close...)
-		existingTick.High = append(existingTick.High, high...)
-		existingTick.Low = append(existingTick.Low, low...)
-		set.Ticks[key] = existingTick
-	} else {
-		set.Ticks[key] = exchangeTick{
-			Time:  time,
-			Open:  open,
-			Close: close,
-			High:  high,
-			Low:   low,
-		}
+func (set *exchangeSet) Append(charts *ChartData, key string, time ChartUints, open ChartFloats, close ChartFloats, high ChartFloats, low ChartFloats) {
+	if len(time) == 0 {
+		return
+	}
+	if err := charts.AppendChartUintsAxis(key+"-"+string(TimeAxis), time); err != nil {
+		log.Errorf("Error in append exchange time, %s", err.Error())
+	}
+	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeOpenAxis), open); err != nil {
+		log.Errorf("Error in append exchange open axis, %s", err.Error())
+	}
+	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeCloseAxis), close); err != nil {
+		log.Errorf("Error in append exchange close axis, %s", err.Error())
+	}
+	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeHighAxis), high); err != nil {
+		log.Errorf("Error in append exchange high axis, %s", err.Error())
+	}
+	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeLowAxis), low); err != nil {
+		log.Errorf("Error in append exchange low axis, %s", err.Error())
 	}
 }
 
@@ -89,37 +90,32 @@ func ExtractExchangeKey(setKey string) (exchangeName string, currencyPair string
 }
 
 func (charts *ChartData) ExchangeSetTime(key string) uint64 {
-	if tick, found := charts.Exchange.Ticks[key]; found && len(tick.Time) > 0 {
-		return tick.Time[len(tick.Time)-1]
+	var dates ChartUints
+	if err := charts.ReadAxis(key + "-" + string(TimeAxis), &dates); err != nil {
+		log.Errorf("Cannot get exchange set time, %s - %s", err.Error(),  key)
+		return 0
 	}
-	return 0
+	if len(dates) < 1 {
+		return 0
+	}
+	return dates[len(dates)-1]
 }
 
-func makeExchangeChart(ctx context.Context, charts *ChartData, axis axisType, setKey ...string) ([]byte, error) {
-	if len(setKey) < 1 {
+func makeExchangeChart(ctx context.Context, charts *ChartData, axis axisType, key ...string) ([]byte, error) {
+	if len(key) < 1 {
 		return nil, errors.New("exchange set key is required for exchange chart")
 	}
-
-	if tick, found := charts.Exchange.Ticks[setKey[0]]; found {
-		var yAxis ChartFloats
-		switch axis {
-		case ExchangeOpenAxis:
-			yAxis = tick.Open
-			break
-		case ExchangeCloseAxis:
-			yAxis = tick.Close
-			break
-		case ExchangeLowAxis:
-			yAxis = tick.Low
-			break
-		case ExchangeHighAxis:
-			yAxis = tick.High
-			break
-		default:
-			return nil, errors.New("invalid exchange chart axis")
-		}
-
-		return charts.Encode(nil, tick.Time, yAxis)
+	var dates ChartUints
+	if err := charts.ReadAxis(key[0] + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
 	}
-	return nil, errors.New("no record found for the selected exchange")
+
+	var yAxis ChartFloats
+	if err := charts.ReadAxis(key[0] + "-" + string(axis), &yAxis); err != nil {
+		log.Errorf("Cannot create exchange chart, %s", err.Error())
+		return nil, errors.New("no record found for the selected exchange")
+	}
+
+	return charts.Encode(nil, dates, yAxis)
+
 }

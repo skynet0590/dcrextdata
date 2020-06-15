@@ -628,7 +628,7 @@ func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData)
 func appendExchangeChart(charts *cache.ChartData, data interface{}) error {
 	var tickSets = data.(map[string]exchangeTickSet)
 	for key, tickSet := range tickSets {
-		charts.Exchange.Append(key, tickSet.time, tickSet.open, tickSet.close, tickSet.high, tickSet.low)
+		charts.Exchange.Append(charts, key, tickSet.time, tickSet.open, tickSet.close, tickSet.high, tickSet.low)
 	}
 
 	return nil
