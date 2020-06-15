@@ -503,7 +503,6 @@ export default class extends Controller {
       }
     }
     const data = csv(result, this.selectedSources.length)
-    console.log(result, data)
     this.chartsView = new Dygraph(
       this.chartsViewTarget,
       data,
