@@ -1764,7 +1764,7 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-// api/charts/{chartType}
+// api/charts/{chartType}/{axis}
 func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	chartType := getChartTypeCtx(r)

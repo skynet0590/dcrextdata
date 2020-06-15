@@ -141,3 +141,15 @@ func (charts ChartData) VSPTimeTip() uint64 {
 	}
 	return dates[dates.Length() - 1]
 }
+
+func (charts ChartData) SnapshotTip() uint64 {
+	var dates ChartUints
+	err := charts.ReadAxis(Snapshot + "-" + string(TimeAxis), &dates)
+	if err != nil {
+		return 0
+	}
+	if len(dates) == 0 {
+		return 0
+	}
+	return dates[dates.Length() - 1]
+}

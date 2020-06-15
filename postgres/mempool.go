@@ -534,7 +534,10 @@ func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartDat
 // This is the Appender half of a pair that make up a cache.ChartUpdater.
 func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) error {
 	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
-	// chartsMempool := charts.Mempool
+	if len(mempoolSlice) == 0 {
+		return nil
+	}
+
 	var chartsMempoolTime, chartsMempoolTxCount, chartsMempoolSize cache.ChartUints
 	var chartsMempoolFees cache.ChartFloats
 
@@ -728,6 +731,10 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) error {
 	propagationSet := data.(propagationSet)
 
+	if len(propagationSet.height) == 0 {
+		return nil
+	}
+	
 	if err := charts.AppendChartUintsAxis(cache.Propagation + "-" + string(cache.HeightAxis), 
 		propagationSet.height); err !=  nil {
 		return err 

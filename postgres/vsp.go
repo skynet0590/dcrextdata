@@ -635,7 +635,6 @@ func appendVspChart(charts *cache.ChartData, data interface{}) error {
 		vspDataSet.time); err !=  nil {
 		return err 
 	}
-	return nil
 
 	for vspSource, record := range vspDataSet.immature {
 		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.ImmatureAxis) + "-" + vspSource, 

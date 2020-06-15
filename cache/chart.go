@@ -27,6 +27,7 @@ const (
 	PowChart = "pow"
 	VSP      = "vsp"
 	Exchange = "exchange"
+	Snapshot = "snapshot"
 )
 
 // binLevel specifies the granularity of data.
@@ -61,6 +62,11 @@ const (
 	ProportionMissedAxis axisType = "proportion-missed"
 	UserCountAxis        axisType = "user-count"
 	UsersActiveAxis      axisType = "users-active"
+
+	SnapshotNodes 		 	axisType = "nodes"
+	SnapshotReachableNodes 	axisType = "reachable-nodes"
+	SnapshotLocations 	 	axisType = "locations"
+	SnapshotNodeVersions 	axisType = "node-versions"
 )
 
 // ParseAxis returns the matching axis type, else the default of time axis.
@@ -116,6 +122,13 @@ func ParseAxis(aType string) axisType {
 		return ExchangeOpenAxis
 	case ExchangeLowAxis:
 		return ExchangeLowAxis
+		// snapshot
+	case SnapshotNodes:
+		return SnapshotNodes
+	case SnapshotLocations:
+		return SnapshotLocations
+	case SnapshotNodeVersions:
+		return SnapshotNodeVersions
 	default:
 		return TimeAxis
 	}
@@ -1358,6 +1371,7 @@ var chartMakers = map[string]ChartMaker{
 	PowChart: powChart,
 	VSP: makeVspChart,
 	Exchange: makeExchangeChart,
+	Snapshot: networkSnapshorChart,
 }
 
 // Chart will return a JSON-encoded chartResponse of the provided type
@@ -1582,6 +1596,76 @@ func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullDat
 	var recs = []Lengther{dates}
 	for _, d := range deviations {
 		recs = append(recs, d)
+	}
+	return charts.Encode(nil, recs...)
+}
+
+func networkSnapshorChart (ctx context.Context, charts *ChartData, axis axisType, extras ...string) ([]byte, error) {
+	switch axis {
+	case SnapshotNodes:
+		return networkSnapshotNodesChart(charts)
+	case SnapshotLocations:
+		return networkSnapshotLocationsChart(charts, extras...)
+	case SnapshotNodeVersions:
+		return networkSnapshotNodeVersionsChart(charts, extras...)
+	default:
+		return nil, UnknownChartErr
+	}
+}
+
+func networkSnapshotNodesChart(charts *ChartData) ([]byte, error) {
+	var dates ChartUints
+	if err := charts.ReadAxis(Snapshot + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	var nodes ChartUints
+	if err := charts.ReadAxis(Snapshot + "-" + string(SnapshotNodes), &nodes); err != nil {
+		return nil, err
+	}
+
+	var reachableNodes ChartUints
+	if err := charts.ReadAxis(Snapshot + "-" + string(SnapshotReachableNodes), &reachableNodes); err != nil {
+		return nil, err
+	}
+	return charts.Encode(nil, dates, nodes, reachableNodes)
+}
+
+func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]byte, error) {
+	var recs = make([]Lengther, len(countries) + 1)
+	var dates ChartUints
+	if err := charts.ReadAxis(Snapshot + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	recs[0] = dates
+
+	for i, country := range countries {
+		key := Snapshot + "-" + string(SnapshotLocations) + "-" + country
+		var rec ChartUints
+		if err := charts.ReadAxis(key, &rec); err != nil {
+			log.Criticalf("%s - %s", err.Error(), key)
+			return nil, err
+		}
+		recs[i + 1] = rec
+	}
+	return charts.Encode(nil, recs...)
+}
+
+func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) ([]byte, error) {
+	var recs = make([]Lengther, len(userAgents) + 1)
+	var dates ChartUints
+	if err := charts.ReadAxis(Snapshot + "-" + string(TimeAxis), &dates); err != nil {
+		return nil, err
+	}
+	recs[0] = dates
+
+	for i, userAgent := range userAgents {
+		key := Snapshot + "-" + string(SnapshotNodeVersions) + "-" + userAgent
+		var rec ChartUints
+		if err := charts.ReadAxis(key, &rec); err != nil {
+			log.Criticalf("%s - %s", err.Error(), key)
+			return nil, err
+		}
+		recs[i + 1] = rec
 	}
 	return charts.Encode(nil, recs...)
 }

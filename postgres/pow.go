@@ -445,8 +445,6 @@ func appendPowChart(charts *cache.ChartData, data interface{}) error {
 		return err 
 	}
 
-	return nil
-
 	for pool, workers := range powDataSet.workers {
 		if err := charts.AppendChartNullUintsAxis(cache.PowChart + "-" + string(cache.WorkerAxis) + "-" + pool, 
 			workers); err !=  nil {
