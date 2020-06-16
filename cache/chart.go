@@ -1579,6 +1579,9 @@ func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUin
 }
 
 func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
+	// Because the dates for vsp tick vary from source to source, 
+	// a single date collection cannot be used for all and so
+	// the record is retrieved at every request.
 	sort.Strings(vsps)
 	key := fmt.Sprintf("%s-%s-%s", VSP, strings.Join(vsps, "-"), string(axis))
 	cache, found, _ := charts.getCache(key, axis)

@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   options,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, csv
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, csv, notifyFailure
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -223,7 +223,19 @@ export default class extends Controller {
     })
   }
 
-  chartSourceCheckChanged () {
+  chartSourceCheckChanged (e) {
+    // allow a maximum of 5 sources to avoid server overload
+    let count = 0
+    this.chartSourceTargets.forEach(el => {
+      if (el.checked) {
+        count++
+      }
+    })
+    if (count > 10) {
+      notifyFailure('You cannot compare more than 10 sources')
+      e.currentTarget.checked = false
+      return
+    }
     this.fetchDataAndPlotGraph()
   }
 

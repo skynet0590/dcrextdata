@@ -334,7 +334,7 @@ func (pg *PgDb) VspTickCount(ctx context.Context) (int64, error) {
 	return models.VSPTicks().Count(ctx, pg.db)
 }
 
-func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.Time, endDate uint64, axisString string) (records models.VSPTickSlice, err error) {
+func (pg *PgDb) fetchVSPChartData(ctx context.Context, vspName string, start time.Time, endDate uint64, axisString string) (records models.VSPTickSlice, err error) {
 	vspInfo, err := models.VSPS(models.VSPWhere.Name.EQ(null.StringFrom(vspName))).One(ctx, pg.db)
 	if err != nil {
 		return nil, err
@@ -342,39 +342,39 @@ func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.T
 	var queries []qm.QueryMod
 	if axisString != "" {
 		var col string
-		switch(strings.ToLower(axisString)) {
+		switch strings.ToLower(axisString) {
 		case string(cache.ImmatureAxis):
 			col = models.VSPTickColumns.Immature
 			break
-			
+
 		case string(cache.LiveAxis):
 			col = models.VSPTickColumns.Live
 			break
-			
+
 		case string(cache.VotedAxis):
 			col = models.VSPTickColumns.Voted
 			break
-			
+
 		case string(cache.MissedAxis):
 			col = models.VSPTickColumns.Missed
 			break
-			
+
 		case string(cache.PoolFeesAxis):
 			col = models.VSPTickColumns.PoolFees
 			break
-			
+
 		case string(cache.ProportionLiveAxis):
 			col = models.VSPTickColumns.ProportionLive
 			break
-			
+
 		case string(cache.ProportionMissedAxis):
 			col = models.VSPTickColumns.ProportionMissed
 			break
-			
+
 		case string(cache.UserCountAxis):
 			col = models.VSPTickColumns.UserCount
 			break
-			
+
 		case string(cache.UsersActiveAxis):
 			col = models.VSPTickColumns.UsersActive
 			break
@@ -391,18 +391,18 @@ func (pg *PgDb) fetchChartData(ctx context.Context, vspName string, start time.T
 }
 
 func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time, vspSources ...string) ([]time.Time, error) {
-	
+
 	var query = []qm.QueryMod{
 		qm.Select(models.VSPTickColumns.Time),
 		models.VSPTickWhere.Time.GT(start),
 		qm.OrderBy(models.VSPTickColumns.Time),
 	}
-		var wheres []string
+	var wheres []string
 	if len(vspSources) > 0 {
 		var args = make([]interface{}, len(vspSources))
 		for i, s := range vspSources {
 			args[i] = s
-			wheres = append(wheres, fmt.Sprintf("%s = $%d", models.VSPColumns.Name, i + 1))
+			wheres = append(wheres, fmt.Sprintf("%s = $%d", models.VSPColumns.Name, i+1))
 		}
 		vsps, err := models.VSPS(
 			qm.Where(strings.Join(wheres, " OR "), args...),
@@ -410,18 +410,18 @@ func (pg *PgDb) allVspTickDates(ctx context.Context, start time.Time, vspSources
 		if err != nil {
 			return nil, err
 		}
-	
+
 		args = make([]interface{}, len(vsps))
 		wheres = make([]string, len(vsps))
 		for i, v := range vsps {
 			args[i] = v.ID
 			wheres[i] = fmt.Sprintf("%s = %d", models.VSPTickColumns.VSPID, v.ID)
 		}
-		query = append(query, qm.Where(strings.Join(wheres, " OR "),))
+		query = append(query, qm.Where(strings.Join(wheres, " OR ")))
 	}
-	
+
 	vspDates, err := models.VSPTicks(
-		query...
+		query...,
 	).All(ctx, pg.db)
 
 	if err != nil {
@@ -466,63 +466,63 @@ func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData
 	if err != nil {
 		return nil, err
 	}
-	switch(strings.ToLower(axisString)) {
+	switch strings.ToLower(axisString) {
 	case string(cache.ImmatureAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.immature[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.LiveAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.live[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.VotedAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.voted[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.MissedAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.missed[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.PoolFeesAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.poolFees[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.ProportionLiveAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.proportionLive[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.ProportionMissedAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.proportionMissed[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.UserCountAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
 			deviations = append(deviations, data.userCount[p])
 		}
 		return cache.MakeVspChart(charts, data.time, deviations, vspSources)
-		
+
 	case string(cache.UsersActiveAxis):
 		var deviations []cache.ChartNullData
 		for _, p := range vspSources {
@@ -535,20 +535,26 @@ func (pg *PgDb) fetchEncodeVspChart(ctx context.Context, charts *cache.ChartData
 
 func (pg *PgDb) fetchCacheVspChart(ctx context.Context, charts *cache.ChartData, page int) (interface{}, func(), bool, error) {
 	startDate := charts.VSPTimeTip()
-	if startDate == 0 {
-		var receiver time.Time
-		rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT 1", models.VSPTickColumns.Time,
-		 models.TableNames.VSPTick, models.VSPTickColumns.Time))
-		err := rows.Scan(&receiver)
-		if err != nil {
-			log.Errorf("Error in getting min vsp date - %s", err.Error())
-		}
-		startDate = uint64(receiver.Unix())
+	// Get close to the nearest value after the start date to avoid continue loop for situations where there is a gap
+	var receiver time.Time
+	rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s WHERE %s > '%s' ORDER BY %s LIMIT 1", models.VSPTickColumns.Time,
+		models.TableNames.VSPTick, models.VSPTickColumns.Time, 
+		helpers.UnixTime(int64(startDate)).Format("2006-01-02 15:04:05+0700"), models.VSPTickColumns.Time))
+	if err := rows.Scan(&receiver); err != nil {
+		log.Errorf("Error in getting min vsp date - %s", err.Error())
 	}
+	if int64(startDate) < receiver.Unix() {
+		startDate = uint64(receiver.Unix())
+		if startDate > 0 {
+			startDate -= 1
+		}
+	}
+	//
+
 	aDay := 86400
-	endDate := startDate + uint64(7 * aDay)
+	endDate := startDate + uint64(7*aDay)
 	data, done, err := pg.fetchVspChart(ctx, startDate, endDate, "")
-	return data, func() {}, done, err 
+	return data, func() {}, done, err
 }
 
 func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, endDate uint64, axisString string, vspSources ...string) (*vspSet, bool, error) {
@@ -565,11 +571,9 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, endDate uin
 		usersActive:      make(map[string]cache.ChartNullUints),
 	}
 
-	
-
 	var vsps []string = vspSources
 	if len(vsps) == 0 {
-		allVspData, err := pg.FetchVSPs(ctx,)
+		allVspData, err := pg.FetchVSPs(ctx)
 		if err != nil {
 			return nil, false, err
 		}
@@ -577,7 +581,6 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, endDate uin
 			vsps = append(vsps, vspSource.Name)
 		}
 	}
-	
 
 	dates, err := pg.allVspTickDates(ctx, helpers.UnixTime(int64(startDate)), vspSources...)
 	if err != nil && err != sql.ErrNoRows {
@@ -590,7 +593,7 @@ func (pg *PgDb) fetchVspChart(ctx context.Context, startDate uint64, endDate uin
 
 	var done = true
 	for _, vspSource := range vsps {
-		points, err := pg.fetchChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)), endDate, axisString)
+		points, err := pg.fetchVSPChartData(ctx, vspSource, helpers.UnixTime(int64(startDate)), endDate, axisString)
 		if err != nil {
 			if err.Error() == sql.ErrNoRows.Error() {
 				continue
@@ -656,71 +659,71 @@ func appendVspChart(charts *cache.ChartData, data interface{}) error {
 		return nil
 	}
 
-	if err := charts.AppendChartUintsAxis(cache.VSP + "-" + string(cache.TimeAxis), 
-		vspDataSet.time); err !=  nil {
-		return err 
+	if err := charts.AppendChartUintsAxis(cache.VSP+"-"+string(cache.TimeAxis),
+		vspDataSet.time); err != nil {
+		return err
 	}
 
 	for vspSource, record := range vspDataSet.immature {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.ImmatureAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.ImmatureAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.live {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.LiveAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.LiveAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.voted {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.VotedAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.VotedAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.missed {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.MissedAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.MissedAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.poolFees {
-		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.PoolFeesAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP+"-"+string(cache.PoolFeesAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.proportionLive {
-		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.ProportionLiveAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP+"-"+string(cache.ProportionLiveAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.proportionMissed {
-		if err := charts.AppendChartNullFloatsAxis(cache.VSP + "-" + string(cache.ProportionMissedAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullFloatsAxis(cache.VSP+"-"+string(cache.ProportionMissedAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.usersActive {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.UsersActiveAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.UsersActiveAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
 	for vspSource, record := range vspDataSet.userCount {
-		if err := charts.AppendChartNullUintsAxis(cache.VSP + "-" + string(cache.UserCountAxis) + "-" + vspSource, 
-			record); err !=  nil {
-			return err 
+		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.UserCountAxis)+"-"+vspSource,
+			record); err != nil {
+			return err
 		}
 	}
 
