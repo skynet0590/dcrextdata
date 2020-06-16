@@ -1647,6 +1647,9 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 	recs[0] = dates
 
 	for i, country := range countries {
+		if country == "" {
+			country = "Unknown"
+		}
 		key := Snapshot + "-" + string(SnapshotLocations) + "-" + country
 		var rec ChartUints
 		if err := charts.ReadAxis(key, &rec); err != nil {
@@ -1667,6 +1670,9 @@ func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) (
 	recs[0] = dates
 
 	for i, userAgent := range userAgents {
+		if userAgent == "" {
+			userAgent = "Unknown"
+		}
 		key := Snapshot + "-" + string(SnapshotNodeVersions) + "-" + userAgent
 		var rec ChartUints
 		if err := charts.ReadAxis(key, &rec); err != nil {
