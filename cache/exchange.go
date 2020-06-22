@@ -92,7 +92,6 @@ func ExtractExchangeKey(setKey string) (exchangeName string, currencyPair string
 func (charts *ChartData) ExchangeSetTime(key string) uint64 {
 	var dates ChartUints
 	if err := charts.ReadAxis(key + "-" + string(TimeAxis), &dates); err != nil {
-		log.Errorf("Cannot get exchange set time, %s - %s", err.Error(),  key)
 		return 0
 	}
 	if len(dates) < 1 {
