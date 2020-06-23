@@ -1579,9 +1579,38 @@ func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUin
 }
 
 func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
-	// Because the dates for vsp tick vary from source to source, 
+	// var dates ChartUints
+	// if err := charts.ReadAxis(VSP+"-"+string(TimeAxis), &dates); err != nil {
+	// 	return nil, err
+	// }
+
+	// var deviations = make([]ChartNullData, len(vsps))
+
+	// for i, s := range vsps {
+	// 	switch axis {
+	// 	case ImmatureAxis, LiveAxis, VotedAxis, MissedAxis, UserCountAxis, UsersActiveAxis:
+	// 		var data chartNullIntsPointer
+	// 		if err := charts.ReadAxis(VSP + "-" + string(axis) + "-" + s, &data); err != nil {
+	// 			return nil, err
+	// 		}
+	// 		deviations[i] = data.toChartNullUint()
+
+	// 	case ProportionLiveAxis, ProportionMissedAxis:
+	// 		var data chartNullFloatsPointer
+	// 		if err := charts.ReadAxis(VSP + "-" + string(axis) + "-" + s, &data); err != nil {
+	// 			return nil, err
+	// 		}
+	// 		deviations[i] = data.toChartNullFloats()
+	// 	}
+
+	// }
+
+	// return MakeVspChart(charts, dates, deviations, vsps)
+
+	// Because the dates for vsp tick vary from source to source,
 	// a single date collection cannot be used for all and so
 	// the record is retrieved at every request.
+
 	sort.Strings(vsps)
 	key := fmt.Sprintf("%s-%s-%s", VSP, strings.Join(vsps, "-"), string(axis))
 	cache, found, _ := charts.getCache(key, axis)
@@ -1599,7 +1628,7 @@ func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ..
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(key, charts.PowTimeTip(), axis, data)
+	charts.cacheChart(key, charts.VSPTimeTip(), axis, data)
 	return data, nil
 }
 
