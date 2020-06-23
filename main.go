@@ -205,7 +205,7 @@ func _main(ctx context.Context) error {
 	})
 
 	log.Infof("Updating charts data...")
-	if err = charts.Update(ctx); err != nil {
+	if err = charts.Load(ctx); err != nil {
 		log.Error(err)
 	}
 

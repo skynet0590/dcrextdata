@@ -10,9 +10,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/dgraph-io/badger/v2"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/volatiletech/null"
 )
 
@@ -639,6 +641,20 @@ func (charts *ChartData) Lengthen() error {
 	// 	}
 	// }
 	return nil
+}
+
+// Load loads chart data from the gob file at the specified path and performs an
+// update.
+func (charts *ChartData) Load(ctx context.Context) error {
+	t := helpers.NowUTC()
+	defer func() {
+		log.Debugf("Completed the initial chart load and update in %f s",
+			time.Since(t).Seconds())
+	}()
+
+	// Bring the charts up to date.
+	log.Infof("Updating charts data...")
+	return charts.Update(ctx)
 }
 
 // TriggerUpdate triggers (*ChartData).Update.
