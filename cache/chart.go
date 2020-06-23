@@ -6,16 +6,13 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/dgraph-io/badger/v2"
-	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/volatiletech/null"
 )
 
@@ -45,9 +42,9 @@ const (
 	HashrateAxis axisType = "hashrate"
 	WorkerAxis   axisType = "workers"
 
-	Size    = "size"
-	Fees    = "fees"
-	TxCount = "tx-count"
+	MempoolSize    = "size"
+	MempoolFees    = "fees"
+	MempoolTxCount = "tx-count"
 
 	BlockPropagation = "block-propagation"
 	BlockTimestamp   = "block-timestamp"
@@ -76,12 +73,12 @@ func ParseAxis(aType string) axisType {
 	case HeightAxis:
 		return HeightAxis
 		//Mempool
-	case Size:
-		return Size
-	case TxCount:
-		return TxCount
-	case Fees:
-		return Fees
+	case MempoolSize:
+		return MempoolSize
+	case MempoolTxCount:
+		return MempoolTxCount
+	case MempoolFees:
+		return MempoolFees
 		//Propagation
 	case BlockPropagation:
 		return BlockPropagation
@@ -241,6 +238,15 @@ func (data chartNullIntsPointer) Append(set ChartNullUints) chartNullIntsPointer
 	return data
 }
 
+// If the data is longer than max, return a subset of length max.
+func (data chartNullIntsPointer) snip(max int) chartNullIntsPointer {
+	if len(data.Items) < max {
+		max = len(data.Items)
+	}
+	data.Items = data.Items[:max]
+	return data
+}
+
 // nullUint64Pointer provides a wrapper around *null.Uint64 to resolve the issue of inability to write nil pointer to gob
 type nullUint64Pointer struct {
 	HasValue bool
@@ -392,6 +398,15 @@ func (data chartNullFloatsPointer) Append(set ChartNullFloats) chartNullFloatsPo
 		}
 		data.Items = append(data.Items, intPointer)
 	}
+	return data
+}
+
+// If the data is longer than max, return a subset of length max.
+func (data chartNullFloatsPointer) snip(max int) chartNullFloatsPointer {
+	if len(data.Items) < max {
+		max = len(data.Items)
+	}
+	data.Items = data.Items[:max]
 	return data
 }
 
@@ -910,11 +925,11 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 
 func mempool(ctx context.Context, charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
 	switch axis {
-	case Size:
+	case MempoolSize:
 		return mempoolSize(charts)
-	case TxCount:
+	case MempoolTxCount:
 		return mempoolTxCount(charts)
-	case Fees:
+	case MempoolFees:
 		return mempoolFees(charts)
 	}
 	return nil, UnknownChartErr
@@ -925,7 +940,7 @@ func mempoolSize(charts *ChartData) ([]byte, error) {
 	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(Size), &sizes); err != nil {
+	if err := charts.ReadAxis(Mempool+"-"+string(MempoolSize), &sizes); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, sizes)
@@ -936,7 +951,7 @@ func mempoolTxCount(charts *ChartData) ([]byte, error) {
 	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(TxCount), &txCounts); err != nil {
+	if err := charts.ReadAxis(Mempool+"-"+string(MempoolTxCount), &txCounts); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, txCounts)
@@ -948,7 +963,7 @@ func mempoolFees(charts *ChartData) ([]byte, error) {
 	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(Fees), &fees); err != nil {
+	if err := charts.ReadAxis(Mempool+"-"+string(MempoolFees), &fees); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, fees)

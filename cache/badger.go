@@ -45,6 +45,8 @@ func (charts ChartData) ReadAxis(key string, result Lengther) error {
 	})
 }
 
+// Appenders
+
 func (charts ChartData) AppendChartUintsAxis(key string, set ChartUints) error {
 	var data ChartUints
 	err := charts.ReadAxis(key, &data)
@@ -92,6 +94,95 @@ func (charts ChartData) AppendChartNullFloatsAxis(key string, set ChartNullFloat
 	data = data.Append(set)
 	return charts.SaveAxis(data, key)
 }
+
+// Snip
+func (charts ChartData) Snip(chartID string, length int, axis ...axisType) error {
+	switch chartID {
+	case Mempool:
+		if len(axis) == 0 {
+			axis = append(axis, TimeAxis, MempoolSize, MempoolTxCount)
+		}
+		for _, a := range axis {
+			key := Mempool + "-" + string(a)
+			if err := charts.snipChartUintsAxis(key, length); err != nil {
+				if err != badger.ErrKeyNotFound {
+					return err
+				}
+			}
+		}
+		key := Mempool + "-" + string(MempoolFees)
+		if err := charts.snipChartFloatsAxis(key, length); err != nil {
+			if err != badger.ErrKeyNotFound {
+				return err
+			}
+		}
+		return nil
+	case Propagation:
+		if len(axis) == 0 {
+			axis = append(axis, TimeAxis, MempoolFees, MempoolSize, MempoolTxCount)
+		}
+		for _, a := range axis {
+			key := Mempool + "-" + string(a)
+			if err := charts.snipChartUintsAxis(key, length); err != nil {
+				if err != badger.ErrKeyNotFound {
+					return err
+				}
+			}
+		}
+		return nil
+	}
+	return nil
+}
+
+func (charts ChartData) snipChartUintsAxis(key string, length int) error {
+	var data ChartUints
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.snip(length)
+	return charts.SaveAxis(data, key)
+}
+
+func (charts ChartData) snipChartNullUintsAxis(key string, length int) error {
+	var data chartNullIntsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.snip(length)
+	return charts.SaveAxis(data, key)
+}
+
+func (charts ChartData) snipChartNullFloatsAxis(key string, length int) error {
+	var data chartNullFloatsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.snip(length)
+	return charts.SaveAxis(data, key)
+}
+
+func (charts ChartData) snipChartFloatsAxis(key string, length int) error {
+	var data ChartFloats
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return err
+		}
+	}
+	data = data.snip(length)
+	return charts.SaveAxis(data, key)
+}
+
+// Length
 
 func (charts ChartData) MempoolTimeTip() uint64 {
 	var dates ChartUints

@@ -468,7 +468,7 @@ func (pg *PgDb) fetchBlockReceiveTimeByHeight(ctx context.Context, height int32)
 func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.ChartData, axisString string, extras ...string) ([]byte, error) {
 	
 	switch(axisString){
-	case cache.Size:
+	case cache.MempoolSize:
 		mempoolSlice, err := models.Mempools(
 			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.Size),
 			qm.OrderBy(models.MempoolColumns.Time),
@@ -484,7 +484,7 @@ func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.Chart
 		}
 		return charts.Encode(nil, time, data)
 
-	case cache.Fees:
+	case cache.MempoolFees:
 		mempoolSlice, err := models.Mempools(
 			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.TotalFee),
 			qm.OrderBy(models.MempoolColumns.Time),
@@ -500,7 +500,7 @@ func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.Chart
 		}
 		return charts.Encode(nil, time, data)
 
-	case cache.TxCount:
+	case cache.MempoolTxCount:
 		mempoolSlice, err := models.Mempools(
 			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.NumberOfTransactions),
 			qm.OrderBy(models.MempoolColumns.Time),
@@ -551,15 +551,15 @@ func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) er
 		return err 
 	}
 
-	if err := charts.AppendChartFloatsAxis(cache.Mempool + "-" + string(cache.Fees), chartsMempoolFees); err !=  nil {
+	if err := charts.AppendChartFloatsAxis(cache.Mempool + "-" + string(cache.MempoolFees), chartsMempoolFees); err !=  nil {
 		return err 
 	}
 
-	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.TxCount), chartsMempoolTxCount); err !=  nil {
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.MempoolTxCount), chartsMempoolTxCount); err !=  nil {
 		return err 
 	}
 
-	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.Size), chartsMempoolSize); err !=  nil {
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.MempoolSize), chartsMempoolSize); err !=  nil {
 		return err 
 	}
 	return nil
