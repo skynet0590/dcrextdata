@@ -37,16 +37,6 @@ func (tickSet *exchangeTick) Snip(length int) {
 	tickSet.Low = tickSet.Low.snip(length)
 }
 
-func (set *exchangeSet) Snip(length int) {
-	for _, tickSet := range set.Ticks {
-		tickSet.Snip(length)
-	}
-}
-
-func newExchangeSet() *exchangeSet {
-	return &exchangeSet{Ticks: map[string]exchangeTick{}}
-}
-
 func (set *exchangeSet) Append(charts *ChartData, key string, time ChartUints, open ChartFloats, close ChartFloats, high ChartFloats, low ChartFloats) {
 	if len(time) == 0 {
 		return

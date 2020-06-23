@@ -522,7 +522,6 @@ func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.Chart
 func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
-	charts.PropagationHeight()
 	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTimeTip())))).All(ctx, pg.db)
 	if err != nil {
 		return nil, cancel, false, fmt.Errorf("chartBlocks: %s", err.Error())
@@ -748,8 +747,6 @@ func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) erro
 		return err 
 	}
 	for source, deviations := range propagationSet.blockPropagation {
-		charts.Propagation.BlockPropagation[source] = append(charts.Propagation.BlockPropagation[source], deviations...)
-
 		if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.BlockPropagation) + "-" + source, 
 			deviations); err !=  nil {
 			return err 

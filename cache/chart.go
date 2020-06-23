@@ -137,13 +137,7 @@ func ParseAxis(aType string) axisType {
 // cacheVersion helps detect when the cache data stored has changed its
 // structure or content. A change on the cache version results to recomputing
 // all the charts data a fresh thereby making the cache to hold the latest changes.
-var cacheVersion = NewSemver(6, 0, 0)
-
-// versionedCacheData defines the cache data contents to be written into a .gob file.
-type versionedCacheData struct {
-	Version string
-	Data    *ChartGobject
-}
+var cacheVersion = NewSemver(1, 0, 0)
 
 // ChartError is an Error interface for use with constant errors.
 type ChartError string
@@ -544,275 +538,6 @@ func newChartUints() ChartUints {
 	return make(ChartUints, 0)
 }
 
-// mempoolSet holds data for mempool fees, size and tx-count chart
-type mempoolSet struct {
-	cacheID uint64
-	Time    ChartUints
-	Size    ChartUints
-	TxCount ChartUints
-	Fees    ChartFloats
-}
-
-// Snip truncates the zoomSet to a provided length.
-func (set *mempoolSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-	set.Time = set.Time.snip(length)
-	set.Size = set.Size.snip(length)
-	set.Fees = set.Fees.snip(length)
-	set.TxCount = set.TxCount.snip(length)
-}
-
-// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
-// since the height is implicit for block-binned data.
-func newMempoolSet() *mempoolSet {
-	return &mempoolSet{
-		Time:    newChartUints(),
-		Size:    newChartUints(),
-		TxCount: newChartUints(),
-		Fees:    newChartFloats(),
-	}
-}
-
-// propagationSet is a set of propagation data
-type propagationSet struct {
-	cacheID                    uint64
-	Height                     ChartUints
-	BlockPropagation           map[string]ChartFloats
-	BlockDelays                ChartFloats
-	VotesReceiveTimeDeviations ChartFloats
-}
-
-// Snip truncates the zoomSet to a provided length.
-func (set *propagationSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-	set.Height = set.Height.snip(length)
-	for source, records := range set.BlockPropagation {
-		set.BlockPropagation[source] = records.snip(length)
-	}
-	set.BlockDelays = set.BlockDelays.snip(length)
-	set.VotesReceiveTimeDeviations = set.VotesReceiveTimeDeviations.snip(length)
-}
-
-// Constructor for a sized zoomSet for blocks, which has has no PropagationHeight slice
-// since the height is implicit for block-binned data.
-func newPropagationSet(syncSources []string) *propagationSet {
-	blockPropagation := make(map[string]ChartFloats)
-	for _, source := range syncSources {
-		blockPropagation[source] = newChartFloats()
-	}
-	return &propagationSet{
-		Height:                     newChartUints(),
-		BlockDelays:                newChartFloats(),
-		VotesReceiveTimeDeviations: newChartFloats(),
-		BlockPropagation:           blockPropagation,
-	}
-}
-
-// powSet is a set of powChart data
-type powSet struct {
-	cacheID  uint64
-	Time     ChartUints
-	Hashrate map[string]ChartNullUints
-	Workers  map[string]ChartNullUints
-}
-
-// Snip truncates the zoomSet to a provided length.
-func (set *powSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-
-	set.Time = set.Time.snip(length)
-
-	for pool, records := range set.Hashrate {
-		set.Hashrate[pool] = records.snip(length)
-	}
-
-	for pool, records := range set.Workers {
-		set.Workers[pool] = records.snip(length)
-	}
-}
-
-// Constructor for Pow Set
-func newPowSet(pools []string) *powSet {
-	hashrate := make(map[string]ChartNullUints)
-	for _, pool := range pools {
-		hashrate[pool] = newChartNullUints()
-	}
-
-	workers := make(map[string]ChartNullUints)
-	for _, pool := range pools {
-		workers[pool] = newChartNullUints()
-	}
-
-	return &powSet{
-		Time:     newChartUints(),
-		Hashrate: hashrate,
-		Workers:  workers,
-	}
-}
-
-// vspSet is a set of Vsp chart data
-type vspSet struct {
-	cacheID          uint64
-	Time             ChartUints
-	Immature         map[string]ChartNullUints
-	Live             map[string]ChartNullUints
-	Voted            map[string]ChartNullUints
-	Missed           map[string]ChartNullUints
-	PoolFees         map[string]ChartNullFloats
-	ProportionLive   map[string]ChartNullFloats
-	ProportionMissed map[string]ChartNullFloats
-	UserCount        map[string]ChartNullUints
-	UsersActive      map[string]ChartNullUints
-}
-
-// Snip truncates the vspSet to a provided length.
-func (set *vspSet) Snip(length int) {
-	if length < 0 {
-		length = 0
-	}
-
-	set.Time = set.Time.snip(length)
-
-	for vsp, records := range set.Immature {
-		set.Immature[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.Live {
-		set.Live[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.Voted {
-		set.Voted[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.Missed {
-		set.Missed[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.PoolFees {
-		set.PoolFees[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.ProportionMissed {
-		set.ProportionMissed[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.ProportionLive {
-		set.ProportionLive[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.UsersActive {
-		set.UsersActive[vsp] = records.snip(length)
-	}
-	for vsp, records := range set.UserCount {
-		set.UserCount[vsp] = records.snip(length)
-	}
-}
-
-// Constructor for a vspSet.
-func newVspSet(vsps []string) *vspSet {
-	immature := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		immature[vsp] = newChartNullUints()
-	}
-
-	live := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		live[vsp] = newChartNullUints()
-	}
-
-	voted := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		voted[vsp] = newChartNullUints()
-	}
-
-	missed := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		missed[vsp] = newChartNullUints()
-	}
-
-	poolFees := make(map[string]ChartNullFloats)
-	for _, vsp := range vsps {
-		poolFees[vsp] = newChartNullFloats()
-	}
-
-	proportionLive := make(map[string]ChartNullFloats)
-	for _, vsp := range vsps {
-		proportionLive[vsp] = newChartNullFloats()
-	}
-
-	proportionMissed := make(map[string]ChartNullFloats)
-	for _, vsp := range vsps {
-		proportionMissed[vsp] = newChartNullFloats()
-	}
-
-	userCount := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		userCount[vsp] = newChartNullUints()
-	}
-
-	usersActive := make(map[string]ChartNullUints)
-	for _, vsp := range vsps {
-		immature[vsp] = newChartNullUints()
-	}
-
-	return &vspSet{
-		Time:             newChartUints(),
-		Immature:         immature,
-		Live:             live,
-		Voted:            voted,
-		Missed:           missed,
-		PoolFees:         poolFees,
-		ProportionLive:   proportionLive,
-		ProportionMissed: proportionMissed,
-		UserCount:        userCount,
-		UsersActive:      usersActive,
-	}
-}
-
-// ChartGobject is the storage object for saving to a gob file. ChartData itself
-// has a lot of extraneous fields, and also embeds sync.RWMutex, so is not
-// suitable for gobbing.
-type ChartGobject struct {
-	MempoolTime       ChartUints
-	MempoolSize       ChartUints
-	MempoolFees       ChartFloats
-	MempoolTxCount    ChartUints
-	PropagationHeight ChartUints
-	BlockPropagation  map[string]ChartFloats
-	ChartDelays       ChartFloats
-	VotesReceiveTime  ChartFloats
-
-	PowTime     ChartUints
-	PowHashrate map[string]chartNullIntsPointer
-	PowWorkers  map[string]chartNullIntsPointer
-
-	VspTime             ChartUints
-	VspImmature         map[string]chartNullIntsPointer
-	VspLive             map[string]chartNullIntsPointer
-	VspVoted            map[string]chartNullIntsPointer
-	VspMissed           map[string]chartNullIntsPointer
-	VspPoolFees         map[string]chartNullFloatsPointer
-	VspProportionLive   map[string]chartNullFloatsPointer
-	VspProportionMissed map[string]chartNullFloatsPointer
-	VspUserCount        map[string]chartNullIntsPointer
-	VspUsersActive      map[string]chartNullIntsPointer
-
-	PoolSize    ChartUints
-	PoolValue   ChartFloats
-	BlockSize   ChartUints
-	TxCount     ChartUints
-	NewAtoms    ChartUints
-	Chainwork   ChartUints
-	Fees        ChartUints
-	WindowTime  ChartUints
-	PowDiff     ChartFloats
-	TicketPrice ChartUints
-	StakeCount  ChartUints
-	MissedVotes ChartUints
-
-	Exchange exchangeSet
-}
-
 // The chart data is cached with the current cacheID of the zoomSet or windowSet.
 type cachedChart struct {
 	CacheID uint64
@@ -840,19 +565,10 @@ type ChartUpdater struct {
 // Retriver provides a function for directly getting a specific chart data from a store
 type Retriver func(ctx context.Context, charts *ChartData, axisString string, extras ...string) ([]byte, error)
 
-// ChartData is a set of data used for charts. It provides methods for
-// managing data validation and update concurrency, but does not perform any
-// data retrieval and must be used with care to keep the data valid. The Blocks
-// and Windows fields must be updated by (presumably) a database package. The
-// Days data is auto-generated from the Blocks data during Lengthen-ing.
+// ChartData is the entry point chart cache
 type ChartData struct {
 	mtx         sync.RWMutex
 	ctx         context.Context
-	Mempool     *mempoolSet
-	Propagation *propagationSet
-	Pow         *powSet
-	Vsp         *vspSet
-	Exchange    *exchangeSet
 	EnableCache bool
 
 	cacheMtx  sync.RWMutex
@@ -892,202 +608,23 @@ func ValidateLengths(lens ...Lengther) (int, error) {
 // Lengthen performs data validation and populates the Days zoomSet. If there is
 // an update to a zoomSet or windowSet, the cacheID will be incremented.
 func (charts *ChartData) Lengthen() error {
-	charts.mtx.Lock()
-	defer charts.mtx.Unlock()
-
-	// Make sure the database has set equal number of mempool data set
-	mempool := charts.Mempool
-	shortest, err := ValidateLengths(mempool.Time, mempool.Fees, mempool.Size, mempool.TxCount)
-	if err != nil {
-		log.Warnf("ChartData.Lengthen: mempool data length mismatch detected. Truncating mempool to %d", shortest)
-		mempool.Snip(shortest)
-	}
-
-	// Make sure the database has set equal number of block propagation data set
-	propagation := charts.Propagation
-	shortest, err = ValidateLengths(propagation.Height, propagation.BlockDelays, propagation.VotesReceiveTimeDeviations)
-	if err != nil {
-		log.Warnf("ChartData.Lengthen: propagation data length mismatch detected. Truncating propagation to %d", shortest)
-		mempool.Snip(shortest)
-	}
 
 	// Make sure exchange data has set equal number of record for each set
-	for _, tick := range charts.Exchange.Ticks {
-		shortest, err := ValidateLengths(tick.Time, tick.Open, tick.Close, tick.High, tick.Low)
-		if err != nil {
-			log.Warnf("ChartData.Lengthen: exchange data length mismatch detected for a set. Truncating to %d", shortest)
-			tick.Snip(shortest)
-		}
-		if tick.Time.Length() > 0 {
-			tick.cacheID = tick.Time[len(tick.Time)-1]
-		}
-	}
-
-	charts.cacheMtx.Lock()
-	defer charts.cacheMtx.Unlock()
-
-	// set cacheID to latest
-	if mempool.Time.Length() > 0 {
-		charts.Mempool.cacheID = mempool.Time[len(mempool.Time)-1]
-	}
-
-	if propagation.Height.Length() > 0 {
-		charts.Propagation.cacheID = propagation.Height[len(propagation.Height)-1]
-	}
-
-	if charts.Vsp.Time.Length() > 0 {
-		charts.Vsp.cacheID = charts.Vsp.Time[charts.Vsp.Time.Length()-1]
-	}
-
-	if charts.Pow.Time.Length() > 0 {
-		charts.Pow.cacheID = charts.Pow.Time[charts.Pow.Time.Length()-1]
-	}
-
+	// for _, tick := range charts.Exchange.Ticks {
+	// 	shortest, err := ValidateLengths(tick.Time, tick.Open, tick.Close, tick.High, tick.Low)
+	// 	if err != nil {
+	// 		log.Warnf("ChartData.Lengthen: exchange data length mismatch detected for a set. Truncating to %d", shortest)
+	// 		tick.Snip(shortest)
+	// 	}
+	// 	if tick.Time.Length() > 0 {
+	// 		tick.cacheID = tick.Time[len(tick.Time)-1]
+	// 	}
+	// }
 	return nil
-}
-
-// isFileExists checks if the provided file paths exists. It returns true if
-// it does exist and false if otherwise.
-func isFileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
-	return !os.IsNotExist(err)
-}
-
-// writeCacheFile creates the charts cache in the provided file path if it
-// doesn't exists. It dumps the ChartsData contents using the .gob encoding.
-// Drops the old .gob dump before creating a new one. Delete the old cache here
-// rather than after loading so that a dump will still be available after a crash.
-func (charts *ChartData) writeCacheFile(filePath string) error {
-	if isFileExists(filePath) {
-		// delete the old dump files before creating new ones.
-		_ = os.RemoveAll(filePath)
-	}
-
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	encoder := gob.NewEncoder(file)
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return encoder.Encode(versionedCacheData{cacheVersion.String(), charts.gobject()})
-}
-
-// readCacheFile reads the contents of the charts cache dump file encoded in
-// .gob format if it exists returns an error if otherwise.
-func (charts *ChartData) readCacheFile(filePath string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		file.Close()
-	}()
-
-	var data = new(versionedCacheData)
-	decoder := gob.NewDecoder(file)
-	err = decoder.Decode(&data)
-	if err != nil {
-		return err
-	}
-
-	// If the required cache version was not found in the .gob file return an error.
-	if data.Version != cacheVersion.String() {
-		return fmt.Errorf("expected cache version v%s but found v%s",
-			cacheVersion, data.Version)
-	}
-
-	gobject := data.Data
-
-	charts.mtx.Lock()
-	charts.Mempool.Time = gobject.MempoolTime
-	charts.Mempool.TxCount = gobject.MempoolTxCount
-	charts.Mempool.Size = gobject.MempoolSize
-	charts.Mempool.Fees = gobject.MempoolFees
-
-	charts.Propagation.Height = gobject.PropagationHeight
-	charts.Propagation.VotesReceiveTimeDeviations = gobject.VotesReceiveTime
-	charts.Propagation.BlockDelays = gobject.ChartDelays
-	charts.Propagation.BlockPropagation = gobject.BlockPropagation
-
-	charts.Pow.Time = gobject.PowTime
-	charts.Pow.Hashrate = uintPointerMapToUint(gobject.PowHashrate)
-	charts.Pow.Workers = uintPointerMapToUint(gobject.PowWorkers)
-
-	charts.Exchange = &gobject.Exchange
-
-	charts.Vsp.Time = gobject.VspTime
-	charts.Vsp.Immature = uintPointerMapToUint(gobject.VspImmature)
-	charts.Vsp.Live = uintPointerMapToUint(gobject.VspLive)
-	charts.Vsp.Missed = uintPointerMapToUint(gobject.VspMissed)
-	charts.Vsp.UserCount = uintPointerMapToUint(gobject.VspUserCount)
-	charts.Vsp.UsersActive = uintPointerMapToUint(gobject.VspUsersActive)
-	charts.Vsp.Voted = uintPointerMapToUint(gobject.VspVoted)
-	charts.Vsp.PoolFees = floatPointerToChartFloatMap(gobject.VspPoolFees)
-	charts.Vsp.ProportionLive = floatPointerToChartFloatMap(gobject.VspProportionLive)
-	charts.Vsp.ProportionMissed = floatPointerToChartFloatMap(gobject.VspProportionMissed)
-
-	charts.mtx.Unlock()
-
-	err = charts.Lengthen()
-	if err != nil {
-		log.Warnf("problem detected during (*ChartData).Lengthen. clearing datasets: %v", err)
-		charts.Mempool.Snip(0)
-		charts.Propagation.Snip(0)
-		charts.Pow.Snip(0)
-		charts.Exchange.Snip(0)
-		charts.Vsp.Snip(0)
-	}
-
-	return nil
-}
-
-// Load loads chart data from the gob file at the specified path and performs an
-// update.
-func (charts *ChartData) Load(ctx context.Context, cacheDumpPath string) error {
-	if !charts.EnableCache {
-		return nil
-	}
-	t := helpers.NowUTC()
-	defer func() {
-		log.Debugf("Completed the initial chart load and update in %f s",
-			time.Since(t).Seconds())
-	}()
-
-	if err := charts.readCacheFile(cacheDumpPath); err != nil {
-		log.Debugf("Cache dump data loading failed: %v", err)
-		// Do not return non-nil error since a new cache file will be generated.
-		// Also, return only after Update has restored the charts data.
-	}
-
-	// Bring the charts up to date.
-	log.Infof("Updating charts data...")
-	return charts.Update(ctx)
-}
-
-// Dump dumps a ChartGobject to a gob file at the given path.
-func (charts *ChartData) Dump(dumpPath string) {
-	err := charts.writeCacheFile(dumpPath)
-	if err != nil {
-		log.Errorf("ChartData.writeCacheFile failed: %v", err)
-	} else {
-		log.Debug("Dumping the charts cache data was successful")
-	}
-}
-
-func (charts ChartData) CloseDb() {
-	if charts.db != nil {
-		charts.db.Close()
-	}
 }
 
 // TriggerUpdate triggers (*ChartData).Update.
 func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
-	charts.CloseDb()
 	opt := badger.DefaultOptions("data")
 	bdb, err := badger.Open(opt)
 	if err != nil {
@@ -1102,37 +639,6 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 	return nil
 }
 
-func (charts *ChartData) gobject() *ChartGobject {
-	return &ChartGobject{
-		MempoolTime:    charts.Mempool.Time,
-		MempoolSize:    charts.Mempool.Size,
-		MempoolFees:    charts.Mempool.Fees,
-		MempoolTxCount: charts.Mempool.TxCount,
-
-		PropagationHeight: charts.Propagation.Height,
-		BlockPropagation:  charts.Propagation.BlockPropagation,
-		ChartDelays:       charts.Propagation.BlockDelays,
-		VotesReceiveTime:  charts.Propagation.VotesReceiveTimeDeviations,
-
-		PowTime:     charts.Pow.Time,
-		PowHashrate: uintMapToPointer(charts.Pow.Hashrate),
-		PowWorkers:  uintMapToPointer(charts.Pow.Workers),
-
-		VspTime:             charts.Vsp.Time,
-		VspImmature:         uintMapToPointer(charts.Vsp.Immature),
-		VspLive:             uintMapToPointer(charts.Vsp.Live),
-		VspVoted:            uintMapToPointer(charts.Vsp.Voted),
-		VspMissed:           uintMapToPointer(charts.Vsp.Missed),
-		VspPoolFees:         floatMapToPointer(charts.Vsp.PoolFees),
-		VspProportionLive:   floatMapToPointer(charts.Vsp.ProportionLive),
-		VspProportionMissed: floatMapToPointer(charts.Vsp.ProportionMissed),
-		VspUserCount:        uintMapToPointer(charts.Vsp.UserCount),
-		VspUsersActive:      uintMapToPointer(charts.Vsp.UsersActive),
-
-		Exchange: *charts.Exchange,
-	}
-}
-
 // StateID returns a unique (enough) ID associated with the state of the Blocks
 // data in a thread-safe way.
 func (charts *ChartData) StateID() uint64 {
@@ -1144,57 +650,13 @@ func (charts *ChartData) StateID() uint64 {
 // stateID returns a unique (enough) ID associated with the state of the Blocks
 // data.
 func (charts *ChartData) stateID() uint64 {
-	timeLen := len(charts.Mempool.Time)
-	if timeLen > 0 {
-		return charts.Mempool.Time[timeLen-1]
-	}
-	return 0
+	return charts.MempoolTimeTip()
 }
 
 // ValidState checks whether the provided chartID is still valid. ValidState
 // should be used under at least a (*ChartData).RLock.
 func (charts *ChartData) validState(stateID uint64) bool {
 	return charts.stateID() == stateID
-}
-
-// MempoolTime is the time of the latest mempool appended to the chart
-func (charts *ChartData) MempoolTime() uint64 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	if len(charts.Mempool.Time) == 0 {
-		return 0
-	}
-	return charts.Mempool.Time[len(charts.Mempool.Time)-1]
-}
-
-// PropagationHeight is the height of the propagation blocks data, which is the most recent entry
-func (charts *ChartData) PropagationHeight() int32 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	if len(charts.Propagation.Height) == 0 {
-		return 0
-	}
-	return int32(charts.Propagation.Height[len(charts.Propagation.Height)-1])
-}
-
-// PowTime is the time of the latest PoW data appended to the chart
-func (charts *ChartData) PowTime() uint64 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	if len(charts.Pow.Time) == 0 {
-		return 0
-	}
-	return charts.Pow.Time[len(charts.Pow.Time)-1]
-}
-
-// VspTime is the time of the latest Vsp data appended to the chart
-func (charts *ChartData) VspTime() uint64 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	if len(charts.Vsp.Time) == 0 {
-		return 0
-	}
-	return charts.Vsp.Time[len(charts.Vsp.Time)-1]
 }
 
 // AddRetriever adds a Retriever to the Retrievers slice.
@@ -1259,11 +721,6 @@ func NewChartData(ctx context.Context, enableCache bool, syncSources []string,
 
 	return &ChartData{
 		ctx:         ctx,
-		Mempool:     newMempoolSet(),
-		Propagation: newPropagationSet(syncSources),
-		Pow:         newPowSet(poolSources),
-		Vsp:         newVspSet(vsps),
-		Exchange:    newExchangeSet(),
 		EnableCache: enableCache,
 		db:          db,
 		cache:       make(map[string]*cachedChart),
@@ -1283,25 +740,25 @@ func cacheKey(chartID string, axis axisType) string {
 func (charts *ChartData) cacheID(chartID string) uint64 {
 	switch chartID {
 	case Mempool:
-		return charts.MempoolTime()
+		return charts.MempoolTimeTip()
 	case BlockPropagation:
 	case BlockTimestamp:
 	case VotesReceiveTime:
-		return uint64(charts.PropagationHeight())
+		return uint64(charts.PropagationHeightTip())
 	case PowChart:
-		return charts.PowTime()
+		return charts.PowTimeTip()
 	case VSP:
-		return charts.VspTime()
-	case Exchange:
-		var version uint64
-		for key, _ := range charts.Exchange.Ticks {
-			if charts.ExchangeSetTime(key) > version {
-				version = charts.ExchangeSetTime(key)
-			}
-		}
-		return version
+		return charts.VSPTimeTip()
+	// case Exchange:
+	// 	var version uint64
+	// 	for key, _ := range charts.Exchange.Ticks {
+	// 		if charts.ExchangeSetTime(key) > version {
+	// 			version = charts.ExchangeSetTime(key)
+	// 		}
+	// 	}
+	// 	return version
 	}
-	return charts.MempoolTime()
+	return charts.MempoolTimeTip()
 }
 
 // Grab the cached data, if it exists. The cacheID is returned as a convenience.
