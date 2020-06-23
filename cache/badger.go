@@ -17,7 +17,6 @@ func (charts ChartData) SaveAxis(rec Lengther, key string) error {
 		err := txn.Set([]byte(key), b.Bytes())
 		return err
 	})
-	log.Infof("Saved %s", key)
 	return err
 }
 
