@@ -15,49 +15,6 @@ const (
 	ExchangeLowAxis   axisType = "low"
 )
 
-type exchangeSet struct {
-	// holds a set of exchange tick where the key is exchange name, currency pair and interval joined by -
-	Ticks map[string]exchangeTick
-}
-
-type exchangeTick struct {
-	Time    ChartUints
-	Open    ChartFloats
-	Close   ChartFloats
-	High    ChartFloats
-	Low     ChartFloats
-	cacheID uint64
-}
-
-func (tickSet *exchangeTick) Snip(length int) {
-	tickSet.Time = tickSet.Time.snip(length)
-	tickSet.Open = tickSet.Open.snip(length)
-	tickSet.Close = tickSet.Close.snip(length)
-	tickSet.High = tickSet.High.snip(length)
-	tickSet.Low = tickSet.Low.snip(length)
-}
-
-func (set *exchangeSet) Append(charts *ChartData, key string, time ChartUints, open ChartFloats, close ChartFloats, high ChartFloats, low ChartFloats) {
-	if len(time) == 0 {
-		return
-	}
-	if err := charts.AppendChartUintsAxis(key+"-"+string(TimeAxis), time); err != nil {
-		log.Errorf("Error in append exchange time, %s", err.Error())
-	}
-	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeOpenAxis), open); err != nil {
-		log.Errorf("Error in append exchange open axis, %s", err.Error())
-	}
-	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeCloseAxis), close); err != nil {
-		log.Errorf("Error in append exchange close axis, %s", err.Error())
-	}
-	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeHighAxis), high); err != nil {
-		log.Errorf("Error in append exchange high axis, %s", err.Error())
-	}
-	if err := charts.AppendChartFloatsAxis(key+"-"+string(ExchangeLowAxis), low); err != nil {
-		log.Errorf("Error in append exchange low axis, %s", err.Error())
-	}
-}
-
 // BuildExchangeKey returns exchange name, currency pair and interval joined by -
 func BuildExchangeKey(exchangeName string, currencyPair string, interval int) string {
 	return fmt.Sprintf("%s-%s-%d", exchangeName, currencyPair, interval)

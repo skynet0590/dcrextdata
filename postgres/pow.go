@@ -445,7 +445,19 @@ func appendPowChart(charts *cache.ChartData, data interface{}) error {
 		return err 
 	}
 
+	keyExists := func (arr []string, key string) bool {
+		for _, s := range arr {
+			if s == key {
+				return true
+			}
+		}
+		return false
+	}
+
 	for pool, workers := range powDataSet.workers {
+		if !keyExists(charts.PowSources, pool) {
+			charts.PowSources = append(charts.PowSources, pool)
+		}
 		if err := charts.AppendChartNullUintsAxis(cache.PowChart + "-" + string(cache.WorkerAxis) + "-" + pool, 
 			workers); err !=  nil {
 			return err 

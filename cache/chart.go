@@ -578,6 +578,9 @@ type ChartData struct {
 	retrivers map[string]Retriver
 
 	syncSource []string
+	VSPSources []string
+	PowSources []string
+	ExchangeKeys  []string
 }
 
 // Check that the length of all arguments is equal.
@@ -749,14 +752,14 @@ func (charts *ChartData) cacheID(chartID string) uint64 {
 		return charts.PowTimeTip()
 	case VSP:
 		return charts.VSPTimeTip()
-	// case Exchange:
-	// 	var version uint64
-	// 	for key, _ := range charts.Exchange.Ticks {
-	// 		if charts.ExchangeSetTime(key) > version {
-	// 			version = charts.ExchangeSetTime(key)
-	// 		}
-	// 	}
-	// 	return version
+	case Exchange:
+		var version uint64
+		for _, key := range charts.ExchangeKeys {
+			if charts.ExchangeSetTime(key) > version {
+				version = charts.ExchangeSetTime(key)
+			}
+		}
+		return version
 	}
 	return charts.MempoolTimeTip()
 }

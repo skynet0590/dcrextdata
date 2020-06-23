@@ -664,7 +664,19 @@ func appendVspChart(charts *cache.ChartData, data interface{}) error {
 		return err
 	}
 
+	keyExists := func (arr []string, key string) bool {
+		for _, s := range arr {
+			if s == key {
+				return true
+			}
+		}
+		return false
+	}
+
 	for vspSource, record := range vspDataSet.immature {
+		if !keyExists(charts.VSPSources, vspSource) {
+			charts.VSPSources = append(charts.VSPSources, vspSource)
+		}
 		if err := charts.AppendChartNullUintsAxis(cache.VSP+"-"+string(cache.ImmatureAxis)+"-"+vspSource,
 			record); err != nil {
 			return err

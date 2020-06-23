@@ -627,8 +627,36 @@ func (pg *PgDb) fetchExchangeChart(ctx context.Context, charts *cache.ChartData,
 
 func appendExchangeChart(charts *cache.ChartData, data interface{}) error {
 	var tickSets = data.(map[string]exchangeTickSet)
+	keyExists := func (arr []string, key string) bool {
+		for _, s := range arr {
+			if s == key {
+				return true
+			}
+		}
+		return false
+	}
 	for key, tickSet := range tickSets {
-		charts.Exchange.Append(charts, key, tickSet.time, tickSet.open, tickSet.close, tickSet.high, tickSet.low)
+		if !keyExists(charts.ExchangeKeys, key) {
+			charts.ExchangeKeys = append(charts.ExchangeKeys, key)
+		}
+		if len(tickSet.time) == 0 {
+			continue
+		}
+		if err := charts.AppendChartUintsAxis(key+"-"+string(cache.TimeAxis), tickSet.time); err != nil {
+			log.Errorf("Error in append exchange time, %s", err.Error())
+		}
+		if err := charts.AppendChartFloatsAxis(key+"-"+string(cache.ExchangeOpenAxis), tickSet.open); err != nil {
+			log.Errorf("Error in append exchange open axis, %s", err.Error())
+		}
+		if err := charts.AppendChartFloatsAxis(key+"-"+string(cache.ExchangeCloseAxis), tickSet.close); err != nil {
+			log.Errorf("Error in append exchange close axis, %s", err.Error())
+		}
+		if err := charts.AppendChartFloatsAxis(key+"-"+string(cache.ExchangeHighAxis), tickSet.high); err != nil {
+			log.Errorf("Error in append exchange high axis, %s", err.Error())
+		}
+		if err := charts.AppendChartFloatsAxis(key+"-"+string(cache.ExchangeLowAxis), tickSet.low); err != nil {
+			log.Errorf("Error in append exchange low axis, %s", err.Error())
+		}
 	}
 
 	return nil
