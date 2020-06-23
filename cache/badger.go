@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger"
 )
 
 func (charts ChartData) SaveAxis(rec Lengther, key string) error {
@@ -95,8 +95,67 @@ func (charts ChartData) AppendChartNullFloatsAxis(key string, set ChartNullFloat
 	return charts.SaveAxis(data, key)
 }
 
+// length correction
+func (charts ChartData) normalizeLength(chartID string) error {
+	switch chartID {
+	case Mempool:
+		key := Mempool + "-" + string(TimeAxis)
+		timeLen, err := charts.chartUintsLength(key)
+		if err != nil {
+			return err
+		}
+		timeLen++
+	}
+
+	return nil
+}
+
+func (charts ChartData) chartUintsLength(key string) (int, error) {
+	var data ChartUints
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return 0, err
+		}
+	}
+	return data.Length(), nil
+}
+
+func (charts ChartData) chartFloatsLength(key string) (int, error) {
+	var data ChartFloats
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return 0, err
+		}
+	}
+	return data.Length(), nil
+}
+
+func (charts ChartData) chartNullUintsLength(key string) (int, error) {
+	var data chartNullIntsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return 0, err
+		}
+	}
+	return data.Length(), nil
+}
+
+func (charts ChartData) chartNullFloatsLength(key string) (int, error) {
+	var data chartNullFloatsPointer
+	err := charts.ReadAxis(key, &data)
+	if err != nil {
+		if err != badger.ErrKeyNotFound {
+			return 0, err
+		}
+	}
+	return data.Length(), nil
+}
+
 // Snip
-func (charts ChartData) Snip(chartID string, length int, axis ...axisType) error {
+func (charts ChartData) Snip(chartID string, length int) error {
 	switch chartID {
 	case Mempool:
 		return charts.snipMempool(length)
@@ -329,8 +388,6 @@ func (charts ChartData) snipChartFloatsAxis(key string, length int) error {
 	data = data.snip(length)
 	return charts.SaveAxis(data, key)
 }
-
-// Length
 
 func (charts ChartData) MempoolTimeTip() uint64 {
 	var dates ChartUints

@@ -2,7 +2,6 @@ module github.com/raedahgroup/dcrextdata
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/decred/dcrd/chaincfg v1.5.1
 	github.com/decred/dcrd/chaincfg/chainhash v1.0.2
 	github.com/decred/dcrd/chaincfg/v2 v2.3.0
@@ -15,8 +14,7 @@ require (
 	github.com/decred/dcrdata/explorer/types v1.1.0
 	github.com/decred/dcrdata/txhelpers/v2 v2.0.0
 	github.com/decred/slog v1.0.0
-	github.com/dgraph-io/badger v1.6.1 // indirect
-	github.com/dgraph-io/badger/v2 v2.0.3
+	github.com/dgraph-io/badger v1.6.1
 	github.com/ericlagergren/decimal v0.0.0-20190331172538-c787d12d14a5 // indirect
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi v4.0.2+incompatible

@@ -18,7 +18,7 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger"
 	"github.com/jessevdk/go-flags"
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
@@ -204,7 +204,6 @@ func _main(ctx context.Context) error {
 		return db, nil
 	})
 
-	log.Infof("Updating charts data...")
 	if err = charts.Load(ctx); err != nil {
 		log.Error(err)
 	}

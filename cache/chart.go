@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg"
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/volatiletech/null"
 )
@@ -627,8 +627,7 @@ func ValidateLengths(lens ...Lengther) (int, error) {
 	return firstLen, nil
 }
 
-// Lengthen performs data validation and populates the Days zoomSet. If there is
-// an update to a zoomSet or windowSet, the cacheID will be incremented.
+// Lengthen performs data validation, the cacheID will be incremented.
 func (charts *ChartData) Lengthen() error {
 
 	// Make sure exchange data has set equal number of record for each set
