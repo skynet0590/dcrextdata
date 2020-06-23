@@ -598,6 +598,8 @@ type ChartData struct {
 	VSPSources []string
 	PowSources []string
 	ExchangeKeys  []string
+	NodeVersion []string
+	NodeLocations []string
 }
 
 // Check that the length of all arguments is equal.

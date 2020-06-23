@@ -878,9 +878,20 @@ func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
 		return err 
 	}
 
+	keyExists := func (arr []string, key string) bool {
+		for _, item := range arr {
+			if item == key {
+				return true
+			}
+		}
+		return false
+	}
 	for country, record := range tickSets.locations {
 		if country == "" {
 			country = "Unknown"
+		}
+		if !keyExists(charts.NodeLocations, country) {
+			charts.NodeLocations = append(charts.NodeLocations, country)
 		}
 		if err := charts.AppendChartUintsAxis(cache.Snapshot + "-" + string(cache.SnapshotLocations) + "-" + country, 
 			record); err !=  nil {
@@ -891,6 +902,9 @@ func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
 	for userAgent, record := range tickSets.versions {
 		if userAgent == "" {
 			userAgent = "Unknown"
+		}
+		if !keyExists(charts.NodeVersion, userAgent) {
+			charts.NodeLocations = append(charts.NodeVersion, userAgent)
 		}
 		if err := charts.AppendChartUintsAxis(cache.Snapshot + "-" + string(cache.SnapshotNodeVersions) + "-" + userAgent, 
 			record); err !=  nil {
