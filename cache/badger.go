@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 
 	"github.com/dgraph-io/badger"
+	"github.com/friendsofgo/errors"
 )
 
 func (charts ChartData) SaveAxis(rec Lengther, key string) error {
@@ -95,18 +96,516 @@ func (charts ChartData) AppendChartNullFloatsAxis(key string, set ChartNullFloat
 	return charts.SaveAxis(data, key)
 }
 
+func (charts ChartData) NormalizeLength() error {
+	ids := []string{
+		Mempool, Propagation, PowChart, VSP, Exchange, Snapshot, Community,
+	}
+	var err error
+	for _, chartID := range ids {
+		if cerr := charts.normalizeLength(chartID); cerr != nil {
+			err = errors.Wrap(cerr, "Normalize failed for " + chartID)
+		}
+	}
+	return err
+}
+
 // length correction
 func (charts ChartData) normalizeLength(chartID string) error {
+	// TODO: use transaction
 	switch chartID {
 	case Mempool:
-		key := Mempool + "-" + string(TimeAxis)
-		timeLen, err := charts.chartUintsLength(key)
+		return charts.normalizeMempoolLength()
+		
+	case Propagation:
+		return charts.normalizePropagationLength()
+		
+	case PowChart:
+		return charts.normalizePowChartLength()
+		
+	case VSP:
+		return charts.normalizeVSPLength()
+		
+	case Exchange:
+		return charts.normalizeExchangeLength()
+		
+	case Snapshot:
+		return charts.normalizeSnapshotLength()
+	case Community:
+		return nil
+
+	}
+
+	return nil
+}
+
+func (charts ChartData) normalizeMempoolLength() error {
+	var firstLen, shortest, longest int
+	key := Mempool + "-" + string(TimeAxis)
+	firstLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
+
+	key = Mempool + "-" + string(MempoolFees)
+	dLen, err := charts.chartFloatsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizeMempoolLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	key = Mempool + "-" + string(MempoolSize)
+	dLen, err = charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizeMempoolLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	key = Mempool + "-" + string(MempoolTxCount)
+	dLen, err = charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizeMempoolLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	if longest != shortest {
+		return charts.snipMempool(shortest)
+	}
+	return nil
+}
+
+func (charts ChartData) normalizePropagationLength() error {
+	var firstLen, shortest, longest int
+	key := Propagation + "-" + string(HeightAxis)
+	firstLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
+
+	key = Propagation + "-" + string(BlockTimestamp)
+	dLen, err := charts.chartFloatsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizePropagationLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	key = Propagation + "-" + string(VotesReceiveTime)
+	dLen, err = charts.chartFloatsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizePropagationLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	for _, source := range charts.syncSource {
+		key = Propagation + "-" + string(BlockPropagation) + "-" + source
+		dLen, err = charts.chartFloatsLength(key)
 		if err != nil {
 			return err
 		}
-		timeLen++
+		if dLen != firstLen {
+			log.Warnf("charts.normalizePropagationLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
 	}
 
+	if longest != shortest {
+		return charts.snipPropagationChart(shortest)
+	}
+	return nil
+}
+
+func (charts ChartData) normalizePowChartLength() error {
+	var firstLen, shortest, longest int
+	key := PowChart + "-" + string(TimeAxis)
+	firstLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
+
+	for _, source := range charts.PowSources {
+		key = PowChart + "-" + string(WorkerAxis) + "-" + source
+		dLen, err := charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizePowChartLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		key = PowChart + "-" + string(HashrateAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizePowChartLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+	}
+
+	if longest != shortest {
+		return charts.snipPowChart(shortest)
+	}
+	return nil
+}
+
+func (charts ChartData) normalizeVSPLength() error {
+	var firstLen, shortest, longest int
+	key := VSP + "-" + string(TimeAxis)
+	firstLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
+
+	for _, source := range charts.VSPSources {
+		// ImmatureAxis
+		key = VSP + "-" + string(ImmatureAxis) + "-" + source
+		dLen, err := charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// LiveAxis
+		key = VSP + "-" + string(LiveAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// VotedAxis
+		key = VSP + "-" + string(VotedAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// MissedAxis
+		key = VSP + "-" + string(MissedAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// PoolFeesAxis
+		key = VSP + "-" + string(PoolFeesAxis) + "-" + source
+		dLen, err = charts.chartNullFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// ProportionLiveAxis
+		key = VSP + "-" + string(ProportionLiveAxis) + "-" + source
+		dLen, err = charts.chartNullFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// ProportionMissedAxis
+		key = VSP + "-" + string(ProportionMissedAxis) + "-" + source
+		dLen, err = charts.chartNullFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// UsersActiveAxis
+		key = VSP + "-" + string(UsersActiveAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// UserCountAxis
+		key = VSP + "-" + string(UserCountAxis) + "-" + source
+		dLen, err = charts.chartNullUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeVSPLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+	}
+
+	if longest != shortest {
+		return charts.snipPowChart(shortest)
+	}
+	return nil
+}
+
+func (charts ChartData) normalizeExchangeLength() error {
+
+	var shortest, longest int
+	for _, exchangeKeys := range charts.ExchangeKeys {
+		key := exchangeKeys + "-" + string(TimeAxis)
+		firstLen, err := charts.chartUintsLength(key)
+		if err != nil {
+			return err
+		}
+		shortest, longest = firstLen, firstLen
+
+		// ExchangeOpenAxis
+		key = exchangeKeys + "-" + string(ExchangeOpenAxis)
+		dLen, err := charts.chartFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeExchangeLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// ExchangeCloseAxis
+		key = exchangeKeys + "-" + string(ExchangeCloseAxis)
+		dLen, err = charts.chartFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeExchangeLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// ExchangeHighAxis
+		key = exchangeKeys + "-" + string(ExchangeHighAxis)
+		dLen, err = charts.chartFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeExchangeLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+
+		// ExchangeLowAxis
+		key = exchangeKeys + "-" + string(ExchangeLowAxis)
+		dLen, err = charts.chartFloatsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeExchangeLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+	}
+
+	if longest != shortest {
+		return charts.snipPowChart(shortest)
+	}
+	return nil
+}
+
+func (charts ChartData) normalizeSnapshotLength() error {
+	var firstLen, shortest, longest int
+	key := Snapshot + "-" + string(TimeAxis)
+	firstLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
+
+	// SnapshotNodes
+	key = Snapshot + "-" + string(SnapshotNodes)
+	dLen, err := charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizeSnapshotLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	// SnapshotReachableNodes
+	key = Snapshot + "-" + string(SnapshotReachableNodes)
+	dLen, err = charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	if dLen != firstLen {
+		log.Warnf("charts.normalizeSnapshotLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+		if dLen < shortest {
+			shortest = dLen
+		} else if dLen > longest {
+			longest = dLen
+		}
+	}
+
+	for _, source := range charts.NodeLocations {
+		// SnapshotLocations
+		key = Snapshot + "-" + string(SnapshotLocations) + "-" + source
+		dLen, err := charts.chartUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeSnapshotLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+	}
+
+	for _, source := range charts.NodeVersion {
+		// SnapshotNodeVersions
+		key = Snapshot + "-" + string(SnapshotNodeVersions) + "-" + source
+		dLen, err := charts.chartUintsLength(key)
+		if err != nil {
+			return err
+		}
+		if dLen != firstLen {
+			log.Warnf("charts.normalizeSnapshotLength: dataset for %s axis has mismatched length %d != %d", key, dLen, firstLen)
+			if dLen < shortest {
+				shortest = dLen
+			} else if dLen > longest {
+				longest = dLen
+			}
+		}
+	}
+
+	if longest != shortest {
+		return charts.snipPowChart(shortest)
+	}
 	return nil
 }
 

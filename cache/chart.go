@@ -629,19 +629,7 @@ func ValidateLengths(lens ...Lengther) (int, error) {
 
 // Lengthen performs data validation, the cacheID will be incremented.
 func (charts *ChartData) Lengthen() error {
-
-	// Make sure exchange data has set equal number of record for each set
-	// for _, tick := range charts.Exchange.Ticks {
-	// 	shortest, err := ValidateLengths(tick.Time, tick.Open, tick.Close, tick.High, tick.Low)
-	// 	if err != nil {
-	// 		log.Warnf("ChartData.Lengthen: exchange data length mismatch detected for a set. Truncating to %d", shortest)
-	// 		tick.Snip(shortest)
-	// 	}
-	// 	if tick.Time.Length() > 0 {
-	// 		tick.cacheID = tick.Time[len(tick.Time)-1]
-	// 	}
-	// }
-	return nil
+	return charts.NormalizeLength()
 }
 
 // Load loads chart data from the gob file at the specified path and performs an

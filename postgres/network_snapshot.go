@@ -904,7 +904,7 @@ func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
 			userAgent = "Unknown"
 		}
 		if !keyExists(charts.NodeVersion, userAgent) {
-			charts.NodeLocations = append(charts.NodeVersion, userAgent)
+			charts.NodeVersion = append(charts.NodeVersion, userAgent)
 		}
 		if err := charts.AppendChartUintsAxis(cache.Snapshot + "-" + string(cache.SnapshotNodeVersions) + "-" + userAgent, 
 			record); err !=  nil {
