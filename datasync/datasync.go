@@ -8,7 +8,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
 )
 
@@ -42,14 +41,6 @@ func (s *SyncCoordinator) Syncer(tableName string) (Syncer, bool) {
 
 func (s *SyncCoordinator) StartSyncing(ctx context.Context) {
 	runSyncers := func() {
-		for {
-			if app.MarkBusyIfFree() {
-				break
-			}
-		}
-
-		defer app.ReleaseForNewModule()
-
 		for _, source := range s.instances {
 			for i := 0; i <= len(s.syncersKeys); i++ {
 				tableName := s.syncersKeys[i]
