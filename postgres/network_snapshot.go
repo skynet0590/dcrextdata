@@ -723,7 +723,9 @@ type snapshotSet struct {
 	nodes cache.ChartUints
 	reachableNodes cache.ChartUints
 	locations map[string]cache.ChartUints
+	locationDates cache.ChartUints
 	versions map[string]cache.ChartUints
+	versionDates cache.ChartUints
 }
 
 func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.ChartData, page int) (interface{}, func(), bool, error) {
@@ -743,7 +745,7 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 		}
 	}
 
-	pageSize := 100
+	pageSize := 10000
 	done := true
 	result, err := pg.SnapshotsByTime(ctx, int64(startDate), pageSize)
 	if err != nil {
@@ -802,13 +804,14 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 
 	for _, d := range allDates {
 		for _, c := range allCountries {
-			rec := dateCountryCount[d][c]
+			rec := dateCountryCount[int64(d)][c]
 			if record, found := set.locations[c]; found {
 				set.locations[c] = append(record, uint64(rec))
 			} else {
 				set.locations[c] = cache.ChartUints{uint64(rec)}
 			}
 		}
+		set.locationDates = append(set.locationDates, uint64(d))
 	}
 
 	// versions
@@ -848,13 +851,14 @@ func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Cha
 
 	for _, d := range allDates {
 		for _, c := range allUserAgents {
-			rec := dateUserAgentCount[d][c]
+			rec := dateUserAgentCount[int64(d)][c]
 			if record, found := set.versions[c]; found {
 				set.versions[c] = append(record, uint64(rec))
 			} else {
 				set.versions[c] = cache.ChartUints{uint64(rec)}
 			}
 		}
+		set.versionDates = append(set.versionDates, uint64(d))
 	}
 
 	return set, func() {}, done, nil
@@ -886,6 +890,12 @@ func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
 		}
 		return false
 	}
+	
+	if err := charts.AppendChartUintsAxis(cache.Snapshot + "-" + string(cache.SnapshotLocations) + 
+		"-" + string(cache.TimeAxis), tickSets.locationDates); err !=  nil {
+		return err 
+	}
+
 	for country, record := range tickSets.locations {
 		if country == "" {
 			country = "Unknown"
@@ -910,6 +920,11 @@ func appendSnapshotChart(charts *cache.ChartData, data interface{}) error {
 			record); err !=  nil {
 			return err 
 		}
+	}
+	
+	if err := charts.AppendChartUintsAxis(cache.Snapshot + "-" + string(cache.SnapshotNodeVersions) + 
+		"-" + string(cache.TimeAxis), tickSets.versionDates); err !=  nil {
+		return err 
 	}
 
 	return nil

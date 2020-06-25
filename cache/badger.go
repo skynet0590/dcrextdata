@@ -568,9 +568,20 @@ func (charts ChartData) normalizeSnapshotLength() error {
 			longest = dLen
 		}
 	}
+	if longest != shortest {
+		if err = charts.snipSnapshotChart(shortest, SnapshotNodes); err != nil {
+			log.Warnf("SnapshotNodeVersions fail at %s, %s", SnapshotNodes, err.Error())
+		}
+	}
 
+	// SnapshotLocations
+	key = Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
+	firstLen, err = charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
 	for _, source := range charts.NodeLocations {
-		// SnapshotLocations
 		key = Snapshot + "-" + string(SnapshotLocations) + "-" + source
 		dLen, err := charts.chartUintsLength(key)
 		if err != nil {
@@ -585,7 +596,18 @@ func (charts ChartData) normalizeSnapshotLength() error {
 			}
 		}
 	}
+	if longest != shortest {
+		if err = charts.snipSnapshotChart(shortest, SnapshotLocations); err != nil {
+			log.Warnf("SnapshotNodeVersions fail at %s, %s", SnapshotLocations, err.Error())
+		}
+	}
 
+	key = Snapshot + "-" + string(SnapshotNodeVersions) + "-" + string(TimeAxis)
+	firstLen, err = charts.chartUintsLength(key)
+	if err != nil {
+		return err
+	}
+	shortest, longest = firstLen, firstLen
 	for _, source := range charts.NodeVersion {
 		// SnapshotNodeVersions
 		key = Snapshot + "-" + string(SnapshotNodeVersions) + "-" + source
@@ -604,7 +626,9 @@ func (charts ChartData) normalizeSnapshotLength() error {
 	}
 
 	if longest != shortest {
-		return charts.snipPowChart(shortest)
+		if err = charts.snipSnapshotChart(shortest, SnapshotNodeVersions); err != nil {
+			log.Warnf("SnapshotNodeVersions fail at %s, %s", SnapshotNodeVersions, err.Error())
+		}
 	}
 	return nil
 }
@@ -651,27 +675,6 @@ func (charts ChartData) chartNullFloatsLength(key string) (int, error) {
 		}
 	}
 	return data.Length(), nil
-}
-
-// Snip
-func (charts ChartData) Snip(chartID string, length int) error {
-	switch chartID {
-	case Mempool:
-		return charts.snipMempool(length)
-	case Propagation:
-		return charts.snipPropagationChart(length)
-	case PowChart:
-		return charts.snipPowChart(length)
-	case VSP:
-		return charts.snipVspChart(length)
-	case Exchange:
-		return charts.snipExchangeChart(length)
-	case Snapshot:
-		return charts.snipSnapshotChart(length)
-	case Community:
-		return nil
-	}
-	return nil
 }
 
 func (charts ChartData) snipMempool(length int) error {
@@ -814,18 +817,30 @@ func (charts ChartData) snipExchangeChart(length int) error {
 	return nil
 }
 
-func (charts ChartData) snipSnapshotChart(length int) error {
-	keys := []string{
-		Snapshot + "-" + string(TimeAxis),
-		Snapshot + "-" + string(SnapshotNodes),
-		Snapshot + "-" + string(SnapshotReachableNodes),
+func (charts ChartData) snipSnapshotChart(length int, axis axisType) error {
+	var keys []string
+	switch axis {
+	case SnapshotNodes:
+		keys = []string{
+			Snapshot + "-" + string(TimeAxis),
+			Snapshot + "-" + string(SnapshotNodes),
+			Snapshot + "-" + string(SnapshotReachableNodes),
+		}
+		break
+	case SnapshotLocations:
+		keys = append(keys, Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis))
+		for _, country := range charts.NodeLocations {
+			keys = append(keys, Snapshot+"-"+string(SnapshotLocations)+"-"+country)
+		}
+		break
+	case SnapshotNodeVersions:
+		keys = append(keys, Snapshot + "-" + string(SnapshotNodeVersions) + "-" + string(TimeAxis))
+		for _, userAgent := range charts.NodeVersion {
+			keys = append(keys, Snapshot+"-"+string(SnapshotNodeVersions)+"-"+userAgent)
+		}
+		break
 	}
-	for _, country := range charts.NodeLocations {
-		keys = append(keys, Snapshot+"-"+string(SnapshotLocations)+"-"+country)
-	}
-	for _, userAgent := range charts.NodeVersion {
-		keys = append(keys, Snapshot+"-"+string(SnapshotNodeVersions)+"-"+userAgent)
-	}
+	
 	for _, key := range keys {
 		if err := charts.snipChartUintsAxis(key, length); err != nil {
 			if err != badger.ErrKeyNotFound {

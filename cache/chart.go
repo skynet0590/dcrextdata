@@ -159,7 +159,10 @@ const InvalidBinErr = ChartError("invalid bin")
 type Lengther interface {
 	Length() int
 	Truncate(int) Lengther
+	IsZero(index int) bool
+	Remove(index int) Lengther
 }
+
 
 // ChartFloats is a slice of floats. It satisfies the lengther interface, and
 // provides methods for taking averages or sums of segments.
@@ -174,6 +177,20 @@ func (data ChartFloats) Length() int {
 // interface.
 func (data ChartFloats) Truncate(l int) Lengther {
 	return data[:l]
+}
+
+func (data ChartFloats) IsZero(index int) bool {
+	if index >= data.Length() {
+		return true
+	}
+	return data[index] == 0
+}
+
+func (data ChartFloats) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	return append(data[:index], data[index+1:]...)
 }
 
 // If the data is longer than max, return a subset of length max.
@@ -197,7 +214,6 @@ type ChartNullData interface {
 	Lengther
 	Value(index int) interface{}
 	Valid(index int) bool
-	IsZero(index int) bool
 	String(index int) string
 }
 
@@ -237,6 +253,21 @@ func (data chartNullIntsPointer) Append(set ChartNullUints) chartNullIntsPointer
 		}
 		data.Items = append(data.Items, intPointer)
 	}
+	return data
+}
+
+func (data chartNullIntsPointer) IsZero(index int) bool {
+	if index >= data.Length() {
+		return false
+	}
+	return data.Items[index].HasValue
+}
+
+func (data chartNullIntsPointer) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	data.Items = append(data.Items[:index], data.Items[index+1:]...)
 	return data
 }
 
@@ -323,6 +354,14 @@ func (data ChartNullUints) IsZero(index int) bool {
 	return data.Value(index).(uint64) == 0
 }
 
+func (data ChartNullUints) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	data = append(data[:index], data[index+1:]...)
+	return data
+}
+
 func (data ChartNullUints) String(index int) string {
 	return strconv.FormatUint(data.Value(index).(uint64), 10)
 }
@@ -403,6 +442,22 @@ func (data chartNullFloatsPointer) Append(set ChartNullFloats) chartNullFloatsPo
 	return data
 }
 
+
+func (data chartNullFloatsPointer) IsZero(index int) bool {
+	if index >= data.Length() {
+		return false
+	}
+	return !data.Items[index].HasValue
+}
+
+func (data chartNullFloatsPointer) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	data.Items = append(data.Items[:index], data.Items[index+1:]...)
+	return data
+}
+
 // If the data is longer than max, return a subset of length max.
 func (data chartNullFloatsPointer) snip(max int) chartNullFloatsPointer {
 	if len(data.Items) < max {
@@ -480,6 +535,14 @@ func (data ChartNullFloats) IsZero(index int) bool {
 	return data.Value(index).(float64) == 0
 }
 
+func (data ChartNullFloats) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	return append(data[:index], data[index+1:]...)
+	return data
+}
+
 func (data ChartNullFloats) String(index int) string {
 	return fmt.Sprintf("%f", data.Value(index).(float64))
 }
@@ -523,6 +586,21 @@ func (data ChartStrings) Truncate(l int) Lengther {
 	return data[:l]
 }
 
+func (data ChartStrings) IsZero(index int) bool {
+	if index >= data.Length() {
+		return false
+	}
+	return data[index] == ""
+}
+
+func (data ChartStrings) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	return append(data[:index], data[index+1:]...)
+	return data
+}
+
 // ChartUints is a slice of uints. It satisfies the lengther interface, and
 // provides methods for taking averages or sums of segments.
 type ChartUints []uint64
@@ -536,6 +614,21 @@ func (data ChartUints) Length() int {
 // interface.
 func (data ChartUints) Truncate(l int) Lengther {
 	return data[:l]
+}
+
+func (data ChartUints) IsZero(index int) bool {
+	if index >= data.Length() {
+		return false
+	}
+	return data[index] == 0
+}
+
+func (data ChartUints) Remove(index int) Lengther {
+	if index >= data.Length() {
+		return data
+	}
+	return append(data[:index], data[index+1:]...)
+	return data
 }
 
 // If the data is longer than max, return a subset of length max.
@@ -903,11 +996,22 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 	}
 	smaller := sets[0].Length()
 	for _, x := range sets {
+		if x == nil {
+			smaller = 0
+			continue
+		}
 		l := x.Length()
 		if l < smaller {
 			smaller = l
 		}
 	}
+	for i := range sets {
+		if sets[i] == nil {
+			continue
+		}
+		sets[i] = sets[i].Truncate(smaller)
+	}
+	sets = charts.trim(sets...)
 	response := make(chartResponse)
 	for i := range sets {
 		rk := keys[i%len(keys)]
@@ -917,9 +1021,32 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 		if i >= len(keys) {
 			rk += strconv.Itoa(i / len(keys))
 		}
-		response[rk] = sets[i].Truncate(smaller)
+		response[rk] = sets[i]
 	}
 	return json.Marshal(response)
+}
+
+// trim remove points that has 0s in all yAxis.
+func (charts *ChartData) trim(sets ...Lengther) []Lengther {
+
+	dLen := sets[0].Length()
+	for i := dLen-1; i >= 0; i-- {
+		var isZero bool = true
+		out:
+		for j := 1; j < len(sets); j++ {
+			if !sets[j].IsZero(i) {
+				isZero = false
+				break out
+			}
+		}
+		if isZero {
+			for j := 0; j < len(sets); j++ {
+				sets[j] = sets[j].Remove(i)
+			}
+		}
+	}
+
+	return sets
 }
 
 func mempool(ctx context.Context, charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
@@ -1147,14 +1274,15 @@ func networkSnapshotNodesChart(charts *ChartData) ([]byte, error) {
 func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]byte, error) {
 	var recs = make([]Lengther, len(countries)+1)
 	var dates ChartUints
-	if err := charts.ReadAxis(Snapshot+"-"+string(TimeAxis), &dates); err != nil {
+	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
+	if err := charts.ReadAxis(key, &dates); err != nil {
 		return nil, err
 	}
 	recs[0] = dates
 
 	for i, country := range countries {
 		if country == "" {
-			country = "Unknown"
+			continue
 		}
 		key := Snapshot + "-" + string(SnapshotLocations) + "-" + country
 		var rec ChartUints
@@ -1170,14 +1298,15 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) ([]byte, error) {
 	var recs = make([]Lengther, len(userAgents)+1)
 	var dates ChartUints
-	if err := charts.ReadAxis(Snapshot+"-"+string(TimeAxis), &dates); err != nil {
+	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
+	if err := charts.ReadAxis(key, &dates); err != nil {
 		return nil, err
 	}
 	recs[0] = dates
 
 	for i, userAgent := range userAgents {
 		if userAgent == "" {
-			userAgent = "Unknown"
+			continue
 		}
 		key := Snapshot + "-" + string(SnapshotNodeVersions) + "-" + userAgent
 		var rec ChartUints
