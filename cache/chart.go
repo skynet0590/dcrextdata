@@ -163,7 +163,6 @@ type Lengther interface {
 	Remove(index int) Lengther
 }
 
-
 // ChartFloats is a slice of floats. It satisfies the lengther interface, and
 // provides methods for taking averages or sums of segments.
 type ChartFloats []float64
@@ -442,7 +441,6 @@ func (data chartNullFloatsPointer) Append(set ChartNullFloats) chartNullFloatsPo
 	return data
 }
 
-
 func (data chartNullFloatsPointer) IsZero(index int) bool {
 	if index >= data.Length() {
 		return false
@@ -687,11 +685,11 @@ type ChartData struct {
 	updaters  []ChartUpdater
 	retrivers map[string]Retriver
 
-	syncSource []string
-	VSPSources []string
-	PowSources []string
+	syncSource    []string
+	VSPSources    []string
+	PowSources    []string
 	ExchangeKeys  []string
-	NodeVersion []string
+	NodeVersion   []string
 	NodeLocations []string
 }
 
@@ -826,17 +824,34 @@ func (charts *ChartData) Update(ctx context.Context) error {
 }
 
 // NewChartData constructs a new ChartData.
-func NewChartData(ctx context.Context, enableCache bool, syncSources []string,
-	poolSources []string, vsps []string, chainParams *chaincfg.Params, db *badger.DB) *ChartData {
+func NewChartData(ctx context.Context, enableCache bool, syncSources,
+	poolSources, vsps, nodeLocations, nodeVersion []string, chainParams *chaincfg.Params, db *badger.DB) *ChartData {
 
+	var locations, versions = make([]string, len(nodeLocations)), make([]string, len(nodeVersion))
+	for i, c := range nodeLocations {
+		if c == "" {
+			c = "Unknown"
+		}
+		locations[i] = c
+	}
+	for i, v := range nodeVersion {
+		if v == "" {
+			v = "Unknown"
+		}
+		versions[i] = v
+	}
 	return &ChartData{
-		ctx:         ctx,
-		EnableCache: enableCache,
-		db:          db,
-		cache:       make(map[string]*cachedChart),
-		updaters:    make([]ChartUpdater, 0),
-		retrivers:   make(map[string]Retriver),
-		syncSource:  syncSources,
+		ctx:           ctx,
+		EnableCache:   enableCache,
+		db:            db,
+		cache:         make(map[string]*cachedChart),
+		updaters:      make([]ChartUpdater, 0),
+		retrivers:     make(map[string]Retriver),
+		syncSource:    syncSources,
+		PowSources:    poolSources,
+		VSPSources:    vsps,
+		NodeLocations: locations,
+		NodeVersion:   versions,
 	}
 }
 
@@ -1030,9 +1045,9 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 func (charts *ChartData) trim(sets ...Lengther) []Lengther {
 
 	dLen := sets[0].Length()
-	for i := dLen-1; i >= 0; i-- {
+	for i := dLen - 1; i >= 0; i-- {
 		var isZero bool = true
-		out:
+	out:
 		for j := 1; j < len(sets); j++ {
 			if !sets[j].IsZero(i) {
 				isZero = false

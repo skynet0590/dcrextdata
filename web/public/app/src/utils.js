@@ -265,6 +265,9 @@ export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoe
 }
 
 export function csv (dataSet, labelsCount) {
+  if (!dataSet.x) {
+    return ''
+  }
   let keys = ['x', 'y', 'z']
   let rks = []
   for (let i = 0; i <= labelsCount; i++) {

@@ -189,13 +189,24 @@ func _main(ctx context.Context) error {
 		vsps = append(vsps, vspSource.Name)
 	}
 
+	noveVersions, err := db.AllNodeVersions(ctx)
+	if err != nil {
+		log.Error(err)
+	}
+
+	nodeCountries, err := db.AllNodeContries(ctx)
+	if err != nil {
+		log.Error(err)
+	}
+
 	opt := badger.DefaultOptions("data")
 	bdb, err := badger.Open(opt)
 	if err != nil {
 		return err
 	}
 	
-	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType), bdb)
+	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, 
+		nodeCountries, noveVersions, netParams(cfg.DcrdNetworkType), bdb)
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {
