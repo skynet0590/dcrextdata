@@ -625,7 +625,6 @@ func (data ChartUints) Remove(index int) Lengther {
 		return data
 	}
 	return append(data[:index], data[index+1:]...)
-	return data
 }
 
 // If the data is longer than max, return a subset of length max.
@@ -731,6 +730,15 @@ func (charts *ChartData) Load(ctx context.Context) error {
 			time.Since(t).Seconds())
 	}()
 
+	currentVersion, err := charts.getVersion()
+	if err != nil {
+		return fmt.Errorf("Error in getting cache version, %v", err)
+	}
+
+	if !Compatible(cacheVersion, currentVersion) {
+		return fmt.Errorf("Invalid cache version detected. Expected %s, got %s", 
+		cacheVersion.String(), currentVersion.String())
+	}
 	// Bring the charts up to date.
 	log.Infof("Updating charts data...")
 	return charts.Update(ctx)
@@ -1093,10 +1101,10 @@ func mempool(ctx context.Context, charts *ChartData, axis axisType, _ ...string)
 
 func mempoolSize(charts *ChartData) ([]byte, error) {
 	var dates, sizes ChartUints
-	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(MempoolSize), &sizes); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(MempoolSize), &sizes); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, sizes)
@@ -1104,10 +1112,10 @@ func mempoolSize(charts *ChartData) ([]byte, error) {
 
 func mempoolTxCount(charts *ChartData) ([]byte, error) {
 	var dates, txCounts ChartUints
-	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(MempoolTxCount), &txCounts); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(MempoolTxCount), &txCounts); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, txCounts)
@@ -1116,10 +1124,10 @@ func mempoolTxCount(charts *ChartData) ([]byte, error) {
 func mempoolFees(charts *ChartData) ([]byte, error) {
 	var dates ChartUints
 	var fees ChartFloats
-	if err := charts.ReadAxis(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadAxis(Mempool+"-"+string(MempoolFees), &fees); err != nil {
+	if err := charts.ReadVal(Mempool+"-"+string(MempoolFees), &fees); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, fees)
@@ -1139,13 +1147,13 @@ func propagation(ctx context.Context, charts *ChartData, axis axisType, syncSour
 
 func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
 	var heights ChartUints
-	if err := charts.ReadAxis(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
 		return nil, err
 	}
 	var deviations = []Lengther{heights}
 	for _, source := range syncSources {
 		var d ChartFloats
-		if err := charts.ReadAxis(Propagation+"-"+string(BlockPropagation)+"-"+source, &d); err != nil {
+		if err := charts.ReadVal(Propagation+"-"+string(BlockPropagation)+"-"+source, &d); err != nil {
 			return nil, err
 		}
 		deviations = append(deviations, d)
@@ -1156,11 +1164,11 @@ func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) 
 
 func blockTimestamp(charts *ChartData) ([]byte, error) {
 	var heights ChartUints
-	if err := charts.ReadAxis(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
 		return nil, err
 	}
 	var blockDelays ChartFloats
-	if err := charts.ReadAxis(Propagation+"-"+string(BlockTimestamp), &blockDelays); err != nil {
+	if err := charts.ReadVal(Propagation+"-"+string(BlockTimestamp), &blockDelays); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, heights, blockDelays)
@@ -1168,11 +1176,11 @@ func blockTimestamp(charts *ChartData) ([]byte, error) {
 
 func votesReceiveTime(charts *ChartData) ([]byte, error) {
 	var heights ChartUints
-	if err := charts.ReadAxis(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
 		return nil, err
 	}
 	var votesReceiveTime ChartFloats
-	if err := charts.ReadAxis(Propagation+"-"+string(VotesReceiveTime), &votesReceiveTime); err != nil {
+	if err := charts.ReadVal(Propagation+"-"+string(VotesReceiveTime), &votesReceiveTime); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, heights, votesReceiveTime)
@@ -1258,16 +1266,16 @@ func networkSnapshorChart(ctx context.Context, charts *ChartData, axis axisType,
 
 func networkSnapshotNodesChart(charts *ChartData) ([]byte, error) {
 	var dates ChartUints
-	if err := charts.ReadAxis(Snapshot+"-"+string(TimeAxis), &dates); err != nil {
+	if err := charts.ReadVal(Snapshot+"-"+string(TimeAxis), &dates); err != nil {
 		return nil, err
 	}
 	var nodes ChartUints
-	if err := charts.ReadAxis(Snapshot+"-"+string(SnapshotNodes), &nodes); err != nil {
+	if err := charts.ReadVal(Snapshot+"-"+string(SnapshotNodes), &nodes); err != nil {
 		return nil, err
 	}
 
 	var reachableNodes ChartUints
-	if err := charts.ReadAxis(Snapshot+"-"+string(SnapshotReachableNodes), &reachableNodes); err != nil {
+	if err := charts.ReadVal(Snapshot+"-"+string(SnapshotReachableNodes), &reachableNodes); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, nodes, reachableNodes)
@@ -1277,7 +1285,7 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 	var recs = make([]Lengther, len(countries)+1)
 	var dates ChartUints
 	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
-	if err := charts.ReadAxis(key, &dates); err != nil {
+	if err := charts.ReadVal(key, &dates); err != nil {
 		return nil, err
 	}
 	recs[0] = dates
@@ -1288,7 +1296,7 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 		}
 		key := Snapshot + "-" + string(SnapshotLocations) + "-" + country
 		var rec ChartUints
-		if err := charts.ReadAxis(key, &rec); err != nil {
+		if err := charts.ReadVal(key, &rec); err != nil {
 			log.Criticalf("%s - %s", err.Error(), key)
 			return nil, err
 		}
@@ -1301,7 +1309,7 @@ func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) (
 	var recs = make([]Lengther, len(userAgents)+1)
 	var dates ChartUints
 	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
-	if err := charts.ReadAxis(key, &dates); err != nil {
+	if err := charts.ReadVal(key, &dates); err != nil {
 		return nil, err
 	}
 	recs[0] = dates
@@ -1312,7 +1320,7 @@ func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) (
 		}
 		key := Snapshot + "-" + string(SnapshotNodeVersions) + "-" + userAgent
 		var rec ChartUints
-		if err := charts.ReadAxis(key, &rec); err != nil {
+		if err := charts.ReadVal(key, &rec); err != nil {
 			log.Criticalf("%s - %s", err.Error(), key)
 			return nil, err
 		}

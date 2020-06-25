@@ -17,17 +17,17 @@ func NewSemver(major, minor, patch uint32) Semver {
 
 // Semver models a semantic version (semver) major.minor.patch
 type Semver struct {
-	major, minor, patch uint32
+	Major, Minor, Patch uint32
 }
 
 // Compatible decides if the actual version is compatible with the required one.
 func Compatible(required, actual Semver) bool {
 	switch {
-	case required.major != actual.major:
+	case required.Major != actual.Major:
 		return false
-	case required.minor > actual.minor:
+	case required.Minor > actual.Minor:
 		return false
-	case required.minor == actual.minor && required.patch > actual.patch:
+	case required.Minor == actual.Minor && required.Patch > actual.Patch:
 		return false
 	default:
 		return true
@@ -47,12 +47,12 @@ func AnyCompatible(compatible []Semver, actual Semver) (isApiCompat bool) {
 }
 
 func (s Semver) String() string {
-	return fmt.Sprintf("%d.%d.%d", s.major, s.minor, s.patch)
+	return fmt.Sprintf("%d.%d.%d", s.Major, s.Minor, s.Patch)
 }
 
 // Split returns the major, minor and patch version.
 func (s *Semver) Split() (uint32, uint32, uint32) {
-	return s.major, s.minor, s.patch
+	return s.Major, s.Minor, s.Patch
 }
 
 // ParseVersionStr makes a *Semver from a version string (e.g. v3.1.0, 5.3.2,

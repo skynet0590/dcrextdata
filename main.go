@@ -214,10 +214,12 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
-
+	
 	if err = charts.Load(ctx); err != nil {
-		log.Error(err)
+		return err
 	}
+
+	defer charts.SaveVersion()
 
 
 	// http server method
