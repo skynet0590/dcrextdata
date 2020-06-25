@@ -232,6 +232,14 @@ func (charts ChartData) normalizePropagationLength() error {
 		}
 	}
 
+	if longest != shortest {
+		if err = charts.snipPropagationChart(shortest, BlockTimestamp); err != nil {
+			log.Warn(err)
+		}
+	}
+
+	// sync source data can alway have a mis-match. 
+	// TODO: resolve peculiar issue
 	for _, source := range charts.syncSource {
 		key = Propagation + "-" + string(BlockPropagation) + "-" + source
 		dLen, err = charts.chartFloatsLength(key)
@@ -247,10 +255,12 @@ func (charts ChartData) normalizePropagationLength() error {
 			}
 		}
 	}
-
 	if longest != shortest {
-		return charts.snipPropagationChart(shortest)
+		if err = charts.snipPropagationChart(shortest, BlockPropagation); err != nil {
+			log.Warn(err)
+		}
 	}
+
 	return nil
 }
 
@@ -698,20 +708,28 @@ func (charts ChartData) snipMempool(length int) error {
 	return nil
 }
 
-func (charts ChartData) snipPropagationChart(length int) error {
+func (charts ChartData) snipPropagationChart(length int, axis axisType) error {
 	key := Propagation + "-" + string(HeightAxis)
 	if err := charts.snipChartUintsAxis(key, length); err != nil {
 		if err != badger.ErrKeyNotFound {
 			return err
 		}
 	}
-	keys := []string{
-		Propagation + "-" + string(BlockTimestamp),
-		Propagation + "-" + string(VotesReceiveTime),
+	var keys []string
+	switch axis {
+	case BlockPropagation:
+		for _, source := range charts.syncSource {
+			keys = append(keys, Propagation+"-"+string(BlockPropagation)+"-"+source)
+		}
+		break
+	case BlockTimestamp:
+		keys = []string{
+			Propagation + "-" + string(BlockTimestamp),
+			Propagation + "-" + string(VotesReceiveTime),
+		}
+		break
 	}
-	for _, source := range charts.syncSource {
-		keys = append(keys, Propagation+"-"+string(BlockPropagation)+"-"+source)
-	}
+	
 	for _, key := range keys {
 		if err := charts.snipChartFloatsAxis(key, length); err != nil {
 			if err != badger.ErrKeyNotFound {
