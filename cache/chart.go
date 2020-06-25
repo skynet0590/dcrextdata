@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -747,7 +746,7 @@ func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
 	return nil
 }
 
-// StateID returns a unique (enough) ID associated with the state of the Blocks
+// StateID returns a unique (enough) ID associated with the state of the chart
 // data in a thread-safe way.
 func (charts *ChartData) StateID() uint64 {
 	charts.mtx.RLock()
@@ -755,7 +754,7 @@ func (charts *ChartData) StateID() uint64 {
 	return charts.stateID()
 }
 
-// stateID returns a unique (enough) ID associated with the state of the Blocks
+// stateID returns a unique (enough) ID associated with the state of the chart
 // data.
 func (charts *ChartData) stateID() uint64 {
 	return charts.MempoolTimeTip()
@@ -967,14 +966,29 @@ var chartMakers = map[string]ChartMaker{
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
 func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, extras ...string) ([]byte, error) {
+	
+	axis := ParseAxis(axisString)
+	key := fmt.Sprintf("%s-%s-%s", chartID, strings.Join(extras, "-"), string(axis))
+	cache, found, _ := charts.getCache(key, axis)
+	if found {
+		if cache.Version == charts.cacheID(chartID) {
+			return cache.Data, nil
+		}
+		charts.removeCache(key, axis)
+	}
+
 	if !charts.EnableCache {
 		retriever, hasRetriever := charts.retrivers[chartID]
 		if !hasRetriever {
 			return nil, UnknownChartErr
 		}
-		return retriever(ctx, charts, axisString, extras...)
+		data, err := retriever(ctx, charts, axisString, extras...)
+		if err != nil {
+			return nil, err
+		}
+		charts.cacheChart(key, charts.cacheID(chartID), axis, data)
+		return data, nil
 	}
-	axis := ParseAxis(axisString)
 
 	maker, hasMaker := chartMakers[chartID]
 	if !hasMaker {
@@ -988,6 +1002,7 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	if err != nil {
 		return nil, err
 	}
+	charts.cacheChart(key, charts.cacheID(chartID), axis, data)
 	return data, nil
 }
 
@@ -1164,25 +1179,11 @@ func votesReceiveTime(charts *ChartData) ([]byte, error) {
 }
 
 func powChart(ctx context.Context, charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
-	sort.Strings(pools)
-	key := fmt.Sprintf("%s-%s-%s", PowChart, strings.Join(pools, "-"), string(axis))
-	cache, found, _ := charts.getCache(key, axis)
-	if found {
-		if cache.Version == charts.PowTimeTip() {
-			return cache.Data, nil
-		}
-		charts.removeCache(key, axis)
-	}
 	retriever, hasRetriever := charts.retrivers[PowChart]
 	if !hasRetriever {
 		return nil, UnknownChartErr
 	}
-	data, err := retriever(ctx, charts, string(axis), pools...)
-	if err != nil {
-		return nil, err
-	}
-	charts.cacheChart(key, charts.PowTimeTip(), axis, data)
-	return data, nil
+	return retriever(ctx, charts, string(axis), pools...)
 }
 
 func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
@@ -1227,25 +1228,11 @@ func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ..
 	// a single date collection cannot be used for all and so
 	// the record is retrieved at every request.
 
-	sort.Strings(vsps)
-	key := fmt.Sprintf("%s-%s-%s", VSP, strings.Join(vsps, "-"), string(axis))
-	cache, found, _ := charts.getCache(key, axis)
-	if found {
-		if cache.Version == charts.VSPTimeTip() {
-			return cache.Data, nil
-		}
-		charts.removeCache(key, axis)
-	}
 	retriever, hasRetriever := charts.retrivers[VSP]
 	if !hasRetriever {
 		return nil, UnknownChartErr
 	}
-	data, err := retriever(ctx, charts, string(axis), vsps...)
-	if err != nil {
-		return nil, err
-	}
-	charts.cacheChart(key, charts.VSPTimeTip(), axis, data)
-	return data, nil
+	return retriever(ctx, charts, string(axis), vsps...)
 }
 
 func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
