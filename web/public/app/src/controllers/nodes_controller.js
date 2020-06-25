@@ -10,7 +10,9 @@ import {
   showLoading,
   updateQueryParam,
   hideAll,
-  trimUrl
+  trimUrl,
+  csv,
+  notifyFailure
 } from '../utils'
 
 import { animationFrame } from '../helpers/animation_helper'
@@ -105,7 +107,18 @@ export default class extends Controller {
     this.reloadChat()
   }
 
-  chartSourceCheckChanged () {
+  chartSourceCheckChanged (event) {
+    let count = 0
+    this.chartSourceTargets.forEach(el => {
+      if (el.checked) {
+        count++
+      }
+    })
+    if (count > 5) {
+      event.currentTarget.checked = false
+      notifyFailure('You cannot compare more than 10 sources')
+      return
+    }
     this.reloadChat()
   }
 
@@ -150,13 +163,15 @@ export default class extends Controller {
     }
     let html = ''
     _this.allChartSourceTarget.checked = true
-    result.forEach(item => {
+    result.forEach((item, i) => {
+      var checked = i <= 1
       if (item === '') {
+        checked = false
         item = 'Unknown'
       }
       html += `<div class="form-check">
                     <input name="chartSource" data-target="nodes.chartSource" data-action="click->nodes#chartSourceCheckChanged"
-                    class="form-check-input" type="checkbox" id="inlineCheckbox-${item}" value="${item}" checked>
+                    class="form-check-input" type="checkbox" id="inlineCheckbox-${item}" value="${item}" ${checked ? 'checked' : ''}>
                     <label class="form-check-label" for="inlineCheckbox-${item}">${item}</label>
                 </div>`
     })
@@ -381,28 +396,28 @@ export default class extends Controller {
     let url
     let drawChartFn
 
-    let selectedSources = []
+    this.selectedSources = []
     this.chartSourceTargets.forEach(el => {
       if (el.checked) {
-        selectedSources.push(el.value)
+        this.selectedSources.push(el.value)
       }
     })
     let q = ''
-    if (selectedSources.length > 0) {
-      q = `sources=${selectedSources.join('|')}`
+    if (this.selectedSources.length > 0) {
+      q = `sources=${this.selectedSources.join('|')}`
     }
     switch (this.dataType) {
       case dataTypeVersion:
-        url = `/api/snapshots/user-agents/chart?${q}`
+        url = `/api/charts/snapshot/node-versions?${q}`
         drawChartFn = this.drawUserAgentsChart
         break
       case dataTypeLocation:
-        url = `/api/snapshots/countries/chart?${q}`
+        url = `/api/charts/snapshot/locations?${q}`
         drawChartFn = this.drawCountriesChart
         break
       case dataTypeNodes:
       default:
-        url = '/api/snapshots/chart'
+        url = '/api/charts/snapshot/nodes'
         drawChartFn = this.drawSnapshotChart
         break
     }
@@ -424,27 +439,13 @@ export default class extends Controller {
   }
 
   drawSnapshotChart (result) {
-    let minDate, maxDate, csv
-
-    result.forEach(record => {
-      let date = new Date(record.timestamp * 1000)
-      if (minDate === undefined || date < minDate) {
-        minDate = date
-      }
-
-      if (maxDate === undefined || date > maxDate) {
-        maxDate = date
-      }
-      csv += `${date},${record.node_count},${record.reachable_node_count}\n`
-    })
-
     this.chartsView = new Dygraph(
       this.chartsViewTarget,
-      csv,
+      csv(result, 2),
       {
         legend: 'always',
         includeZero: true,
-        dateWindow: [minDate, maxDate],
+        // dateWindow: [minDate, maxDate],
         legendFormatter: legendFormatter,
         digitsAfterDecimal: 8,
         labelsDiv: this.labelsTarget,
@@ -477,6 +478,7 @@ export default class extends Controller {
       labelsDiv: this.labelsTarget,
       ylabel: 'Node Count',
       xlabel: 'Date (UTC)',
+      labels: ['Date (UTC)', ...this.selectedSources],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -489,7 +491,7 @@ export default class extends Controller {
     }
     this.chartsView = new Dygraph(
       this.chartsViewTarget,
-      result.csv,
+      csv(result, this.selectedSources.length),
       options
     )
     hideLoading(this.loadingDataTarget)
@@ -503,6 +505,7 @@ export default class extends Controller {
       labelsDiv: this.labelsTarget,
       ylabel: 'Node Count',
       xlabel: 'Date (UTC)',
+      labels: ['Date (UTC)', ...this.selectedSources],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -513,9 +516,10 @@ export default class extends Controller {
         }
       }
     }
+    const data = csv(result, this.selectedSources.length)
     this.chartsView = new Dygraph(
       this.chartsViewTarget,
-      result.csv,
+      data,
       options
     )
     hideLoading(this.loadingDataTarget)

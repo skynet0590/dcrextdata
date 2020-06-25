@@ -8,7 +8,7 @@ import {
   showLoading,
   hideLoading,
   options,
-  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl
+  selectedOption, insertOrUpdateQueryParam, updateQueryParam, updateZoomSelector, trimUrl, csv, notifyFailure
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import Zoom from '../helpers/zoom_helper'
@@ -223,7 +223,19 @@ export default class extends Controller {
     })
   }
 
-  chartSourceCheckChanged () {
+  chartSourceCheckChanged (e) {
+    // allow a maximum of 5 sources to avoid server overload
+    let count = 0
+    this.chartSourceTargets.forEach(el => {
+      if (el.checked) {
+        count++
+      }
+    })
+    if (count > 10) {
+      notifyFailure('You cannot compare more than 10 sources')
+      e.currentTarget.checked = false
+      return
+    }
     this.fetchDataAndPlotGraph()
   }
 
@@ -242,10 +254,10 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
-    let vsps = []
+    this.vsps = []
     this.chartSourceTargets.forEach(chartSource => {
       if (chartSource.checked) {
-        vsps.push(chartSource.value)
+        this.vsps.push(chartSource.value)
       }
     })
 
@@ -253,8 +265,8 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     let _this = this
-    const queryString = `axis=${this.dataType}&sources=${vsps.join('|')}`
-    axios.get(`/api/charts/vsp?${queryString}`).then(function (response) {
+    const queryString = `sources=${this.vsps.join('|')}`
+    axios.get(`/api/charts/vsp/${this.dataType}?${queryString}`).then(function (response) {
       let result = response.data
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (result.error) {
@@ -346,6 +358,7 @@ export default class extends Controller {
       labelsDiv: _this.labelsTarget,
       ylabel: _this.yLabel,
       xlabel: 'Date',
+      labels: ['Date', ...this.vsps],
       labelsUTC: true,
       labelsKMB: true,
       connectSeparatedPoints: true,
@@ -358,7 +371,7 @@ export default class extends Controller {
     }
     _this.chartsView = new Dygraph(
       _this.chartsViewTarget,
-      dataSet.csv,
+      csv(dataSet, this.vsps.length),
       options
     )
 

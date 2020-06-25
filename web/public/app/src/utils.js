@@ -2,8 +2,6 @@ import dompurify from 'dompurify'
 import humanize from './helpers/humanize_helper'
 import { map } from 'lodash-es'
 
-const Dygraph = require('../../dist/js/dygraphs.min.js')
-
 export const appName = 'dcrextdata'
 
 export const hide = (el) => {
@@ -101,41 +99,6 @@ export function legendFormatter (data) {
 
   dompurify.sanitize(html)
   return html
-}
-
-export function barChartPlotter (e) {
-  const ctx = e.drawingContext
-  const points = e.points
-  const yBottom = e.dygraph.toDomYCoord(0)
-
-  ctx.fillStyle = darkenColor(e.color)
-
-  // Find the minimum separation between x-values.
-  // This determines the bar width.
-  let minSep = Infinity
-  for (let i = 1; i < points.length; i++) {
-    const sep = points[i].canvasx - points[i - 1].canvasx
-    if (sep < minSep) minSep = sep
-  }
-  const barWidth = Math.max(Math.floor(2.0 / 3 * minSep), 5)
-
-  // Do the actual plotting.
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i]
-    const centerx = p.canvasx
-
-    ctx.fillRect(centerx - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
-    ctx.strokeRect(centerx - barWidth / 2, p.canvasy, barWidth, yBottom - p.canvasy)
-  }
-}
-
-function darkenColor (colorStr) {
-  // Defined in dygraph-utils.js
-  var color = Dygraph.toRGB_(colorStr)
-  color.r = Math.floor((255 + color.r) / 2)
-  color.g = Math.floor((255 + color.g) / 2)
-  color.b = Math.floor((255 + color.b) / 2)
-  return 'rgb(' + color.r + ',' + color.g + ',' + color.b + ')'
 }
 
 export var options = {
@@ -299,6 +262,50 @@ export function zipXYZData (gData, isHeightAxis, isDayBinned, yCoefficient, zCoe
 
     return data
   })
+}
+
+export function csv (dataSet, labelsCount) {
+  if (!dataSet.x) {
+    return ''
+  }
+  let keys = ['x', 'y', 'z']
+  let rks = []
+  for (let i = 0; i <= labelsCount; i++) {
+    if (i < keys.length) {
+      rks.push(keys[i])
+      continue
+    }
+    const m = i % keys.length
+    const s = (i - m) / keys.length
+    rks.push(keys[m] + s)
+  }
+  const noValidEntryBeforeIndex = function (data, index) {
+    for (let i = index; i >= 0; i--) {
+      if (data[i] === null) {
+        return false
+      }
+    }
+    return true
+  }
+  let csv = ''
+  const len = dataSet.x.length
+  for (let i = 0; i < len; i++) {
+    let row = [new Date(dataSet.x[i] * 1000)]
+    for (let j = 1; j < rks.length; j++) {
+      const rk = rks[j]
+      if (dataSet[rk][i] !== null) {
+        row.push(dataSet[rk][i])
+        continue
+      }
+      if (noValidEntryBeforeIndex(dataSet[rk], i)) {
+        row.push('Nan')
+      } else {
+        row.push('')
+      }
+    }
+    csv += row.join(',') + '\n'
+  }
+  return csv
 }
 
 export function updateZoomSelector (targets, minDate, maxDate) {

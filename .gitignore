@@ -9,6 +9,7 @@ logs
 *.log
 *.log.*
 .idea
+data
 postgres/sqlboiler.toml
 web/public/app/node_modules
 web/public/dist/js/app.bundle.js

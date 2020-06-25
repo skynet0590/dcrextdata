@@ -18,6 +18,7 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
+	"github.com/dgraph-io/badger"
 	"github.com/jessevdk/go-flags"
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/config"
@@ -188,7 +189,24 @@ func _main(ctx context.Context) error {
 		vsps = append(vsps, vspSource.Name)
 	}
 
-	charts := cache.NewChartData(ctx, cfg.SyncDatabases, poolSources, vsps, netParams(cfg.DcrdNetworkType))
+	noveVersions, err := db.AllNodeVersions(ctx)
+	if err != nil {
+		log.Error(err)
+	}
+
+	nodeCountries, err := db.AllNodeContries(ctx)
+	if err != nil {
+		log.Error(err)
+	}
+
+	opt := badger.DefaultOptions("data")
+	bdb, err := badger.Open(opt)
+	if err != nil {
+		return err
+	}
+	
+	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, 
+		nodeCountries, noveVersions, netParams(cfg.DcrdNetworkType), bdb)
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {
@@ -196,18 +214,13 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
-
-	// Pre-populate charts data using the dumped cache data in the .gob file path
-	// provided instead of querying the data from the dbs.
-	// This charts pre-population is faster than db querying
-	// and can be done before the monitors are fully set up.
-	if err = charts.Load(ctx, cfg.ChartsCacheDump); err != nil {
-		log.Warnf("Failed to load charts data cache: %v", err)
+	
+	if err = charts.Load(ctx); err != nil {
+		return err
 	}
 
-	// This dumps the cache charts data into a file for future use on system
-	// exit.
-	defer charts.Dump(cfg.ChartsCacheDump)
+	defer charts.SaveVersion()
+
 
 	// http server method
 	if cfg.HttpMode {

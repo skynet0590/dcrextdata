@@ -92,7 +92,10 @@ export default class extends Controller {
     trimUrl(['view-option', 'chart-type'])
     // reset this table properties as they are removed from the url
     this.currentPage = 1
-    this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value = 20
+    this.selectedNumberOfRowsberOfRows = 20
+    if (this.hasSelectedNumberOfRowsTarget) {
+      this.selectedNumberOfRowsTarget.value = this.selectedNumberOfRowsberOfRows
+    }
   }
 
   setBothRecordSet () {
@@ -395,7 +398,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/api/charts/${this.chartType}`).then(function (response) {
+    axios.get(`/api/charts/propagation/${this.chartType}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
     }).catch(function (e) {
@@ -410,6 +413,7 @@ export default class extends Controller {
       this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">${message}</p>`
       show(this.messageViewTarget)
       hide(this.chartWrapperTarget)
+      hideLoading(this.loadingDataTarget, [])
       return
     }
 
@@ -417,7 +421,7 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/api/charts/${this.chartType}?sources=${this.syncSources.join('|')}`).then(function (response) {
+    axios.get(`/api/charts/propagation/${this.chartType}?sources=${this.syncSources.join('|')}`).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       if (response.data.x === null || response.data.x.length === 0) {
         _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">

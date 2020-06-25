@@ -144,7 +144,7 @@ func (pc *Collector) Collect(ctx context.Context) {
 		default:
 			data, err := powInfo.Collect(ctx)
 			if err != nil {
-				log.Error(err)
+				log.Error(err, powInfo.Name())
 			}
 			err = pc.store.AddPowData(ctx, data)
 			if err != nil {

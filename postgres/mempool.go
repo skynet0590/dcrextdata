@@ -465,27 +465,102 @@ func (pg *PgDb) fetchBlockReceiveTimeByHeight(ctx context.Context, height int32)
 
 // *****CHARTS******* //
 
-func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchEncodeMempoolChart(ctx context.Context, charts *cache.ChartData, axisString string, extras ...string) ([]byte, error) {
+	
+	switch(axisString){
+	case cache.MempoolSize:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.Size),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartUints, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = uint64(m.Size.Int)
+		}
+		return charts.Encode(nil, time, data)
+
+	case cache.MempoolFees:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.TotalFee),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartFloats, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = m.TotalFee.Float64
+		}
+		return charts.Encode(nil, time, data)
+
+	case cache.MempoolTxCount:
+		mempoolSlice, err := models.Mempools(
+			qm.Select(models.MempoolColumns.Time, models.MempoolColumns.NumberOfTransactions),
+			qm.OrderBy(models.MempoolColumns.Time),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var time = make(cache.ChartUints, len(mempoolSlice))
+		var data = make(cache.ChartUints, len(mempoolSlice))
+		for i, m := range mempoolSlice {
+			time[i] = uint64(m.Time.UTC().Unix())
+			data[i] = uint64(m.NumberOfTransactions.Int)
+		}
+		return charts.Encode(nil, time, data)
+	}
+	return nil, cache.UnknownChartErr
+}
+
+func (pg *PgDb) retrieveChartMempool(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, pg.queryTimeout)
 
-	charts.PropagationHeight()
-	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTime())))).All(ctx, pg.db)
+	mempoolSlice, err := models.Mempools(models.MempoolWhere.Time.GT(helpers.UnixTime(int64(charts.MempoolTimeTip())))).All(ctx, pg.db)
 	if err != nil {
-		return nil, cancel, fmt.Errorf("chartBlocks: %s", err.Error())
+		return nil, cancel, false, fmt.Errorf("chartBlocks: %s", err.Error())
 	}
-	return mempoolSlice, cancel, nil
+	return mempoolSlice, cancel, true, nil
 }
 
 // Append the results from retrieveChartMempool to the provided ChartData.
 // This is the Appender half of a pair that make up a cache.ChartUpdater.
 func appendChartMempool(charts *cache.ChartData, mempoolSliceInt interface{}) error {
 	mempoolSlice := mempoolSliceInt.(models.MempoolSlice)
-	chartsMempool := charts.Mempool
+	if len(mempoolSlice) == 0 {
+		return nil
+	}
+
+	var chartsMempoolTime, chartsMempoolTxCount, chartsMempoolSize cache.ChartUints
+	var chartsMempoolFees cache.ChartFloats
+
 	for _, mempoolData := range mempoolSlice {
-		chartsMempool.Time = append(chartsMempool.Time, uint64(mempoolData.Time.UTC().Unix()))
-		chartsMempool.Fees = append(chartsMempool.Fees, mempoolData.TotalFee.Float64)
-		chartsMempool.TxCount = append(chartsMempool.TxCount, uint64(mempoolData.NumberOfTransactions.Int))
-		chartsMempool.Size = append(chartsMempool.Size, uint64(mempoolData.Size.Int))
+		chartsMempoolTime = append(chartsMempoolTime, uint64(mempoolData.Time.UTC().Unix()))
+		chartsMempoolFees = append(chartsMempoolFees, mempoolData.TotalFee.Float64)
+		chartsMempoolTxCount = append(chartsMempoolTxCount, uint64(mempoolData.NumberOfTransactions.Int))
+		chartsMempoolSize = append(chartsMempoolSize, uint64(mempoolData.Size.Int))
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.TimeAxis), chartsMempoolTime); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartFloatsAxis(cache.Mempool + "-" + string(cache.MempoolFees), chartsMempoolFees); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.MempoolTxCount), chartsMempoolTxCount); err !=  nil {
+		return err 
+	}
+
+	if err := charts.AppendChartUintsAxis(cache.Mempool + "-" + string(cache.MempoolSize), chartsMempoolSize); err !=  nil {
+		return err 
 	}
 	return nil
 }
@@ -497,14 +572,97 @@ type propagationSet struct {
 	blockPropagation          map[string][]float64
 }
 
-func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
+func (pg *PgDb) fetchEncodePropagationChart(ctx context.Context, charts *cache.ChartData, axisString string, extras ...string) ([]byte, error) {
+	blockDelays, err := pg.propagationBlockChartData(ctx, 0)
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	var heights cache.ChartUints
+	var blockDelay cache.ChartFloats
+	localBlockReceiveTime := make(map[uint64]float64)
+	for _, record := range blockDelays {
+		heights = append(heights, uint64(record.BlockHeight))
+		timeDifference, _ := strconv.ParseFloat(fmt.Sprintf("%04.2f", record.TimeDifference), 64)
+		blockDelay = append(blockDelay, timeDifference)
+
+		localBlockReceiveTime[uint64(record.BlockHeight)] = timeDifference
+	}
+
+	switch axisString {
+	case cache.BlockPropagation:
+		blockPropagation := make(map[string]cache.ChartFloats)
+		for _, source := range pg.syncSources {
+			db, err := pg.syncSourceDbProvider(source)
+			if err != nil {
+				return nil, err
+			}
+
+			blockDelays, err := db.propagationBlockChartData(ctx, 0)
+			if err != nil && err != sql.ErrNoRows {
+				return nil, err
+			}
+
+			receiveTimeMap := make(map[uint64]float64)
+			for _, record := range blockDelays {
+
+				receiveTimeMap[uint64(record.BlockHeight)], _ = strconv.ParseFloat(fmt.Sprintf("%04.2f", record.TimeDifference), 64)
+			}
+
+			for _, height := range heights {
+				if sourceTime, found := receiveTimeMap[height]; found {
+					blockPropagation[source] = append(blockPropagation[source], localBlockReceiveTime[height] - sourceTime)
+					continue
+				}
+				blockPropagation[source] = append(blockPropagation[source], 0)
+			}
+		}
+		var data = []cache.Lengther{heights}
+		for _, d := range blockPropagation {
+			data = append(data, d)
+		}
+		return charts.Encode(nil, data...)
+
+	case cache.BlockTimestamp:
+		return charts.Encode(nil, heights, blockDelay)
+
+	case cache.VotesReceiveTime:
+		votesReceiveTime, err := pg.propagationVoteChartDataByHeight(ctx, 0)
+		if err != nil && err != sql.ErrNoRows {
+			return nil, err
+		}
+		var votesTimeDeviations = make(map[int64]cache.ChartFloats)
+
+		for _, record := range votesReceiveTime {
+			votesTimeDeviations[record.BlockHeight] = append(votesTimeDeviations[record.BlockHeight], record.TimeDifference)
+		}
+
+		var voteReceiveTimeDeviations cache.ChartFloats
+		for _, height := range heights {
+			if deviations, found := votesTimeDeviations[int64(height)]; found {
+				var totalTime float64
+				for _, timeDiff := range deviations {
+					totalTime += timeDiff
+				}
+				timeDifference, _ := strconv.ParseFloat(fmt.Sprintf("%04.2f", totalTime/float64(len(deviations))*1000), 64)
+				voteReceiveTimeDeviations = append(voteReceiveTimeDeviations, timeDifference)
+				continue
+			}
+			voteReceiveTimeDeviations = append(voteReceiveTimeDeviations, 0)
+		}
+		return charts.Encode(nil, heights, voteReceiveTimeDeviations)
+	}
+	return nil, cache.UnknownChartErr
+}
+
+func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
 	emptyCancelFunc := func() {}
 	var propagationSet propagationSet
 
-	chartsBlockHeight := charts.PropagationHeight()
+	chartsBlockHeight := int32(charts.PropagationHeightTip())
 	blockDelays, err := pg.propagationBlockChartData(ctx, int(chartsBlockHeight))
 	if err != nil && err != sql.ErrNoRows {
-		return nil, emptyCancelFunc, err
+		return nil, emptyCancelFunc, false, err
 	}
 
 	localBlockReceiveTime := make(map[uint64]float64)
@@ -518,7 +676,7 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 
 	votesReceiveTime, err := pg.propagationVoteChartDataByHeight(ctx, chartsBlockHeight)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, emptyCancelFunc, err
+		return nil, emptyCancelFunc, false, err
 	}
 	var votesTimeDeviations = make(map[int64][]float64)
 
@@ -543,12 +701,12 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 	for _, source := range pg.syncSources {
 		db, err := pg.syncSourceDbProvider(source)
 		if err != nil {
-			return nil, emptyCancelFunc, err
+			return nil, emptyCancelFunc, false, err
 		}
 
 		blockDelays, err := db.propagationBlockChartData(ctx, int(chartsBlockHeight))
 		if err != nil && err != sql.ErrNoRows {
-			return nil, emptyCancelFunc, err
+			return nil, emptyCancelFunc, false, err
 		}
 
 		receiveTimeMap := make(map[uint64]float64)
@@ -566,24 +724,33 @@ func (pg *PgDb) fetchBlockPropagationChart(ctx context.Context, charts *cache.Ch
 		}
 	}
 
-	return propagationSet, emptyCancelFunc, nil
+	return propagationSet, emptyCancelFunc, true, nil
 }
 
 func appendBlockPropagationChart(charts *cache.ChartData, data interface{}) error {
 	propagationSet := data.(propagationSet)
-	for _, height := range propagationSet.height {
-		charts.Propagation.Height = append(charts.Propagation.Height, height)
-	}
-	for _, delay := range propagationSet.blockDelay {
-		charts.Propagation.BlockDelays = append(charts.Propagation.BlockDelays, delay)
-	}
-	for _, voteTime := range propagationSet.voteReceiveTimeDeviations {
-		charts.Propagation.VotesReceiveTimeDeviations = append(charts.Propagation.VotesReceiveTimeDeviations, voteTime)
-	}
 
+	if len(propagationSet.height) == 0 {
+		return nil
+	}
+	
+	if err := charts.AppendChartUintsAxis(cache.Propagation + "-" + string(cache.HeightAxis), 
+		propagationSet.height); err !=  nil {
+		return err 
+	}
+	if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.BlockTimestamp), 
+		propagationSet.blockDelay); err !=  nil {
+		return err 
+	}
+	if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.VotesReceiveTime), 
+		propagationSet.voteReceiveTimeDeviations); err !=  nil {
+		return err 
+	}
 	for source, deviations := range propagationSet.blockPropagation {
-		charts.Propagation.BlockPropagation[source] = append(charts.Propagation.BlockPropagation[source], deviations...)
+		if err := charts.AppendChartFloatsAxis(cache.Propagation + "-" + string(cache.BlockPropagation) + "-" + source, 
+			deviations); err !=  nil {
+			return err 
+		}
 	}
-
 	return nil
 }

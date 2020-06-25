@@ -343,29 +343,56 @@ func (pg *PgDb) FetchPowSourceData(ctx context.Context) ([]pow.PowDataSource, er
 
 type powSet struct {
 	time     []uint64
-	workers  map[string][]*null.Uint64
-	hashrate map[string][]*null.Uint64
+	workers  map[string]cache.ChartNullUints
+	hashrate map[string]cache.ChartNullUints
 }
 
-func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (interface{}, func(), error) {
-	cancelFun := func() {}
+func (pg *PgDb) fetchEncodePowChart(ctx context.Context, charts *cache.ChartData, axisString string, pools ...string) ([]byte, error) {
+	data, err := pg.fetchPowChart(ctx, 0)
+	if err != nil {
+		return nil, err
+	}
+	switch(strings.ToLower(axisString)) {
+	case string(cache.WorkerAxis):
+		var deviations []cache.ChartNullUints
+		for _, p := range pools {
+			deviations = append(deviations, data.workers[p])
+		}
+		return cache.MakePowChart(charts, data.time, deviations, pools)
+	case string(cache.HashrateAxis):
+		var deviations []cache.ChartNullUints
+		for _, p := range pools {
+			deviations = append(deviations, data.hashrate[p])
+		}
+		return cache.MakePowChart(charts, data.time, deviations, pools)
+	}
+	return nil, cache.UnknownChartErr
+}
+
+func (pg *PgDb) fetchCachePowChart(ctx context.Context, charts *cache.ChartData, _ int) (interface{}, func(), bool, error) {
+	data, err := pg.fetchPowChart(ctx, charts.PowTimeTip())
+	return data, func() {}, true, err 
+}
+
+func (pg *PgDb) fetchPowChart(ctx context.Context, startDate uint64) (*powSet, error) {
+	
 	var powDataSet = powSet{
 		time:     []uint64{},
-		workers:  make(map[string][]*null.Uint64),
-		hashrate: make(map[string][]*null.Uint64),
+		workers:  make(map[string]cache.ChartNullUints),
+		hashrate: make(map[string]cache.ChartNullUints),
 	}
 
 	pools, err := pg.FetchPowSourceData(ctx)
 	if err != nil {
-		return nil, cancelFun, err
+		return nil, err
 	}
 
-	var poolSources []string
-	for _, pool := range pools {
-		poolSources = append(poolSources, pool.Source)
+	var poolSources = make([]string, len(pools))
+	for i, pool := range pools {
+		poolSources[i] = pool.Source
 	}
 
-	dates, err := pg.powDistinctDates(ctx, poolSources, int64(charts.PowTime()))
+	dates, err := pg.powDistinctDates(ctx, poolSources, int64(startDate))
 	for _, date := range dates {
 		powDataSet.time = append(powDataSet.time, uint64(date))
 	}
@@ -373,9 +400,9 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (int
 	for _, pool := range poolSources {
 		points, err := models.PowData(
 			models.PowDatumWhere.Source.EQ(pool),
-			models.PowDatumWhere.Time.GT(int(charts.PowTime()))).All(ctx, pg.db)
+			models.PowDatumWhere.Time.GT(int(startDate))).All(ctx, pg.db)
 		if err != nil {
-			return nil, cancelFun, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
+			return nil, fmt.Errorf("error in fetching records for %s: %s", pool, err.Error())
 		}
 
 		var pointsMap = map[uint64]*models.PowDatum{}
@@ -403,26 +430,45 @@ func (pg *PgDb) fetchPowChart(ctx context.Context, charts *cache.ChartData) (int
 		}
 	}
 
-	return powDataSet, cancelFun, nil
+	return &powDataSet, nil
 }
 
 func appendPowChart(charts *cache.ChartData, data interface{}) error {
-	powDataSet := data.(powSet)
+	powDataSet := data.(*powSet)
 
-	charts.Pow.Time = append(charts.Pow.Time, powDataSet.time...)
+	if len(powDataSet.time) == 0 {
+		return nil
+	}
+	
+	if err := charts.AppendChartUintsAxis(cache.PowChart + "-" + string(cache.TimeAxis), 
+		powDataSet.time); err !=  nil {
+		return err 
+	}
+
+	keyExists := func (arr []string, key string) bool {
+		for _, s := range arr {
+			if s == key {
+				return true
+			}
+		}
+		return false
+	}
 
 	for pool, workers := range powDataSet.workers {
-		if charts.Pow.Workers == nil {
-			charts.Pow.Workers = map[string]cache.ChartNullUints{}
+		if !keyExists(charts.PowSources, pool) {
+			charts.PowSources = append(charts.PowSources, pool)
 		}
-		charts.Pow.Workers[pool] = append(charts.Pow.Workers[pool], workers...)
+		if err := charts.AppendChartNullUintsAxis(cache.PowChart + "-" + string(cache.WorkerAxis) + "-" + pool, 
+			workers); err !=  nil {
+			return err 
+		}
 	}
 
 	for pool, hashrate := range powDataSet.hashrate {
-		if charts.Pow.Hashrate == nil {
-			charts.Pow.Hashrate = map[string]cache.ChartNullUints{}
+		if err := charts.AppendChartNullUintsAxis(cache.PowChart + "-" + string(cache.HashrateAxis) + "-" + pool, 
+			hashrate); err !=  nil {
+			return err 
 		}
-		charts.Pow.Hashrate[pool] = append(charts.Pow.Hashrate[pool], hashrate...)
 	}
 
 	return nil
