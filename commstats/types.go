@@ -6,9 +6,10 @@ package commstats
 
 import (
 	"context"
-	"github.com/raedahgroup/dcrextdata/app/config"
 	"net/http"
 	"time"
+
+	"github.com/raedahgroup/dcrextdata/app/config"
 )
 
 type CommStat struct {

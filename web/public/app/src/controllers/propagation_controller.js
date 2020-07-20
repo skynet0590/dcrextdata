@@ -8,9 +8,12 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData, selectedOption, updateZoomSelector
 } from '../utils'
+import TurboQuery from '../helpers/turbolinks_helper'
 import dompurify from 'dompurify'
+import Zoom from '../helpers/zoom_helper'
+import { animationFrame } from '../helpers/animation_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 
@@ -21,11 +24,13 @@ export default class extends Controller {
   static get targets () {
     return [
       'nextPageButton', 'previousPageButton', 'recordSetSelector', 'bothRecordSetOption',
-      'tableRecordSetOptions', 'selectedRecordSet', 'bothRecordWrapper', 'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
+      'tableRecordSetOptions', 'selectedRecordSet', 'bothRecordWrapper',
+      'selectedNum', 'numPageWrapper', 'paginationButtonsWrapper',
       'chartTypesWrapper', 'chartType',
       'tablesWrapper', 'table', 'blocksTbody', 'votesTbody', 'chartWrapper', 'chartsView', 'labels', 'messageView',
       'blocksTable', 'blocksTableBody', 'blocksRowTemplate', 'votesTable', 'votesTableBody', 'votesRowTemplate',
-      'totalPageCount', 'currentPage', 'viewOptionControl', 'viewOption', 'loadingData'
+      'totalPageCount', 'currentPage', 'viewOptionControl', 'viewOption', 'loadingData',
+      'graphIntervalWrapper', 'interval', 'axisOption', 'zoomSelector', 'zoomOption'
     ]
   }
 
@@ -38,6 +43,14 @@ export default class extends Controller {
     this.selectedViewOption = this.viewOptionControlTarget.dataset.initialValue
     this.selectedRecordSet = this.tableRecordSetOptionsTarget.dataset.initialValue
     this.chartType = this.chartTypesWrapperTarget.dataset.initialValue
+
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate([
+      'zoom', 'bin', 'axis', 'dataType', 'page', 'view-option', 'interval'
+    ])
+
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
 
     const syncSources = this.chartTypesWrapperTarget.dataset.syncSources
     if (syncSources) {
@@ -67,6 +80,7 @@ export default class extends Controller {
     show(this.paginationButtonsWrapperTarget)
     show(this.numPageWrapperTarget)
     hide(this.chartWrapperTarget)
+    hide(this.graphIntervalWrapperTarget)
     show(this.tablesWrapperTarget)
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
@@ -84,6 +98,7 @@ export default class extends Controller {
     hide(this.paginationButtonsWrapperTarget)
     hide(this.tablesWrapperTarget)
     show(this.chartWrapperTarget)
+    show(this.graphIntervalWrapperTarget)
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveRecordSetBtn(this.selectedRecordSet, this.selectedRecordSetTargets)
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
@@ -398,7 +413,11 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/api/charts/propagation/${this.chartType}`).then(function (response) {
+    let url = `/api/charts/propagation/${this.chartType}?axis=${this.selectedAxis()}`
+    if (this.selectedAxis() === 'time') {
+      url += `&bin=${this.selectedInterval()}`
+    }
+    axios.get(url).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(response.data)
     }).catch(function (e) {
@@ -421,9 +440,13 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     const _this = this
-    axios.get(`/api/charts/propagation/${this.chartType}?sources=${this.syncSources.join('|')}`).then(function (response) {
+    let url = `/api/charts/propagation/${this.chartType}?extras=${this.syncSources.join('|')}&axis=${this.selectedAxis()}`
+    if (this.selectedAxis() === 'time') {
+      url += `&bin=${this.selectedInterval()}`
+    }
+    axios.get(url).then(function (response) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
-      if (response.data.x === null || response.data.x.length === 0) {
+      if (!response.data.x || response.data.x.length === 0) {
         _this.messageViewTarget.innerHTML = `<p class="text-danger" style="text-align: center;">
             No propagation data found, please add one sync source to the configuration and try again</p>`
         show(_this.messageViewTarget)
@@ -443,40 +466,55 @@ export default class extends Controller {
     const _this = this
 
     let yLabel = this.chartType === 'votes-receive-time' ? 'Time Difference (Milliseconds)' : 'Delay (s)'
+    let xLabel = this.selectedAxis() === 'height' ? 'Height' : 'Time'
     let options = {
       legend: 'always',
       includeZero: true,
       legendFormatter: _this.propagationLegendFormatter,
       labelsDiv: _this.labelsTarget,
       ylabel: yLabel,
-      xlabel: 'Height',
-      labels: ['Height', yLabel],
+      xlabel: xLabel,
+      labels: [xLabel, yLabel],
       labelsKMB: true,
       drawPoints: true,
       strokeWidth: 0.0,
       showRangeSelector: true
     }
-
-    const chartData = zipXYZData(data, true)
-
+    const chartData = zipXYZData(data, this.selectedAxis() === 'height')
     _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
+    if (this.selectedAxis() === 'time') {
+      _this.validateZoom()
+      let minDate, maxDate
+      data.x.forEach(unixTime => {
+        let date = new Date(unixTime * 1000)
+        if (minDate === undefined || date < minDate) {
+          minDate = date
+        }
+
+        if (maxDate === undefined || date > maxDate) {
+          maxDate = date
+        }
+      })
+      updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)
+      show(this.zoomSelectorTarget)
+    }
   }
 
   plotExtDataGraph (data) {
     const _this = this
 
-    const labels = ['Height']
+    let xLabel = this.selectedAxis() === 'height' ? 'Height' : 'Time'
+    const labels = [xLabel]
     this.syncSources.forEach(source => {
       labels.push(source)
     })
-    console.log(labels)
     let options = {
       legend: 'always',
       includeZero: true,
       legendFormatter: legendFormatter,
       labelsDiv: _this.labelsTarget,
       ylabel: 'Block Time Variance (seconds)',
-      xlabel: 'Height',
+      xlabel: xLabel,
       labels: labels,
       labelsKMB: true,
       drawPoints: true,
@@ -489,10 +527,24 @@ export default class extends Controller {
       }
     }
 
-    const chartData = zipXYZData(data, true)
+    const chartData = zipXYZData(data, this.selectedAxis() === 'height')
+    this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
+    if (this.selectedAxis() === 'time') {
+      this.validateZoom()
+      let minDate, maxDate
+      data.x.forEach(unixTime => {
+        let date = new Date(unixTime * 1000)
+        if (minDate === undefined || date < minDate) {
+          minDate = date
+        }
 
-    console.log(chartData)
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
+        if (maxDate === undefined || date > maxDate) {
+          maxDate = date
+        }
+      })
+      updateZoomSelector(this.zoomOptionTargets, minDate, maxDate)
+      show(this.zoomSelectorTarget)
+    }
   }
 
   propagationLegendFormatter (data) {
@@ -530,5 +582,91 @@ export default class extends Controller {
 
     dompurify.sanitize(html)
     return html
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
+  }
+
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+  }
+
+  selectedInterval () { return selectedOption(this.intervalTargets) }
+
+  setInterval (e) {
+    const option = e.currentTarget.dataset.option
+    setActiveOptionBtn(option, this.intervalTargets)
+    this.plotSelectedChart()
+  }
+
+  selectedAxis () {
+    let axis = selectedOption(this.axisOptionTargets)
+    if (!axis) {
+      axis = 'time'
+    }
+    return axis
+  }
+
+  setAxis (e) {
+    const option = e.currentTarget.dataset.option
+    if (option === 'time') {
+      show(this.graphIntervalWrapperTarget)
+    } else {
+      hide(this.graphIntervalWrapperTarget)
+    }
+    setActiveOptionBtn(option, this.axisOptionTargets)
+    this.plotSelectedChart()
   }
 }

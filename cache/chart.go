@@ -65,6 +65,10 @@ const (
 	SnapshotReachableNodes axisType = "reachable-nodes"
 	SnapshotLocations      axisType = "locations"
 	SnapshotNodeVersions   axisType = "node-versions"
+
+	defaultBin binLevel = "default"
+	hourBin    binLevel = "hour"
+	dayBin     binLevel = "day"
 )
 
 // ParseAxis returns the matching axis type, else the default of time axis.
@@ -129,6 +133,17 @@ func ParseAxis(aType string) axisType {
 		return SnapshotNodeVersions
 	default:
 		return TimeAxis
+	}
+}
+
+func ParseBin(binString string) binLevel {
+	switch binLevel(binString) {
+	case hourBin:
+		return hourBin
+	case dayBin:
+		return dayBin
+	default:
+		return defaultBin
 	}
 }
 
@@ -203,9 +218,25 @@ func (charts ChartFloats) Normalize() Lengther {
 	return charts
 }
 
+// Avg is the average value of a segment of the dataset.
+func (data ChartFloats) Avg(s, e int) float64 {
+	if s >= data.Length() || e >= data.Length() {
+		return 0
+	}
+
+	if e <= s {
+		return 0
+	}
+	var sum float64
+	for _, v := range data[s:e] {
+		sum += v
+	}
+	return sum / float64(e-s)
+}
+
 // A constructor for a sized ChartFloats.
 func newChartFloats() ChartFloats {
-	return make([]float64, 0, 0)
+	return make([]float64, 0)
 }
 
 type ChartNullData interface {
@@ -242,6 +273,25 @@ func (data chartNullIntsPointer) Truncate(l int) Lengther {
 	return data
 }
 
+// Avg is the average value of a segment of the dataset.
+func (data chartNullIntsPointer) Avg(s, e int) (d nullUint64Pointer) {
+	if s >= data.Length() || e >= data.Length() {
+		return
+	}
+	if e <= s {
+		return
+	}
+	var sum uint64
+	for _, v := range data.Items[s:e] {
+		if v.HasValue {
+			d.HasValue = true
+		}
+		sum += v.Value.Uint64
+	}
+	d.Value.Uint64 = sum / uint64(e-s)
+	return
+}
+
 func (data chartNullIntsPointer) Append(set ChartNullUints) chartNullIntsPointer {
 	for _, item := range set {
 		var intPointer nullUint64Pointer
@@ -258,7 +308,7 @@ func (data chartNullIntsPointer) IsZero(index int) bool {
 	if index >= data.Length() {
 		return false
 	}
-	return data.Items[index].HasValue
+	return data.Items[index].Value.IsZero()
 }
 
 func (data chartNullIntsPointer) Remove(index int) Lengther {
@@ -284,11 +334,13 @@ type nullUint64Pointer struct {
 	Value    null.Uint64
 }
 
-func (data chartNullIntsPointer) toChartNullUint() ChartNullUints {
+func (data *chartNullIntsPointer) toChartNullUint() ChartNullUints {
 	var result ChartNullUints
 	for _, item := range data.Items {
 		if item.HasValue {
-			result = append(result, &item.Value)
+			result = append(result, &null.Uint64{
+				Uint64: item.Value.Uint64, Valid: item.HasValue,
+			})
 		} else {
 			result = append(result, nil)
 		}
@@ -428,6 +480,25 @@ func (data chartNullFloatsPointer) Truncate(l int) Lengther {
 	return data
 }
 
+// Avg is the average value of a segment of the dataset.
+func (data chartNullFloatsPointer) Avg(s, e int) (d nullFloat64Pointer) {
+	if s >= data.Length() || e >= data.Length() {
+		return
+	}
+	if e <= s {
+		return
+	}
+	var sum float64
+	for _, v := range data.Items[s:e] {
+		if v.HasValue {
+			d.HasValue = true
+		}
+		sum += v.Value.Float64
+	}
+	d.Value.Float64 = sum / float64(e-s)
+	return
+}
+
 func (data chartNullFloatsPointer) Append(set ChartNullFloats) chartNullFloatsPointer {
 	for _, item := range set {
 		var intPointer nullFloat64Pointer
@@ -444,7 +515,7 @@ func (data chartNullFloatsPointer) IsZero(index int) bool {
 	if index >= data.Length() {
 		return false
 	}
-	return !data.Items[index].HasValue
+	return data.Items[index].Value.IsZero()
 }
 
 func (data chartNullFloatsPointer) Remove(index int) Lengther {
@@ -464,11 +535,13 @@ func (data chartNullFloatsPointer) snip(max int) chartNullFloatsPointer {
 	return data
 }
 
-func (data chartNullFloatsPointer) toChartNullFloats() ChartNullFloats {
+func (data *chartNullFloatsPointer) toChartNullFloats() ChartNullFloats {
 	var result ChartNullFloats
 	for _, item := range data.Items {
 		if item.HasValue {
-			result = append(result, &item.Value)
+			result = append(result, &null.Float64{
+				Float64: item.Value.Float64, Valid: item.Value.Valid,
+			})
 		} else {
 			result = append(result, nil)
 		}
@@ -537,7 +610,6 @@ func (data ChartNullFloats) Remove(index int) Lengther {
 		return data
 	}
 	return append(data[:index], data[index+1:]...)
-	return data
 }
 
 func (data ChartNullFloats) String(index int) string {
@@ -595,7 +667,6 @@ func (data ChartStrings) Remove(index int) Lengther {
 		return data
 	}
 	return append(data[:index], data[index+1:]...)
-	return data
 }
 
 // ChartUints is a slice of uints. It satisfies the lengther interface, and
@@ -639,6 +710,21 @@ func (data ChartUints) Normalize() Lengther {
 	return data
 }
 
+// Avg is the average value of a segment of the dataset.
+func (data ChartUints) Avg(s, e int) uint64 {
+	if s >= data.Length() || e >= data.Length() {
+		return 0
+	}
+	if e <= s {
+		return 0
+	}
+	var sum uint64
+	for _, v := range data[s:e] {
+		sum += v
+	}
+	return sum / uint64(e-s)
+}
+
 // A constructor for a sized ChartUints.
 func newChartUints() ChartUints {
 	return make(ChartUints, 0)
@@ -669,7 +755,7 @@ type ChartUpdater struct {
 }
 
 // Retriver provides a function for directly getting a specific chart data from a store
-type Retriver func(ctx context.Context, charts *ChartData, axisString string, extras ...string) ([]byte, error)
+type Retriver func(ctx context.Context, charts *ChartData, dataType, axisString string, bin string, extras ...string) ([]byte, error)
 
 // ChartData is the entry point chart cache
 type ChartData struct {
@@ -678,9 +764,9 @@ type ChartData struct {
 	EnableCache bool
 
 	cacheMtx  sync.RWMutex
-	db        *badger.DB
+	DB        *badger.DB
 	cache     map[string]*cachedChart
-	updaters  []ChartUpdater
+	updaters  map[string]ChartUpdater
 	retrivers map[string]Retriver
 
 	syncSource    []string
@@ -717,8 +803,32 @@ func ValidateLengths(lens ...Lengther) (int, error) {
 }
 
 // Lengthen performs data validation, the cacheID will be incremented.
-func (charts *ChartData) Lengthen() error {
-	return charts.NormalizeLength()
+func (charts *ChartData) Lengthen(tags ...string) error {
+	if len(tags) == 0 {
+		tags = []string{
+			Mempool, Propagation, PowChart, VSP, Exchange, Snapshot, Community,
+		}
+	}
+
+	if err := charts.NormalizeLength(tags...); err != nil {
+		return err
+	}
+	lengtheners := map[string]func() error{
+		Mempool:     charts.lengthenMempool,
+		Propagation: charts.lengthenPropagation,
+		Snapshot:    charts.lengthenSnapshot,
+		VSP:         charts.lengthenVsp,
+		PowChart:    charts.lengthenPow,
+	}
+	for _, t := range tags {
+		if lengthener, f := lengtheners[t]; f {
+			if err := lengthener(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Load loads chart data from the gob file at the specified path and performs an
@@ -736,8 +846,8 @@ func (charts *ChartData) Load(ctx context.Context) error {
 	}
 
 	if !Compatible(cacheVersion, currentVersion) {
-		return fmt.Errorf("Invalid cache version detected. Expected %s, got %s", 
-		cacheVersion.String(), currentVersion.String())
+		return fmt.Errorf("Invalid cache version detected. Expected %s, got %s",
+			cacheVersion.String(), currentVersion.String())
 	}
 	// Bring the charts up to date.
 	log.Infof("Updating charts data...")
@@ -745,33 +855,13 @@ func (charts *ChartData) Load(ctx context.Context) error {
 }
 
 // TriggerUpdate triggers (*ChartData).Update.
-func (charts *ChartData) TriggerUpdate(ctx context.Context) error {
-	if err := charts.Update(ctx); err != nil {
+func (charts *ChartData) TriggerUpdate(ctx context.Context, tag string) error {
+	if err := charts.Update(ctx, tag); err != nil {
 		// Only log errors from ChartsData.Update. TODO: make this more severe.
 		log.Errorf("(*ChartData).Update failed: %v", err)
 	}
 	charts.ClearVLog()
 	return nil
-}
-
-// StateID returns a unique (enough) ID associated with the state of the chart
-// data in a thread-safe way.
-func (charts *ChartData) StateID() uint64 {
-	charts.mtx.RLock()
-	defer charts.mtx.RUnlock()
-	return charts.stateID()
-}
-
-// stateID returns a unique (enough) ID associated with the state of the chart
-// data.
-func (charts *ChartData) stateID() uint64 {
-	return charts.MempoolTimeTip()
-}
-
-// ValidState checks whether the provided chartID is still valid. ValidState
-// should be used under at least a (*ChartData).RLock.
-func (charts *ChartData) validState(stateID uint64) bool {
-	return charts.stateID() == stateID
 }
 
 // AddRetriever adds a Retriever to the Retrievers slice.
@@ -782,30 +872,45 @@ func (charts *ChartData) AddRetriever(chartID string, retriever Retriver) {
 // AddUpdater adds a ChartUpdater to the Updaters slice. Updaters are run
 // sequentially during (*ChartData).Update.
 func (charts *ChartData) AddUpdater(updater ChartUpdater) {
-	charts.updaters = append(charts.updaters, updater)
+	charts.updaters[updater.Tag] = updater
 }
 
 // Update refreshes chart data by calling the ChartUpdaters sequentially. The
 // Update is abandoned with a warning if stateID changes while running a Fetcher
 // (likely due to a new update starting during a query).
-func (charts *ChartData) Update(ctx context.Context) error {
+func (charts *ChartData) Update(ctx context.Context, tags ...string) error {
 	// only run updater if caching is enabled
 	if !charts.EnableCache {
 		return nil
 	}
 
-	for _, updater := range charts.updaters {
-		stateID := charts.StateID()
+	var updaters []ChartUpdater
+	if len(tags) > 0 {
+		for _, t := range tags {
+			if updater, found := charts.updaters[t]; found {
+				updaters = append(updaters, updater)
+			}
+		}
+	} else {
+		for _, updater := range charts.updaters {
+			updaters = append(updaters, updater)
+		}
+	}
+
+	for _, updater := range updaters {
 		var completed bool
 		var page = 1
 		for !completed {
+			stateID := charts.cacheID(updater.Tag)
 			rows, cancel, done, err := updater.Fetcher(ctx, charts, page)
 			if err != nil {
 				err = fmt.Errorf("error encountered during charts %s update. aborting update: %v", updater.Tag, err)
 			} else {
 				charts.mtx.Lock()
-				if !charts.validState(stateID) {
-					err = fmt.Errorf("state change detected during charts %s update. aborting update", updater.Tag)
+				if stateID != charts.cacheID(updater.Tag) {
+					if updater.Tag != VSP {
+						err = fmt.Errorf("state change detected during charts %s update. aborting update", updater.Tag)
+					}
 				} else {
 					err = updater.Appender(charts, rows)
 					if err != nil {
@@ -815,6 +920,9 @@ func (charts *ChartData) Update(ctx context.Context) error {
 				charts.mtx.Unlock()
 			}
 			completed = done
+			if updater.Tag != VSP {
+				completed = true
+			}
 			cancel()
 			if err != nil {
 				return err
@@ -824,7 +932,7 @@ func (charts *ChartData) Update(ctx context.Context) error {
 	}
 
 	// Since the charts db data query is complete. Update derived dataset.
-	if err := charts.Lengthen(); err != nil {
+	if err := charts.Lengthen(tags...); err != nil {
 		return fmt.Errorf("(*ChartData).Lengthen failed: %v", err)
 	}
 	return nil
@@ -850,9 +958,9 @@ func NewChartData(ctx context.Context, enableCache bool, syncSources,
 	return &ChartData{
 		ctx:           ctx,
 		EnableCache:   enableCache,
-		db:            db,
+		DB:            db,
 		cache:         make(map[string]*cachedChart),
-		updaters:      make([]ChartUpdater, 0),
+		updaters:      make(map[string]ChartUpdater),
 		retrivers:     make(map[string]Retriver),
 		syncSource:    syncSources,
 		PowSources:    poolSources,
@@ -876,7 +984,7 @@ func (charts *ChartData) cacheID(chartID string) uint64 {
 	case BlockPropagation:
 	case BlockTimestamp:
 	case VotesReceiveTime:
-		return uint64(charts.PropagationHeightTip())
+		return charts.PropagationHeightTip()
 	case PowChart:
 		return charts.PowTimeTip()
 	case VSP:
@@ -902,7 +1010,7 @@ func (charts *ChartData) getCache(chartID string, axis axisType) (data *cachedCh
 	cacheID = charts.cacheID(chartID)
 	data, found = charts.cache[ck]
 
-	err := charts.db.View(func(txn *badger.Txn) error {
+	err := charts.DB.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(ck))
 		if err != nil {
 			return err
@@ -937,7 +1045,7 @@ func (charts *ChartData) cacheChart(chartID string, version uint64, axis axisTyp
 	if err := e.Encode(c); err != nil {
 		log.Errorf("Error caching cart, %s, %s", chartID, err.Error())
 	}
-	err := charts.db.Update(func(txn *badger.Txn) error {
+	err := charts.DB.Update(func(txn *badger.Txn) error {
 		err := txn.Set([]byte(ck), b.Bytes())
 		return err
 	})
@@ -949,7 +1057,7 @@ func (charts *ChartData) cacheChart(chartID string, version uint64, axis axisTyp
 
 func (charts *ChartData) removeCache(chartID string, axis axisType) {
 	ck := cacheKey(chartID, axis)
-	err := charts.db.Update(func(txn *badger.Txn) error {
+	err := charts.DB.Update(func(txn *badger.Txn) error {
 		err := txn.Delete([]byte(ck))
 		return err
 	})
@@ -960,7 +1068,7 @@ func (charts *ChartData) removeCache(chartID string, axis axisType) {
 
 // ChartMaker is a function that accepts a chart type and BinLevel, and returns
 // a JSON-encoded chartResponse.
-type ChartMaker func(ctx context.Context, charts *ChartData, axis axisType, sources ...string) ([]byte, error)
+type ChartMaker func(ctx context.Context, charts *ChartData, dataType, axis axisType, bin binLevel, sources ...string) ([]byte, error)
 
 var chartMakers = map[string]ChartMaker{
 	Mempool:     mempool,
@@ -973,16 +1081,18 @@ var chartMakers = map[string]ChartMaker{
 
 // Chart will return a JSON-encoded chartResponse of the provided type
 // and BinLevel.
-func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, extras ...string) ([]byte, error) {
-	
+func (charts *ChartData) Chart(ctx context.Context, chartID, dataType, axisString, binString string, extras ...string) ([]byte, error) {
+
+	dataTypeAxis := ParseAxis(dataType)
+	bin := ParseBin(binString)
 	axis := ParseAxis(axisString)
-	key := fmt.Sprintf("%s-%s-%s", chartID, strings.Join(extras, "-"), string(axis))
-	cache, found, _ := charts.getCache(key, axis)
+	key := fmt.Sprintf("%s-%s-%s-%s", chartID, bin, strings.Join(extras, "-"), string(dataTypeAxis))
+	cache, found, _ := charts.getCache(key, dataTypeAxis)
 	if found {
 		if cache.Version == charts.cacheID(chartID) {
 			return cache.Data, nil
 		}
-		charts.removeCache(key, axis)
+		charts.removeCache(key, dataTypeAxis)
 	}
 
 	if !charts.EnableCache {
@@ -990,11 +1100,11 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 		if !hasRetriever {
 			return nil, UnknownChartErr
 		}
-		data, err := retriever(ctx, charts, axisString, extras...)
+		data, err := retriever(ctx, charts, string(dataTypeAxis), string(axis), string(bin), extras...)
 		if err != nil {
 			return nil, err
 		}
-		charts.cacheChart(key, charts.cacheID(chartID), axis, data)
+		charts.cacheChart(key, charts.cacheID(chartID), dataTypeAxis, data)
 		return data, nil
 	}
 
@@ -1005,12 +1115,12 @@ func (charts *ChartData) Chart(ctx context.Context, chartID, axisString string, 
 	// Do the locking here, rather than in encodeXY, so that the helper functions
 	// (accumulate, btw) are run under lock.
 	charts.mtx.RLock()
-	data, err := maker(ctx, charts, axis, extras...)
+	data, err := maker(ctx, charts, dataTypeAxis, axis, bin, extras...)
 	charts.mtx.RUnlock()
 	if err != nil {
 		return nil, err
 	}
-	charts.cacheChart(key, charts.cacheID(chartID), axis, data)
+	charts.cacheChart(key, charts.cacheID(chartID), dataTypeAxis, data)
 	return data, nil
 }
 
@@ -1032,7 +1142,7 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 	if len(sets) == 0 {
 		return nil, fmt.Errorf("encode called without arguments")
 	}
-	smaller := sets[0].Length()
+	var smaller int = sets[0].Length()
 	for _, x := range sets {
 		if x == nil {
 			smaller = 0
@@ -1049,7 +1159,6 @@ func (charts *ChartData) encodeArr(keys []string, sets []Lengther) ([]byte, erro
 		}
 		sets[i] = sets[i].Truncate(smaller)
 	}
-	sets = charts.trim(sets...)
 	response := make(chartResponse)
 	for i := range sets {
 		rk := keys[i%len(keys)]
@@ -1072,14 +1181,16 @@ func (charts *ChartData) trim(sets ...Lengther) []Lengther {
 		var isZero bool = true
 	out:
 		for j := 1; j < len(sets); j++ {
-			if !sets[j].IsZero(i) {
+			if sets[j] != nil && !sets[j].IsZero(i) {
 				isZero = false
 				break out
 			}
 		}
 		if isZero {
 			for j := 0; j < len(sets); j++ {
-				sets[j] = sets[j].Remove(i)
+				if sets[j] != nil {
+					sets[j] = sets[j].Remove(i)
+				}
 			}
 		}
 	}
@@ -1087,73 +1198,122 @@ func (charts *ChartData) trim(sets ...Lengther) []Lengther {
 	return sets
 }
 
-func mempool(ctx context.Context, charts *ChartData, axis axisType, _ ...string) ([]byte, error) {
-	switch axis {
+func mempool(ctx context.Context, charts *ChartData, dataType, _ axisType, bin binLevel, _ ...string) ([]byte, error) {
+	switch dataType {
 	case MempoolSize:
-		return mempoolSize(charts)
+		return mempoolSize(charts, bin)
 	case MempoolTxCount:
-		return mempoolTxCount(charts)
+		return mempoolTxCount(charts, bin)
 	case MempoolFees:
-		return mempoolFees(charts)
+		return mempoolFees(charts, bin)
 	}
 	return nil, UnknownChartErr
 }
 
-func mempoolSize(charts *ChartData) ([]byte, error) {
+func mempoolSize(charts *ChartData, bin binLevel) ([]byte, error) {
 	var dates, sizes ChartUints
-	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+
+	var key = fmt.Sprintf("%s-%s", Mempool, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &dates); err != nil {
+		log.Info(key)
 		return nil, err
 	}
-	if err := charts.ReadVal(Mempool+"-"+string(MempoolSize), &sizes); err != nil {
+
+	key = fmt.Sprintf("%s-%s", Mempool, MempoolSize)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &sizes); err != nil {
 		return nil, err
 	}
+
 	return charts.Encode(nil, dates, sizes)
 }
 
-func mempoolTxCount(charts *ChartData) ([]byte, error) {
+func mempoolTxCount(charts *ChartData, bin binLevel) ([]byte, error) {
 	var dates, txCounts ChartUints
-	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+
+	var key = fmt.Sprintf("%s-%s", Mempool, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+
+	if err := charts.ReadVal(key, &dates); err != nil {
+		log.Info(key)
 		return nil, err
 	}
-	if err := charts.ReadVal(Mempool+"-"+string(MempoolTxCount), &txCounts); err != nil {
+
+	key = fmt.Sprintf("%s-%s", Mempool, MempoolTxCount)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &txCounts); err != nil {
 		return nil, err
 	}
+
 	return charts.Encode(nil, dates, txCounts)
 }
 
-func mempoolFees(charts *ChartData) ([]byte, error) {
+func mempoolFees(charts *ChartData, bin binLevel) ([]byte, error) {
 	var dates ChartUints
 	var fees ChartFloats
-	if err := charts.ReadVal(Mempool+"-"+string(TimeAxis), &dates); err != nil {
+
+	var key = fmt.Sprintf("%s-%s", Mempool, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+
+	if err := charts.ReadVal(key, &dates); err != nil {
 		return nil, err
 	}
-	if err := charts.ReadVal(Mempool+"-"+string(MempoolFees), &fees); err != nil {
+
+	key = fmt.Sprintf("%s-%s", Mempool, MempoolFees)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &fees); err != nil {
 		return nil, err
 	}
 	return charts.Encode(nil, dates, fees)
 }
 
-func propagation(ctx context.Context, charts *ChartData, axis axisType, syncSources ...string) ([]byte, error) {
-	switch axis {
+func propagation(ctx context.Context, charts *ChartData, dataType, axis axisType, bin binLevel, syncSources ...string) ([]byte, error) {
+	switch dataType {
 	case BlockPropagation:
-		return blockPropagation(charts, syncSources...)
+		return blockPropagation(charts, axis, bin, syncSources...)
 	case BlockTimestamp:
-		return blockTimestamp(charts)
+		return blockTimestamp(charts, axis, bin)
 	case VotesReceiveTime:
-		return votesReceiveTime(charts)
+		return votesReceiveTime(charts, axis, bin)
 	}
 	return nil, UnknownChartErr
 }
 
-func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) {
-	var heights ChartUints
-	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+func blockPropagation(charts *ChartData, axis axisType, bin binLevel, syncSources ...string) ([]byte, error) {
+	var xData ChartUints
+	key := fmt.Sprintf("%s-%s", Propagation, HeightAxis)
+	if axis == TimeAxis {
+		key = fmt.Sprintf("%s-%s", Propagation, TimeAxis)
+	}
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &xData); err != nil {
+		log.Info(err, key)
 		return nil, err
 	}
-	var deviations = []Lengther{heights}
+	var deviations = []Lengther{xData}
 	for _, source := range syncSources {
 		var d ChartFloats
-		if err := charts.ReadVal(Propagation+"-"+string(BlockPropagation)+"-"+source, &d); err != nil {
+		key = fmt.Sprintf("%s-%s-%s", Propagation, BlockPropagation, source)
+		if bin != defaultBin {
+			key = fmt.Sprintf("%s-%s", key, bin)
+		}
+		if err := charts.ReadVal(key, &d); err != nil {
+			log.Info(err, key)
 			return nil, err
 		}
 		deviations = append(deviations, d)
@@ -1162,36 +1322,86 @@ func blockPropagation(charts *ChartData, syncSources ...string) ([]byte, error) 
 	return charts.encodeArr(nil, deviations)
 }
 
-func blockTimestamp(charts *ChartData) ([]byte, error) {
-	var heights ChartUints
-	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+func blockTimestamp(charts *ChartData, axis axisType, bin binLevel) ([]byte, error) {
+	var xData ChartUints
+	key := fmt.Sprintf("%s-%s", Propagation, HeightAxis)
+	if axis == TimeAxis {
+		key = fmt.Sprintf("%s-%s", Propagation, TimeAxis)
+	}
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &xData); err != nil {
 		return nil, err
 	}
 	var blockDelays ChartFloats
-	if err := charts.ReadVal(Propagation+"-"+string(BlockTimestamp), &blockDelays); err != nil {
+	key = fmt.Sprintf("%s-%s", Propagation, BlockTimestamp)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &blockDelays); err != nil {
 		return nil, err
 	}
-	return charts.Encode(nil, heights, blockDelays)
+	return charts.Encode(nil, xData, blockDelays)
 }
 
-func votesReceiveTime(charts *ChartData) ([]byte, error) {
-	var heights ChartUints
-	if err := charts.ReadVal(Propagation+"-"+string(HeightAxis), &heights); err != nil {
+func votesReceiveTime(charts *ChartData, axis axisType, bin binLevel) ([]byte, error) {
+	var xData ChartUints
+	key := fmt.Sprintf("%s-%s", Propagation, HeightAxis)
+	if axis == TimeAxis {
+		key = fmt.Sprintf("%s-%s", Propagation, TimeAxis)
+	}
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &xData); err != nil {
 		return nil, err
 	}
 	var votesReceiveTime ChartFloats
-	if err := charts.ReadVal(Propagation+"-"+string(VotesReceiveTime), &votesReceiveTime); err != nil {
+	key = fmt.Sprintf("%s-%s", Propagation, VotesReceiveTime)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &votesReceiveTime); err != nil {
 		return nil, err
 	}
-	return charts.Encode(nil, heights, votesReceiveTime)
+	return charts.Encode(nil, xData, votesReceiveTime)
 }
 
-func powChart(ctx context.Context, charts *ChartData, axis axisType, pools ...string) ([]byte, error) {
+func powChart(ctx context.Context, charts *ChartData, dataType, axis axisType, bin binLevel, pools ...string) ([]byte, error) {
+	var dates ChartUints
+	key := PowChart + "-" + string(TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &dates); err != nil {
+		return nil, err
+	}
+
+	var deviations = make([]ChartNullUints, len(pools))
+
+	for i, s := range pools {
+		key = fmt.Sprintf("%s-%s-%s", PowChart, dataType, s)
+		if bin != defaultBin {
+			key = fmt.Sprintf("%s-%s", key, bin)
+		}
+		var data chartNullIntsPointer
+		if err := charts.ReadVal(key, &data); err != nil {
+			return nil, err
+		}
+		deviations[i] = data.toChartNullUint()
+
+	}
+
+	return MakePowChart(charts, dates, deviations, pools)
+}
+
+func powCharta(ctx context.Context, charts *ChartData, dataType, axis axisType, bin binLevel, pools ...string) ([]byte, error) {
 	retriever, hasRetriever := charts.retrivers[PowChart]
 	if !hasRetriever {
 		return nil, UnknownChartErr
 	}
-	return retriever(ctx, charts, string(axis), pools...)
+	return retriever(ctx, charts, string(dataType), string(axis), string(bin), pools...)
 }
 
 func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUints, pools []string) ([]byte, error) {
@@ -1200,47 +1410,52 @@ func MakePowChart(charts *ChartData, dates ChartUints, deviations []ChartNullUin
 	for _, d := range deviations {
 		recs = append(recs, d)
 	}
+	recs = charts.trim(recs...)
 	return charts.Encode(nil, recs...)
 }
 
-func makeVspChart(ctx context.Context, charts *ChartData, axis axisType, vsps ...string) ([]byte, error) {
-	// var dates ChartUints
-	// if err := charts.ReadAxis(VSP+"-"+string(TimeAxis), &dates); err != nil {
-	// 	return nil, err
-	// }
-
-	// var deviations = make([]ChartNullData, len(vsps))
-
-	// for i, s := range vsps {
-	// 	switch axis {
-	// 	case ImmatureAxis, LiveAxis, VotedAxis, MissedAxis, UserCountAxis, UsersActiveAxis:
-	// 		var data chartNullIntsPointer
-	// 		if err := charts.ReadAxis(VSP + "-" + string(axis) + "-" + s, &data); err != nil {
-	// 			return nil, err
-	// 		}
-	// 		deviations[i] = data.toChartNullUint()
-
-	// 	case ProportionLiveAxis, ProportionMissedAxis:
-	// 		var data chartNullFloatsPointer
-	// 		if err := charts.ReadAxis(VSP + "-" + string(axis) + "-" + s, &data); err != nil {
-	// 			return nil, err
-	// 		}
-	// 		deviations[i] = data.toChartNullFloats()
-	// 	}
-
-	// }
-
-	// return MakeVspChart(charts, dates, deviations, vsps)
-
-	// Because the dates for vsp tick vary from source to source,
-	// a single date collection cannot be used for all and so
-	// the record is retrieved at every request.
-
-	retriever, hasRetriever := charts.retrivers[VSP]
-	if !hasRetriever {
-		return nil, UnknownChartErr
+func makeVspChart(ctx context.Context, charts *ChartData, dataType, axis axisType, bin binLevel, vsps ...string) ([]byte, error) {
+	var dates ChartUints
+	key := VSP + "-" + string(TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
 	}
-	return retriever(ctx, charts, string(axis), vsps...)
+	if err := charts.ReadVal(key, &dates); err != nil {
+		return nil, err
+	}
+
+	var deviations = make([]ChartNullData, len(vsps))
+
+	for i, s := range vsps {
+		key = fmt.Sprintf("%s-%s-%s", VSP, dataType, s)
+		if bin != defaultBin {
+			key = fmt.Sprintf("%s-%s", key, bin)
+		}
+		switch dataType {
+		case ImmatureAxis, LiveAxis, VotedAxis, MissedAxis, UserCountAxis, UsersActiveAxis:
+			var data chartNullIntsPointer
+			if err := charts.ReadVal(key, &data); err != nil {
+				return nil, err
+			}
+			var valid = 0
+			for _, d := range data.Items {
+				if !d.Value.IsZero() {
+					valid++
+				}
+			}
+			deviations[i] = data.toChartNullUint()
+
+		case ProportionLiveAxis, ProportionMissedAxis:
+			var data chartNullFloatsPointer
+			if err := charts.ReadVal(key, &data); err != nil {
+				return nil, err
+			}
+			deviations[i] = data.toChartNullFloats()
+		}
+
+	}
+
+	return MakeVspChart(charts, dates, deviations, vsps)
 }
 
 func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullData, vsps []string) ([]byte, error) {
@@ -1248,43 +1463,62 @@ func MakeVspChart(charts *ChartData, dates ChartUints, deviations []ChartNullDat
 	for _, d := range deviations {
 		recs = append(recs, d)
 	}
+
+	recs = charts.trim(recs...)
 	return charts.Encode(nil, recs...)
 }
 
-func networkSnapshorChart(ctx context.Context, charts *ChartData, axis axisType, extras ...string) ([]byte, error) {
-	switch axis {
+func networkSnapshorChart(ctx context.Context, charts *ChartData, dataType, _ axisType, bin binLevel, extras ...string) ([]byte, error) {
+	switch dataType {
 	case SnapshotNodes:
-		return networkSnapshotNodesChart(charts)
+		return networkSnapshotNodesChart(charts, bin)
 	case SnapshotLocations:
-		return networkSnapshotLocationsChart(charts, extras...)
+		return networkSnapshotLocationsChart(charts, bin, extras...)
 	case SnapshotNodeVersions:
-		return networkSnapshotNodeVersionsChart(charts, extras...)
+		return networkSnapshotNodeVersionsChart(charts, bin, extras...)
 	default:
 		return nil, UnknownChartErr
 	}
 }
 
-func networkSnapshotNodesChart(charts *ChartData) ([]byte, error) {
-	var dates ChartUints
-	if err := charts.ReadVal(Snapshot+"-"+string(TimeAxis), &dates); err != nil {
-		return nil, err
+func networkSnapshotNodesChart(charts *ChartData, bin binLevel) ([]byte, error) {
+	var dates, nodes, reachableNodes ChartUints
+
+	var key = fmt.Sprintf("%s-%s", Snapshot, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
 	}
-	var nodes ChartUints
-	if err := charts.ReadVal(Snapshot+"-"+string(SnapshotNodes), &nodes); err != nil {
+	if err := charts.ReadVal(key, &dates); err != nil {
+		log.Info(key)
 		return nil, err
 	}
 
-	var reachableNodes ChartUints
-	if err := charts.ReadVal(Snapshot+"-"+string(SnapshotReachableNodes), &reachableNodes); err != nil {
+	key = fmt.Sprintf("%s-%s", Snapshot, SnapshotNodes)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &nodes); err != nil {
 		return nil, err
 	}
+
+	key = fmt.Sprintf("%s-%s", Snapshot, SnapshotReachableNodes)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
+	if err := charts.ReadVal(key, &reachableNodes); err != nil {
+		return nil, err
+	}
+
 	return charts.Encode(nil, dates, nodes, reachableNodes)
 }
 
-func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]byte, error) {
+func networkSnapshotLocationsChart(charts *ChartData, bin binLevel, countries ...string) ([]byte, error) {
 	var recs = make([]Lengther, len(countries)+1)
 	var dates ChartUints
-	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
+	key := fmt.Sprintf("%s-%s-%s", Snapshot, SnapshotLocations, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
 	if err := charts.ReadVal(key, &dates); err != nil {
 		return nil, err
 	}
@@ -1294,7 +1528,10 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 		if country == "" {
 			continue
 		}
-		key := Snapshot + "-" + string(SnapshotLocations) + "-" + country
+		var key = fmt.Sprintf("%s-%s-%s", Snapshot, SnapshotLocations, country)
+		if bin != defaultBin {
+			key = fmt.Sprintf("%s-%s", key, bin)
+		}
 		var rec ChartUints
 		if err := charts.ReadVal(key, &rec); err != nil {
 			log.Criticalf("%s - %s", err.Error(), key)
@@ -1305,11 +1542,15 @@ func networkSnapshotLocationsChart(charts *ChartData, countries ...string) ([]by
 	return charts.Encode(nil, recs...)
 }
 
-func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) ([]byte, error) {
+func networkSnapshotNodeVersionsChart(charts *ChartData, bin binLevel, userAgents ...string) ([]byte, error) {
 	var recs = make([]Lengther, len(userAgents)+1)
 	var dates ChartUints
-	key := Snapshot + "-" + string(SnapshotLocations) + "-" + string(TimeAxis)
+	key := fmt.Sprintf("%s-%s-%s", Snapshot, SnapshotNodeVersions, TimeAxis)
+	if bin != defaultBin {
+		key = fmt.Sprintf("%s-%s", key, bin)
+	}
 	if err := charts.ReadVal(key, &dates); err != nil {
+		log.Info(key)
 		return nil, err
 	}
 	recs[0] = dates
@@ -1318,7 +1559,11 @@ func networkSnapshotNodeVersionsChart(charts *ChartData, userAgents ...string) (
 		if userAgent == "" {
 			continue
 		}
-		key := Snapshot + "-" + string(SnapshotNodeVersions) + "-" + userAgent
+
+		var key = fmt.Sprintf("%s-%s-%s", Snapshot, SnapshotNodeVersions, userAgent)
+		if bin != defaultBin {
+			key = fmt.Sprintf("%s-%s", key, bin)
+		}
 		var rec ChartUints
 		if err := charts.ReadVal(key, &rec); err != nil {
 			log.Criticalf("%s - %s", err.Error(), key)

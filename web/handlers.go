@@ -301,28 +301,26 @@ func (s *Server) getExchangeChartData(res http.ResponseWriter, req *http.Request
 func (s *Server) tickIntervalsByExchangeAndPair(res http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
 	selectedCurrencyPair := req.FormValue("currency-pair")
-	var result = []struct{
+	var result = []struct {
 		Label string `json:"label"`
-		Value int `json:"value"`
-	} {
+		Value int    `json:"value"`
+	}{
 		{Label: "All", Value: -1},
 	}
 	pairs, err := s.db.TickIntervalsByExchangeAndPair(req.Context(), req.FormValue("exchange"), selectedCurrencyPair)
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
-			s.renderErrorJSON("error in loading intervals, " + err.Error(), res)
+			s.renderErrorJSON("error in loading intervals, "+err.Error(), res)
 			return
 		}
 		s.renderJSON(result, res)
 		return
 	}
 
-	
-
 	for _, p := range pairs {
 		result = append(result, struct {
 			Label string `json:"label"`
-			Value int `json:"value"`
+			Value int    `json:"value"`
 		}{
 			Label: exchangeTickIntervals[p.Interval],
 			Value: p.Interval,
@@ -337,7 +335,7 @@ func (s *Server) currencyPairByExchange(res http.ResponseWriter, req *http.Reque
 	pairs, err := s.db.CurrencyPairByExchange(req.Context(), req.FormValue("exchange"))
 	if err != nil {
 		if err.Error() != sql.ErrNoRows.Error() {
-			s.renderErrorJSON("error in loading intervals, " + err.Error(), res)
+			s.renderErrorJSON("error in loading intervals, "+err.Error(), res)
 			return
 		}
 		s.renderJSON(result, res)
@@ -1118,7 +1116,6 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		columnHeaders = append(columnHeaders, "Date", "Subscribers", "Accounts Active")
-		break
 	case twitterPlatform:
 		handle := req.FormValue("twitter-handle")
 		stats, err = s.db.TwitterStats(req.Context(), handle, offset, pageSize)
@@ -1134,7 +1131,6 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		columnHeaders = append(columnHeaders, "Date", "Followers")
-		break
 	case githubPlatform:
 		repository := req.FormValue("repository")
 		stats, err = s.db.GithubStat(req.Context(), repository, offset, pageSize)
@@ -1150,7 +1146,6 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		columnHeaders = append(columnHeaders, "Date", "Stars", "Forks")
-		break
 	case youtubePlatform:
 		channel := req.FormValue("channel")
 		stats, err = s.db.YoutubeStat(req.Context(), channel, offset, pageSize)
@@ -1166,7 +1161,6 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		columnHeaders = append(columnHeaders, "Date", "Subscribers", "View Count")
-		break
 	}
 
 	totalPages := totalCount / int64(pageSize)
@@ -1200,12 +1194,10 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		}
 		plarform = models.TableNames.Github
 		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
-		break
 	case twitterPlatform:
 		yLabel = "Followers"
 		dataType = models.TwitterColumns.Followers
 		plarform = models.TableNames.Twitter
-		break
 	case redditPlatform:
 		if dataType == models.RedditColumns.ActiveAccounts {
 			yLabel = "Active Accounts"
@@ -1222,7 +1214,6 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 			yLabel = "Subscribers"
 		}
 		filters[models.YoutubeColumns.Channel] = fmt.Sprintf("'%s'", req.FormValue("channel"))
-		break
 	}
 
 	if dataType == "" {
@@ -1435,10 +1426,9 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 		if page < 1 {
 			page = 1
 		}
-		offset = (page -1) * pageSize
+		offset = (page - 1) * pageSize
 		limit = pageSize
 	}
-	
 
 	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
 	if err != nil {
@@ -1470,7 +1460,7 @@ func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Reques
 			return
 		}
 	}
-	
+
 	var datesMap = map[int64]struct{}{}
 	var allDates []int64
 	var userAgentMap = map[string]struct{}{}
@@ -1486,7 +1476,7 @@ func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Reques
 		if _, exists := dateUserAgentCount[item.Timestamp]; !exists {
 			dateUserAgentCount[item.Timestamp] = make(map[string]int64)
 		}
-		
+
 		if _, exists := userAgentMap[item.UserAgent]; !exists {
 			userAgentMap[item.UserAgent] = struct{}{}
 			allUserAgents = append(allUserAgents, item.UserAgent)
@@ -1494,10 +1484,8 @@ func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Reques
 		dateUserAgentCount[item.Timestamp][item.UserAgent] = item.Nodes
 	}
 
-	var row = []string{ "Date (UTC)" }
-	for _, userAgent := range allUserAgents {
-		row = append(row, userAgent)
-	}
+	var row = []string{"Date (UTC)"}
+	row = append(row, allUserAgents...)
 	csv := strings.Join(row, ",") + "\n"
 
 	var minDate, maxDate int64
@@ -1510,17 +1498,17 @@ func (s *Server) nodesCountUserAgentsChart(w http.ResponseWriter, r *http.Reques
 			maxDate = timestamp
 		}
 
-		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		row = []string{time.Unix(timestamp, 0).UTC().String()}
 		for _, userAgent := range allUserAgents {
 			row = append(row, strconv.FormatInt(dateUserAgentCount[timestamp][userAgent], 10))
 		}
 		csv += strings.Join(row, ",") + "\n"
 	}
 
-	s.renderJSON(map[string]interface{}{ 
-		"csv" : csv, 
-		"minDate" : time.Unix(minDate, 0).UTC().String(), 
-		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	s.renderJSON(map[string]interface{}{
+		"csv":     csv,
+		"minDate": time.Unix(minDate, 0).UTC().String(),
+		"maxDate": time.Unix(maxDate, 0).UTC().String(),
 	}, w)
 }
 
@@ -1538,7 +1526,7 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 		if page < 1 {
 			page = 1
 		}
-		offset = (page -1) * pageSize
+		offset = (page - 1) * pageSize
 		limit = pageSize
 	}
 
@@ -1578,7 +1566,7 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 			return
 		}
 	}
-	
+
 	var datesMap = map[int64]struct{}{}
 	var allDates []int64
 	var countryMap = map[string]struct{}{}
@@ -1594,7 +1582,7 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 		if _, exists := dateCountryCount[item.Timestamp]; !exists {
 			dateCountryCount[item.Timestamp] = make(map[string]int64)
 		}
-		
+
 		if _, exists := countryMap[item.Country]; !exists {
 			countryMap[item.Country] = struct{}{}
 			allCountries = append(allCountries, item.Country)
@@ -1602,10 +1590,8 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 		dateCountryCount[item.Timestamp][item.Country] = item.Nodes
 	}
 
-	var row = []string{ "Date (UTC)" }
-	for _, country := range allCountries {
-		row = append(row, country)
-	}
+	var row = []string{"Date (UTC)"}
+	row = append(row, allCountries...)
 	csv := strings.Join(row, ",") + "\n"
 
 	var minDate, maxDate int64
@@ -1618,17 +1604,17 @@ func (s *Server) nodesCountByCountriesChart(w http.ResponseWriter, r *http.Reque
 			maxDate = timestamp
 		}
 
-		row = []string{ time.Unix(timestamp, 0).UTC().String() }
+		row = []string{time.Unix(timestamp, 0).UTC().String()}
 		for _, country := range allCountries {
 			row = append(row, strconv.FormatInt(dateCountryCount[timestamp][country], 10))
 		}
 		csv += strings.Join(row, ",") + "\n"
 	}
 
-	s.renderJSON(map[string]interface{}{ 
-		"csv" : csv, 
-		"minDate" : time.Unix(minDate, 0).UTC().String(), 
-		"maxDate" : time.Unix(maxDate, 0).UTC().String(), 
+	s.renderJSON(map[string]interface{}{
+		"csv":     csv,
+		"minDate": time.Unix(minDate, 0).UTC().String(),
+		"maxDate": time.Unix(maxDate, 0).UTC().String(),
 	}, w)
 }
 
@@ -1658,9 +1644,7 @@ func (s *Server) nodes(w http.ResponseWriter, r *http.Request) {
 	offset := (page - 1) * pageSize
 	query := r.FormValue("q")
 
-	var timestamp int64
-
-	timestamp = getTitmestampCtx(r)
+	timestamp := getTitmestampCtx(r)
 	if timestamp == 0 {
 		s.renderErrorJSON("timestamp is required and cannot be zero", w)
 		return
@@ -1760,16 +1744,16 @@ func (s *Server) sync(res http.ResponseWriter, req *http.Request) {
 	result.Success = response.Success
 	result.Records = response.Records
 	result.TotalCount = response.TotalCount
-
-	return
 }
 
-// api/charts/{chartType}/{axis}
+// api/charts/{chartType}/{dataType}
 func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	chartType := getChartTypeCtx(r)
-	axis := getChartAxisTypeCtx(r)
-	extras := r.URL.Query().Get("sources")
+	dataType := getChartDataTypeCtx(r)
+	bin := r.URL.Query().Get("bin")
+	axis := r.URL.Query().Get("axis")
+	extras := r.URL.Query().Get("extras")
 
 	// the extra data passed for exchange chart is the exchange set key
 	if chartType == cache.Exchange {
@@ -1785,7 +1769,8 @@ func (s *Server) chartTypeData(w http.ResponseWriter, r *http.Request) {
 
 		extras = cache.BuildExchangeKey(selectedExchange, selectedCurrencyPair, interval)
 	}
-	chartData, err := s.charts.Chart(r.Context(), chartType, axis, strings.Split(extras, "|")...)
+
+	chartData, err := s.charts.Chart(r.Context(), chartType, dataType, axis, bin, strings.Split(extras, "|")...)
 	if err != nil {
 		s.renderErrorJSON(err.Error(), w)
 		log.Warnf(`Error fetching %s chart: %v`, chartType, err)

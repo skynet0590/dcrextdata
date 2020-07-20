@@ -14,8 +14,8 @@ import (
 
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/go-chi/chi"
-	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/go-chi/chi/middleware"
+	"github.com/raedahgroup/dcrextdata/app/helpers"
 	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/commstats"
 	"github.com/raedahgroup/dcrextdata/exchanges/ticks"
@@ -97,9 +97,9 @@ type Server struct {
 	charts       *cache.ChartData
 }
 
-func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery, 
+func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery,
 	activeChain *chaincfg.Params, extDbFactory func(name string) (DataQuery, error)) {
-		
+
 	server := &Server{
 		templates:    map[string]*template.Template{},
 		db:           db,
@@ -189,7 +189,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/api/snapshot/node-countries", s.nodeCountries)
 
 	r.With(syncDataType).Get("/api/sync/{dataType}", s.sync)
-	r.With(chartTypeCtx).With(chartAxisTypeCtx).Get("/api/charts/{chartType}/{chartAxisType}", s.chartTypeData)
+	r.With(chartTypeCtx).With(chartDataTypeCtx).Get("/api/charts/{chartType}/{chartDataType}", s.chartTypeData)
 	r.With(chartTypeCtx).Get("/api/charts/{chartType}", s.chartTypeData)
 }
 
@@ -198,10 +198,8 @@ func (s *Server) getExplorerBestBlock(ctx context.Context) (uint32, error) {
 	switch s.activeChain.Name {
 	case chaincfg.MainNetParams.Name:
 		explorerUrl = "https://explorer.dcrdata.org/api/block/best"
-		break
 	case chaincfg.TestNet3Params.Name:
 		explorerUrl = "https://testnet.dcrdata.org/api/block/best"
-		break
 	}
 
 	var bestBlock = struct {

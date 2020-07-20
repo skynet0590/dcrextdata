@@ -14,6 +14,7 @@ import (
 
 	"github.com/raedahgroup/dcrextdata/app"
 	"github.com/raedahgroup/dcrextdata/app/helpers"
+	"github.com/raedahgroup/dcrextdata/cache"
 	"github.com/raedahgroup/dcrextdata/datasync"
 )
 
@@ -37,9 +38,10 @@ type Collector struct {
 	pows   []Pow
 	period int64
 	store  PowDataStore
+	charts *cache.ChartData
 }
 
-func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Collector, error) {
+func NewCollector(disabledPows []string, period int64, store PowDataStore, charts *cache.ChartData) (*Collector, error) {
 	pows := make([]Pow, 0, len(availablePows)-len(disabledPows))
 	disabledMap := make(map[string]struct{})
 	for _, pow := range disabledPows {
@@ -65,6 +67,7 @@ func NewCollector(disabledPows []string, period int64, store PowDataStore) (*Col
 		pows:   pows,
 		period: period,
 		store:  store,
+		charts: charts,
 	}, nil
 }
 
@@ -152,6 +155,9 @@ func (pc *Collector) Collect(ctx context.Context) {
 			}
 		}
 	}
+	if err := pc.charts.TriggerUpdate(ctx, cache.PowChart); err != nil {
+		log.Errorf("Charts update problem for %s: %s", cache.PowChart, err.Error())
+	}
 }
 
 func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
@@ -171,7 +177,7 @@ func (pc *Collector) RegisterSyncer(syncCoordinator *datasync.SyncCoordinator) {
 			return
 		},
 		Retrieve: func(ctx context.Context, last string, skip, take int) (result *datasync.Result, err error) {
-			dateUnix, err := strconv.ParseInt(last, 10, 64)
+			dateUnix, _ := strconv.ParseInt(last, 10, 64)
 			result = new(datasync.Result)
 			powDatum, totalCount, err := pc.store.FetchPowDataForSync(ctx, dateUnix, skip, take)
 			if err != nil {

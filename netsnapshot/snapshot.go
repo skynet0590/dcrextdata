@@ -199,7 +199,7 @@ func (t taker) Start(ctx context.Context) {
 
 				mtx.Unlock()
 				if amgr.showDetailedLog {
-					log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(), 
+					log.Infof("New heartbeat recorded for node: %s, %s, %d", node.IP.String(),
 						node.UserAgent, node.ProtocolVersion)
 				}
 			}

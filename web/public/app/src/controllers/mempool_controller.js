@@ -24,7 +24,7 @@ export default class extends Controller {
       'chartWrapper', 'viewOption', 'labels', 'viewOptionControl', 'messageView',
       'chartDataTypeSelector', 'chartDataType', 'chartOptions', 'labels', 'selectedMempoolOpt',
       'selectedNumberOfRows', 'numPageWrapper', 'loadingData',
-      'zoomSelector', 'zoomOption'
+      'zoomSelector', 'zoomOption', 'interval', 'graphIntervalWrapper'
     ]
   }
 
@@ -35,7 +35,10 @@ export default class extends Controller {
     }
 
     this.query = new TurboQuery()
-    this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType', 'page', 'view-option'])
+    this.settings = TurboQuery.nullTemplate([
+      'chart', 'zoom', 'scale', 'bin', 'axis',
+      'dataType', 'page', 'view-option', 'interval'
+    ])
     this.settings.chart = this.settings.chart || 'mempool'
 
     this.zoomCallback = this._zoomCallback.bind(this)
@@ -58,6 +61,7 @@ export default class extends Controller {
     hide(this.messageViewTarget)
     hide(this.chartDataTypeSelectorTarget)
     hide(this.zoomSelectorTarget)
+    hide(this.graphIntervalWrapperTarget)
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     show(this.btnWrapperTarget)
@@ -75,9 +79,9 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     show(this.chartDataTypeSelectorTarget)
-    show(this.zoomSelectorTarget)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
+    show(this.graphIntervalWrapperTarget)
     this.fetchData(this.selectedViewOption)
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
     trimUrl(['view-option', 'chart-data-type'])
@@ -120,7 +124,7 @@ export default class extends Controller {
       this.selectedNumberOfRowsberOfRows = this.selectedNumberOfRowsTarget.value
       url = `/getmempool?page=${this.nextPage}&records-per-page=${this.selectedNumberOfRowsberOfRows}&view-option=${this.selectedViewOption}`
     } else {
-      url = `/api/charts/mempool/${this.dataType}`
+      url = `/api/charts/mempool/${this.dataType}?bin=${this.selectedInterval()}`
     }
 
     const _this = this
@@ -201,6 +205,14 @@ export default class extends Controller {
     setActiveOptionBtn(option, this.zoomOptionTargets)
     if (!target) return // Exit if running for the first time
     this.validateZoom()
+  }
+
+  selectedInterval () { return selectedOption(this.intervalTargets) }
+
+  setInterval (e) {
+    const option = e.currentTarget.dataset.option
+    setActiveOptionBtn(option, this.intervalTargets)
+    this.fetchData(this.selectedViewOption)
   }
 
   async validateZoom () {
@@ -307,6 +319,7 @@ export default class extends Controller {
 
       _this.validateZoom()
       updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)
+      show(this.zoomSelectorTarget)
     }
   }
 

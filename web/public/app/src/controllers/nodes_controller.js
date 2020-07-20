@@ -12,9 +12,11 @@ import {
   hideAll,
   trimUrl,
   csv,
-  notifyFailure
+  notifyFailure,
+  updateZoomSelector
 } from '../utils'
 
+import TurboQuery from '../helpers/turbolinks_helper'
 import { animationFrame } from '../helpers/animation_helper'
 import Zoom from '../helpers/zoom_helper'
 import humanize from '../helpers/humanize_helper'
@@ -38,12 +40,12 @@ export default class extends Controller {
 
   static get targets () {
     return [
-      'viewOptionControl', 'viewOption', 'chartDataTypeSelector', 'chartDataType',
+      'viewOption', 'chartDataTypeSelector', 'chartDataType',
       'numPageWrapper', 'pageSize', 'messageView', 'chartWrapper', 'chartsView', 'labels',
       'btnWrapper', 'nextPageButton', 'previousPageButton', 'tableTitle', 'tableWrapper', 'tableHeader', 'tableBody',
       'snapshotRowTemplate', 'userAgentRowTemplate', 'countriesRowTemplate', 'totalPageCount', 'currentPage', 'loadingData',
       'dataTypeSelector', 'dataType', 'chartWrapper', 'chartSourceWrapper', 'chartSource', 'chartsViewWrapper', 'chartSourceList',
-      'allChartSource'
+      'allChartSource', 'graphIntervalWrapper', 'interval', 'zoomSelector', 'zoomOption'
     ]
   }
 
@@ -53,6 +55,11 @@ export default class extends Controller {
     this.selectedViewOption = this.data.get('viewOption')
     this.dataType = this.data.get('dataType') || dataTypeNodes
     setActiveOptionBtn(this.dataType, this.dataTypeTargets)
+
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate([
+      'zoom', 'bin', 'axis', 'dataType', 'page', 'view-option', 'interval'
+    ])
 
     this.zoomCallback = this._zoomCallback.bind(this)
     this.drawCallback = this._drawCallback.bind(this)
@@ -75,6 +82,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.selectedViewOption, this.viewOptionTargets)
     hide(this.chartWrapperTarget)
     hide(this.messageViewTarget)
+    hide(this.graphIntervalWrapperTarget)
     show(this.tableWrapperTarget)
     show(this.numPageWrapperTarget)
     insertOrUpdateQueryParam('view-option', this.selectedViewOption, 'chart')
@@ -91,6 +99,7 @@ export default class extends Controller {
     setActiveOptionBtn(this.dataType, this.chartDataTypeTargets)
     hide(this.numPageWrapperTarget)
     show(this.chartWrapperTarget)
+    show(this.graphIntervalWrapperTarget)
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
     this.reloadChat()
     trimUrl(['view-option', 'data-type'])
@@ -392,6 +401,14 @@ export default class extends Controller {
     this._zoomCallback(start, end)
   }
 
+  selectedInterval () { return selectedOption(this.intervalTargets) }
+
+  setInterval (e) {
+    const option = e.currentTarget.dataset.option
+    setActiveOptionBtn(option, this.intervalTargets)
+    this.reloadChat()
+  }
+
   async reloadChat () {
     let url
     let drawChartFn
@@ -402,9 +419,9 @@ export default class extends Controller {
         this.selectedSources.push(el.value)
       }
     })
-    let q = ''
+    let q = `bin=${this.selectedInterval()}`
     if (this.selectedSources.length > 0) {
-      q = `sources=${this.selectedSources.join('|')}`
+      q += `&extras=${this.selectedSources.join('|')}`
     }
     switch (this.dataType) {
       case dataTypeVersion:
@@ -417,7 +434,7 @@ export default class extends Controller {
         break
       case dataTypeNodes:
       default:
-        url = '/api/charts/snapshot/nodes'
+        url = `/api/charts/snapshot/nodes?${q}`
         drawChartFn = this.drawSnapshotChart
         break
     }
@@ -468,6 +485,20 @@ export default class extends Controller {
       }
     )
     hideLoading(this.loadingDataTarget)
+    this.validateZoom()
+    let minDate, maxDate
+    result.x.forEach(unixTime => {
+      let date = new Date(unixTime * 1000)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+    })
+    updateZoomSelector(this.zoomOptionTargets, minDate, maxDate)
+    show(this.zoomSelectorTarget)
   }
 
   drawUserAgentsChart (result) {
@@ -495,6 +526,20 @@ export default class extends Controller {
       options
     )
     hideLoading(this.loadingDataTarget)
+    this.validateZoom()
+    let minDate, maxDate
+    result.x.forEach(unixTime => {
+      let date = new Date(unixTime * 1000)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+    })
+    updateZoomSelector(this.zoomOptionTargets, minDate, maxDate)
+    show(this.zoomSelectorTarget)
   }
 
   drawCountriesChart (result) {
@@ -523,6 +568,20 @@ export default class extends Controller {
       options
     )
     hideLoading(this.loadingDataTarget)
+    this.validateZoom()
+    let minDate, maxDate
+    result.x.forEach(unixTime => {
+      let date = new Date(unixTime * 1000)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+    })
+    updateZoomSelector(this.zoomOptionTargets, minDate, maxDate)
+    show(this.zoomSelectorTarget)
   }
 
   drawInitialGraph () {

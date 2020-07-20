@@ -204,8 +204,8 @@ func _main(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	
-	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps, 
+
+	charts := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps,
 		nodeCountries, noveVersions, netParams(cfg.DcrdNetworkType), bdb)
 	db.RegisterCharts(charts, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
@@ -214,13 +214,12 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
-	
+
 	if err = charts.Load(ctx); err != nil {
 		return err
 	}
 
 	defer charts.SaveVersion()
-
 
 	// http server method
 	if cfg.HttpMode {
@@ -267,7 +266,7 @@ func _main(ctx context.Context) error {
 				log.Errorf(fmt.Sprintf("Unable to connect to dcrd at %s. Is it running?", cfg.DcrdRpcServer))
 				return nil
 			} //running on port
-			fmt.Println(fmt.Sprintf("Error in opening a dcrd connection: %s", err.Error()))
+			fmt.Printf("Error in opening a dcrd connection: %s\n", err.Error())
 			return nil
 		}
 
@@ -298,7 +297,7 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisableVSP {
-		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db, charts)
 		if err == nil {
 			vspCollector.RegisterSyncer(syncCoordinator)
 			go vspCollector.Run(ctx)
@@ -309,7 +308,7 @@ func _main(ctx context.Context) error {
 
 	if !cfg.DisableExchangeTicks {
 		go func() {
-			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
+			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db, charts)
 			if err == nil {
 				ticksHub.RegisterSyncer(syncCoordinator)
 				ticksHub.Run(ctx)
@@ -320,7 +319,7 @@ func _main(ctx context.Context) error {
 	}
 
 	if !cfg.DisablePow {
-		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
+		powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db, charts)
 		if err == nil {
 			powCollector.RegisterSyncer(syncCoordinator)
 			go powCollector.Run(ctx)
