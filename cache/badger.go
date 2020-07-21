@@ -1001,7 +1001,14 @@ func (charts *ChartData) lengthenMempool() error {
 	txn := charts.DB.NewTransaction(true)
 	defer txn.Discard()
 
-	dayIntervals, hourIntervals, err := charts.lengthenTime(fmt.Sprintf("%s-%s", Mempool, TimeAxis), txn)
+	if err := charts.updateMempoolHeights(txn); err != nil {
+		log.Errorf("Unable to update mempool heights, %s", err.Error())
+		return err
+	}
+
+	dayIntervals, hourIntervals, err := charts.lengthenTimeAndHeight(
+		fmt.Sprintf("%s-%s", Mempool, TimeAxis),
+		fmt.Sprintf("%s-%s", Mempool, HeightAxis), txn)
 	if err != nil {
 		return err
 	}
@@ -1028,12 +1035,68 @@ func (charts *ChartData) lengthenMempool() error {
 	return nil
 }
 
+func (charts *ChartData) updateMempoolHeights(txn *badger.Txn) error {
+	var mempoolDates, propagationDates, mempoolHeights, propagationHeights ChartUints
+	if err := charts.ReadValTx(fmt.Sprintf("%s-%s", Mempool, TimeAxis), &mempoolDates, txn); err != nil {
+		if err == badger.ErrKeyNotFound {
+			log.Warn("Mempool height not updated, mempool dates has no value")
+			return nil
+		}
+		return err
+	}
+
+	if mempoolDates.Length() == 0 {
+		log.Warn("Mempool height not updated, mempool dates has no value")
+		return nil
+	}
+
+	if err := charts.ReadValTx(fmt.Sprintf("%s-%s", Propagation, TimeAxis), &propagationDates, txn); err != nil {
+		if err == badger.ErrKeyNotFound {
+			log.Warn("Mempool height not updated, propagation dates has no value")
+			return nil
+		}
+		return err
+	}
+
+	if propagationDates.Length() == 0 {
+		log.Warn("Mempool height not updated, propagation dates has no value")
+		return nil
+	}
+
+	if err := charts.ReadValTx(fmt.Sprintf("%s-%s", Propagation, HeightAxis), &propagationHeights, txn); err != nil {
+		if err == badger.ErrKeyNotFound {
+			log.Warn("Mempool height not updated, propagation heights has no value")
+			return nil
+		}
+		return err
+	}
+
+	if propagationHeights.Length() == 0 {
+		log.Warn("Mempool height not updated, propagation heights has no value")
+		return nil
+	}
+
+	pIndex := 0
+	for _, date := range mempoolDates {
+		if pIndex+1 < propagationDates.Length() && date >= propagationDates[pIndex+1] {
+			pIndex += 1
+		}
+		mempoolHeights = append(mempoolHeights, propagationHeights[pIndex])
+	}
+
+	if err := charts.SaveValTx(fmt.Sprintf("%s-%s", Mempool, HeightAxis), mempoolHeights, txn); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (charts *ChartData) lengthenPropagation() error {
 	txn := charts.DB.NewTransaction(true)
 	defer txn.Discard()
 
 	key := fmt.Sprintf("%s-%s", Propagation, TimeAxis)
-	dayIntervals, hourIntervals, err := charts.lengthenTime(key, txn)
+	dayIntervals, hourIntervals, err := charts.lengthenTimeAndHeight(key, fmt.Sprintf("%s-%s", Propagation, HeightAxis), txn)
 	if err != nil {
 		return err
 	}
@@ -1274,6 +1337,111 @@ func (charts *ChartData) lengthenTime(key string, txn *badger.Txn) (dayIntervals
 	}
 
 	if err = charts.SaveValTx(fmt.Sprintf("%s-%s", key, hourBin), hours, txn); err != nil {
+		return
+	}
+
+	return
+}
+
+func (charts *ChartData) lengthenTimeAndHeight(timeKey, heightKey string, txn *badger.Txn) (dayIntervals [][2]int, hourIntervals [][2]int, err error) {
+	var dates, heights ChartUints
+	if err = charts.ReadValTx(timeKey, &dates, txn); err != nil {
+		if err == badger.ErrKeyNotFound {
+			err = nil
+			return
+		}
+		return
+	}
+
+	if err = charts.ReadValTx(heightKey, &heights, txn); err != nil {
+		if err == badger.ErrKeyNotFound {
+			err = nil
+			return
+		}
+		return
+	}
+
+	if dates.Length() == 0 {
+		return
+	}
+
+	// day bin
+	var days, dayHeights ChartUints
+	// Get the current first and last midnight stamps.
+	var start = midnight(dates[0])
+	end := midnight(dates[len(dates)-1])
+
+	// the index that begins new data.
+	offset := 0
+	// If there is day or more worth of new data, append to the Days zoomSet by
+	// finding the first and last+1 blocks of each new day, and taking averages
+	// or sums of the blocks in the interval.  0.06096031
+	if end > start+aDay {
+		next := start + aDay
+		startIdx := 0
+		for i, t := range dates[offset:] {
+			if t >= next {
+				// Once passed the next midnight, prepare a day window by
+				// storing the range of indices. 0, 1, 2, 3, 4, 5
+				dayIntervals = append(dayIntervals, [2]int{startIdx + offset, i + offset})
+				// check for records b/4 appending.
+				days = append(days, start)
+				dayHeights = append(dayHeights, heights[i])
+				next = midnight(t)
+				start = next
+				next += aDay
+				startIdx = i
+				if t > end {
+					break
+				}
+			}
+		}
+	}
+
+	if err = charts.SaveValTx(fmt.Sprintf("%s-%s", timeKey, dayBin), days, txn); err != nil {
+		return
+	}
+
+	if err = charts.SaveValTx(fmt.Sprintf("%s-%s", heightKey, dayBin), dayHeights, txn); err != nil {
+		return
+	}
+
+	// hour bin
+	var hours, hourHeights ChartUints
+	// Get the current first and last hour stamps.
+	start = hourStamp(dates[0])
+	end = hourStamp(dates[len(dates)-1])
+
+	// the index that begins new data.
+	offset = 0
+	// If there is day or more worth of new data, append to the Days zoomSet by
+	// finding the first and last+1 blocks of each new day, and taking averages
+	// or sums of the blocks in the interval.
+	if end > start+anHour {
+		next := start + anHour
+		startIdx := 0
+		for i, t := range dates[offset:] {
+			if t >= next {
+				// Once passed the next hour, prepare a day window by storing
+				// the range of indices.
+				hourIntervals = append(hourIntervals, [2]int{startIdx + offset, i + offset})
+				hours = append(hours, start)
+				hourHeights = append(hourHeights, heights[i])
+				next = hourStamp(t)
+				start = next
+				next += anHour
+				startIdx = i
+				if t > end {
+					break
+				}
+			}
+		}
+	}
+
+	if err = charts.SaveValTx(fmt.Sprintf("%s-%s", timeKey, hourBin), hours, txn); err != nil {
+		return
+	}
+	if err = charts.SaveValTx(fmt.Sprintf("%s-%s", heightKey, hourBin), hourHeights, txn); err != nil {
 		return
 	}
 
