@@ -10,8 +10,14 @@ import {
   formatDate,
   trimUrl,
   insertOrUpdateQueryParam,
-  removeUrlParam
+  removeUrlParam,
+  selectedOption,
+  updateZoomSelector,
+  zipXYZData
 } from '../utils'
+import Zoom from '../helpers/zoom_helper'
+import { animationFrame } from '../helpers/animation_helper'
+import TurboQuery from '../helpers/turbolinks_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
 const redditPlatform = 'Reddit'
@@ -35,11 +41,16 @@ export default class extends Controller {
       'chartWrapper', 'chartsView', 'labels', 'tableWrapper', 'loadingData', 'messageView',
       'tableWrapper', 'table', 'rowTemplate', 'tableCol1', 'tableCol2', 'tableCol3',
       'platform', 'subreddit', 'subAccountWrapper', 'dataTypeWrapper', 'dataType',
-      'twitterHandle', 'repository', 'channel'
+      'twitterHandle', 'repository', 'channel', 'zoomSelector', 'zoomOption'
     ]
   }
 
   initialize () {
+    this.query = new TurboQuery()
+    this.settings = TurboQuery.nullTemplate(['zoom', 'dataType'])
+    this.query.update(this.settings)
+    this.zoomCallback = this._zoomCallback.bind(this)
+    this.drawCallback = this._drawCallback.bind(this)
     this.currentPage = parseInt(this.currentPageTarget.dataset.currentPage)
     if (this.currentPage < 1) {
       this.currentPage = 1
@@ -76,6 +87,10 @@ export default class extends Controller {
 
     this.dataType = this.dataTypeTarget.dataset.initialValue
 
+    if (this.settings.zoom) {
+      setActiveOptionBtn(this.settings.zoom, this.zoomOptionTargets)
+    }
+
     this.viewOption = this.viewOptionControlTarget.dataset.initialValue
     if (this.viewOption === 'chart') {
       this.setChart()
@@ -93,6 +108,7 @@ export default class extends Controller {
     show(this.tableWrapperTarget)
     show(this.pageSizeWrapperTarget)
     show(this.paginationWrapperTarget)
+    hide(this.zoomSelectorTarget)
     this.pageSizeTarget.value = this.pageSize
     this.updateDataTypeControl()
     this.fetchData()
@@ -135,7 +151,7 @@ export default class extends Controller {
           break
       }
     } else {
-      var chartParams = baseSet
+      var chartParams = ['zoom', ...baseSet]
       switch (this.platform) {
         case redditPlatform:
           keepSet = ['subreddit', 'data-type', ...chartParams]
@@ -491,9 +507,20 @@ export default class extends Controller {
     })
   }
 
-  // vsp chart
   plotGraph (dataSet) {
     const _this = this
+
+    let minDate, maxDate
+    dataSet.x.forEach(unixTime => {
+      let date = new Date(unixTime * 1000)
+      if (minDate === undefined || date < minDate) {
+        minDate = date
+      }
+
+      if (maxDate === undefined || date > maxDate) {
+        maxDate = date
+      }
+    })
 
     let options = {
       legend: 'always',
@@ -514,6 +541,74 @@ export default class extends Controller {
       }
     }
 
-    _this.chartsView = new Dygraph(_this.chartsViewTarget, dataSet.stats, options)
+    const chartData = zipXYZData(dataSet)
+    _this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
+    _this.validateZoom()
+    if (updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate, 1)) {
+      show(this.zoomSelectorTarget)
+    } else {
+      hide(this.zoomSelectorTarget)
+    }
+  }
+
+  selectedZoom () { return selectedOption(this.zoomOptionTargets) }
+
+  setZoom (e) {
+    var target = e.srcElement || e.target
+    var option
+    if (!target) {
+      let ex = this.chartsView.xAxisExtremes()
+      option = Zoom.mapKey(e, ex, 1)
+    } else {
+      option = target.dataset.option
+    }
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+    if (!target) return // Exit if running for the first time
+    this.validateZoom()
+    insertOrUpdateQueryParam('zoom', option, 'all')
+  }
+
+  async validateZoom () {
+    await animationFrame()
+    await animationFrame()
+    let oldLimits = this.limits || this.chartsView.xAxisExtremes()
+    this.limits = this.chartsView.xAxisExtremes()
+    var selected = this.selectedZoom()
+    if (selected) {
+      this.lastZoom = Zoom.validate(selected, this.limits, 1, 1)
+    } else {
+      this.lastZoom = Zoom.project(this.settings.zoom, oldLimits, this.limits)
+    }
+    if (this.lastZoom) {
+      this.chartsView.updateOptions({
+        dateWindow: [this.lastZoom.start, this.lastZoom.end]
+      })
+    }
+    if (selected !== this.settings.zoom) {
+      this._zoomCallback(this.lastZoom.start, this.lastZoom.end)
+    }
+    await animationFrame()
+    this.chartsView.updateOptions({
+      zoomCallback: this.zoomCallback,
+      drawCallback: this.drawCallback
+    })
+  }
+
+  _zoomCallback (start, end) {
+    this.lastZoom = Zoom.object(start, end)
+    this.settings.zoom = Zoom.encode(this.lastZoom)
+    // this.query.replace(this.settings)
+    let ex = this.chartsView.xAxisExtremes()
+    let option = Zoom.mapKey(this.settings.zoom, ex, 1)
+    setActiveOptionBtn(option, this.zoomOptionTargets)
+  }
+
+  _drawCallback (graph, first) {
+    if (first) return
+    var start, end
+    [start, end] = this.chartsView.xAxisRange()
+    if (start === end) return
+    if (this.lastZoom.start === start) return // only handle slide event.
+    this._zoomCallback(start, end)
   }
 }

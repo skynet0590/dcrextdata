@@ -54,6 +54,16 @@ export const isHidden = (el) => {
   return el.classList.contains('d-none')
 }
 
+export const isInViewport = function (el) {
+  var bounding = el.getBoundingClientRect()
+  return (
+    bounding.top >= 0 &&
+      bounding.left >= 0 &&
+      bounding.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+      bounding.right <= (window.innerWidth || document.documentElement.clientWidth)
+  )
+}
+
 export function legendFormatter (data) {
   let html = ''
   if (data.x == null) {
@@ -336,6 +346,7 @@ export function updateZoomSelector (targets, minVal, maxVal, scale) {
       hide(el)
     }
   })
+  return days >= 1
 }
 
 export function formatDate (date, format) {

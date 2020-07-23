@@ -31,6 +31,14 @@ export default class extends Controller {
   initialize () {
     this.query = new TurboQuery()
     this.settings = TurboQuery.nullTemplate(['chart', 'zoom', 'scale', 'bin', 'axis', 'dataType'])
+    this.query.update(this.settings)
+
+    if (this.settings.zoom) {
+      setActiveOptionBtn(this.settings.zoom, this.zoomOptionTargets)
+    }
+    if (this.settings.bin) {
+      setActiveOptionBtn(this.settings.bin, this.intervalTargets)
+    }
 
     this.currentPage = parseInt(this.currentPageTarget.getAttribute('data-current-page'))
     if (this.currentPage < 1) {
@@ -99,7 +107,7 @@ export default class extends Controller {
     show(this.chartDataTypeSelectorTarget)
     this.fetchDataAndPlotGraph()
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
-    trimUrl(['view-option', 'pools', 'data-type'])
+    trimUrl(['view-option', 'pools', 'data-type', 'bin', 'zoom'])
     // reset this table properties as they are removed from the url
     this.currentPage = 1
   }
@@ -232,6 +240,7 @@ export default class extends Controller {
   }
 
   fetchDataAndPlotGraph () {
+    hide(this.messageViewTarget)
     this.selectedPools = []
     this.poolTargets.forEach(el => {
       if (el.checked) {
@@ -245,13 +254,21 @@ export default class extends Controller {
     const _this = this
 
     axios.get(`/api/charts/pow/${this.dataType}?extras=${this.selectedPools.join('|')}&bin=${this.selectedInterval()}`).then(function (response) {
-      hideLoading(_this.loadingDataTarget, elementsToToggle)
       let result = response.data
       if (result.error) {
-        console.log(result.error) // todo show error page from front page
+        _this.messageViewTarget.innerHTML = `<p class="text-danger">${result.error}</p>`
+        show(_this.messageViewTarget)
+        hide(_this.loadingDataTarget)
         return
       }
 
+      if (result.x.length === 0) {
+        _this.messageViewTarget.innerHTML = '<p class="text-danger">No record found</p>'
+        show(_this.messageViewTarget)
+        hide(_this.loadingDataTarget)
+        return
+      }
+      hideLoading(_this.loadingDataTarget, elementsToToggle)
       _this.plotGraph(result)
     }).catch(function (e) {
       hideLoading(_this.loadingDataTarget, elementsToToggle)
@@ -265,6 +282,7 @@ export default class extends Controller {
     const option = e.currentTarget.dataset.option
     setActiveOptionBtn(option, this.intervalTargets)
     this.fetchDataAndPlotGraph()
+    insertOrUpdateQueryParam('bin', option, 'day')
   }
 
   selectedZoom () { return selectedOption(this.zoomOptionTargets) }
@@ -280,6 +298,7 @@ export default class extends Controller {
     }
     setActiveOptionBtn(option, this.zoomOptionTargets)
     if (!target) return // Exit if running for the first time
+    insertOrUpdateQueryParam('zoom', option, 'all')
     this.validateZoom()
   }
 
@@ -368,7 +387,10 @@ export default class extends Controller {
     _this.chartsView = new Dygraph(_this.chartsViewTarget, csv(data, this.selectedPools.length), options)
     _this.validateZoom()
 
-    updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)
-    show(this.zoomSelectorTarget)
+    if (updateZoomSelector(_this.zoomOptionTargets, minDate, maxDate)) {
+      show(this.zoomSelectorTarget)
+    } else {
+      hide(this.zoomSelectorTarget)
+    }
   }
 }

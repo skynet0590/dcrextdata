@@ -2,7 +2,7 @@ package postgres
 
 import "github.com/raedahgroup/dcrextdata/cache"
 
-func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, syncSourceDbProvider func(source string) (*PgDb, error)) {
+func (pg *PgDb) RegisterCharts(charts *cache.Manager, syncSources []string, syncSourceDbProvider func(source string) (*PgDb, error)) {
 	pg.syncSourceDbProvider = syncSourceDbProvider
 	pg.syncSources = syncSources
 
@@ -46,5 +46,15 @@ func (pg *PgDb) RegisterCharts(charts *cache.ChartData, syncSources []string, sy
 		Fetcher:  pg.fetchNetworkSnapshotChart,
 		Appender: appendSnapshotChart,
 	})
+	charts.AddUpdater(cache.ChartUpdater{
+		Tag:      cache.Snapshot + "-*",
+		Fetcher:  pg.fetchNetworkSnapshotTable,
+		Appender: appendSnapshotTable,
+	})
 	charts.AddRetriever(cache.Snapshot, pg.fetchEncodeSnapshotChart)
+
+	charts.AddUpdater(cache.ChartUpdater{
+		Tag:     cache.Community,
+		Fetcher: pg.fetchAppendCommunityChart,
+	})
 }

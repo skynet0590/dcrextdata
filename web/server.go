@@ -57,6 +57,7 @@ type DataQuery interface {
 	BlocksWithoutVotes(ctx context.Context, offset int, limit int) ([]mempool.BlockDto, error)
 
 	Votes(ctx context.Context, offset int, limit int) ([]mempool.VoteDto, error)
+	VotesByBlock(ctx context.Context, blockHash string) ([]mempool.VoteDto, error)
 	VotesCount(ctx context.Context) (int64, error)
 
 	CountRedditStat(ctx context.Context, subreddit string) (int64, error)
@@ -94,10 +95,10 @@ type Server struct {
 	db           DataQuery
 	activeChain  *chaincfg.Params
 	extDbFactory func(name string) (DataQuery, error)
-	charts       *cache.ChartData
+	charts       *cache.Manager
 }
 
-func StartHttpServer(httpHost, httpPort string, charts *cache.ChartData, db DataQuery,
+func StartHttpServer(httpHost, httpPort string, charts *cache.Manager, db DataQuery,
 	activeChain *chaincfg.Params, extDbFactory func(name string) (DataQuery, error)) {
 
 	server := &Server{
@@ -166,6 +167,7 @@ func (s *Server) registerHandlers(r *chi.Mux) {
 	r.Get("/getblocks", s.getBlocks)
 	r.Get("/blockdata", s.getBlockData)
 	r.Get("/getvotes", s.getVotes)
+	r.Get("/getVoteByBlock", s.getVoteByBlock)
 	r.Get("/votesdata", s.getVoteData)
 
 	r.Get("/community", s.community)

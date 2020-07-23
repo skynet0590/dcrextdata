@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -35,6 +34,8 @@ const (
 )
 
 var (
+	commStatPlatforms = []string{redditPlatform, twitterPlatform, githubPlatform, youtubePlatform}
+
 	exchangeTickIntervals = map[int]string{
 		-1:   "All",
 		5:    "5m",
@@ -67,8 +68,6 @@ var (
 		"User-Count",
 		"Users-Active",
 	}
-
-	commStatPlatforms = []string{redditPlatform, twitterPlatform, githubPlatform, youtubePlatform}
 )
 
 // /home
@@ -510,11 +509,12 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 
 	var pageSize int
 	numRows, err := strconv.Atoi(numberOfRows)
-	if err != nil || numRows <= 0 {
+	switch {
+	case err != nil || numRows <= 0:
 		pageSize = defaultPageSize
-	} else if numRows > maxPageSize {
+	case numRows > maxPageSize:
 		pageSize = maxPageSize
-	} else {
+	default:
 		pageSize = numRows
 	}
 
@@ -527,7 +527,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 		selectedPow = "All"
 	}
 
-	offset := (pageToLoad - 1) * defaultPageSize
+	offset := (pageToLoad - 1) * pageSize
 
 	ctx := req.Context()
 
@@ -541,7 +541,6 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 		"selectedNum":        pageSize,
 		"currentPage":        pageToLoad,
 		"previousPage":       pageToLoad - 1,
-		"totalPages":         pageToLoad,
 	}
 
 	powSource, err := s.db.FetchPowSourceData(ctx)
@@ -579,7 +578,7 @@ func (s *Server) fetchPoWData(req *http.Request) (map[string]interface{}, error)
 	}
 
 	data["powData"] = allPowDataSlice
-	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(defaultPageSize)))
+	data["totalPages"] = int(math.Ceil(float64(totalCount) / float64(pageSize)))
 
 	totalTxLoaded := offset + len(allPowDataSlice)
 	if int64(totalTxLoaded) < totalCount {
@@ -710,12 +709,11 @@ func (s *Server) propagation(res http.ResponseWriter, req *http.Request) {
 // /getPropagationData
 func (s *Server) getPropagationData(res http.ResponseWriter, req *http.Request) {
 	data, err := s.fetchPropagationData(req)
-	defer s.renderJSON(data, res)
-
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
 	}
+	s.renderJSON(data, res)
 }
 
 func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}, error) {
@@ -779,9 +777,17 @@ func (s *Server) fetchPropagationData(req *http.Request) (map[string]interface{}
 		return data, nil
 	}
 
-	blockSlice, err := s.db.Blocks(ctx, offset, pageSize)
+	blockSlice, err := s.db.BlocksWithoutVotes(ctx, offset, pageSize)
 	if err != nil {
 		return nil, err
+	}
+
+	for i := 0; i <= 1 && i <= len(blockSlice)-1; i++ {
+		votes, err := s.db.VotesByBlock(ctx, blockSlice[i].BlockHash)
+		if err != nil {
+			return nil, err
+		}
+		blockSlice[i].Votes = votes
 	}
 
 	totalCount, err := s.db.BlockCount(ctx)
@@ -905,12 +911,12 @@ func (s *Server) fetchBlockData(req *http.Request) (map[string]interface{}, erro
 // /getvotes
 func (s *Server) getVotes(res http.ResponseWriter, req *http.Request) {
 	data, err := s.fetchVoteData(req)
-	defer s.renderJSON(data, res)
 
 	if err != nil {
 		s.renderErrorJSON(err.Error(), res)
 		return
 	}
+	defer s.renderJSON(data, res)
 }
 
 func (s *Server) getVoteData(res http.ResponseWriter, req *http.Request) {
@@ -997,6 +1003,17 @@ func (s *Server) fetchVoteData(req *http.Request) (map[string]interface{}, error
 	}
 
 	return data, nil
+}
+
+func (s *Server) getVoteByBlock(res http.ResponseWriter, req *http.Request) {
+	req.ParseForm()
+	hash := req.FormValue("block_hash")
+	votes, err := s.db.VotesByBlock(req.Context(), hash)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), res)
+		return
+	}
+	defer s.renderJSON(votes, res)
 }
 
 // /community
@@ -1182,40 +1199,36 @@ func (s *Server) getCommunityStat(resp http.ResponseWriter, req *http.Request) {
 // /communitychat
 func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
-	plarform := req.FormValue("platform")
+	platform := req.FormValue("platform")
 	dataType := req.FormValue("data-type")
 
-	filters := map[string]string{}
-	yLabel := ""
-	switch plarform {
+	var yLabel, subAccount string
+	switch platform {
 	case githubPlatform:
 		if dataType == models.GithubColumns.Folks {
 			yLabel = "Forks"
 		} else {
 			yLabel = "Stars"
 		}
-		plarform = models.TableNames.Github
-		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
+		subAccount = req.FormValue("repository")
 	case twitterPlatform:
 		yLabel = "Followers"
 		dataType = models.TwitterColumns.Followers
-		plarform = models.TableNames.Twitter
+		subAccount = req.FormValue("twitter-handle")
 	case redditPlatform:
 		if dataType == models.RedditColumns.ActiveAccounts {
 			yLabel = "Active Accounts"
 		} else if dataType == models.RedditColumns.Subscribers {
 			yLabel = "Subscribers"
 		}
-		plarform = models.TableNames.Reddit
-		filters[models.RedditColumns.Subreddit] = fmt.Sprintf("'%s'", req.FormValue("subreddit"))
+		subAccount = req.FormValue("subreddit")
 	case youtubePlatform:
-		plarform = models.TableNames.Youtube
 		if dataType == models.YoutubeColumns.ViewCount {
 			yLabel = "View Count"
 		} else if dataType == models.YoutubeColumns.Subscribers {
 			yLabel = "Subscribers"
 		}
-		filters[models.YoutubeColumns.Channel] = fmt.Sprintf("'%s'", req.FormValue("channel"))
+		subAccount = req.FormValue("channel")
 	}
 
 	if dataType == "" {
@@ -1223,36 +1236,27 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	data, err := s.db.CommunityChart(req.Context(), plarform, dataType, filters)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s", err.Error()), resp)
+	var dates, records cache.ChartUints
+	dateKey := fmt.Sprintf("%s-%s-%s-%s", cache.Community, platform, subAccount, cache.TimeAxis)
+	if err := s.charts.ReadVal(dateKey, &dates); err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s, %s", err.Error(), dateKey), resp)
 		return
 	}
 
-	var dates []time.Time
-	var pointsMap = map[time.Time]int64{}
-
-	csv := "" //fmt.Sprintf("Date,%s\n", yLabel)
-	for _, stat := range data {
-		dates = append(dates, stat.Date)
-		pointsMap[stat.Date] = stat.Record
-	}
-
-	sort.Slice(dates, func(i, j int) bool {
-		return dates[i].Before(dates[j])
-	})
-
-	for _, date := range dates {
-		csv += fmt.Sprintf("%s,%d\n", date.Format(time.RFC3339Nano), pointsMap[date])
+	dataKey := fmt.Sprintf("%s-%s-%s-%s", cache.Community, platform, subAccount, dataType)
+	if err := s.charts.ReadVal(dataKey, &records); err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s, %s", err.Error(), dataKey), resp)
+		return
 	}
 
 	s.renderJSON(map[string]interface{}{
-		"stats":  csv,
+		"x":      dates,
+		"y":      records,
 		"ylabel": yLabel,
 	}, resp)
 }
 
-// /snapshot
+// /nodes
 func (s *Server) snapshot(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	page, _ := strconv.Atoi(r.FormValue("page"))
@@ -1422,30 +1426,31 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page, _ := strconv.Atoi(r.FormValue("page"))
-	limit := -1
 	var offset int
-	if r.FormValue("chart") != "1" {
-		if page < 1 {
-			page = 1
-		}
-		offset = (page - 1) * pageSize
-		limit = pageSize
+	if page < 1 {
+		page = 1
 	}
+	offset = (page - 1) * pageSize
 
-	userAgents, total, err := s.db.PeerCountByUserAgents(r.Context(), r.FormValue("sources"), offset, limit)
-	if err != nil {
+	var userAgents []netsnapshot.UserAgentInfo
+	if err = s.charts.ReadVal(fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotNodeVersions), &userAgents); err != nil {
 		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
 	}
 
-	var totalPages int64
-	if total%int64(pageSize) == 0 {
-		totalPages = total / int64(pageSize)
+	total := len(userAgents)
+	var totalPages int
+	if total%(pageSize) == 0 {
+		totalPages = total / (pageSize)
 	} else {
-		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+		totalPages = 1 + (total-total%(pageSize))/(pageSize)
 	}
 
-	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
+	end := offset + pageSize
+	if end >= total {
+		end = total - 1
+	}
+	s.renderJSON(map[string]interface{}{"userAgents": userAgents[offset:end], "totalPages": totalPages}, w)
 }
 
 // /api/snapshots/user-agents/chart
@@ -1522,36 +1527,32 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page, _ := strconv.Atoi(r.FormValue("page"))
-	limit := -1
 	var offset int
-	if r.FormValue("chart") != "1" {
-		if page < 1 {
-			page = 1
-		}
-		offset = (page - 1) * pageSize
-		limit = pageSize
+	if page < 1 {
+		page = 1
 	}
+	offset = (page - 1) * pageSize
 
-	countries, total, err := s.db.PeerCountByCountries(r.Context(), r.FormValue("sources"), offset, limit)
-	if err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Cannot retrieve peer count by countries, %s", err.Error()), w)
+	var countries []netsnapshot.UserAgentInfo
+	if err = s.charts.ReadVal(fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotLocations), &countries); err != nil {
+		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
 		return
 	}
 
-	if r.FormValue("chart") != "1" {
-		sort.Slice(countries, func(i, j int) bool {
-			return countries[i].Nodes > countries[j].Nodes
-		})
-	}
-
-	var totalPages int64
-	if total%int64(pageSize) == 0 {
-		totalPages = total / int64(pageSize)
+	total := len(countries)
+	var totalPages int
+	if total%(pageSize) == 0 {
+		totalPages = total / (pageSize)
 	} else {
-		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
+		totalPages = 1 + (total-total%(pageSize))/(pageSize)
 	}
 
-	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
+	end := offset + pageSize
+	if end >= total {
+		end = total - 1
+	}
+
+	s.renderJSON(map[string]interface{}{"countries": countries[offset:end], "totalPages": totalPages}, w)
 }
 
 // /api/snapshots/countries/chart

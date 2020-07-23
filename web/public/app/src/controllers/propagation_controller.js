@@ -8,7 +8,7 @@ import {
   hideLoading,
   displayPillBtnOption,
   setActiveRecordSetBtn,
-  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData, selectedOption, updateZoomSelector
+  legendFormatter, insertOrUpdateQueryParam, updateQueryParam, trimUrl, zipXYZData, selectedOption, updateZoomSelector, isInViewport
 } from '../utils'
 import TurboQuery from '../helpers/turbolinks_helper'
 import dompurify from 'dompurify'
@@ -16,6 +16,7 @@ import Zoom from '../helpers/zoom_helper'
 import { animationFrame } from '../helpers/animation_helper'
 
 const Dygraph = require('../../../dist/js/dygraphs.min.js')
+const voteLoadingHtml = '<tr><td colspan="7"><div class="h-loader">Loading...</div></td></tr>'
 
 export default class extends Controller {
   chartType
@@ -47,8 +48,16 @@ export default class extends Controller {
 
     this.query = new TurboQuery()
     this.settings = TurboQuery.nullTemplate([
-      'zoom', 'bin', 'axis', 'dataType', 'page', 'view-option', 'interval'
+      'zoom', 'bin', 'axis', 'dataType', 'page', 'view-option'
     ])
+    this.query.update(this.settings)
+
+    if (this.settings.zoom) {
+      setActiveOptionBtn(this.settings.zoom, this.zoomOptionTargets)
+    }
+    if (this.settings.bin) {
+      setActiveOptionBtn(this.settings.bin, this.intervalTargets)
+    }
 
     this.zoomCallback = this._zoomCallback.bind(this)
     this.drawCallback = this._drawCallback.bind(this)
@@ -106,7 +115,7 @@ export default class extends Controller {
     displayPillBtnOption(this.selectedViewOption, this.selectedRecordSetTargets)
     this.plotSelectedChart()
     updateQueryParam('view-option', this.selectedViewOption, 'chart')
-    trimUrl(['view-option', 'chart-type'])
+    trimUrl(['view-option', 'chart-type', 'zoom', 'bin'])
     // reset this table properties as they are removed from the url
     this.currentPage = 1
     this.selectedNumberOfRowsberOfRows = 20
@@ -197,16 +206,13 @@ export default class extends Controller {
     showLoading(this.loadingDataTarget, elementsToToggle)
 
     var numberOfRows = this.selectedNumTarget.value
-    let url = '/getpropagationdata'
+    let url = 'getpropagationdata'
     switch (this.selectedRecordSet) {
       case 'blocks':
         url = 'getblocks'
         break
       case 'votes':
         url = 'getvotes'
-        break
-      default:
-        url = 'getpropagationdata'
         break
     }
     axios.get(`/${url}?page=${page}&records-per-page=${numberOfRows}&view-option=${_this.selectedViewOption}`).then(function (response) {
@@ -334,9 +340,18 @@ export default class extends Controller {
       show(this.paginationButtonsWrapperTarget)
 
       data.records.forEach(block => {
-        let votesHtml = ''
+        let votesHtml = voteLoadingHtml
         let i = 0
         if (block.votes) {
+          votesHtml = `<tr style="white-space: nowrap;">
+              <td style="width: 120px;">Voting On</td>
+              <td style="width: 120px;">Block Hash</td>
+              <td style="width: 120px;">Validator ID</td>
+              <td style="width: 120px;">Validity</td>
+              <td style="width: 120px;">Received</td>
+              <td style="width: 120px;">Block Receive Time Diff</td>
+              <td style="width: 120px;">Hash</td>
+          </tr>`
           block.votes.forEach(vote => {
             votesHtml += `<tr>
                               <td><a target="_blank" href="https://explorer.dcrdata.org/block/${vote.voting_on}">${vote.voting_on}</a></td>
@@ -363,18 +378,7 @@ export default class extends Controller {
                               </td>
                           </tr>
                           </tbody>
-                          <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">
-                          <tr style="white-space: nowrap;">
-                              <td style="width: 120px;">Voting On</td>
-                              <td style="width: 120px;">Block Hash</td>
-                              <td style="width: 120px;">Validator ID</td>
-                              <td style="width: 120px;">Validity</td>
-                              <td style="width: 120px;">Received</td>
-                              <td style="width: 120px;">Block Receive Time Diff</td>
-                              <td style="width: 120px;">Hash</td>
-                          </tr>
-                          ${votesHtml}
-                          </tbody>
+                          <tbody data-target="propagation.votesTbody" data-block-hash="${block.block_hash}">${votesHtml}</tbody>
                             <tr>
                                 <td colspan="7" height="15" style="border: none !important;"></td>
                             </tr>`
@@ -396,6 +400,36 @@ export default class extends Controller {
     show(this.tableTarget)
     hide(this.blocksTableTarget)
     hide(this.votesTableTarget)
+  }
+
+  onScroll (e) {
+    this.votesTbodyTargets.forEach(el => {
+      if (!(isInViewport(el) && el.innerHTML === voteLoadingHtml)) return
+      const hash = el.dataset.blockHash
+      axios.get('/getVoteByBlock?block_hash=' + hash).then(response => {
+        let votesHtml = `<tr style="white-space: nowrap;">
+              <td style="width: 120px;">Voting On</td>
+              <td style="width: 120px;">Block Hash</td>
+              <td style="width: 120px;">Validator ID</td>
+              <td style="width: 120px;">Validity</td>
+              <td style="width: 120px;">Received</td>
+              <td style="width: 120px;">Block Receive Time Diff</td>
+              <td style="width: 120px;">Hash</td>
+          </tr>`
+        response.data.forEach(vote => {
+          votesHtml += `<tr>
+                              <td><a target="_blank" href="https://explorer.dcrdata.org/block/${vote.voting_on}">${vote.voting_on}</a></td>
+                              <td><a target="_blank" href="https://explorer.dcrdata.org/block/${vote.block_hash}">...${vote.short_block_hash}</a></td>
+                              <td>${vote.validator_id}</td>
+                              <td>${vote.validity}</td>
+                              <td>${vote.receive_time}</td>
+                              <td>${vote.block_receive_time_diff}s</td>
+                              <td><a target="_blank" href="https://explorer.dcrdata.org/tx/${vote.hash}">${vote.hash}</a></td>
+                          </tr>`
+        })
+        el.innerHTML = votesHtml
+      })
+    })
   }
 
   plotSelectedChart () {
@@ -493,8 +527,11 @@ export default class extends Controller {
         maxVal = val
       }
     })
-    updateZoomSelector(_this.zoomOptionTargets, minVal, maxVal, this.isHeightAxis() ? this.avgBlockTime : 1)
-    show(this.zoomSelectorTarget)
+    if (updateZoomSelector(_this.zoomOptionTargets, minVal, maxVal, this.isHeightAxis() ? this.avgBlockTime : 1)) {
+      show(this.zoomSelectorTarget)
+    } else {
+      hide(this.zoomSelectorTarget)
+    }
   }
 
   plotExtDataGraph (data) {
@@ -526,21 +563,25 @@ export default class extends Controller {
 
     const chartData = zipXYZData(data, this.isHeightAxis())
     this.chartsView = new Dygraph(_this.chartsViewTarget, chartData, options)
-    if (this.selectedAxis() === 'time') {
-      this.validateZoom()
-      let minDate, maxDate
-      data.x.forEach(unixTime => {
-        let date = new Date(unixTime * 1000)
-        if (minDate === undefined || date < minDate) {
-          minDate = date
-        }
+    this.validateZoom()
+    let minVal, maxVal
+    data.x.forEach(record => {
+      let val = record
+      if (!this.isHeightAxis()) {
+        val = new Date(record * 1000)
+      }
+      if (minVal === undefined || val < minVal) {
+        minVal = val
+      }
 
-        if (maxDate === undefined || date > maxDate) {
-          maxDate = date
-        }
-      })
-      updateZoomSelector(this.zoomOptionTargets, minDate, maxDate)
+      if (maxVal === undefined || val > maxVal) {
+        maxVal = val
+      }
+    })
+    if (updateZoomSelector(_this.zoomOptionTargets, minVal, maxVal, this.isHeightAxis() ? this.avgBlockTime : 1)) {
       show(this.zoomSelectorTarget)
+    } else {
+      hide(this.zoomSelectorTarget)
     }
   }
 
@@ -636,6 +677,7 @@ export default class extends Controller {
       option = target.dataset.option
     }
     setActiveOptionBtn(option, this.zoomOptionTargets)
+    insertOrUpdateQueryParam('zoom', option, 'all')
     if (!target) return // Exit if running for the first time
     this.validateZoom()
   }
@@ -645,6 +687,7 @@ export default class extends Controller {
   setInterval (e) {
     const option = e.currentTarget.dataset.option
     setActiveOptionBtn(option, this.intervalTargets)
+    insertOrUpdateQueryParam('bin', option, 'day')
     this.plotSelectedChart()
   }
 

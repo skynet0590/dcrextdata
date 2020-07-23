@@ -40,7 +40,7 @@ func creep(netParams *chaincfg.Params) {
 	onaddr := make(chan struct{})
 	verack := make(chan struct{})
 	peerConfig := peer.Config{
-		UserAgentName:    "dcrpeersniffer",
+		UserAgentName:    "dcrextdata",
 		UserAgentVersion: "0.0.1",
 		Net:              netParams.Net,
 		DisableRelayTx:   true,
@@ -165,7 +165,7 @@ func creep(netParams *chaincfg.Params) {
 }
 
 func runSeeder(cfg config.NetworkSnapshotOptions, netParams *chaincfg.Params) {
-	amgr.AddAddresses([]peerAddress{peerAddress{net.ParseIP(cfg.Seeder), cfg.SeederPort}})
+	amgr.AddAddresses([]peerAddress{{net.ParseIP(cfg.Seeder), cfg.SeederPort}})
 
 	wg.Add(1)
 	go creep(netParams)
