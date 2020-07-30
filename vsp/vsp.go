@@ -57,7 +57,7 @@ func (vsp *Collector) fetch(ctx context.Context, response interface{}) error {
 	return nil
 }
 
-func (vsp *Collector) Run(ctx context.Context) {
+func (vsp *Collector) Run(ctx context.Context, cacheManager *cache.Manager) {
 	if ctx.Err() != nil {
 		return
 	}
@@ -77,11 +77,7 @@ func (vsp *Collector) Run(ctx context.Context) {
 	}
 
 	// continually check the state of the app until its free to run this module
-	for {
-		if app.MarkBusyIfFree() {
-			break
-		}
-	}
+	app.MarkBusyIfFree()
 
 	err := vsp.collectAndStore(ctx)
 	app.ReleaseForNewModule()
@@ -101,11 +97,7 @@ func (vsp *Collector) Run(ctx context.Context) {
 				return
 			case <-ticker.C:
 				// continually check the state of the app until its free to run this module
-				for {
-					if app.MarkBusyIfFree() {
-						break
-					}
-				}
+				app.MarkBusyIfFree()
 				err := vsp.collectAndStore(ctx)
 				app.ReleaseForNewModule()
 				if err != nil {

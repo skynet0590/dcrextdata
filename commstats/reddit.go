@@ -10,6 +10,7 @@ import (
 
 	"github.com/planetdecred/dcrextdata/app"
 	"github.com/planetdecred/dcrextdata/app/helpers"
+	"github.com/planetdecred/dcrextdata/cache"
 	"github.com/planetdecred/dcrextdata/postgres/models"
 )
 
@@ -23,7 +24,7 @@ func Subreddits() []string {
 	return subreddits
 }
 
-func (c *Collector) startRedditCollector(ctx context.Context) {
+func (c *Collector) startRedditCollector(ctx context.Context, cacheManager *cache.Manager) {
 	var lastCollectionDate time.Time
 	err := c.dataStore.LastEntry(ctx, models.TableNames.Reddit, &lastCollectionDate)
 	if err != nil && err != sql.ErrNoRows {
@@ -44,15 +45,11 @@ func (c *Collector) startRedditCollector(ctx context.Context) {
 
 	registerStarter := func() {
 		// continually check the state of the app until its free to run this module
-		for {
-			if app.MarkBusyIfFree() {
-				break
-			}
-		}
+		app.MarkBusyIfFree()
 	}
 
 	registerStarter()
-	c.collectAndStoreRedditStat(ctx)
+	c.collectAndStoreRedditStat(ctx, cacheManager)
 	app.ReleaseForNewModule()
 
 	ticker := time.NewTicker(time.Duration(c.options.RedditStatInterval) * time.Minute)
@@ -62,13 +59,13 @@ func (c *Collector) startRedditCollector(ctx context.Context) {
 			return
 		case <-ticker.C:
 			registerStarter()
-			c.collectAndStoreRedditStat(ctx)
+			c.collectAndStoreRedditStat(ctx, cacheManager)
 			app.ReleaseForNewModule()
 		}
 	}
 }
 
-func (c *Collector) collectAndStoreRedditStat(ctx context.Context) {
+func (c *Collector) collectAndStoreRedditStat(ctx context.Context, cacheManager *cache.Manager) {
 	log.Info("Starting Reddit stats collection cycle")
 
 	for _, subreddit := range c.options.Subreddit {
@@ -95,6 +92,10 @@ func (c *Collector) collectAndStoreRedditStat(ctx context.Context) {
 		}
 		log.Infof("New Reddit stat collected for %s at %s, Subscribers  %d, Active Users %d", subreddit,
 			helpers.NowUTC().Format(dateMiliTemplate), resp.Data.Subscribers, resp.Data.AccountsActive)
+	}
+
+	if err := cacheManager.Update(ctx, cache.Community); err != nil {
+		log.Error(err)
 	}
 }
 

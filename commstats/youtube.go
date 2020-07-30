@@ -12,6 +12,7 @@ import (
 
 	"github.com/planetdecred/dcrextdata/app"
 	"github.com/planetdecred/dcrextdata/app/helpers"
+	"github.com/planetdecred/dcrextdata/cache"
 	"github.com/planetdecred/dcrextdata/postgres/models"
 )
 
@@ -21,7 +22,7 @@ func YoutubeChannels() []string {
 	return youtubeChannels
 }
 
-func (c *Collector) startYoutubeCollector(ctx context.Context) {
+func (c *Collector) startYoutubeCollector(ctx context.Context, cacheManager *cache.Manager) {
 	if c.options.YoutubeDataApiKey == "" {
 		log.Error("youtubedataapikey is required for the youtube stat collector to work")
 		return
@@ -52,15 +53,11 @@ func (c *Collector) startYoutubeCollector(ctx context.Context) {
 
 	registerStarter := func() {
 		// continually check the state of the app until its free to run this module
-		for {
-			if app.MarkBusyIfFree() {
-				break
-			}
-		}
+		app.MarkBusyIfFree()
 	}
 
 	registerStarter()
-	c.collectAndStoreYoutubeStat(ctx)
+	c.collectAndStoreYoutubeStat(ctx, cacheManager)
 	app.ReleaseForNewModule()
 
 	ticker := time.NewTicker(time.Duration(c.options.YoutubeStatInterval) * time.Minute)
@@ -70,13 +67,13 @@ func (c *Collector) startYoutubeCollector(ctx context.Context) {
 			return
 		case <-ticker.C:
 			registerStarter()
-			c.collectAndStoreYoutubeStat(ctx)
+			c.collectAndStoreYoutubeStat(ctx, cacheManager)
 			app.ReleaseForNewModule()
 		}
 	}
 }
 
-func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context) {
+func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context, cacheManager *cache.Manager) {
 	log.Info("Starting Github stats collection cycle")
 	// youtube
 	for index, id := range c.options.YoutubeChannelId {
@@ -105,6 +102,9 @@ func (c *Collector) collectAndStoreYoutubeStat(ctx context.Context) {
 
 		log.Infof("New Youtube stat collected for %s at %s, Subscribers %d", channel,
 			youtubeStat.Date.Format(dateMiliTemplate), youtubeSubscribers)
+		if err = cacheManager.Update(ctx, cache.Community); err != nil {
+			log.Error(err)
+		}
 	}
 
 }

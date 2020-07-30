@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/decred/dcrd/chaincfg/v2"
-	"github.com/planetdecred/dcrextdata/app"
 	"github.com/planetdecred/dcrextdata/app/config"
 	"github.com/planetdecred/dcrextdata/app/helpers"
+	"github.com/planetdecred/dcrextdata/cache"
 )
 
 var snapshotinterval int
@@ -31,12 +31,7 @@ func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
 	}
 }
 
-func (t taker) Start(ctx context.Context) {
-	for {
-		if app.MarkBusyIfFree() {
-			break
-		}
-	}
+func (t taker) Start(ctx context.Context, cacheManager *cache.Manager) {
 	log.Info("Triggering network snapshot taker.")
 
 	var netParams = chaincfg.MainNetParams()
@@ -49,7 +44,7 @@ func (t taker) Start(ctx context.Context) {
 
 	var err error
 	amgr, err = NewManager(filepath.Join(defaultHomeDir,
-		netParams.Name), t.cfg.ShowDetailedLog)
+		netParams.Name), t.cfg.ShowDetailedLog, t.cfg.SnapshotInterval)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "NewManager: %v\n", err)
 		os.Exit(1)
@@ -112,6 +107,10 @@ func (t taker) Start(ctx context.Context) {
 			if err != nil {
 				t.dataStore.DeleteSnapshot(ctx, timestamp)
 				log.Errorf("Error in saving network snapshot, %s", err.Error())
+			}
+
+			if err = cacheManager.Update(ctx, cache.Snapshot, cache.SnapshotTable); err != nil {
+				log.Error(err)
 			}
 
 			mtx.Lock()

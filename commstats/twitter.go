@@ -11,6 +11,7 @@ import (
 
 	"github.com/planetdecred/dcrextdata/app"
 	"github.com/planetdecred/dcrextdata/app/helpers"
+	"github.com/planetdecred/dcrextdata/cache"
 	"github.com/planetdecred/dcrextdata/postgres/models"
 )
 
@@ -24,7 +25,7 @@ func TwitterHandles() []string {
 	return twitterHandles
 }
 
-func (c *Collector) startTwitterCollector(ctx context.Context) {
+func (c *Collector) startTwitterCollector(ctx context.Context, cacheManager *cache.Manager) {
 	var lastCollectionDate time.Time
 	err := c.dataStore.LastEntry(ctx, models.TableNames.Twitter, &lastCollectionDate)
 	if err != nil && err != sql.ErrNoRows {
@@ -45,15 +46,11 @@ func (c *Collector) startTwitterCollector(ctx context.Context) {
 
 	registerStarter := func() {
 		// continually check the state of the app until its free to run this module
-		for {
-			if app.MarkBusyIfFree() {
-				break
-			}
-		}
+		app.MarkBusyIfFree()
 	}
 
 	registerStarter()
-	c.collectAndStoreTwitterStat(ctx)
+	c.collectAndStoreTwitterStat(ctx, cacheManager)
 	app.ReleaseForNewModule()
 
 	ticker := time.NewTicker(time.Duration(c.options.TwitterStatInterval) * time.Minute)
@@ -63,13 +60,13 @@ func (c *Collector) startTwitterCollector(ctx context.Context) {
 			return
 		case <-ticker.C:
 			registerStarter()
-			c.collectAndStoreTwitterStat(ctx)
+			c.collectAndStoreTwitterStat(ctx, cacheManager)
 			app.ReleaseForNewModule()
 		}
 	}
 }
 
-func (c *Collector) collectAndStoreTwitterStat(ctx context.Context) {
+func (c *Collector) collectAndStoreTwitterStat(ctx context.Context, cacheManager *cache.Manager) {
 	log.Info("Starting Twitter stats collection cycle")
 	for _, handle := range c.options.TwitterHandles {
 		followers, err := c.getTwitterFollowers(ctx, handle)
@@ -91,6 +88,10 @@ func (c *Collector) collectAndStoreTwitterStat(ctx context.Context) {
 
 		log.Infof("New Twitter stat collected for %s at %s, Followers %d", handle,
 			twitterStat.Date.Format(dateMiliTemplate), twitterStat.Followers)
+
+		if err = cacheManager.Update(ctx, cache.Community); err != nil {
+			log.Error(err)
+		}
 	}
 }
 
