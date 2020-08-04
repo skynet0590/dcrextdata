@@ -6,15 +6,19 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"path/filepath"
 
+	"github.com/decred/dcrd/dcrutil"
 	flags "github.com/jessevdk/go-flags"
 )
 
 const (
-	DefaultConfigFilename      = "dcrextdata.conf"
-	defaultLogFilename         = "dcrextdata.log"
+	defaultConfigFileName      = "dcrextdata.conf"
+	sampleConfigFileName       = "./sample-dcrextdata.conf"
+	defaultLogFileName         = "dcrextdata.log"
 	defaultChartsCacheDump     = "charts-cache.glob"
 	Hint                       = `Run dcrextdata < --http > to start http server or dcrextdata < --help > for help.`
 	defaultDbHost              = "localhost"
@@ -22,7 +26,7 @@ const (
 	defaultDbUser              = "postgres"
 	defaultDbPass              = "dbpass"
 	defaultDbName              = "dcrextdata"
-	defaultLogLevel            = "debug"
+	defaultLogLevel            = InfoLogLevel
 	defaultHttpHost            = "127.0.0.1"
 	defaultHttpPort            = "7770"
 	defaultDcrdServer          = "127.0.0.1:9109"
@@ -38,13 +42,25 @@ const (
 	defaultTwitterStatInterval = 60 * 24
 	defaultGithubStatInterval  = 60 * 24
 	defaultYoutubeInterval     = 60 * 24
+
 	//dcrseeder
 	defaultSeeder            = "127.0.0.1"
 	defaultSeederPort        = 9108
 	maxPeerConnectionFailure = 3
+
+	// log levels
+	TraceLogLevel   = "trace"
+	DebugLogLevel   = "debug"
+	InfoLogLevel    = "info"
+	WarningLogLevel = "warning"
+	ErrorLogLevel   = "error"
 )
 
 var (
+	defaultHomeDir        = dcrutil.AppDataDir("dcrextdata", false)
+	defaultConfigFilename = filepath.Join(defaultHomeDir, defaultConfigFileName)
+	defaultLogFilename    = filepath.Join(defaultHomeDir, "log", defaultLogFileName)
+
 	defaultSubreddits          = []string{"decred"}
 	defaultTwitterHandles      = []string{"decredproject"}
 	defaultGithubRepositories  = []string{"decred/dcrd", "decred/dcrdata", "decred/dcrwallet", "decred/politeia", "decred/decrediton"}
@@ -60,7 +76,7 @@ func defaultFileOptions() ConfigFileOptions {
 		DBUser:           defaultDbUser,
 		DBPass:           defaultDbPass,
 		DBName:           defaultDbName,
-		DebugLevel:       defaultLogLevel,
+		LogLevel:         defaultLogLevel,
 		VSPInterval:      defaultVSPInterval,
 		PowInterval:      defaultPowInterval,
 		MempoolInterval:  defaultMempoolInterval,
@@ -99,9 +115,9 @@ type Config struct {
 
 type ConfigFileOptions struct {
 	// General application behaviour
-	LogFile    string `short:"L" long:"logfile" description:"File name of the log file"`
-	DebugLevel string `short:"d" long:"debuglevel" description:"Logging level {trace, debug, info, warn, error, critical}"`
-	Quiet      bool   `short:"q" long:"quiet" description:"Easy way to set debuglevel to error"`
+	LogFile  string `short:"L" long:"logfile" description:"File name of the log file"`
+	LogLevel string `long:"loglevel" description:"Logging level {trace, debug, info, warn, error, critical}"`
+	Quiet    bool   `short:"q" long:"quiet" description:"Easy way to set debuglevel to error"`
 
 	// Postgresql Configuration
 	DBHost string `long:"dbhost" description:"Database host"`
@@ -158,7 +174,7 @@ type ConfigFileOptions struct {
 type CommandLineOptions struct {
 	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
 	ConfigFile string `short:"C" long:"configfile" description:"Path to Configuration file"`
-	HttpMode   bool   `long:"http" description:"Launch http server"`
+	HttpMode   string `long:"http" description:"Launch http server"`
 }
 
 type CommunityStatOptions struct {
@@ -185,16 +201,37 @@ type NetworkSnapshotOptions struct {
 	IpStackAccessKey         string `long:"ipStackAccessKey" description:"IP stack access key https://ipstack.com/"`
 	IpLocationProvidingPeer  string `long:"ipLocationProvidingPeer" description:"An optional peer address for getting IP info"`
 	TestNet                  bool   `long:"testnet" description:"Use testnet"`
-	ShowDetailedLog          bool   `long:"showdetailedlog" description:"Weather or not to show detailed log for peer discovery"`
 }
 
 func defaultConfig() Config {
 	return Config{
 		CommandLineOptions: CommandLineOptions{
-			ConfigFile: DefaultConfigFilename,
+			ConfigFile: defaultConfigFilename,
+			HttpMode:   "true",
 		},
 		ConfigFileOptions: defaultFileOptions(),
 	}
+}
+
+func copyFile(sourec, destination string) error {
+	from, err := os.Open(sourec)
+	if err != nil {
+		return err
+	}
+	defer from.Close()
+
+	to, err := os.OpenFile(destination, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func LoadConfig() (*Config, []string, error) {
@@ -214,13 +251,20 @@ func LoadConfig() (*Config, []string, error) {
 		}
 	}
 
+	// if the config file is missing, create the default
+	if _, err := os.Stat(defaultConfigFilename); os.IsNotExist(err) {
+		if err = copyFile(sampleConfigFileName, defaultConfigFilename); err != nil {
+			return nil, nil, fmt.Errorf("Missing default config file and cannot copy the sample - %s", err.Error())
+		}
+	}
+	fmt.Printf("Loading config file from %s\n", preCfg.ConfigFile)
 	parser := flags.NewParser(&cfg, flags.IgnoreUnknown)
 	err := flags.NewIniParser(parser).ParseFile(preCfg.ConfigFile)
 	if err != nil {
 		if _, ok := err.(*os.PathError); !ok {
 			return nil, nil, err
 		}
-		fmt.Printf("Missing Config file %s in current directory\n", preCfg.ConfigFile)
+		fmt.Printf("Missing Config file %s\n", preCfg.ConfigFile)
 	}
 
 	unknownArg, err := parser.Parse()

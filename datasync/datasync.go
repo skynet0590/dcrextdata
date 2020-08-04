@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strings"
 	"time"
 
 	"github.com/planetdecred/dcrextdata/app/helpers"
@@ -86,14 +87,15 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 	skip := 0
 	take := 1000
 	lastEntry, err := syncer.LastEntry(ctx, source.store)
+	if err != nil {
+		return fmt.Errorf("error in fetching sync history, %s", err.Error())
+	}
+
 	for {
-		if err != nil {
-			return fmt.Errorf("error in fetching sync history, %s", err.Error())
-
-		}
 		retries := 0
-		url := fmt.Sprintf("%s/api/sync/%s?last=%s&skip=%d&take=%d", source.url, tableName, lastEntry, skip, take)
-
+		url := fmt.Sprintf("%s/api/sync/%s?last=%s&skip=%d&take=%d", strings.TrimSuffix(source.url, "/"),
+			tableName, lastEntry, skip, take)
+		log.Infof("Syncing %s data from %s", tableName, url)
 		var result *Result
 		for {
 			result, err = syncer.Collect(ctx, url)
@@ -101,6 +103,7 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 			if err == nil || retries >= 3 {
 				break
 			}
+			log.Errorf("Sync %s data from %s failed, %s. Retrying...", tableName, url, err.Error())
 		}
 		if err != nil {
 			return fmt.Errorf("error in fetching data for %s, %s", url, err.Error())
@@ -121,7 +124,6 @@ func (s *SyncCoordinator) sync(ctx context.Context, source instance, tableName s
 		}
 
 		syncer.Append(ctx, source.store, result.Records)
-
 		skip += take
 	}
 }
@@ -131,15 +133,16 @@ func RegisteredSources() ([]string, error) {
 		return nil, errors.New("syncer not initialized")
 	}
 
-	var sources []string
-	for _, s := range coordinator.instances {
-		sources = append(sources, s.database)
+	var sources = make([]string, len(coordinator.instances))
+	for i, s := range coordinator.instances {
+		sources[i] = s.database
 	}
 
 	return sources, nil
 }
 
 func Retrieve(ctx context.Context, tableName string, last string, skip, take int) (*Result, error) {
+	log.Infof("Sync request received for %s, last: %d, start: %s", tableName, skip, take)
 	if coordinator == nil {
 		return nil, errors.New("syncer not initialized")
 	}
@@ -150,6 +153,7 @@ func Retrieve(ctx context.Context, tableName string, last string, skip, take int
 
 	syncer, found := coordinator.syncers[tableName]
 	if !found {
+		log.Infof("Invalid data type in sync request, %s", tableName)
 		return nil, errors.New("syncer not found for " + tableName)
 	}
 

@@ -48,14 +48,13 @@ type attemptedPeer struct {
 type Manager struct {
 	mtx sync.RWMutex
 
-	nodes           map[string]*Node
-	liveNodeIPs     []net.IP
-	peerNtfn        chan *Node
-	attemptNtfn     chan attemptedPeer
-	connFailNtfn    chan net.IP
-	showDetailedLog bool
-	quit            chan struct{}
-	peersFile       string
+	nodes        map[string]*Node
+	liveNodeIPs  []net.IP
+	peerNtfn     chan *Node
+	attemptNtfn  chan attemptedPeer
+	connFailNtfn chan net.IP
+	quit         chan struct{}
+	peersFile    string
 }
 
 var (
@@ -136,7 +135,7 @@ func isRoutable(addr net.IP) bool {
 	return true
 }
 
-func NewManager(dataDir string, showDetailedLog bool, snapshotInterval int) (*Manager, error) {
+func NewManager(dataDir string, snapshotInterval int) (*Manager, error) {
 	err := os.MkdirAll(dataDir, 0700)
 	if err != nil {
 		return nil, err
@@ -146,13 +145,12 @@ func NewManager(dataDir string, showDetailedLog bool, snapshotInterval int) (*Ma
 	dumpAddressInterval = defaultStaleTimeout
 
 	amgr := Manager{
-		nodes:           make(map[string]*Node),
-		peerNtfn:        make(chan *Node),
-		attemptNtfn:     make(chan attemptedPeer),
-		connFailNtfn:    make(chan net.IP),
-		showDetailedLog: showDetailedLog,
-		peersFile:       filepath.Join(dataDir, peersFilename),
-		quit:            make(chan struct{}),
+		nodes:        make(map[string]*Node),
+		peerNtfn:     make(chan *Node),
+		attemptNtfn:  make(chan attemptedPeer),
+		connFailNtfn: make(chan net.IP),
+		peersFile:    filepath.Join(dataDir, peersFilename),
+		quit:         make(chan struct{}),
 	}
 
 	err = amgr.deserializePeers()
@@ -333,9 +331,7 @@ func (m *Manager) prunePeers() {
 	l := len(m.nodes)
 	m.mtx.Unlock()
 
-	if m.showDetailedLog {
-		log.Infof("Pruned %d addresses: %d remaining", count, l)
-	}
+	log.Infof("Pruned %d addresses: %d remaining", count, l)
 }
 
 func (m *Manager) deserializePeers() error {
@@ -392,7 +388,5 @@ func (m *Manager) savePeers() {
 		return
 	}
 
-	if m.showDetailedLog {
-		log.Infof("%d nodes saved to %s", len(m.nodes), m.peersFile)
-	}
+	log.Infof("%d nodes saved to %s", len(m.nodes), m.peersFile)
 }
