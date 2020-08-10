@@ -64,21 +64,20 @@ Run `export GO111MODULE=on` in terminal (for Mac/Linux) or `setx GO111MODULE on`
 Building will place the `dcrextdata` binary in your working directory while install will place the binary in $GOPATH/bin.
 
 #### Building http front-end
-* From your project directory, type `cd web/public/app` using command line, rn `npm install` when its done installing packages, 
+* From your project directory, type `cd web/public/app` using command line, run `npm install` when its done installing packages, 
 run `npm run build`.
 
 ### Step 4. Configuration
-`dcrextdata` can be configured via command-line options or a config file located in the same diretcory as the executable. Start with the sample config file:
+`dcrextdata` can be configured via command-line options or a config file located in the home directory. Start with the sample config file:
 ```sh
-cp sample-dcrextdata.conf dcrextdata.conf
+cp sample-dcrextdata.conf ~/.dcrextdata/dcrextdata.conf
 ```
-Then edit `dcrextdata.conf` with your postgres settings.  See the output of `dcrextdata --help`
+Then edit `dcrextdata.conf` with your postgres settings. See the output of `dcrextdata --help`
 for a list of all options and their default values.
 
 ## Running dcrextdata
 To run *dcrextdata*, use...
-- `dcrextdata` on your command line interface to create database table, fetch data and store the data.
-- `dcrextdata --http` on your command line interface to launch the http web user interface/front-end.
+- `dcrextdata` on your command line interface to create database table, fetch data and store the data and launch the http web server. The web server can be disabled by setting `--http=false`
 - You can perform a reset by running with the `-R` or `--reset` flag.
 - Run `dcrextdata -h` or `dcrextdata help` to get general information of commands and options that can be issued on the cli.
 - Use `dcrextdata <command> -h` or   `dcrextdata help <command>` to get detailed information about a command.
