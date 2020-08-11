@@ -5,11 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "webpack --watch --config webpack/webpack.dev.js",
-    "start": "webpack-dev-server --open --config webpack/webpack.dev.js",
-    "analyze": "webpack --config webpack/webpack.analyze.js",
-    "build": "webpack --config webpack/webpack.prod.js",
-    "lint": "eslint --fix --ext .js, src"
+    "watch": "webpack --watch --config web/public/app/webpack/webpack.dev.js",
+    "start": "webpack-dev-server --open --config web/public/app/webpack/webpack.dev.js",
+    "analyze": "webpack --config web/public/app/webpack/webpack.analyze.js",
+    "build": "webpack --config web/public/app/webpack/webpack.prod.js",
+    "lint": "eslint --fix --ext .js, web/public/app/src"
   },
   "dependencies": {
     "axios": "^0.19.0",

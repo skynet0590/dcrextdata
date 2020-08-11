@@ -3,7 +3,7 @@ const StyleLintPlugin = require('stylelint-webpack-plugin')
 
 module.exports = {
   entry: {
-    app: './src/index.js'
+    app: './web/public/app/src/index.js'
   },
   externals: {
   },
