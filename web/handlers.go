@@ -1202,7 +1202,8 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 	platform := req.FormValue("platform")
 	dataType := req.FormValue("data-type")
 
-	var yLabel, subAccount string
+	filters := map[string]string{}
+	yLabel := ""
 	switch platform {
 	case githubPlatform:
 		if dataType == models.GithubColumns.Folks {
@@ -1210,25 +1211,28 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		} else {
 			yLabel = "Stars"
 		}
-		subAccount = req.FormValue("repository")
+		platform = models.TableNames.Github
+		filters[models.GithubColumns.Repository] = fmt.Sprintf("'%s'", req.FormValue("repository"))
 	case twitterPlatform:
 		yLabel = "Followers"
 		dataType = models.TwitterColumns.Followers
-		subAccount = req.FormValue("twitter-handle")
+		platform = models.TableNames.Twitter
 	case redditPlatform:
 		if dataType == models.RedditColumns.ActiveAccounts {
 			yLabel = "Active Accounts"
 		} else if dataType == models.RedditColumns.Subscribers {
 			yLabel = "Subscribers"
 		}
-		subAccount = req.FormValue("subreddit")
+		platform = models.TableNames.Reddit
+		filters[models.RedditColumns.Subreddit] = fmt.Sprintf("'%s'", req.FormValue("subreddit"))
 	case youtubePlatform:
+		platform = models.TableNames.Youtube
 		if dataType == models.YoutubeColumns.ViewCount {
 			yLabel = "View Count"
 		} else if dataType == models.YoutubeColumns.Subscribers {
 			yLabel = "Subscribers"
 		}
-		subAccount = req.FormValue("channel")
+		filters[models.YoutubeColumns.Channel] = fmt.Sprintf("'%s'", req.FormValue("channel"))
 	}
 
 	if dataType == "" {
@@ -1236,17 +1240,15 @@ func (s *Server) communityChat(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var dates, records cache.ChartUints
-	dateKey := fmt.Sprintf("%s-%s-%s-%s", cache.Community, platform, subAccount, cache.TimeAxis)
-	if err := s.charts.ReadVal(dateKey, &dates); err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s, %s", err.Error(), dateKey), resp)
+	data, err := s.db.CommunityChart(req.Context(), platform, dataType, filters)
+	if err != nil {
+		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s", err.Error()), resp)
 		return
 	}
-
-	dataKey := fmt.Sprintf("%s-%s-%s-%s", cache.Community, platform, subAccount, dataType)
-	if err := s.charts.ReadVal(dataKey, &records); err != nil {
-		s.renderErrorJSON(fmt.Sprintf("Cannot fetch chart data, %s, %s", err.Error(), dataKey), resp)
-		return
+	var dates, records cache.ChartUints
+	for _, record := range data {
+		dates = append(dates, uint64(record.Date.Unix()))
+		records = append(records, uint64(record.Record))
 	}
 
 	s.renderJSON(map[string]interface{}{
@@ -1432,25 +1434,19 @@ func (s *Server) nodesCountUserAgents(w http.ResponseWriter, r *http.Request) {
 	}
 	offset = (page - 1) * pageSize
 
-	var userAgents []netsnapshot.UserAgentInfo
-	if err = s.charts.ReadVal(fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotNodeVersions), &userAgents); err != nil {
-		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+	userAgents, total, err := s.db.FetchNodeVersion(r.Context(), offset, pageSize)
+	if err != nil {
+		s.renderErrorfJSON(err.Error(), w)
 		return
 	}
 
-	total := len(userAgents)
-	var totalPages int
-	if total%(pageSize) == 0 {
-		totalPages = total / (pageSize)
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
 	} else {
-		totalPages = 1 + (total-total%(pageSize))/(pageSize)
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
 	}
-
-	end := offset + pageSize
-	if end >= total {
-		end = total - 1
-	}
-	s.renderJSON(map[string]interface{}{"userAgents": userAgents[offset:end], "totalPages": totalPages}, w)
+	s.renderJSON(map[string]interface{}{"userAgents": userAgents, "totalPages": totalPages}, w)
 }
 
 // /api/snapshots/user-agents/chart
@@ -1533,26 +1529,20 @@ func (s *Server) nodesCountByCountries(w http.ResponseWriter, r *http.Request) {
 	}
 	offset = (page - 1) * pageSize
 
-	var countries []netsnapshot.UserAgentInfo
-	if err = s.charts.ReadVal(fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotLocations), &countries); err != nil {
-		s.renderErrorfJSON("Cannot fetch data: %s", w, err.Error())
+	countries, total, err := s.db.FetchNodeLocations(r.Context(), offset, pageSize)
+	if err != nil {
+		s.renderErrorJSON(err.Error(), w)
 		return
 	}
 
-	total := len(countries)
-	var totalPages int
-	if total%(pageSize) == 0 {
-		totalPages = total / (pageSize)
+	var totalPages int64
+	if total%int64(pageSize) == 0 {
+		totalPages = total / int64(pageSize)
 	} else {
-		totalPages = 1 + (total-total%(pageSize))/(pageSize)
+		totalPages = 1 + (total-total%int64(pageSize))/int64(pageSize)
 	}
 
-	end := offset + pageSize
-	if end >= total {
-		end = total - 1
-	}
-
-	s.renderJSON(map[string]interface{}{"countries": countries[offset:end], "totalPages": totalPages}, w)
+	s.renderJSON(map[string]interface{}{"countries": countries, "totalPages": totalPages}, w)
 }
 
 // /api/snapshots/countries/chart

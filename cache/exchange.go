@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -34,34 +32,4 @@ func ExtractExchangeKey(setKey string) (exchangeName string, currencyPair string
 		interval, _ = strconv.Atoi(keys[2])
 	}
 	return
-}
-
-func (charts *Manager) ExchangeSetTime(key string) uint64 {
-	var dates ChartUints
-	if err := charts.ReadVal(key+"-"+string(TimeAxis), &dates); err != nil {
-		return 0
-	}
-	if len(dates) < 1 {
-		return 0
-	}
-	return dates[len(dates)-1]
-}
-
-func makeExchangeChart(ctx context.Context, charts *Manager, dataType, _ axisType, bin binLevel, key ...string) ([]byte, error) {
-	if len(key) < 1 {
-		return nil, errors.New("exchange set key is required for exchange chart")
-	}
-	var dates ChartUints
-	if err := charts.ReadVal(key[0]+"-"+string(TimeAxis), &dates); err != nil {
-		return nil, err
-	}
-
-	var yAxis ChartFloats
-	if err := charts.ReadVal(key[0]+"-"+string(dataType), &yAxis); err != nil {
-		log.Errorf("Cannot create exchange chart, %s", err.Error())
-		return nil, errors.New("no record found for the selected exchange")
-	}
-
-	return charts.Encode(nil, dates, yAxis)
-
 }

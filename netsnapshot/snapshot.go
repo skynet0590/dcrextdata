@@ -15,7 +15,6 @@ import (
 	"github.com/decred/dcrd/chaincfg/v2"
 	"github.com/planetdecred/dcrextdata/app/config"
 	"github.com/planetdecred/dcrextdata/app/helpers"
-	"github.com/planetdecred/dcrextdata/cache"
 )
 
 var snapshotinterval int
@@ -32,7 +31,7 @@ func NewTaker(store DataStore, cfg config.NetworkSnapshotOptions) *taker {
 	}
 }
 
-func (t taker) Start(ctx context.Context, cacheManager *cache.Manager) {
+func (t taker) Start(ctx context.Context) {
 	log.Info("Triggering network snapshot taker.")
 
 	var netParams = chaincfg.MainNetParams()
@@ -108,9 +107,8 @@ func (t taker) Start(ctx context.Context, cacheManager *cache.Manager) {
 				t.dataStore.DeleteSnapshot(ctx, timestamp)
 				log.Errorf("Error in saving network snapshot, %s", err.Error())
 			}
-
-			if err = cacheManager.Update(ctx, cache.Snapshot, cache.SnapshotTable); err != nil {
-				log.Error(err)
+			if err = t.dataStore.UpdateSnapshotNodesBin(ctx); err != nil {
+				log.Errorf("Error in initial network snapshot bin update, %s", err.Error())
 			}
 
 			mtx.Lock()

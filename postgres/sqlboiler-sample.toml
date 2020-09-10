@@ -4,11 +4,30 @@
     user = "user"
     pass = "pass"
     sslmode = "disable"
-    whitelist=["exchange", 
-            "exchange_tick",
-            "vsp",
-            "vsp_tick",
-            "pow_data",
-            "mempool",
-            "block",
-            "comm_stat"]
+    whitelist=[
+        "block",
+        "block_bin",
+        "exchange",
+        "exchange_tick",
+        "github",
+        "mempool",
+        "mempool_bin",
+        "propagation",
+        "pow_data",
+        "pow_bin",
+        "reddit",
+        "twitter",
+        "vote",
+        "vote_receive_time_deviation",
+        "vsp",
+        "vsp_tick",
+        "vsp_tick_bin",
+        "youtube",
+        "node",
+        "network_snapshot",
+        "network_snapshot_bin",
+        "node_version",
+        "node_location",
+        "heartbeat",
+        "community_stat"
+    ]
