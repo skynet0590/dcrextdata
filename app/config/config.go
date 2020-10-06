@@ -5,6 +5,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -176,6 +177,7 @@ type ConfigFileOptions struct {
 // CommandLineOptions holds the top-level options/flags that are displayed on the command-line menu
 type CommandLineOptions struct {
 	Reset      bool   `short:"R" long:"reset" description:"Drop all database tables and start over"`
+	ResetCache bool   `short:"E" long:"reset-cache" description:"Drop all database tables used in storing computed cache data"`
 	ConfigFile string `short:"C" long:"configfile" description:"Path to Configuration file"`
 	HttpMode   string `long:"http" description:"Launch http server"`
 }
@@ -294,6 +296,10 @@ func LoadConfig() (*Config, []string, error) {
 	if net.ParseIP(cfg.Seeder) == nil {
 		str := "\"%s\" is not a valid textual representation of an IP address"
 		return nil, nil, fmt.Errorf(str, cfg.Seeder)
+	}
+
+	if len(cfg.SyncDatabases) != len(cfg.SyncSources) {
+		return nil, nil, errors.New("You must set the same number of sync source and database.")
 	}
 
 	return &cfg, unknownArg, nil
