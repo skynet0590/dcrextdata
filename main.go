@@ -18,7 +18,6 @@ import (
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/dcrutil"
 	"github.com/decred/dcrd/rpcclient"
-	"github.com/dgraph-io/badger"
 	"github.com/jessevdk/go-flags"
 	"github.com/planetdecred/dcrextdata/app"
 	"github.com/planetdecred/dcrextdata/app/config"
@@ -150,6 +149,27 @@ func _main(ctx context.Context) error {
 		return nil
 	}
 
+	if cfg.ResetCache {
+		resetTables, err := helpers.RequestYesNoConfirmation("Are you sure you want to reset the dcrextdata cache data?", "")
+		if err != nil {
+			return fmt.Errorf("error reading your response: %s", err.Error())
+		}
+
+		if resetTables {
+			err = db.DropCacheTables()
+			if err != nil {
+				db.Close()
+				log.Error("Could not drop tables: ", err)
+				return err
+			}
+
+			fmt.Println("Done. You can restart the server now.")
+			return nil
+		}
+
+		return nil
+	}
+
 	// Display app version.
 	log.Infof("%s version %v (Go version %s)", app.AppName, app.Version(), runtime.Version())
 
@@ -212,16 +232,9 @@ func _main(ctx context.Context) error {
 		log.Error(err)
 	}
 
-	opt := badger.DefaultOptions("data")
-	bdb, err := badger.Open(opt)
-	if err != nil {
-		return err
-	}
-
 	commstats.SetAccounts(cfg.CommunityStatOptions)
-
 	cacheManager := cache.NewChartData(ctx, cfg.EnableChartCache, cfg.SyncDatabases, poolSources, vsps,
-		nodeCountries, noveVersions, netParams(cfg.DcrdNetworkType), bdb)
+		nodeCountries, noveVersions, netParams(cfg.DcrdNetworkType), cfg.CacheDir)
 	db.RegisterCharts(cacheManager, cfg.SyncDatabases, func(name string) (*postgres.PgDb, error) {
 		db, found := syncDbs[name]
 		if !found {
@@ -229,16 +242,27 @@ func _main(ctx context.Context) error {
 		}
 		return db, nil
 	})
-
-	if err = cacheManager.Load(ctx); err != nil {
-		return err
+	if err = db.UpdateMempoolAggregateData(ctx); err != nil {
+		return fmt.Errorf("Error in initial mempool bin update, %s", err.Error())
 	}
-
-	defer func() {
-		if err = cacheManager.SaveVersion(); err != nil {
-			log.Error(err)
-		}
-	}()
+	if err = db.UpdatePropagationData(ctx); err != nil {
+		return fmt.Errorf("Error in initial propagation data update, %s", err.Error())
+	}
+	if err = db.UpdateBlockBinData(ctx); err != nil {
+		return fmt.Errorf("Error in initial block data update, %s", err.Error())
+	}
+	if err = db.UpdateVoteTimeDeviationData(ctx); err != nil {
+		return fmt.Errorf("Error in initial vote receive time deviation data update, %s", err.Error())
+	}
+	if err = db.UpdatePowChart(ctx); err != nil {
+		return fmt.Errorf("Error in initial PoW bin update, %s", err.Error())
+	}
+	if err = db.UpdateVspChart(ctx); err != nil {
+		return fmt.Errorf("Error in initial VSP bin update, %s", err.Error())
+	}
+	if err = db.UpdateSnapshotNodesBin(ctx); err != nil {
+		return fmt.Errorf("Error in initial network snapshot bin update, %s", err.Error())
+	}
 
 	// http server method
 	if strings.ToLower(cfg.HttpMode) == "true" || cfg.HttpMode == "1" {
@@ -312,11 +336,11 @@ func _main(ctx context.Context) error {
 
 		collector.SetClient(dcrClient)
 
-		go collector.StartMonitoring(ctx, cacheManager)
+		go collector.StartMonitoring(ctx)
 	}
 
 	if !cfg.DisableVSP {
-		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db, cacheManager)
+		vspCollector, err := vsp.NewVspCollector(cfg.VSPInterval, db)
 		if err == nil {
 			go vspCollector.Run(ctx, cacheManager)
 		} else {
@@ -326,7 +350,7 @@ func _main(ctx context.Context) error {
 
 	if !cfg.DisableExchangeTicks {
 		go func() {
-			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db, cacheManager)
+			ticksHub, err := exchanges.NewTickHub(ctx, cfg.DisabledExchanges, db)
 			if err != nil {
 				log.Error(err)
 				return
@@ -337,19 +361,19 @@ func _main(ctx context.Context) error {
 
 	if !cfg.DisablePow {
 		go func() {
-			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db, cacheManager)
+			powCollector, err := pow.NewCollector(cfg.DisabledPows, cfg.PowInterval, db)
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			powCollector.Run(ctx, cacheManager)
+			powCollector.Run(ctx)
 		}()
 	}
 
 	if !cfg.DisableCommunityStat {
 		redditCollector, err := commstats.NewCommStatCollector(db, &cfg.CommunityStatOptions)
 		if err == nil {
-			go redditCollector.Run(ctx, cacheManager)
+			go redditCollector.Run(ctx)
 		} else {
 			log.Error(err)
 		}
@@ -357,7 +381,7 @@ func _main(ctx context.Context) error {
 
 	if !cfg.DisableNetworkSnapshot {
 		snapshotTaker := netsnapshot.NewTaker(db, cfg.NetworkSnapshotOptions)
-		go snapshotTaker.Start(ctx, cacheManager)
+		go snapshotTaker.Start(ctx)
 	}
 
 	go syncCoordinator.StartSyncing(ctx)
@@ -419,6 +443,22 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 		log.Info("Mempool table created successfully.")
 	}
 
+	if !db.MempoolBinDataTableExits() {
+		if err := db.CreateMempoolDayBinTable(); err != nil {
+			log.Error("Error creating mempool_bin table: ", err)
+			return err
+		}
+		log.Info("Mempool bin table created successfully.")
+	}
+
+	if !db.PropagationTableExists() {
+		if err := db.CreatePropagationTable(); err != nil {
+			log.Error("Error creating propagation table: ", err)
+			return err
+		}
+		log.Info("Propagation table created successfully.")
+	}
+
 	if !db.BlockTableExits() {
 		if err := db.CreateBlockTable(); err != nil {
 			log.Error("Error creating block table: ", err)
@@ -428,12 +468,29 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 
 	}
 
+	if !db.BlockBinTableExits() {
+		if err := db.CreateBlockBinTable(); err != nil {
+			log.Error("Error creating block bin table: ", err)
+			return err
+		}
+		log.Info("Blocks bin table created successfully.")
+
+	}
+
 	if !db.VoteTableExits() {
 		if err := db.CreateVoteTable(); err != nil {
 			log.Error("Error creating vote table: ", err)
 			return err
 		}
 		log.Info("Votes table created successfully.")
+	}
+
+	if !db.VoteReceiveTimeDeviationTableExits() {
+		if err := db.CreateVoteReceiveTimeDeviationTable(); err != nil {
+			log.Error("Error creating vote receive time deviation table: ", err)
+			return err
+		}
+		log.Info("Vote receive time deviation table created successfully.")
 	}
 
 	if exists := db.VSPInfoTableExits(); !exists {
@@ -456,6 +513,14 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			log.Error("Error creating vsp data index: ", err)
 			return err
 		}
+	}
+
+	if exists := db.VSPTickBinTableExits(); !exists {
+		if err := db.CreateVSPTickBinTable(); err != nil {
+			log.Error("Error creating vsp tick bin table: ", err)
+			return err
+		}
+		log.Info("VSPTicks bin table created successfully.")
 	}
 
 	if exists := db.ExchangeTableExits(); !exists {
@@ -485,6 +550,14 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			return err
 		}
 		log.Info("Pow table created successfully.")
+	}
+
+	if exists := db.PowBInTableExits(); !exists {
+		if err := db.CreatePowBinTable(); err != nil {
+			log.Error("Error creating PoW bin table: ", err)
+			return err
+		}
+		log.Info("Pow bin table created successfully.")
 	}
 
 	if exists := db.RedditTableExits(); !exists {
@@ -525,6 +598,30 @@ func createTablesAndIndex(db *postgres.PgDb) error {
 			return err
 		}
 		log.Info("snapshot table created successfully.")
+	}
+
+	if exists := db.NetworkSnapshotBinTableExists(); !exists {
+		if err := db.CreateNetworkSnapshotBinTable(); err != nil {
+			log.Error("Error creating network snapshot bin table: ", err)
+			return err
+		}
+		log.Info("snapshot bin table created successfully.")
+	}
+
+	if exists := db.NodeVersionTableExists(); !exists {
+		if err := db.CreateNodeVersoinTable(); err != nil {
+			log.Error("Error creating node version table: ", err)
+			return err
+		}
+		log.Info("node version table created successfully.")
+	}
+
+	if exists := db.NodeLocationTableExists(); !exists {
+		if err := db.CreateNodeLocationTable(); err != nil {
+			log.Error("Error creating node location table: ", err)
+			return err
+		}
+		log.Info("node location table created successfully.")
 	}
 
 	if exists := db.NetworkNodeTableExists(); !exists {

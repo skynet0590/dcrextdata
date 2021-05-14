@@ -26,12 +26,14 @@ type UserAgentInfo struct {
 	UserAgent string `json:"user_agent"`
 	Nodes     int64  `json:"nodes"`
 	Timestamp int64  `json:"timestamp"`
+	Height    int64  `json:"height"`
 }
 
 type CountryInfo struct {
 	Country   string `json:"country"`
 	Nodes     int64  `json:"nodes"`
 	Timestamp int64  `json:"timestamp"`
+	Height    int64  `json:"height"`
 }
 
 type NetworkPeer struct {
@@ -76,6 +78,7 @@ type DataStore interface {
 	LastSnapshotTime(ctx context.Context) (timestamp int64)
 	DeleteSnapshot(ctx context.Context, timestamp int64)
 	SaveSnapshot(ctx context.Context, snapShot SnapShot) error
+	UpdateSnapshotNodesBin(ctx context.Context) error
 	SaveHeartbeat(ctx context.Context, peer Heartbeat) error
 	AttemptPeer(ctx context.Context, address string, now int64) error
 	RecordNodeConnectionFailure(ctx context.Context, address string, maxAllowedFailure int) error

@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/planetdecred/dcrextdata/cache"
 	"github.com/planetdecred/dcrextdata/datasync"
 )
 
@@ -65,9 +64,8 @@ type DataStore interface {
 	VspTickTableName() string
 	StoreVSPs(context.Context, Response) (int, []error)
 	LastVspTickEntryTime() (time time.Time)
-
+	UpdateVspChart(ctx context.Context) error
 	FetchVspSourcesForSync(ctx context.Context, lastID int64, skip, take int) ([]VSPDto, int64, error)
-
 	FetchVspTicksForSync(ctx context.Context, lastID int64, skip, take int) ([]datasync.VSPTickSyncDto, int64, error)
 }
 
@@ -76,7 +74,6 @@ type Collector struct {
 	period    time.Duration
 	request   *http.Request
 	dataStore DataStore
-	charts    *cache.Manager
 }
 
 type PoolTickTimeExistsError struct {

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
-	"github.com/dgraph-io/badger"
 	"github.com/planetdecred/dcrextdata/cache"
 	"github.com/planetdecred/dcrextdata/netsnapshot"
 	"github.com/planetdecred/dcrextdata/postgres/models"
@@ -124,6 +124,7 @@ func (pg PgDb) SnapshotsByTime(ctx context.Context, startDate int64, pageSize in
 	var queries = []qm.QueryMod{
 		qm.Select(
 			models.NetworkSnapshotColumns.Timestamp,
+			models.NetworkSnapshotColumns.Height,
 			models.NetworkSnapshotColumns.NodeCount,
 			models.NetworkSnapshotColumns.ReachableNodes,
 		),
@@ -582,7 +583,7 @@ func (pg PgDb) peerCountByUserAgentsByTime(ctx context.Context, startDate uint64
 		where += fmt.Sprintf(" AND node.user_agent IN (%s) ", sourceStr)
 	}
 
-	sql := `SELECT network_snapshot.timestamp, node.user_agent, COUNT(node.user_agent) AS nodes FROM network_snapshot
+	sql := `SELECT network_snapshot.timestamp, network_snapshot.height, node.user_agent, COUNT(node.user_agent) AS nodes FROM network_snapshot
 		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
 		INNER JOIN node ON node.address = heartbeat.node_id` + where +
 		`GROUP BY network_snapshot.timestamp, node.user_agent
@@ -665,7 +666,7 @@ func (pg PgDb) peerCountByCountriesByTime(ctx context.Context, startDate uint64,
 		where += fmt.Sprintf(" AND node.country IN (%s) ", sourceStr)
 	}
 
-	sql := `SELECT network_snapshot.timestamp, node.country, COUNT(node.country) AS nodes FROM network_snapshot
+	sql := `SELECT network_snapshot.timestamp, network_snapshot.height, node.country, COUNT(node.country) AS nodes FROM network_snapshot
 		INNER JOIN heartbeat ON heartbeat.timestamp = network_snapshot.timestamp
 		INNER JOIN node ON node.address = heartbeat.node_id ` + where +
 		`GROUP BY network_snapshot.timestamp, node.country
@@ -719,336 +720,243 @@ func (pg PgDb) AllNodeContries(ctx context.Context) (countries []string, err err
 	return
 }
 
-type snapshotSet struct {
-	time           cache.ChartUints
-	nodes          cache.ChartUints
-	reachableNodes cache.ChartUints
-	locations      map[string]cache.ChartUints
-	locationDates  cache.ChartUints
-	versions       map[string]cache.ChartUints
-	versionDates   cache.ChartUints
-}
-
-type snapshotTableSet struct {
-	locations []netsnapshot.CountryInfo
-	versoins  []netsnapshot.UserAgentInfo
-}
-
-func (pg *PgDb) fetchNetworkSnapshotChart(ctx context.Context, charts *cache.Manager, page int) (interface{}, func(), bool, error) {
-	var set = snapshotSet{
-		locations: make(map[string]cache.ChartUints),
-		versions:  make(map[string]cache.ChartUints),
-	}
-
-	startDate := charts.SnapshotTip()
-	if startDate == 0 {
-		rows := pg.db.QueryRow(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s LIMIT 1",
-			models.NetworkSnapshotColumns.Timestamp,
-			models.TableNames.NetworkSnapshot, models.NetworkSnapshotColumns.Timestamp))
-		err := rows.Scan(&startDate)
-		if err != nil {
-			if err.Error() != sql.ErrNoRows.Error() {
-				log.Errorf("Error in getting min Network Snapshot date - %s", err.Error())
-			}
-		}
-	}
-
-	pageSize := 100000000
-	done := true
-	result, err := pg.SnapshotsByTime(ctx, int64(startDate), pageSize)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, func() {}, false, err
-		}
-	}
-	if len(result) > 0 {
-		done = false
-	}
-
-	var endDate uint64
-	for _, rec := range result {
-		if uint64(rec.Timestamp) > endDate {
-			endDate = uint64(rec.Timestamp)
-		}
-		set.time = append(set.time, uint64(rec.Timestamp))
-		set.nodes = append(set.nodes, uint64(rec.NodeCount))
-		set.reachableNodes = append(set.reachableNodes, uint64(rec.ReachableNodeCount))
-	}
-
-	// Locations
-	var datesMap = map[int64]struct{}{}
-	var allDates []int64
-	var countryMap = map[string]struct{}{}
-	var allCountries []string
-	var dateCountryCount = make(map[int64]map[string]int64)
-
-	locations, err := pg.peerCountByCountriesByTime(ctx, startDate, endDate)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, func() {}, false, err
-		}
-	}
-
-	if len(locations) > 0 {
-		done = false
-	}
-
-	for _, item := range locations {
-		if _, exists := datesMap[item.Timestamp]; !exists {
-			datesMap[item.Timestamp] = struct{}{}
-			allDates = append(allDates, item.Timestamp)
-		}
-
-		if _, exists := dateCountryCount[item.Timestamp]; !exists {
-			dateCountryCount[item.Timestamp] = make(map[string]int64)
-		}
-
-		if _, exists := countryMap[item.Country]; !exists {
-			countryMap[item.Country] = struct{}{}
-			allCountries = append(allCountries, item.Country)
-		}
-		dateCountryCount[item.Timestamp][item.Country] = item.Nodes
-	}
-
-	for _, d := range allDates {
-		for _, c := range allCountries {
-			rec := dateCountryCount[d][c]
-			if record, found := set.locations[c]; found {
-				set.locations[c] = append(record, uint64(rec))
-			} else {
-				set.locations[c] = cache.ChartUints{uint64(rec)}
-			}
-		}
-		set.locationDates = append(set.locationDates, uint64(d))
-	}
-
-	// versions
-	datesMap = map[int64]struct{}{}
-	allDates = []int64{}
-	var userAgentMap = map[string]struct{}{}
-	var allUserAgents []string
-	var dateUserAgentCount = make(map[int64]map[string]int64)
-
-	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, startDate, endDate)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, func() {}, false, err
-		}
-	}
-
-	if len(userAgents) > 0 {
-		done = false
-	}
-
-	for _, item := range userAgents {
-		if _, exists := datesMap[item.Timestamp]; !exists {
-			datesMap[item.Timestamp] = struct{}{}
-			allDates = append(allDates, item.Timestamp)
-		}
-
-		if _, exists := dateUserAgentCount[item.Timestamp]; !exists {
-			dateUserAgentCount[item.Timestamp] = make(map[string]int64)
-		}
-
-		if _, exists := userAgentMap[item.UserAgent]; !exists {
-			userAgentMap[item.UserAgent] = struct{}{}
-			allUserAgents = append(allUserAgents, item.UserAgent)
-		}
-		dateUserAgentCount[item.Timestamp][item.UserAgent] = item.Nodes
-	}
-
-	for _, d := range allDates {
-		for _, c := range allUserAgents {
-			rec := dateUserAgentCount[d][c]
-			if record, found := set.versions[c]; found {
-				set.versions[c] = append(record, uint64(rec))
-			} else {
-				set.versions[c] = cache.ChartUints{uint64(rec)}
-			}
-		}
-		set.versionDates = append(set.versionDates, uint64(d))
-	}
-
-	if !done {
-		done = true //TODO: remove
-	}
-	return set, func() {}, done, nil
-}
-
-func appendSnapshotChart(charts *cache.Manager, data interface{}) error {
-	var tickSets = data.(snapshotSet)
-	if len(tickSets.time) == 0 {
-		return nil
-	}
-
-	txn := charts.DB.NewTransaction(true)
-	defer txn.Discard()
-
-	key := fmt.Sprintf("%s-%s", cache.Snapshot, cache.TimeAxis)
-	if err := charts.AppendChartUintsAxisTx(key, tickSets.time, txn); err != nil {
-		return err
-	}
-
-	key = fmt.Sprintf("%s-%s", cache.Snapshot, cache.SnapshotNodes)
-	if err := charts.AppendChartUintsAxisTx(key, tickSets.nodes, txn); err != nil {
-		return err
-	}
-
-	key = fmt.Sprintf("%s-%s", cache.Snapshot, cache.SnapshotReachableNodes)
-	if err := charts.AppendChartUintsAxisTx(key, tickSets.reachableNodes, txn); err != nil {
-		return err
-	}
-
-	keyExists := func(arr []string, key string) bool {
-		for _, item := range arr {
-			if item == key {
-				return true
-			}
-		}
-		return false
-	}
-
-	key = fmt.Sprintf("%s-%s-%s", cache.Snapshot, cache.SnapshotLocations, cache.TimeAxis)
-	if err := charts.AppendChartUintsAxisTx(key, tickSets.locationDates, txn); err != nil {
-		return err
-	}
-
-	for country, record := range tickSets.locations {
-		if country == "" {
-			country = "Unknown"
-		}
-		if !keyExists(charts.NodeLocations, country) {
-			charts.NodeLocations = append(charts.NodeLocations, country)
-		}
-		key = fmt.Sprintf("%s-%s-%s", cache.Snapshot, cache.SnapshotLocations, country)
-		if err := charts.AppendChartUintsAxisTx(key, record, txn); err != nil {
-			return err
-		}
-	}
-
-	key = fmt.Sprintf("%s-%s-%s", cache.Snapshot, cache.SnapshotNodeVersions, cache.TimeAxis)
-	if err := charts.AppendChartUintsAxisTx(key, tickSets.versionDates, txn); err != nil {
-		return err
-	}
-
-	for userAgent, record := range tickSets.versions {
-		if userAgent == "" {
-			userAgent = "Unknown"
-		}
-		if !keyExists(charts.NodeVersion, userAgent) {
-			charts.NodeVersion = append(charts.NodeVersion, userAgent)
-		}
-		key = fmt.Sprintf("%s-%s-%s", cache.Snapshot, cache.SnapshotNodeVersions, userAgent)
-		if err := charts.AppendChartUintsAxisTx(key, record, txn); err != nil {
-			return err
-		}
-	}
-
-	if err := txn.Commit(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (pg *PgDb) fetchNetworkSnapshotTable(ctx context.Context, charts *cache.Manager, page int) (interface{}, func(), bool, error) {
-	var set snapshotTableSet
-
-	// Locations
-	locations, err := pg.peerCountByCountriesByTime(ctx, 0, 0)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, func() {}, false, err
-		}
-	}
-	set.locations = locations
-
-	// versions
-	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, 0, 0)
-	if err != nil {
-		if err.Error() != sql.ErrNoRows.Error() {
-			return nil, func() {}, false, err
-		}
-	}
-	set.versoins = userAgents
-	return set, func() {}, true, nil
-}
-
-func appendSnapshotTable(charts *cache.Manager, data interface{}) error {
-	set := data.(snapshotTableSet)
-
-	txn := charts.DB.NewTransaction(true)
-	defer txn.Discard()
-
-	var oldLocations []netsnapshot.CountryInfo
-	locationKey := fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotLocations)
-	if err := charts.ReadValTx(locationKey, &oldLocations, txn); err != nil && err != badger.ErrKeyNotFound {
-		return err
-	}
-	if err := charts.SaveValTx(locationKey, set.locations, txn); err != nil {
-		return err
-	}
-
-	var oldVersions []netsnapshot.UserAgentInfo
-	versionKey := fmt.Sprintf("%s-%s-*", cache.Snapshot, cache.SnapshotNodeVersions)
-	if err := charts.ReadValTx(versionKey, &oldVersions, txn); err != nil && err != badger.ErrKeyNotFound {
-		return err
-	}
-	if err := charts.SaveValTx(versionKey, set.versoins, txn); err != nil {
-		return err
-	}
-
-	if err := txn.Commit(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (pg *PgDb) fetchEncodeSnapshotChart(ctx context.Context, charts *cache.Manager, dataType, _ string, binString string, extras ...string) ([]byte, error) {
+func (pg *PgDb) fetchEncodeSnapshotChart(ctx context.Context, charts *cache.Manager, dataType, axis, binString string, extras ...string) ([]byte, error) {
 	switch dataType {
 	case string(cache.SnapshotNodes):
-		return pg.fetchEncodeSnapshotNodesChart(ctx, charts)
+		return pg.fetchEncodeSnapshotNodesChart(ctx, charts, dataType, binString)
 	case string(cache.SnapshotNodeVersions):
-		return pg.fetchEncodeSnapshotNodeVersionsChart(ctx, charts, extras...)
+		return pg.fetchEncodeSnapshotNodeVersionsChart(ctx, charts, axis, binString, extras...)
 	case string(cache.SnapshotLocations):
-		return pg.fetchEncodeSnapshotLocationsChart(ctx, charts, extras...)
+		return pg.fetchEncodeSnapshotLocationsChart(ctx, charts, axis, binString, extras...)
 	default:
 		return nil, cache.UnknownChartErr
 	}
 }
 
-func (pg *PgDb) fetchEncodeSnapshotNodesChart(ctx context.Context, charts *cache.Manager) ([]byte, error) {
-	result, err := pg.SnapshotsByTime(ctx, 0, 0)
-	if err != nil {
-		return nil, err
-	}
-
+func (pg *PgDb) fetchEncodeSnapshotNodesChart(ctx context.Context, charts *cache.Manager, dataType, binString string) ([]byte, error) {
 	var time, nodes, reachableNodes cache.ChartUints
-	for _, rec := range result {
-		time = append(time, uint64(rec.Timestamp))
-		nodes = append(nodes, uint64(rec.NodeCount))
-		reachableNodes = append(reachableNodes, uint64(rec.ReachableNodeCount))
+
+	if binString == string(cache.DefaultBin) {
+		result, err := pg.SnapshotsByTime(ctx, 0, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, rec := range result {
+			if dataType == string(cache.HeightAxis) {
+				time = append(time, uint64(rec.Height))
+			} else {
+				time = append(time, uint64(rec.Timestamp))
+			}
+			nodes = append(nodes, uint64(rec.NodeCount))
+			reachableNodes = append(reachableNodes, uint64(rec.ReachableNodeCount))
+		}
+	} else {
+		result, err := models.NetworkSnapshotBins(
+			models.NetworkSnapshotBinWhere.Bin.EQ(binString),
+			qm.OrderBy(models.NetworkSnapshotBinColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, rec := range result {
+			if dataType == string(cache.HeightAxis) {
+				time = append(time, uint64(rec.Height))
+			} else {
+				time = append(time, uint64(rec.Timestamp))
+			}
+			nodes = append(nodes, uint64(rec.NodeCount))
+			reachableNodes = append(reachableNodes, uint64(rec.ReachableNodes))
+		}
 	}
 
 	return charts.Encode(nil, time, nodes, reachableNodes)
 }
 
-func (pg *PgDb) fetchEncodeSnapshotNodeVersionsChart(ctx context.Context, charts *cache.Manager, userAgentsArg ...string) ([]byte, error) {
+func (pg *PgDb) UpdateSnapshotNodesBin(ctx context.Context) error {
+	log.Info("Updating snapshot node bin data")
+	// hour bin
+	lastHourEntry, err := models.NetworkSnapshotBins(
+		models.NetworkSnapshotBinWhere.Bin.EQ(string(cache.HourBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NetworkSnapshotBinColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextHour = time.Time{}
+	var lastHour int64
+	if lastHourEntry != nil {
+		lastHour = lastHourEntry.Timestamp
+		nextHour = time.Unix(lastHourEntry.Timestamp, 0).Add(cache.AnHour * time.Second).UTC()
+	}
+	if time.Now().Before(nextHour) {
+		return nil
+	}
+
+	records, err := pg.SnapshotsByTime(ctx, lastHour, 0)
+	if err != nil {
+		return err
+	}
+
+	var dates, heights, nodes, reachableNodes cache.ChartUints
+	for _, rec := range records {
+		dates = append(dates, uint64(rec.Timestamp))
+		heights = append(heights, uint64(rec.Height))
+		nodes = append(nodes, uint64(rec.NodeCount))
+		reachableNodes = append(reachableNodes, uint64(rec.ReachableNodeCount))
+	}
+
+	tx, err := pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	hours, hourHeights, hourIntervals := cache.GenerateHourBin(dates, heights)
+	for i, interval := range hourIntervals {
+		if int64(hours[i]) < nextHour.Unix() {
+			continue
+		}
+		m := models.NetworkSnapshotBin{
+			Timestamp:      int64(hours[i]),
+			Height:         int64(hourHeights[i]),
+			Bin:            string(cache.HourBin),
+			NodeCount:      int(nodes.Avg(interval[0], interval[1])),
+			ReachableNodes: int(reachableNodes.Avg(interval[0], interval[1])),
+		}
+		if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// day bin
+	lastDayEntry, err := models.NetworkSnapshotBins(
+		models.NetworkSnapshotBinWhere.Bin.EQ(string(cache.DayBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NetworkSnapshotBinColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextDay time.Time
+	var lastDay int64
+	if lastDayEntry != nil {
+		lastDay = lastDayEntry.Timestamp
+		nextDay = time.Unix(lastDayEntry.Timestamp, 0).Add(cache.ADay * time.Second).UTC()
+	}
+	if time.Now().Before(nextDay) {
+		return nil
+	}
+
+	records, err = pg.SnapshotsByTime(ctx, lastDay, 0)
+	if err != nil {
+		return err
+	}
+
+	dates, heights, nodes, reachableNodes = cache.ChartUints{}, cache.ChartUints{}, cache.ChartUints{}, cache.ChartUints{}
+	for _, rec := range records {
+		dates = append(dates, uint64(rec.Timestamp))
+		heights = append(heights, uint64(rec.Height))
+		nodes = append(nodes, uint64(rec.NodeCount))
+		reachableNodes = append(reachableNodes, uint64(rec.ReachableNodeCount))
+	}
+
+	tx, err = pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	days, dayHeights, dayIntervals := cache.GenerateDayBin(dates, heights)
+	for i, interval := range dayIntervals {
+		if int64(days[i]) < nextDay.Unix() {
+			continue
+		}
+		m := models.NetworkSnapshotBin{
+			Timestamp:      int64(days[i]),
+			Height:         int64(dayHeights[i]),
+			Bin:            string(cache.DayBin),
+			NodeCount:      int(nodes.Avg(interval[0], interval[1])),
+			ReachableNodes: int(reachableNodes.Avg(interval[0], interval[1])),
+		}
+		if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	if err = pg.UpdateNodeVersion(ctx); err != nil {
+		return err
+	}
+
+	if err = pg.UpdateNodeLocation(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) fetchEncodeSnapshotNodeVersionsChart(ctx context.Context, charts *cache.Manager, axis, binString string, userAgentsArg ...string) ([]byte, error) {
 	datesMap := map[int64]struct{}{}
 	allDates := cache.ChartUints{}
+	versions := map[string]cache.ChartUints{}
+	for _, userAgent := range userAgentsArg {
+		records, err := models.NodeVersions(
+			models.NodeVersionWhere.UserAgent.EQ(userAgent),
+			models.NodeVersionWhere.Bin.EQ(binString),
+			qm.OrderBy(models.NodeVersionColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var nodeCounts cache.ChartUints
+		for _, rec := range records {
+			if _, f := datesMap[rec.Timestamp]; !f {
+				if axis == string(cache.HeightAxis) {
+					allDates = append(allDates, uint64(rec.Height))
+				} else {
+					allDates = append(allDates, uint64(rec.Timestamp))
+				}
+			}
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		versions[userAgent] = nodeCounts
+	}
+
+	recs := []cache.Lengther{allDates}
+	for _, r := range versions {
+		recs = append(recs, r)
+	}
+
+	return charts.Encode(nil, recs...)
+}
+
+func (pg *PgDb) fetchSnapshotNodeVersions(ctx context.Context, startDate int64) (cache.ChartUints, cache.ChartUints, map[string]cache.ChartUints, error) {
+	datesMap, heightMap := map[int64]struct{}{}, map[int64]struct{}{}
+	allDates, allHeights := cache.ChartUints{}, cache.ChartUints{}
+
 	var userAgentMap = map[string]struct{}{}
 	var allUserAgents []string
 	var dateUserAgentCount = make(map[uint64]map[string]int64)
 
-	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, 0, 0, userAgentsArg...)
+	userAgents, err := pg.peerCountByUserAgentsByTime(ctx, uint64(startDate), 0)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	for _, item := range userAgents {
 		if _, exists := datesMap[item.Timestamp]; !exists {
 			datesMap[item.Timestamp] = struct{}{}
 			allDates = append(allDates, uint64(item.Timestamp))
+		}
+		if _, exists := heightMap[item.Height]; !exists {
+			datesMap[item.Height] = struct{}{}
+			allHeights = append(allHeights, uint64(item.Height))
 		}
 
 		if _, exists := dateUserAgentCount[uint64(item.Timestamp)]; !exists {
@@ -1062,13 +970,9 @@ func (pg *PgDb) fetchEncodeSnapshotNodeVersionsChart(ctx context.Context, charts
 		dateUserAgentCount[uint64(item.Timestamp)][item.UserAgent] = item.Nodes
 	}
 
-	if len(userAgentsArg) == 0 {
-		userAgentsArg = allUserAgents
-	}
-
 	versions := map[string]cache.ChartUints{}
 	for _, d := range allDates {
-		for _, c := range userAgentsArg {
+		for _, c := range allUserAgents {
 			rec := dateUserAgentCount[d][c]
 			if record, found := versions[c]; found {
 				versions[c] = append(record, uint64(rec))
@@ -1077,30 +981,304 @@ func (pg *PgDb) fetchEncodeSnapshotNodeVersionsChart(ctx context.Context, charts
 			}
 		}
 	}
+
+	return allDates, allHeights, versions, nil
+}
+
+func (pg *PgDb) UpdateNodeVersion(ctx context.Context) error {
+	log.Info("Updating snapshot node versions")
+	// default bin
+	lastHourEntry, err := models.NodeVersions(
+		models.NodeVersionWhere.Bin.EQ(string(cache.DefaultBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeVersionColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var lastEntry int64
+	if lastHourEntry != nil {
+		lastEntry = lastHourEntry.Timestamp
+	}
+
+	allDates, allHeights, versions, err := pg.fetchSnapshotNodeVersions(ctx, lastEntry)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	tx, err := pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for userAgent, records := range versions {
+		for i := range allDates {
+			if int64(allDates[i]) <= lastEntry {
+				continue
+			}
+			m := models.NodeVersion{
+				Timestamp: int64(allDates[i]),
+				Bin:       string(cache.DefaultBin),
+				Height:    int64(allHeights[i]),
+				NodeCount: int(records[i]),
+				UserAgent: userAgent,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	if err = pg.updateSnapshotVersionBinData(ctx); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) updateSnapshotVersionBinData(ctx context.Context) error {
+	log.Info("Updating snapshot version bin data")
+	allNodeVersion, err := pg.AllNodeVersions(ctx)
+	if err != nil {
+		return err
+	}
+
+	// hour bin
+	lastHourEntry, err := models.NodeVersions(
+		models.NodeVersionWhere.Bin.EQ(string(cache.HourBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeVersionColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextHour = time.Time{}
+	var lastHour int64
+	if lastHourEntry != nil {
+		lastHour = lastHourEntry.Timestamp
+		nextHour = time.Unix(lastHourEntry.Timestamp, 0).Add(cache.AnHour * time.Second).UTC()
+	}
+	if time.Now().Before(nextHour) {
+		return nil
+	}
+	tx, err := pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, userAgent := range allNodeVersion {
+		records, err := models.NodeVersions(
+			models.NodeVersionWhere.Bin.EQ(string(cache.DefaultBin)),
+			models.NodeVersionWhere.UserAgent.EQ(userAgent),
+			models.NodeVersionWhere.Timestamp.GT(lastHour),
+			qm.OrderBy(models.NodeVersionColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		var dates, heights, nodeCounts cache.ChartUints
+		for _, rec := range records {
+			dates = append(dates, uint64(rec.Timestamp))
+			heights = append(heights, uint64(rec.Height))
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		hours, hourHeights, hourIntervals := cache.GenerateHourBin(dates, heights)
+		for i, interval := range hourIntervals {
+			if int64(hours[i]) < nextHour.Unix() {
+				continue
+			}
+			m := models.NodeVersion{
+				Timestamp: int64(hours[i]),
+				Height:    int64(hourHeights[i]),
+				Bin:       string(cache.HourBin),
+				NodeCount: int(nodeCounts.Avg(interval[0], interval[1])),
+				UserAgent: userAgent,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// day bin
+	lastDayEntry, err := models.NodeVersions(
+		models.NodeVersionWhere.Bin.EQ(string(cache.DayBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeVersionColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextDay = time.Time{}
+	var lastDay int64
+	if lastDayEntry != nil {
+		lastDay = lastDayEntry.Timestamp
+		nextDay = time.Unix(lastDayEntry.Timestamp, 0).Add(cache.AnHour * time.Second).UTC()
+	}
+	if time.Now().Before(nextDay) {
+		return nil
+	}
+	tx, err = pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, userAgent := range allNodeVersion {
+		records, err := models.NodeVersions(
+			models.NodeVersionWhere.Bin.EQ(string(cache.DefaultBin)),
+			models.NodeVersionWhere.UserAgent.EQ(userAgent),
+			models.NodeVersionWhere.Timestamp.GT(lastDay),
+			qm.OrderBy(models.NodeVersionColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		var dates, heights, nodeCounts cache.ChartUints
+		for _, rec := range records {
+			dates = append(dates, uint64(rec.Timestamp))
+			heights = append(heights, uint64(rec.Height))
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		days, dayHeights, dayIntervals := cache.GenerateDayBin(dates, heights)
+		for i, interval := range dayIntervals {
+			if int64(days[i]) < nextHour.Unix() {
+				continue
+			}
+			m := models.NodeVersion{
+				Timestamp: int64(days[i]),
+				Height:    int64(dayHeights[i]),
+				Bin:       string(cache.DayBin),
+				NodeCount: int(nodeCounts.Avg(interval[0], interval[1])),
+				UserAgent: userAgent,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) fetchEncodeSnapshotLocationsChart(ctx context.Context, charts *cache.Manager, axis, binString string, countriesArg ...string) ([]byte, error) {
+	var datesMap = map[int64]struct{}{}
+	var allDates cache.ChartUints
+
+	locationSet := map[string]cache.ChartUints{}
+	for _, userAgent := range countriesArg {
+		records, err := models.NodeLocations(
+			models.NodeLocationWhere.Country.EQ(userAgent),
+			models.NodeLocationWhere.Bin.EQ(binString),
+			qm.OrderBy(models.NodeLocationColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			return nil, err
+		}
+		var nodeCounts cache.ChartUints
+		for _, rec := range records {
+			if _, f := datesMap[rec.Timestamp]; !f {
+				if axis == string(cache.HeightAxis) {
+					allDates = append(allDates, uint64(rec.Height))
+				} else {
+					allDates = append(allDates, uint64(rec.Timestamp))
+				}
+			}
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		locationSet[userAgent] = nodeCounts
+	}
+
 	recs := []cache.Lengther{allDates}
-	for _, r := range versions {
+	for _, r := range locationSet {
 		recs = append(recs, r)
 	}
 
 	return charts.Encode(nil, recs...)
 }
 
-func (pg *PgDb) fetchEncodeSnapshotLocationsChart(ctx context.Context, charts *cache.Manager, countriesArg ...string) ([]byte, error) {
-	var datesMap = map[int64]struct{}{}
-	var allDates cache.ChartUints
+func (pg *PgDb) UpdateNodeLocation(ctx context.Context) error {
+	log.Info("Updating snapshot node locations")
+	// default bin
+	lastHourEntry, err := models.NodeLocations(
+		models.NodeLocationWhere.Bin.EQ(string(cache.DefaultBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeLocationColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var lastEntry int64
+	if lastHourEntry != nil {
+		lastEntry = lastHourEntry.Timestamp
+	}
+
+	allDates, allHeights, locations, err := pg.fetchNodeLocationChart(ctx, lastEntry)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+	tx, err := pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for country, records := range locations {
+		for i := range allDates {
+			if int64(allDates[i]) <= lastEntry {
+				continue
+			}
+			m := models.NodeLocation{
+				Timestamp: int64(allDates[i]),
+				Bin:       string(cache.DefaultBin),
+				Height:    int64(allHeights[i]),
+				NodeCount: int(records[i]),
+				Country:   country,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	if err = pg.updateNodeLocationBinData(ctx); err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) fetchNodeLocationChart(ctx context.Context, startDate int64) (cache.ChartUints, cache.ChartUints, map[string]cache.ChartUints, error) {
+	var datesMap, heightsMap = map[int64]struct{}{}, map[int64]struct{}{}
+	var allDates, allHeights cache.ChartUints
 	var countryMap = map[string]struct{}{}
 	var allCountries []string
 	var dateCountryCount = make(map[uint64]map[string]int64)
 
-	locations, err := pg.peerCountByCountriesByTime(ctx, 0, 0, countriesArg...)
+	locations, err := pg.peerCountByCountriesByTime(ctx, uint64(startDate), 0)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	for _, item := range locations {
 		if _, exists := datesMap[item.Timestamp]; !exists {
 			datesMap[item.Timestamp] = struct{}{}
 			allDates = append(allDates, uint64(item.Timestamp))
+		}
+		if _, exists := heightsMap[item.Height]; !exists {
+			datesMap[item.Height] = struct{}{}
+			allHeights = append(allHeights, uint64(item.Height))
 		}
 
 		if _, exists := dateCountryCount[uint64(item.Timestamp)]; !exists {
@@ -1114,13 +1292,9 @@ func (pg *PgDb) fetchEncodeSnapshotLocationsChart(ctx context.Context, charts *c
 		dateCountryCount[uint64(item.Timestamp)][item.Country] = item.Nodes
 	}
 
-	if len(countriesArg) == 0 {
-		countriesArg = allCountries
-	}
-
 	var locationSet = map[string]cache.ChartUints{}
 	for _, d := range allDates {
-		for _, c := range countriesArg {
+		for _, c := range allCountries {
 			rec := dateCountryCount[d][c]
 			if record, found := locationSet[c]; found {
 				locationSet[c] = append(record, uint64(rec))
@@ -1130,10 +1304,192 @@ func (pg *PgDb) fetchEncodeSnapshotLocationsChart(ctx context.Context, charts *c
 		}
 	}
 
-	recs := []cache.Lengther{allDates}
-	for _, r := range locationSet {
-		recs = append(recs, r)
+	return allDates, allHeights, locationSet, nil
+}
+
+func (pg *PgDb) updateNodeLocationBinData(ctx context.Context) error {
+	log.Info("Updating snapshot location bin data")
+	allCountries, err := pg.AllNodeContries(ctx)
+	if err != nil {
+		return err
 	}
 
-	return charts.Encode(nil, recs...)
+	// hour bin
+	lastHourEntry, err := models.NodeLocations(
+		models.NodeLocationWhere.Bin.EQ(string(cache.HourBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeLocationColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextHour = time.Time{}
+	var lastHour int64
+	if lastHourEntry != nil {
+		lastHour = lastHourEntry.Timestamp
+		nextHour = time.Unix(lastHourEntry.Timestamp, 0).Add(cache.AnHour * time.Second).UTC()
+	}
+	if time.Now().Before(nextHour) {
+		return nil
+	}
+	tx, err := pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, country := range allCountries {
+		records, err := models.NodeLocations(
+			models.NodeLocationWhere.Bin.EQ(string(cache.DefaultBin)),
+			models.NodeLocationWhere.Country.EQ(country),
+			models.NodeLocationWhere.Timestamp.GT(lastHour),
+			qm.OrderBy(models.NodeVersionColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		var dates, heights, nodeCounts cache.ChartUints
+		for _, rec := range records {
+			dates = append(dates, uint64(rec.Timestamp))
+			heights = append(heights, uint64(rec.Height))
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		hours, hourHeights, hourIntervals := cache.GenerateHourBin(dates, heights)
+		for i, interval := range hourIntervals {
+			if int64(hours[i]) < nextHour.Unix() {
+				continue
+			}
+			m := models.NodeLocation{
+				Timestamp: int64(hours[i]),
+				Height:    int64(hourHeights[i]),
+				Bin:       string(cache.HourBin),
+				NodeCount: int(nodeCounts.Avg(interval[0], interval[1])),
+				Country:   country,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	// day bin
+	lastDayEntry, err := models.NodeLocations(
+		models.NodeLocationWhere.Bin.EQ(string(cache.DayBin)),
+		qm.OrderBy(fmt.Sprintf("%s desc", models.NodeLocationColumns.Timestamp)),
+	).One(ctx, pg.db)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	var nextDay = time.Time{}
+	var lastDay int64
+	if lastDayEntry != nil {
+		lastDay = lastDayEntry.Timestamp
+		nextDay = time.Unix(lastDayEntry.Timestamp, 0).Add(cache.AnHour * time.Second).UTC()
+	}
+	if time.Now().Before(nextDay) {
+		return nil
+	}
+	tx, err = pg.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, country := range allCountries {
+		records, err := models.NodeLocations(
+			models.NodeLocationWhere.Bin.EQ(string(cache.DefaultBin)),
+			models.NodeLocationWhere.Country.EQ(country),
+			models.NodeLocationWhere.Timestamp.GT(lastDay),
+			qm.OrderBy(models.NodeLocationColumns.Timestamp),
+		).All(ctx, pg.db)
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
+		var dates, heights, nodeCounts cache.ChartUints
+		for _, rec := range records {
+			dates = append(dates, uint64(rec.Timestamp))
+			heights = append(heights, uint64(rec.Height))
+			nodeCounts = append(nodeCounts, uint64(rec.NodeCount))
+		}
+		days, dayHeights, dayIntervals := cache.GenerateDayBin(dates, heights)
+		for i, interval := range dayIntervals {
+			if int64(days[i]) < nextHour.Unix() {
+				continue
+			}
+			m := models.NodeLocation{
+				Timestamp: int64(days[i]),
+				Height:    int64(dayHeights[i]),
+				Bin:       string(cache.DayBin),
+				NodeCount: int(nodeCounts.Avg(interval[0], interval[1])),
+				Country:   country,
+			}
+			if err = m.Insert(ctx, tx, boil.Infer()); err != nil {
+				_ = tx.Rollback()
+				return err
+			}
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pg *PgDb) FetchNodeLocations(ctx context.Context, offset, limit int) ([]netsnapshot.CountryInfo, int64, error) {
+	records, err := models.NodeLocations(
+		models.NodeLocationWhere.NodeCount.GT(0),
+		qm.OrderBy(models.NodeLocationColumns.Timestamp+" desc"),
+		qm.Offset(offset),
+		qm.Limit(limit),
+	).All(ctx, pg.db)
+
+	if err != nil {
+		return nil, 0, err
+	}
+	var result = make([]netsnapshot.CountryInfo, len(records))
+	for i, rec := range records {
+		result[i] = netsnapshot.CountryInfo{
+			Country:   rec.Country,
+			Height:    rec.Height,
+			Timestamp: rec.Timestamp,
+			Nodes:     int64(rec.NodeCount),
+		}
+	}
+	count, err := models.NodeLocations().Count(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return result, count, nil
+}
+
+func (pg *PgDb) FetchNodeVersion(ctx context.Context, offset, limit int) ([]netsnapshot.UserAgentInfo, int64, error) {
+	records, err := models.NodeVersions(
+		models.NodeVersionWhere.NodeCount.GT(0),
+		qm.OrderBy(models.NodeVersionColumns.Timestamp+" desc"),
+		qm.Offset(offset),
+		qm.Limit(limit),
+	).All(ctx, pg.db)
+
+	if err != nil {
+		return nil, 0, err
+	}
+	var result = make([]netsnapshot.UserAgentInfo, len(records))
+	for i, rec := range records {
+		result[i] = netsnapshot.UserAgentInfo{
+			UserAgent: rec.UserAgent,
+			Height:    rec.Height,
+			Timestamp: rec.Timestamp,
+			Nodes:     int64(rec.NodeCount),
+		}
+	}
+	count, err := models.NodeVersions().Count(ctx, pg.db)
+	if err != nil {
+		return nil, 0, err
+	}
+	return result, count, nil
 }

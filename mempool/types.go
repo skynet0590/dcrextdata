@@ -95,8 +95,10 @@ type DataStore interface {
 	LastMempoolTime() (entryTime time.Time, err error)
 	FetchMempoolForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Mempool, int64, error)
 	SaveBlock(context.Context, Block) error
+	UpdateBlockBinData(context.Context) error
 	FetchBlockForSync(ctx context.Context, blockHeight int64, offtset int, limit int) ([]Block, int64, error)
 	SaveVote(ctx context.Context, vote Vote) error
+	UpdateVoteTimeDeviationData(context.Context) error
 	FetchVoteForSync(ctx context.Context, date time.Time, offtset int, limit int) ([]Vote, int64, error)
 
 	datasync.Store

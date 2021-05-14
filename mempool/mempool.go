@@ -144,6 +144,10 @@ func (c *Collector) DcrdHandlers(ctx context.Context, cacheManager *cache.Manage
 				if err = c.dataStore.SaveVote(ctx, vote); err != nil {
 					log.Error(err)
 				}
+
+				if err = c.dataStore.UpdateVoteTimeDeviationData(ctx); err != nil {
+					log.Errorf("Error in vote receive time deviation data update, %s", err.Error())
+				}
 			}()
 		},
 
@@ -176,14 +180,15 @@ func (c *Collector) DcrdHandlers(ctx context.Context, cacheManager *cache.Manage
 			}
 			if err = c.dataStore.SaveBlock(ctx, block); err != nil {
 				log.Error(err)
-			} else if err = cacheManager.TriggerUpdate(ctx, cache.Propagation); err != nil {
-				log.Errorf("Charts update problem for %s: %s", cache.Mempool, err.Error())
+			}
+			if err = c.dataStore.UpdateBlockBinData(ctx); err != nil {
+				log.Errorf("Error in block bin data update, %s", err.Error())
 			}
 		},
 	}
 }
 
-func (c *Collector) StartMonitoring(ctx context.Context, cacheManager *cache.Manager) {
+func (c *Collector) StartMonitoring(ctx context.Context) {
 	var mu sync.Mutex
 
 	collectMempool := func() {
@@ -259,10 +264,6 @@ func (c *Collector) StartMonitoring(ctx context.Context, cacheManager *cache.Man
 
 		if err = c.dataStore.StoreMempool(ctx, mempoolDto); err != nil {
 			log.Error(err)
-		} else {
-			if err = cacheManager.TriggerUpdate(ctx, cache.Mempool); err != nil {
-				log.Errorf("Charts update problem for %s: %s", cache.Mempool, err.Error())
-			}
 		}
 	}
 
@@ -347,6 +348,10 @@ func (c *Collector) registerBlockSyncer(syncCoordinator *datasync.SyncCoordinato
 				if err != nil {
 					log.Errorf("Error while appending block synced data, %s", err.Error())
 				}
+			}
+			// update propagation data
+			if err := store.UpdatePropagationData(ctx); err != nil {
+				log.Errorf("Error in initial propagation data update, %s", err.Error())
 			}
 		},
 	})
