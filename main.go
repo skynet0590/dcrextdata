@@ -147,7 +147,6 @@ func _main(ctx context.Context) error {
 		if resetTables {
 			err = db.DropCacheTables()
 			if err != nil {
-				db.Close()
 				log.Error("Could not drop tables: ", err)
 				return err
 			}
@@ -157,7 +156,6 @@ func _main(ctx context.Context) error {
 		} else {
 			log.Error("Migrate database fail: ", err)
 		}
-		db.Close()
 		return err
 	}
 

@@ -2,8 +2,12 @@ package postgres
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	migrate "github.com/rubenv/sql-migrate"
 )
@@ -11,6 +15,9 @@ import (
 const (
 	migrateUp   = "up"
 	migrateDown = "down"
+	migrateNew  = "new"
+
+	migrateDir = "postgres/migrations"
 
 	lastExchangeTickEntryTime = `SELECT time FROM exchange_tick ORDER BY time DESC LIMIT 1`
 	lastExchangeEntryID       = `SELECT id FROM exchange ORDER BY id DESC LIMIT 1`
@@ -72,6 +79,25 @@ func (pg *PgDb) dropIndex(name string) error {
 	return err
 }
 
+func (pg *PgDb) newMigrateFile(message string) error {
+	reg, err := regexp.Compile("[^a-zA-Z0-9 ]+")
+	if err != nil {
+		return err
+	}
+	message = reg.ReplaceAllString(message, "")
+	message = strings.Trim(message, " ")
+	message = strings.ReplaceAll(message, " ", "_")
+	nowUnix := time.Now().Unix()
+	fileName := fmt.Sprintf("%d-%s.sql", nowUnix, message)
+	filePath := filepath.Join(migrateDir, fileName)
+	content := []byte("\n-- +migrate Up\n\n-- +migrate Down\n\n")
+	err = ioutil.WriteFile(filePath, content, 0700)
+	if err == nil {
+		log.Infof("Created sql migration file: %s", fileName)
+	}
+	return err
+}
+
 func (pg *PgDb) MigrateDatabase(migrateCode string) error {
 	migrateInfos := strings.Split(strings.ToLower(migrateCode), ":")
 	var migrateAction migrate.MigrationDirection
@@ -80,12 +106,17 @@ func (pg *PgDb) MigrateDatabase(migrateCode string) error {
 		migrateAction = migrate.Up
 	case migrateDown:
 		migrateAction = migrate.Down
+	case migrateNew:
+		if len(migrateInfos) != 2 {
+			return fmt.Errorf("Please enter the migration message. ")
+		}
+		return pg.newMigrateFile(migrateInfos[1])
 	default:
 		return ErrInvalidMigrateConvention
 	}
-
+	log.Infof("Start do migrating action: %s", migrateInfos[0])
 	migrations := &migrate.FileMigrationSource{
-		Dir: "postgres/migrations",
+		Dir: migrateDir,
 	}
 	var n int
 	var err error
@@ -102,6 +133,6 @@ func (pg *PgDb) MigrateDatabase(migrateCode string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Applied %d migrations!\n", n)
+	log.Infof("Applied %d migrations!", n)
 	return nil
 }

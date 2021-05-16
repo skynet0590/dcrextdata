@@ -82,6 +82,7 @@ To run *dcrextdata*, use...
   * `--migrate=up` will upgrade the database to the latest version.
   * `--migrate=up:2` will upgrade the database and limit the number of migrations (2 for this example)
   * `--migrate=down:3` the same with the above example but for downgrade.
+  * `--migrate="new:awesome migrate file message"` create new migration file(only for dev)
 - Run `dcrextdata -h` or `dcrextdata help` to get general information of commands and options that can be issued on the cli.
 - Use `dcrextdata <command> -h` or   `dcrextdata help <command>` to get detailed information about a command.
 
